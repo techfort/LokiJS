@@ -8,11 +8,17 @@
 
 
 trace(LokiJS);
-var db = new LokiJS.db('Test');
-var coll = new LokiJS.collection('user','User');
+trace(loki);
+var db = new loki('Test');
+trace(db);
+var coll = new db.Collection('user','User');
 trace(coll);
-var user = new coll.model({ name : 'joe'});
-coll.add(user);
+var joe = new coll.document({ name : 'joe', email : 'joe@dsforge.net'});
+var jack = new coll.document({ name : 'jack', email : 'jack@dsforge.net'});
+coll.addMany(joe,jack);
+coll.ensureIndexAsync('name', function(){
+	trace('Finished indexing!');
+});
 
 </script>
 </body>

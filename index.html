@@ -8,21 +8,30 @@
 
 
 trace(LokiJS);
-trace(loki);
 var db = new loki('Test');
 trace(db);
 var coll = new db.Collection('user','User');
 trace(coll);
 var joe = new coll.document({ name : 'joe', email : 'joe@dsforge.net'});
 var jack = new coll.document({ name : 'jack', email : 'jack@dsforge.net'});
+coll.ensureIndex('name');
+
 coll.addMany(joe,jack);
-coll.ensureIndexAsync('name', function(){
-	trace('Finished indexing!');
-	var obj = coll.findOne('name','joe');
-	trace(obj);
-	var obj2 = coll.findOneUnindexed('email','jack@dsforge.net');
-	trace(obj2);
-});
+
+var obj = coll.findOne('name','joe');
+trace('Retrieved object with id ' + obj.id);
+obj.name = 'Joe';
+coll.update(obj);
+trace(coll.data);
+trace('Finding object...');
+var o = coll.findOne('name','Joe');
+trace('Found object');
+trace(o);
+trace('About to delete');
+
+coll.delete(o);
+trace(coll.data);
+
 
 </script>
 </body>

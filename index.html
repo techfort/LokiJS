@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="loki.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+
+trace(LokiJS);
+var db = new LokiJS.db('Test');
+var coll = new LokiJS.collection('user','User');
+trace(coll);
+var user = new coll.model({ name : 'joe'});
+coll.add(user);
+
+</script>
+</body>
+</html>

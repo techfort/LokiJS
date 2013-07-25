@@ -46,17 +46,22 @@ function Collection(_name, _objType){
 
 	trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 	this.add = function(obj){
+
 		/*
 		 * try adding object to collection
 		 */
 		if(coll.objType=="" && coll.data.length == 0){
+
 			// set object type to that of the first object added to collection
 			coll.objType = obj.objType;
+
 		} else {
+			
 			// throw an error if the object added is not the same type as the collection's
 			if(coll.objType!=obj.objType) throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + coll.objType +']';
 			if(coll.objType=="") throw 'Object is not a model';
 			trace('Adding object ' + obj.toString() + ' to collection ' + coll.name);
+			
 			// add the object
 			coll.data.push(obj);
 		}
@@ -107,6 +112,7 @@ function Collection(_name, _objType){
 			coll.ensureIndex(property);
 			callback();
 		}, 1);
+		trace('started indexing...');
 	};
 
 	this.findOne = function(prop, value){
@@ -118,8 +124,11 @@ function Collection(_name, _objType){
 				break;
 			}
 		}
+		
 
 	};
+
+
 };
 
 LokiJS.trace = trace.bind(LokiJS);

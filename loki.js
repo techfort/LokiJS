@@ -124,7 +124,13 @@ function Collection(_name, _objType){
 				break;
 			}
 		}
-		
+		var obj = null;
+		if(searchByIndex){
+			// @TODO: perform search based on index
+
+		} else {
+			// @TODO: search all collection and find first matching result
+		}
 
 	};
 

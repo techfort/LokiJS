@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="loki.js"></script>
+<script src="src/LokiJS.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -18,6 +18,10 @@ var jack = new coll.document({ name : 'jack', email : 'jack@dsforge.net'});
 coll.addMany(joe,jack);
 coll.ensureIndexAsync('name', function(){
 	trace('Finished indexing!');
+	var obj = coll.findOne('name','joe');
+	trace(obj);
+	var obj2 = coll.findOneUnindexed('email','jack@dsforge.net');
+	trace(obj2);
 });
 
 </script>

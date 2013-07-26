@@ -24,6 +24,7 @@ function trace(message) {
 };
 
 
+
 /**
  * Define library loki
  */
@@ -62,7 +63,6 @@ window.loki = (function(){
 		this.objType = _objType || "";
 		// pointer to self to avoid this tricks
 		var coll = this;
-
 
 		trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 
@@ -289,6 +289,7 @@ window.loki = (function(){
 			trace(doc);
 			var obj = coll.findOne('id', doc.id);
 			var position = obj.__pos__;
+			delete obj.__pos__;
 			coll.data.splice(position,1);
 			// coll.ensureAllIndexes();
 			for (var i = coll.indices.length - 1; i >= 0; i--) {
@@ -297,9 +298,51 @@ window.loki = (function(){
 
 		};
 
-		this.query = function(queryObject){
+		/**
+		 * Function similar to array.filter but optimized for array of objects
+		 */
+		this.query = function(operator, property, value){
+			trace('Operator: ' + operator);
+			// comparison operators
+			function $eq ( a, b){ return a == b; }
+			function $gt ( a, b){ return a > b; }
+			function $gte( a, b){ return a >= b; }
+			function $lt ( a, b){ return a < b; }
+			function $lte( a, b){ return a <= b; }
+			function $ne ( a, b){ return a != b; }
+
+			var operators = {
+				'$eq': $eq,
+				'$gt': $gt,
+				'$gte': $gte,
+				'$lt': $lt,
+				'$lte': $lte,
+				'$ne' : $ne
+			};
+
+			if (coll.data == null)
+		  		throw new TypeError();
+
+		  	var t = coll.data;
+		    var fun = operators[operator];
+
+		    var res = [];
+
+		    for (var i = t.length - 1; i >= 0; i--) {
+		    	if( fun(t[i][property], value)) res.push(t[i]); 
+		    }
+
+		    return res;
 
 		};
+
+		this.filter = function(operator, property, value){
+			return coll.data.query(operator, property, value);
+		}
+
+		this.find = function(){
+			return coll.data;			
+		}
 
 		this.no_op = function(){
 			trace('Operation completed.');
@@ -309,7 +352,43 @@ window.loki = (function(){
 		coll.ensureIndex('id');
 	};
 
+	function Query(){
+		this.clauses = {
+			or : [],
+			and : [],
+			not : [],
+			nor : []
+		};
+		this.clause = function(operator, property, value){
+			return {
+				op : operator, 
+				prop : property, 
+				val : value
+			};
+		}
+		this.addClause = function(clauseType, operator, property, value){
+			this.clauses[clauseType].push( this.clause( operator, property, value ) );
+		};
+		this.or = function(operator, property, value){
+			this.addClauses( 'or',  operator, property, value );
+		};
+		this.and = functino(operator, property, value){
+			this.addClauses( 'and',  operator, property, value );
+		};
+		this.not = functino(operator, property, value){
+			this.addClauses( 'not',  operator, property, value );
+		};
+		this.nor = functino(operator, property, value){
+			this.addClauses( 'nor',  operator, property, value );
+		};
+		/**
+		 * Execute query
+		 */
+		this.get = function(){
+			// @TODO: iterate clauses and filter results based on logical operators
+		};
 
+	}
 
 	LokiJS.trace = trace.bind(LokiJS);
 	Loki.prototype.Collection = Collection;

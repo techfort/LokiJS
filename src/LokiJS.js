@@ -370,16 +370,16 @@ window.loki = (function(){
 			this.clauses[clauseType].push( this.clause( operator, property, value ) );
 		};
 		this.or = function(operator, property, value){
-			this.addClauses( 'or',  operator, property, value );
+			this.addClause( 'or',  operator, property, value );
 		};
-		this.and = functino(operator, property, value){
-			this.addClauses( 'and',  operator, property, value );
+		this.and = function(operator, property, value){
+			this.addClause( 'and',  operator, property, value );
 		};
-		this.not = functino(operator, property, value){
-			this.addClauses( 'not',  operator, property, value );
+		this.not = function(operator, property, value){
+			this.addClause( 'not',  operator, property, value );
 		};
-		this.nor = functino(operator, property, value){
-			this.addClauses( 'nor',  operator, property, value );
+		this.nor = function(operator, property, value){
+			this.addClause( 'nor',  operator, property, value );
 		};
 		/**
 		 * Execute query

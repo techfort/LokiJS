@@ -10,33 +10,9 @@
 trace(LokiJS);
 var db = new loki('Test');
 trace(db);
-var coll = new db.Collection('user','User');
+var coll = new db.addCollection('user','User', ['name']);
 trace(coll);
-var joe = new coll.document({ name : 'joe', email : 'joe@dsforge.net', age : 38 });
-var jack = new coll.document({ name : 'jack', email : 'jack@dsforge.net', age : 25});
-coll.ensureIndex('name');
 
-coll.addMany(joe,jack);
-
-trace('Testing filter');
-var result = coll.query('$gt', 'age', 39);
-trace(result);
-trace('End of filter test');
-
-
-var obj = coll.findOne('name','joe');
-trace('Retrieved object with id ' + obj.id);
-obj.name = 'Joe';
-coll.update(obj);
-trace(coll.data);
-trace('Finding object...');
-var o = coll.findOne('name','Joe');
-trace('Found object');
-trace(o);
-trace('About to delete');
-
-coll.delete(o);
-trace(coll.data);
 
 
 </script>

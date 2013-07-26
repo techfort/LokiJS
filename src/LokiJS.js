@@ -35,24 +35,33 @@ window.loki = (function(){
 	 * The main database class
 	 */
 	function Loki(_name){
-		try {
-			var name = _name;
-			trace('Creating db ' + name);
+		var name = _name;
+		var collections = [];
+		trace('Creating db ' + name);
 
-			var $getProperty = function(prop){ return prop; }
-			this.getName = function(){
-				return $getProperty.apply(this,['name']);
+		
+		this.getName = function(){
+			return $getProperty.apply(this,['name']);
+		};
+
+		this.addCollection = function(name, objType, indexesArray){
+			var collection = new Collection(name, objType, indexesArray);
+			collections.push(collection);
+			return collection;
+		}
+		this.showCollections = function(){
+			for (var i = collections.length - 1; i >= 0; i--) {
+				trace('Collection : ' + collections[i].name + ' [' + collections.data.length + ']'); 
 			};
-		} catch(err) {
-			trace(err);
-		}	
+		}
+		var $getProperty = function(prop){ return prop; }
 	};
 
 	/**
 	 * @constructor 
 	 * Collection class that handles documents of same type
 	 */
-	function Collection(_name, _objType){
+	function Collection(_name, _objType, indexesArray ){
 		// the name of the collection 
 		this.name = _name;
 		// the data held by the collection
@@ -63,6 +72,7 @@ window.loki = (function(){
 		this.objType = _objType || "";
 		// pointer to self to avoid this tricks
 		var coll = this;
+		
 
 		trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 
@@ -348,6 +358,15 @@ window.loki = (function(){
 			trace('Operation completed.');
 		};
 
+		var indexesArray = indexesArray || [];
+		trace('Passed indexes ' + indexesArray.join(', '))
+
+		// initialize optional indexes from arguments passed to Collection
+		for (var i = indexesArray.length - 1; i >= 0; i--) {
+			trace('Initializing index ' + indexesArray[i]);
+			coll.ensureIndex(indexesArray[i]);
+		};
+
 		// initialize the id index
 		coll.ensureIndex('id');
 	};
@@ -391,7 +410,7 @@ window.loki = (function(){
 	}
 
 	LokiJS.trace = trace.bind(LokiJS);
-	Loki.prototype.Collection = Collection;
+	//Loki.prototype.Collection = Collection;
 
 	return Loki;
 }());

@@ -48,12 +48,22 @@ window.loki = (function(){
       var collection = new Collection(name, objType, indexesArray);
       collections.push(collection);
       return collection;
+    };
+
+    this.loadCollection = function(collection){
+      collections.push(collection);
     }
+
     this.showCollections = function(){
-      for (var i = collections.length - 1; i >= 0; i--) {
+      var i = collections.length;
+      while (i--) {
         trace('Collection : ' + collections[i].name + ' [' + collections.data.length + ']'); 
       };
     }
+
+    this.serialize = function(){
+      return JSON.stringify(collections);
+    };
 
     this.load = function(url){
       // future use method for remote loading of db
@@ -122,7 +132,8 @@ window.loki = (function(){
 
           // resync indexes to make sure all IDs are there
           //coll.ensureAllIndexes();    
-          for (var i = coll.indices.length - 1; i >= 0; i--) {
+          var i = coll.indices.length;
+          while (i--) {
             coll.indices[i].data.push( obj[coll.indices[i].name ]);
           };
         }
@@ -134,7 +145,8 @@ window.loki = (function(){
      * iterate through arguments and add indexes 
      */
     this.addMany = function(){
-      for(var i = 0; i < arguments.length; i++){
+      var i = arguments.length;
+      while(i--){
         coll.add(arguments[i]);
       }
     };
@@ -162,7 +174,8 @@ window.loki = (function(){
         data : []
       };
 
-      for(var i =0; i < coll.indices.length; i++){
+      var i = coll.indices.length;
+      while( i-- ){
         if( coll.indices[i].name == property){
           trace('Index ' + property + ' already exists, re-indexing....');
           index = coll.indices[i];
@@ -177,7 +190,8 @@ window.loki = (function(){
       delete index.data;
 
       index.data = new Array();
-      for(var i =0; i < coll.data.length; i++){
+      var i = coll.data.length;
+      while( i-- ){
         index.data.push( coll.data[i][index.name] );
         trace('Storing into index ' + index.name + ' value ' + index.data[i]);
       }
@@ -201,7 +215,8 @@ window.loki = (function(){
      * Ensure all indexes
      */
     this.ensureAllIndexes = function(){
-      for (var i = coll.indices.length - 1; i >= 0; i--) {
+      var i = coll.indices.length;
+      while (i--) {
         coll.ensureIndex(coll.indices[i].name);
       };
     };
@@ -225,7 +240,8 @@ window.loki = (function(){
       var indexObject = null;
 
       // iterate the indices to ascertain whether property is indexed
-      for(var i = 0; i < coll.indices.length; i++){
+      var i = coll.indices.length;
+      while(i--){
         if( coll.indices[i].name == prop){
           searchByIndex = true;
           indexObject = coll.indices[i];
@@ -237,8 +253,8 @@ window.loki = (function(){
       
       if(searchByIndex){
         // perform search based on index
-        var size = indexObject.data.length;
-        for (var i = size - 1; i >= 0; i--) {
+        var i = indexObject.data.length;
+        while (i--) {
           
           if(indexObject.data[i] == value){
             var doc = coll.data[i];
@@ -259,7 +275,8 @@ window.loki = (function(){
      */
     this.findOneUnindexed = function(prop, value){
       trace('Querying without index');
-      for (var i = coll.data.length - 1; i >= 0; i--) {
+      var i = coll.data.length;
+      while (i--) {
         if(coll.data[i][prop]==value){
           var doc = coll.data[i];
           doc.__pos__ = i;
@@ -287,7 +304,8 @@ window.loki = (function(){
         // operate the update
         coll.data[position] = doc;
         // coll.ensureAllIndexes();
-        for (var i = coll.indices.length - 1; i >= 0; i--) {
+        var i = coll.indices.length;
+        while(i--) {
           coll.indices[i].data[position] = obj[ coll.indices[i].name ];
         };
       }
@@ -311,7 +329,8 @@ window.loki = (function(){
       delete obj.__pos__;
       coll.data.splice(position,1);
       // coll.ensureAllIndexes();
-      for (var i = coll.indices.length - 1; i >= 0; i--) {
+      var i = coll.indices.length;
+      while (i--) {
         coll.indices[i].data.splice( position ,1);
       };
 
@@ -347,7 +366,8 @@ window.loki = (function(){
 
         var res = [];
 
-        for (var i = t.length - 1; i >= 0; i--) {
+        var i = t.length;
+        while (i--) {
           if( fun(t[i][property], value)) res.push(t[i]); 
         }
 
@@ -371,7 +391,8 @@ window.loki = (function(){
     trace('Passed indexes ' + indexesArray.join(', '))
 
     // initialize optional indexes from arguments passed to Collection
-    for (var i = indexesArray.length - 1; i >= 0; i--) {
+    var i = indexesArray.length;
+    while ( i--) {
       trace('Initializing index ' + indexesArray[i]);
       coll.ensureIndex(indexesArray[i]);
     };

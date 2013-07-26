@@ -11,7 +11,8 @@ trace(LokiJS);
 var db = new loki('Test');
 trace(db);
 var coll = new db.addCollection('user','User', ['name']);
-trace(coll);
+var doc = coll.document({ name : 'Joe', email: 'joe@dsforge.net'});
+coll.add(doc);
 
 
 

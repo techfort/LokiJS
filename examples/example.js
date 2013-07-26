@@ -8,7 +8,7 @@ window.runExample = function(){
 	var projects = db.addCollection('projects', 'Project',['name']);
 
 	// show collections in db
-	db.showCollections();
+	//db.showCollections();
 
 	// create two users
 	var joe = users.document( { name : 'joe', email: 'joe.minichino@gmail.com', age: 38 } );
@@ -24,7 +24,7 @@ window.runExample = function(){
 	joe.name = 'Joe Minichino';
 
 	// update object (this really only syncs the index)
-	coll.update(joe);
+	users.update(joe);
 	trace(joe);
 
 

@@ -334,10 +334,30 @@ window.loki = (function(){
       var i = coll.indices.length;
       while (i--) {
         coll.indices[i].data.splice( position ,1);
-      };
+      }
 
     };
 
+    /**
+     * Create view function - CouchDB style
+     */
+    this.view = function(filterFunction){
+      var result = [];
+      var i = coll.data.length;
+      while(i--){
+        result.push(filterFunction( coll.data[i] ));
+      }
+      return result;
+    };
+
+    /**
+     * Map Reduce placeholder (for now...)
+     */
+    this.mapReduce = function(mapFunction, reduceFunction){
+      
+      return reduceFunction( mapFunction(coll.data) );
+      
+    };
     /**
      * Function similar to array.filter but optimized for array of objects
      */

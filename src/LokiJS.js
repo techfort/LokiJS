@@ -21,14 +21,14 @@ function trace(message) {
   }catch(err){
     /* no op */
   }
-};
-
-
+}
 
 /**
  * Define library loki
  */
 window.loki = (function(){
+
+  
 
   /**
    * @constructor
@@ -330,7 +330,7 @@ window.loki = (function(){
       var position = obj.__pos__;
       delete obj.__pos__;
       coll.data.splice(position,1);
-      // coll.ensureAllIndexes();
+
       var i = coll.indices.length;
       while (i--) {
         coll.indices[i].data.splice( position ,1);
@@ -342,12 +342,19 @@ window.loki = (function(){
      * Create view function - CouchDB style
      */
     this.view = function(filterFunction){
-      var result = [];
-      var i = coll.data.length;
-      while(i--){
-        result.push(filterFunction( coll.data[i] ));
+      try {
+        var result = [];
+        var i = coll.data.length;
+        while(i--){
+          if( filterFunction( coll.data[i] ) ){
+            result[i] = coll.data[i];
+          };
+        }
+        return result;
+      } catch(err){
+        trace(err);
       }
-      return result;
+      
     };
 
     /**

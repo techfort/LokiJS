@@ -37,6 +37,8 @@ window.loki = (function(){
   function Loki(_name){
     var name = _name;
     var collections = [];
+
+    var self = this;
     trace('Creating db ' + name);
 
     
@@ -54,12 +56,11 @@ window.loki = (function(){
       collections.push(collection);
     }
 
-    this.showCollections = function(){
+    this.listCollections = function(){
+      trace('Collections: ' + collections.length);
       var i = collections.length;
-      while (i--) {
-        trace('Collection : ' + collections[i].name + ' [' + collections.data.length + ']'); 
-      };
-    }
+      while(i--){ trace('Collection name : ' + collections[i].name); }
+    };
 
     this.serialize = function(){
       return JSON.stringify(collections);
@@ -159,6 +160,7 @@ window.loki = (function(){
       trace(doc);
       doc.id == null;
       doc.objType = coll.objType;
+      coll.add(doc);
       return doc;
     };
 

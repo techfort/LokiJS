@@ -51,6 +51,25 @@ window.runExample = function(){
     trace(users.view(aCustomFilter));
     trace('End of custom filter');
   
+    // example of map reduce
+    trace('Map-reduce...');
+    function mapFun(obj){
+        return obj.age;
+    }
+    function reduceFun(array){
+        var len = array.length >>> 0;
+        var i = len;
+        var cumulator = 0;
+        while(i--){
+            cumulator += array[i];
+        }
+        return cumulator / len;
+    }
+
+    trace('Average age is : ' + users.mapReduce( mapFun, reduceFun).toFixed(2) );
+
+    trace('End of map-reduce...');
+
   } catch(err){
     console.log(err);
   }

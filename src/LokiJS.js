@@ -92,7 +92,35 @@ window.loki = (function(){
     this.objType = _objType || "";
     // pointer to self to avoid this tricks
     var coll = this;
-    
+    /**
+     * Collection write lock
+     * Javascript is single threaded but you can trigger async functions that may cause indexes
+     * to be out of sync with the collection data. This lock blocks write access to collection indexes
+     * and data. Operations will retry every 10ms until the lock is released
+     */
+    var writeLock = false;
+    this.getLock = function(){
+      return writeLock;
+    };
+    function lock(){
+      trace('()==() :: Locking collection ' + coll.name);
+      writeLock = true;
+    };
+
+    function releaseLock(){
+      trace('()==/ :: Releasing lock on ' + coll.name);
+      writeLock = false;
+    };
+
+    function acquireLock(){
+      if(coll.getLock()){
+        trace('|=|) :: Collection ' + coll.name + ' locked, retrying in 10ms');
+        setTimeout(acquireLock, 10);
+      } else {
+        lock();
+      }
+    }
+  
 
     trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 
@@ -100,6 +128,9 @@ window.loki = (function(){
      * Add object to collection
      */
     this.add = function(obj){
+
+      acquireLock();
+      
 
       // if parameter isn't object exit with throw
       if( 'object' != typeof obj ) {
@@ -140,6 +171,9 @@ window.loki = (function(){
         }
 
       }
+      // release lock
+      releaseLock();
+
     };
 
     /**
@@ -171,6 +205,8 @@ window.loki = (function(){
       
       if (property == null || property === undefined) throw 'Attempting to set index without an associated property'; 
       
+      acquireLock();
+
       var index = {
         name : property,
         data : []
@@ -199,6 +235,7 @@ window.loki = (function(){
       }
       trace( coll.indices );
 
+      releaseLock();
     };
 
     /**
@@ -292,7 +329,7 @@ window.loki = (function(){
      * Update method
      */
     this.update = function(doc){
-
+      acquireLock();
       // verify object is a properly formed document
       if( doc.id == undefined || doc.id == null || doc.id < 0){
         throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
@@ -311,12 +348,16 @@ window.loki = (function(){
           coll.indices[i].data[position] = obj[ coll.indices[i].name ];
         };
       }
+      releaseLock();
     };
 
     /**
      * Delete function
      */
     this.delete = function(doc){
+      
+      acquireLock();
+
       if('object' != typeof doc){
         throw 'Parameter is not an object';
       }
@@ -336,6 +377,7 @@ window.loki = (function(){
         coll.indices[i].data.splice( position ,1);
       }
 
+      releaseLock();
     };
 
     /**
@@ -361,9 +403,11 @@ window.loki = (function(){
      * Map Reduce placeholder (for now...)
      */
     this.mapReduce = function(mapFunction, reduceFunction){
-      
-      return reduceFunction( mapFunction(coll.data) );
-      
+      try {
+        return reduceFunction( coll.data.map(mapFunction) );  
+      } catch(err) {
+        console.log(err)
+      }
     };
     /**
      * Function similar to array.filter but optimized for array of objects
@@ -429,44 +473,6 @@ window.loki = (function(){
     // initialize the id index
     coll.ensureIndex('id');
   };
-
-  function Query(){
-    this.clauses = {
-      or : [],
-      and : [],
-      not : [],
-      nor : []
-    };
-    this.clause = function(operator, property, value){
-      return {
-        op : operator, 
-        prop : property, 
-        val : value
-      };
-    }
-    this.addClause = function(clauseType, operator, property, value){
-      this.clauses[clauseType].push( this.clause( operator, property, value ) );
-    };
-    this.or = function(operator, property, value){
-      this.addClause( 'or',  operator, property, value );
-    };
-    this.and = function(operator, property, value){
-      this.addClause( 'and',  operator, property, value );
-    };
-    this.not = function(operator, property, value){
-      this.addClause( 'not',  operator, property, value );
-    };
-    this.nor = function(operator, property, value){
-      this.addClause( 'nor',  operator, property, value );
-    };
-    /**
-     * Execute query
-     */
-    this.get = function(){
-      // @TODO: iterate clauses and filter results based on logical operators
-    };
-
-  }
 
   LokiJS.trace = trace.bind(LokiJS);
   //Loki.prototype.Collection = Collection;

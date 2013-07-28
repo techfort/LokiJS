@@ -434,17 +434,35 @@ window.loki = (function(){
       if (coll.data == null)
           throw new TypeError();
 
+      var searchByIndex = false;
+      var index = null;
+      var len = coll.indices.length >>> 0;
+      while(len--){
+        if(coll.indices[len].name == property){
+          searchByIndex = true;
+          index = coll.indices[len];
+        }
+      }
+
+      // the result array
+      var res = [];
+      var fun = operators[operator];
+
+      if(!searchByIndex){
         var t = coll.data;
-        var fun = operators[operator];
-
-        var res = [];
-
         var i = t.length;
         while (i--) {
           if( fun(t[i][property], value)) res.push(t[i]); 
+        }  
+      } else {
+        var t = index.data;
+        var i = t.length;
+        while(i--){
+          if( fun(t[i][property], value)) res.push(coll.data[i]);
         }
-
-        return res;
+      }
+      
+      return res;
 
     };
 

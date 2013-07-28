@@ -1,10 +1,9 @@
 {
-  "name": "LokiJS",
+  "name": "lokijs",
   "version": "0.0.1",
   "description": "A document oriented javascript client side database",
   "main": "src/LokiJS.js",
   "directories": {
-    "source" : "src",
     "example": "examples"
   },
   "scripts": {
@@ -26,5 +25,10 @@
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
-  }
+  },
+  "dependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-uglify": "~0.2.2"
+  },
+  "devDependencies": {}
 }

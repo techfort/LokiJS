@@ -1,0 +1,13 @@
+{
+  "name": "lokijs",
+  "version": "0.0.1",
+  "main": "[\"src/LokiJS.js\"]",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

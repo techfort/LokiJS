@@ -2,8 +2,9 @@
   "name": "LokiJS",
   "version": "0.0.1",
   "description": "A document oriented javascript client side database",
-  "main": "index.js",
+  "main": "src/LokiJS.js",
   "directories": {
+    "source" : "src",
     "example": "examples"
   },
   "scripts": {
@@ -15,10 +16,11 @@
   },
   "keywords": [
     "javascript",
-    "document",
-    "oriented",
+    "document-oriented",
+    "json",
     "nosql",
-    "lokijs"
+    "lokijs",
+    "in-memory"
   ],
   "author": "Joe Minichino <joe.minichino@gmail.com>",
   "license": "BSD",

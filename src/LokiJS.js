@@ -81,7 +81,7 @@ window.loki = (function(){
    * @constructor 
    * Collection class that handles documents of same type
    */
-  function Collection(_name, _objType, indexesArray ){
+  function Collection(_name, _objType, indexesArray, transactional ){
     // the name of the collection 
     this.name = _name;
     // the data held by the collection
@@ -90,8 +90,13 @@ window.loki = (function(){
     this.indices = [];
     // the object type of the collection
     this.objType = _objType || "";
-    // pointer to self to avoid this tricks
-    var coll = this;
+
+    /** Transactions properties */
+    // is collection transactional
+    this.transactional = transactional || false;
+    // private holders for cached data
+    var cachedIndex = null, cachedData = null;
+
     /**
      * Collection write lock
      * Javascript is single threaded but you can trigger async functions that may cause indexes
@@ -99,20 +104,43 @@ window.loki = (function(){
      * and data. Operations will retry every 10ms until the lock is released
      */
     var writeLock = false;
+    // timeout property - if lock is used for more than this value the current operation will throw an error
+    var timeout = 5000;
+    var elapsed = 0;
+
+    // pointer to self to avoid this tricks
+    var coll = this;
+
+    this.setTimeOutValue = function(duration){
+      timeout = duration;
+    };
+    this.timeOutExceededHandler = function(){
+      throw 'Operation timed out';
+    };
+
+    // gets the current lock status
     this.getLock = function(){
       return writeLock;
     };
+    // locks collection for writing
     function lock(){
       trace('()==() :: Locking collection ' + coll.name);
       writeLock = true;
     };
-
+    // releases lock on collection
     function releaseLock(){
       trace('()==/ :: Releasing lock on ' + coll.name);
       writeLock = false;
+      // reset the lock elapse counter
+      elapsed = 0;
     };
 
     function acquireLock(){
+      elapsed += 10;
+      trace('Elapsed : ' + elapsed);
+      if(elapsed > timeout){
+        coll.timeOutExceededHandler();
+      }
       if(coll.getLock()){
         trace('|=|) :: Collection ' + coll.name + ' locked, retrying in 10ms');
         setTimeout(acquireLock, 10);
@@ -120,7 +148,6 @@ window.loki = (function(){
         lock();
       }
     }
-  
 
     trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 
@@ -128,7 +155,7 @@ window.loki = (function(){
      * Add object to collection
      */
     this.add = function(obj){
-
+      // acquire collection lock
       acquireLock();
       
 
@@ -153,21 +180,36 @@ window.loki = (function(){
         if(coll.objType=="") {
           throw 'Object is not a model';
         }
+
         trace('Adding object ' + obj.toString() + ' to collection ' + coll.name);
         
         if(obj.id != null && obj.id > 0){
           throw 'Document is already in collection, please use update()';
         } else {
-          obj.id = new Date().getTime();
-          // add the object
-          coll.data.push(obj);
 
-          // resync indexes to make sure all IDs are there
-          //coll.ensureAllIndexes();    
-          var i = coll.indices.length;
-          while (i--) {
-            coll.indices[i].data.push( obj[coll.indices[i].name ]);
-          };
+          try {
+            
+            coll.startTransaction();
+
+            obj.id = new Date().getTime();
+            // add the object
+            coll.data.push(obj);
+
+            // resync indexes to make sure all IDs are there
+            //coll.ensureAllIndexes();    
+            var i = coll.indices.length;
+            while (i--) {
+              coll.indices[i].data.push( obj[coll.indices[i].name ]);
+            };
+            
+            coll.commit();
+
+          } catch(err){
+
+            trace(err);
+            coll.rollback();
+          }
+          
         }
 
       }
@@ -335,19 +377,52 @@ window.loki = (function(){
         throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
       } else {
 
-        var obj = coll.findOne('id', doc.id);
-        trace(obj);
-        // get current position in data array
-        var position = obj.__pos__;
-        delete obj.__pos__;
-        // operate the update
-        coll.data[position] = doc;
-        // coll.ensureAllIndexes();
-        var i = coll.indices.length;
-        while(i--) {
-          coll.indices[i].data[position] = obj[ coll.indices[i].name ];
-        };
+        try{
+          coll.startTransaction();
+
+          var obj = coll.findOne('id', doc.id);
+          trace(obj);
+          // get current position in data array
+          var position = obj.__pos__;
+          delete obj.__pos__;
+          // operate the update
+          coll.data[position] = doc;
+          // coll.ensureAllIndexes();
+          var i = coll.indices.length;
+          while(i--) {
+            coll.indices[i].data[position] = obj[ coll.indices[i].name ];
+          };
+
+          coll.commit();
+
+        } catch(err){
+
+          trace(err);
+          coll.rollback();
+
+        }
       }
+      releaseLock();
+    };
+
+    this.findAndModify = function(filterFunction, updateFunction ){
+      acquireLock();
+      var results = coll.view(filterFunction);
+      try {
+        for( var i in results){
+          
+          var obj = updateFunction(results[i]);
+          coll.update(obj);
+
+        }
+
+      } catch(err){
+
+        trace(err);
+        coll.rollback();
+
+      }
+      
       releaseLock();
     };
 
@@ -365,17 +440,29 @@ window.loki = (function(){
       if(doc.id == null || doc.id == undefined){
         throw 'Object is not a document stored in the collection';
       }
-      trace('Deleting object...');
-      trace(doc);
-      var obj = coll.findOne('id', doc.id);
-      var position = obj.__pos__;
-      delete obj.__pos__;
-      coll.data.splice(position,1);
 
-      var i = coll.indices.length;
-      while (i--) {
-        coll.indices[i].data.splice( position ,1);
+      try {
+        coll.startTransaction();
+        trace('Deleting object...');
+        trace(doc);
+        var obj = coll.findOne('id', doc.id);
+        var position = obj.__pos__;
+        delete obj.__pos__;
+        coll.data.splice(position,1);
+
+        var i = coll.indices.length;
+        while (i--) {
+          coll.indices[i].data.splice( position ,1);
+        }
+        coll.commit();
+
+      } catch(err){
+
+        trace(err);
+        coll.rollback();
+
       }
+
 
       releaseLock();
     };
@@ -396,7 +483,6 @@ window.loki = (function(){
       } catch(err){
         trace(err);
       }
-      
     };
 
     /**
@@ -458,7 +544,7 @@ window.loki = (function(){
         var t = index.data;
         var i = t.length;
         while(i--){
-          if( fun(t[i][property], value)) res.push(coll.data[i]);
+          if( fun(t[i], value)) res.push(coll.data[i]);
         }
       }
       
@@ -478,6 +564,35 @@ window.loki = (function(){
       trace('Operation completed.');
     };
 
+    /**
+     * Transaction methods 
+     */
+    /** start the transation */
+    this.startTransaction = function(){
+      if(coll.transactional) {
+        cachedData = coll.data;
+        cachedIndex = coll.indices;  
+      }
+    };
+    /** commit the transation */
+    this.commit = function(){
+      if(coll.transactional) { 
+        cachedData = null;
+        cachedIndex = null;
+      }
+    };
+
+    /** roll back the transation */
+    this.rollback = function(){
+      if(coll.transactional) {
+        if(cachedData != null && cachedIndex != null){
+          coll.data = cachedData;
+          coll.indices = cachedIndex;
+        }  
+      }
+    };
+
+    // handle the indexes passed
     var indexesArray = indexesArray || [];
     trace('Passed indexes ' + indexesArray.join(', '))
 
@@ -491,6 +606,7 @@ window.loki = (function(){
     // initialize the id index
     coll.ensureIndex('id');
   };
+
 
   LokiJS.trace = trace.bind(LokiJS);
   //Loki.prototype.Collection = Collection;

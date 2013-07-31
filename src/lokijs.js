@@ -12,21 +12,13 @@ var LokiJS = LokiJS || {};
 LokiJS = {
   version : '0.0.1',
   /** @define {boolean} */
-  DEBUG_MODE: true
+  DEBUG_MODE: false
 };
-
-function trace(message) { 
-  try{
-    if(LokiJS.DEBUG_MODE) console.log(message);
-  }catch(err){
-    /* no op */
-  }
-}
 
 /**
  * Define library loki
  */
-window.loki = (function(){
+var loki = (function(){
 
   
 
@@ -39,8 +31,6 @@ window.loki = (function(){
     var collections = [];
 
     var self = this;
-    trace('Creating db ' + name);
-
     
     this.getName = function(){
       return $getProperty.apply(this,['name']);
@@ -57,9 +47,9 @@ window.loki = (function(){
     }
 
     this.listCollections = function(){
-      trace('Collections: ' + collections.length);
+      
       var i = collections.length;
-      while(i--){ trace('Collection name : ' + collections[i].name); }
+      
     };
 
     this.serialize = function(){
@@ -124,12 +114,10 @@ window.loki = (function(){
     };
     // locks collection for writing
     function lock(){
-      trace('()==() :: Locking collection ' + coll.name);
       writeLock = true;
     };
     // releases lock on collection
     function releaseLock(){
-      trace('()==/ :: Releasing lock on ' + coll.name);
       writeLock = false;
       // reset the lock elapse counter
       elapsed = 0;
@@ -137,19 +125,16 @@ window.loki = (function(){
 
     function acquireLock(){
       elapsed += 10;
-      trace('Elapsed : ' + elapsed);
       if(elapsed > timeout){
         coll.timeOutExceededHandler();
       }
       if(coll.getLock()){
-        trace('|=|) :: Collection ' + coll.name + ' locked, retrying in 10ms');
+        
         setTimeout(acquireLock, 10);
       } else {
         lock();
       }
     }
-
-    trace('Creating collection with name [' + this.name + '] of type [' + this.objType + ']');
 
     /**
      * Add object to collection
@@ -160,7 +145,7 @@ window.loki = (function(){
       
 
       // if parameter isn't object exit with throw
-      if( 'object' != typeof obj ) {
+      if( 'object' != typeof obj) {
         throw 'Object being added needs to be an object';
       }
       /*
@@ -180,8 +165,6 @@ window.loki = (function(){
         if(coll.objType=="") {
           throw 'Object is not a model';
         }
-
-        trace('Adding object ' + obj.toString() + ' to collection ' + coll.name);
         
         if(obj.id != null && obj.id > 0){
           throw 'Document is already in collection, please use update()';
@@ -206,7 +189,7 @@ window.loki = (function(){
 
           } catch(err){
 
-            trace(err);
+            
             coll.rollback();
           }
           
@@ -232,8 +215,6 @@ window.loki = (function(){
      * generate document method - ensure objects have id and objType properties
      */
     this.document = function(doc){
-      trace('_objType : ' + coll.objType);
-      trace(doc);
       doc.id == null;
       doc.objType = coll.objType;
       coll.add(doc);
@@ -257,10 +238,10 @@ window.loki = (function(){
       var i = coll.indices.length;
       while( i-- ){
         if( coll.indices[i].name == property){
-          trace('Index ' + property + ' already exists, re-indexing....');
+          
           index = coll.indices[i];
         } else {
-          trace('Creating new index ' + property);
+          
           
               
         }
@@ -273,10 +254,8 @@ window.loki = (function(){
       var i = coll.data.length;
       while( i-- ){
         index.data.push( coll.data[i][index.name] );
-        trace('Storing into index ' + index.name + ' value ' + index.data[i]);
       }
-      trace( coll.indices );
-
+      
       releaseLock();
     };
 
@@ -284,12 +263,12 @@ window.loki = (function(){
      * Ensure index async with callback - useful for background syncing with a remote server 
      */
     this.ensureIndexAsync = function(property, callback){
-      trace('Calling ensureIndexAsync...');
+      
       setTimeout( function(){
         coll.ensureIndex(property);
         callback();
       }, 1);
-      trace('started indexing...');
+      
     };
 
     /**
@@ -303,7 +282,7 @@ window.loki = (function(){
     };
 
     this.ensureAllIndexesAsync = function(callback){
-      trace('Calling ensureAllIndexesAsync...');
+      
       var callback = callback || coll.no_op;
       setTimeout( function(){ 
         coll.ensureAllIndexes();
@@ -311,12 +290,15 @@ window.loki = (function(){
       }, 1 );
     };
 
+    /*---------------------+
+    | Querying methods     |
+    +----------------------*/
 
     /**
      * Find one object by index property
      */
     this.findOne = function(prop, value){
-      trace('Querying for ' + prop + '=' + value);
+      
       var searchByIndex = false;
       var indexObject = null;
 
@@ -326,8 +308,7 @@ window.loki = (function(){
         if( coll.indices[i].name == prop){
           searchByIndex = true;
           indexObject = coll.indices[i];
-          trace('Querying with index');
-          trace(indexObject);
+          
           break;
         }
       }
@@ -355,7 +336,7 @@ window.loki = (function(){
      * Find object by unindexed field
      */
     this.findOneUnindexed = function(prop, value){
-      trace('Querying without index');
+      
       var i = coll.data.length;
       while (i--) {
         if(coll.data[i][prop]==value){
@@ -381,7 +362,7 @@ window.loki = (function(){
           coll.startTransaction();
 
           var obj = coll.findOne('id', doc.id);
-          trace(obj);
+          
           // get current position in data array
           var position = obj.__pos__;
           delete obj.__pos__;
@@ -397,7 +378,7 @@ window.loki = (function(){
 
         } catch(err){
 
-          trace(err);
+          
           coll.rollback();
 
         }
@@ -418,7 +399,7 @@ window.loki = (function(){
 
       } catch(err){
 
-        trace(err);
+        
         coll.rollback();
 
       }
@@ -443,8 +424,6 @@ window.loki = (function(){
 
       try {
         coll.startTransaction();
-        trace('Deleting object...');
-        trace(doc);
         var obj = coll.findOne('id', doc.id);
         var position = obj.__pos__;
         delete obj.__pos__;
@@ -457,8 +436,6 @@ window.loki = (function(){
         coll.commit();
 
       } catch(err){
-
-        trace(err);
         coll.rollback();
 
       }
@@ -481,7 +458,7 @@ window.loki = (function(){
         }
         return result;
       } catch(err){
-        trace(err);
+        
       }
     };
 
@@ -499,7 +476,7 @@ window.loki = (function(){
      * Function similar to array.filter but optimized for array of objects
      */
     this.query = function(operator, property, value){
-      trace('Operator: ' + operator);
+      
       // comparison operators
       function $eq ( a, b){ return a == b; }
       function $gt ( a, b){ return a > b; }
@@ -561,7 +538,7 @@ window.loki = (function(){
     }
 
     this.no_op = function(){
-      trace('Operation completed.');
+      
     };
 
     /**
@@ -594,22 +571,18 @@ window.loki = (function(){
 
     // handle the indexes passed
     var indexesArray = indexesArray || [];
-    trace('Passed indexes ' + indexesArray.join(', '))
+    
 
     // initialize optional indexes from arguments passed to Collection
     var i = indexesArray.length;
     while ( i--) {
-      trace('Initializing index ' + indexesArray[i]);
+    
       coll.ensureIndex(indexesArray[i]);
     };
 
     // initialize the id index
     coll.ensureIndex('id');
   };
-
-
-  LokiJS.trace = trace.bind(LokiJS);
-  //Loki.prototype.Collection = Collection;
 
   return Loki;
 }());

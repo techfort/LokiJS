@@ -575,7 +575,7 @@ var loki = (function(){
   };
 
   if(typeof module != 'undefined'){
-    module.exports.loki = Loki;
+    module.exports = Loki;
   }
 
   return Loki;

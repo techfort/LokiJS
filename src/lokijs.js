@@ -6,21 +6,11 @@
  */
 'use strict';
 
-
-var LokiJS = LokiJS || {};
-
-LokiJS = {
-  version : '0.0.1',
-  /** @define {boolean} */
-  DEBUG_MODE: false
-};
-
 /**
  * Define library loki
  */
 var loki = (function(){
 
-  
 
   /**
    * @constructor
@@ -583,6 +573,10 @@ var loki = (function(){
     // initialize the id index
     coll.ensureIndex('id');
   };
+
+  if(typeof module != 'undefined'){
+    module.exports.loki = Loki;
+  }
 
   return Loki;
 }());

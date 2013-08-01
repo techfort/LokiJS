@@ -2,7 +2,7 @@
   "name": "lokijs",
   "version": "0.0.1",
   "description": "A document oriented javascript client side database",
-  "main": "src/LokiJS.js",
+  "main": "src/lokijs.js",
   "directories": {
     "example": "examples"
   },

@@ -574,17 +574,12 @@ var loki = (function(){
     coll.ensureIndex('id');
   };
 
-  var root = this;
-  var loki = new Object();
-  var isNode = false;
-
-  if(typeof module !== 'undefined' && module.exports){
-    module.exports = loki;
-    root.loki = loki;
-    isNode = true;
-  } else {
-    root.loki = loki;
-  }
-
   return Loki;
 }());
+
+
+
+if(typeof module !== 'undefined' && module.exports){
+
+  module.exports = loki;
+}

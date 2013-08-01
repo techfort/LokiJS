@@ -3,13 +3,21 @@
 ## Overview
 
 LokiJS is a document oriented client side database written in javascript.
-Its purpose is to store JSON documents in a mongodb fashion and retrieve them with a similar mechanism.
+Its purpose is to store JSON documents in a mongodb fashion (the API is similar but not strictly compliant) and retrieve them with a similar mechanism.
+Runs in node and the browser.
 LokiJS is ideal for the following scenarios: 
 
-1. persisting the data is not necessary
+1. where a lightweight in-memory db is ideal
 2. data sets are not so large that it wouldn't be a problem loading the entire db from a server and synchronising at the end of the work session
 3. cross-platform mobile apps where you can leverage the power of javascript and avoid interacting with native databases
-4. where a lightweight in-memory db is ideal
+
+LokiJS has limited supports for indexing, transactions, couchdb-style views.
+
+example usage [here](https://github.com/techfort/LokiJS/wiki)
+
+## Roadmap
+
+In the near future mongodb-style dbRef will be implemented, wider and more specific support for indexes such as unique, compound.
 
 ## License
 

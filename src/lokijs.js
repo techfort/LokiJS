@@ -68,6 +68,7 @@ var loki = (function(){
     this.data = [];
     // indices multi-dimensional array
     this.indices = [];
+    this.idIndex = {}; // index of idx
     // the object type of the collection
     this.objType = _objType || "";
 
@@ -90,7 +91,7 @@ var loki = (function(){
     var timeout = 5000;
     var elapsed = 0;
 
-    var maxId = 0;
+    var maxId = 1;
     // pointer to self to avoid this tricks
     var coll = this;
 
@@ -275,6 +276,10 @@ var loki = (function(){
       while( i-- ){
         index.data.push( coll.data[i][index.name] );
       }
+      if(index.name == 'id'){
+        coll.idIndex = index;
+      }
+      
       
     };
 
@@ -311,9 +316,31 @@ var loki = (function(){
      * Get by Id - faster than other methods because of the searching algorithm
      */
     this.get = function(id){
+      var data = coll.idIndex.data;
+      var max = data.length - 1;
+      var min = 0, mid = Math.floor(min +  (max - min ) /2 );
+      console.log(data[min] + ' ' + data[max]);
+      while( data[min] < data[max] ){
+        
+        mid = Math.floor( (min + max )/2 );
+        console.log(max + ' ' + mid + ' ' + min + ' ' + data[mid]) ;
+        
+        if(data[mid] < id){
+          
+          min = mid + 1;
+        } else {
+          
+          max = mid;
+        }
+          
+      }
+      console.log('stats : ' + max + ' ' + mid + ' ' + min);
+      if( max == min && data[min] == id)
+        return coll.data[min];
+      else
+        return null;
 
     };
-
 
     /**
      * Find one object by index property
@@ -422,7 +449,7 @@ var loki = (function(){
     /**
      * Delete function
      */
-    this.delete = function(doc){
+    this.remove = function(doc){
       
       acquireLock();
 

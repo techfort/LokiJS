@@ -19,6 +19,10 @@ window.runExample = function(){
     var oliver = users.document( { name : 'oliver', email : 'oliver.soap@lokijs.org', age: 31 } );
     var hector = users.document( { name : 'hector', email : 'hector.soap@lokijs.org', age: 15} );
     var achilles = users.document( { name : 'achilles', email : 'achilles.soap@lokijs.org', age: 31 } );
+    var lugh = users.document( { name : 'lugh', email : 'lugh.soap@lokijs.org', age: 31 } );
+    var nuada = users.document( { name : 'nuada', email : 'nuada.soap@lokijs.org', age: 31 } );
+    var cuchullain = users.document( { name : 'cuchullain', email : 'cuchullain.soap@lokijs.org', age: 31 } );
+
     trace('Finished adding users');
     
     // create an example project
@@ -31,7 +35,11 @@ window.runExample = function(){
 
     // update object (this really only syncs the index)
     users.update(stan);
+    users.remove(achilles);
     //trace(prj);
+
+    // get by id with binary search index
+    trace(users.get(8));
   
     // a simple filter for users over 30
     function ageView(obj){

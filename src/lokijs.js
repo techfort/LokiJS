@@ -6,6 +6,20 @@
  */
 'use strict';
 
+
+Uint32Array.prototype.push = function(a){
+  var self = this;
+  var size = self.length;
+  
+  var newarray = new Uint32Array(size + 1);
+  newarray.set(self, 0);
+  newarray[size] = a;
+  console.log(this);
+  console.log('newarray has length ' + newarray.length );
+  return newarray;
+
+};
+
 /**
  * Define library loki
  */
@@ -271,11 +285,13 @@ var loki = (function(){
       coll.indices.push(index);
       delete index.data;
 
-      index.data = new Array();
+      index.data = (property == 'id') ? new Uint32Array() : [];
+      console.log('Property '  + index.name + ' typeof ' + typeof index.data);
       var i = coll.data.length;
       while( i-- ){
         index.data.push( coll.data[i][index.name] );
       }
+
       if(index.name == 'id'){
         coll.idIndex = index;
       }
@@ -316,6 +332,7 @@ var loki = (function(){
      * Get by Id - faster than other methods because of the searching algorithm
      */
     this.get = function(id){
+      console.log(coll.idIndex);
       var data = coll.idIndex.data;
       var max = data.length - 1;
       var min = 0, mid = Math.floor(min +  (max - min ) /2 );
@@ -449,10 +466,8 @@ var loki = (function(){
     /**
      * Delete function
      */
-    this.remove = function(doc){
+    this._remove = function(doc){
       
-      acquireLock();
-
       if('object' != typeof doc){
         throw 'Parameter is not an object';
       }
@@ -480,6 +495,10 @@ var loki = (function(){
       }
 
     };
+
+    this.remove = function(obj){
+      coll.execute('_remove', obj);
+    }
 
     /**
      * Create view function - CouchDB style
@@ -512,8 +531,26 @@ var loki = (function(){
     /**
      * Function similar to array.filter but optimized for array of objects
      */
-    this.query = function(operator, property, value){
-      
+    this.find = function(queyrObject){
+      var property, value, operator;
+      for(var p in queyrObject){
+        prop = p;
+        if(typeof queryObject[p] == 'string'){
+          operator = '$eq';
+          value = queryObject[p];
+        } else if (typeof queryObject[p] == 'object'){
+          for(var key in queryObject[p]){
+            operator = key;
+            value = queryObject[p][key];
+            break;
+          }
+        } else {
+          throw 'Do not know what you want to do.';
+        }
+        break;
+      }
+
+      console.log('Op: ' + operator + ' value: ' + value + ' prop: ' + property);
       // comparison operators
       function $eq ( a, b){ return a == b; }
       function $gt ( a, b){ return a > b; }

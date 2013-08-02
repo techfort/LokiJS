@@ -50,6 +50,8 @@ window.runExample = function(){
       return obj.name.length  < 5 && obj.age > 30;
     }
 
+    trace(users.find({'age':{'$gt': 25}}));
+
     // test the filters
     trace('Example: View "Age" test');
     trace(users.view(ageView));

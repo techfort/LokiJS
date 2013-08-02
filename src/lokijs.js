@@ -26,8 +26,8 @@ var loki = (function(){
       return $getProperty.apply(this,['name']);
     };
 
-    this.addCollection = function(name, objType, indexesArray){
-      var collection = new Collection(name, objType, indexesArray);
+    this.addCollection = function(name, objType, indexesArray, transactional, safeMode){
+      var collection = new Collection(name, objType, indexesArray, transactional, safeMode);
       collections.push(collection);
       return collection;
     };
@@ -61,7 +61,7 @@ var loki = (function(){
    * @constructor 
    * Collection class that handles documents of same type
    */
-  function Collection(_name, _objType, indexesArray, transactional ){
+  function Collection(_name, _objType, indexesArray, transactional, safeMode ){
     // the name of the collection 
     this.name = _name;
     // the data held by the collection
@@ -76,6 +76,8 @@ var loki = (function(){
     this.transactional = transactional || false;
     // private holders for cached data
     var cachedIndex = null, cachedData = null;
+    // safe mode
+    var safe = safeMode || false;
 
     /**
      * Collection write lock
@@ -88,6 +90,7 @@ var loki = (function(){
     var timeout = 5000;
     var elapsed = 0;
 
+    var maxId = 0;
     // pointer to self to avoid this tricks
     var coll = this;
 
@@ -125,17 +128,45 @@ var loki = (function(){
         lock();
       }
     }
+    // wrapper for safe usage
+    this._wrapCall = function( op, args ){
+      
+      try{
+        acquireLock();
+        var retval = coll[op].apply(coll, [args]);
+        releaseLock();
+        return retval;
+      } catch(err){
+        //console.error(err);
+      }
+      
+    };
+
+    this.execute = function(methodName, args){
+      return safe ? coll._wrapCall(methodName, args) : coll[methodName](args);
+    };
+
+
+    // async executor with callback
+    this.async = function( fun, callback){
+      setTimeout(function(){
+        if(typeof fun == 'function'){
+          fun();  
+        } else {
+          throw 'Argument passed for async execution is not a function'
+        }
+        if(typeof fun == 'callback') callback();
+      }, 0);
+    };
 
     /**
      * Add object to collection
      */
-    this.add = function(obj){
-      // acquire collection lock
-      acquireLock();
-      
+    this._add = function(obj){      
 
       // if parameter isn't object exit with throw
       if( 'object' != typeof obj) {
+        console.log(obj);
         throw 'Object being added needs to be an object';
       }
       /*
@@ -163,8 +194,8 @@ var loki = (function(){
           try {
             
             coll.startTransaction();
-
-            obj.id = new Date().getTime();
+            maxId++;
+            obj.id = maxId;
             // add the object
             coll.data.push(obj);
 
@@ -174,11 +205,9 @@ var loki = (function(){
             while (i--) {
               coll.indices[i].data.push( obj[coll.indices[i].name ]);
             };
-            
             coll.commit();
-
+            return obj;
           } catch(err){
-
             
             coll.rollback();
           }
@@ -186,10 +215,13 @@ var loki = (function(){
         }
 
       }
-      // release lock
-      releaseLock();
-
     };
+
+    
+    this.add = function(obj){
+      return coll.execute('_add', obj);
+    };
+
 
     /**
      * iterate through arguments and add indexes 
@@ -197,7 +229,7 @@ var loki = (function(){
     this.addMany = function(){
       var i = arguments.length;
       while(i--){
-        coll.add(arguments[i]);
+        coll.execute('_add',arguments[i]);
       }
     };
 
@@ -218,8 +250,6 @@ var loki = (function(){
       
       if (property == null || property === undefined) throw 'Attempting to set index without an associated property'; 
       
-      acquireLock();
-
       var index = {
         name : property,
         data : []
@@ -232,7 +262,7 @@ var loki = (function(){
           index = coll.indices[i];
         } else {
           
-          
+          // to do
               
         }
       }
@@ -246,19 +276,15 @@ var loki = (function(){
         index.data.push( coll.data[i][index.name] );
       }
       
-      releaseLock();
     };
 
     /**
      * Ensure index async with callback - useful for background syncing with a remote server 
      */
     this.ensureIndexAsync = function(property, callback){
-      
-      setTimeout( function(){
+      this.async(function(){
         coll.ensureIndex(property);
-        callback();
-      }, 1);
-      
+      }, callback);
     };
 
     /**
@@ -272,17 +298,22 @@ var loki = (function(){
     };
 
     this.ensureAllIndexesAsync = function(callback){
-      
-      var callback = callback || coll.no_op;
-      setTimeout( function(){ 
+      this.async(function(){
         coll.ensureAllIndexes();
-        callback();
-      }, 1 );
+      }, callback);
     };
 
     /*---------------------+
     | Querying methods     |
     +----------------------*/
+
+    /**
+     * Get by Id - faster than other methods because of the searching algorithm
+     */
+    this.get = function(id){
+
+    };
+
 
     /**
      * Find one object by index property
@@ -298,10 +329,9 @@ var loki = (function(){
         if( coll.indices[i].name == prop){
           searchByIndex = true;
           indexObject = coll.indices[i];
-          
           break;
         }
-      }
+      }      
       
       if(searchByIndex){
         // perform search based on index
@@ -341,18 +371,17 @@ var loki = (function(){
     /**
      * Update method
      */
-    this.update = function(doc){
-      acquireLock();
+    this._update = function(doc){
+      
       // verify object is a properly formed document
-      if( doc.id == undefined || doc.id == null || doc.id < 0){
+      if( doc.id == 'undefined' || doc.id == null || doc.id < 0){
         throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
       } else {
 
         try{
-          coll.startTransaction();
 
+          coll.startTransaction();
           var obj = coll.findOne('id', doc.id);
-          
           // get current position in data array
           var position = obj.__pos__;
           delete obj.__pos__;
@@ -363,38 +392,31 @@ var loki = (function(){
           while(i--) {
             coll.indices[i].data[position] = obj[ coll.indices[i].name ];
           };
-
           coll.commit();
 
         } catch(err){
-
-          
           coll.rollback();
-
         }
       }
-      releaseLock();
+      
     };
 
+    this.update = function(obj){
+      return coll.execute('_update', obj);
+    }
+
     this.findAndModify = function(filterFunction, updateFunction ){
-      acquireLock();
+      
       var results = coll.view(filterFunction);
       try {
         for( var i in results){
-          
           var obj = updateFunction(results[i]);
           coll.update(obj);
-
         }
 
       } catch(err){
-
-        
         coll.rollback();
-
       }
-      
-      releaseLock();
     };
 
     /**
@@ -430,8 +452,6 @@ var loki = (function(){
 
       }
 
-
-      releaseLock();
     };
 
     /**

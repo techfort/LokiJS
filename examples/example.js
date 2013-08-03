@@ -36,8 +36,13 @@ window.runExample = function(){
     // update object (this really only syncs the index)
     users.update(stan);
     users.remove(achilles);
-    //trace(prj);
-
+    // finding users with age greater than 25
+    trace('Find by age > 25');
+    trace(users.find( {'age':{'$gt': 25} } ));
+    trace('Get all users');
+    trace(users.find());
+    trace('Get all users with age equal to 25');
+    trace(users.find({'age': 25}));
     // get by id with binary search index
     trace(users.get(8));
   
@@ -50,7 +55,7 @@ window.runExample = function(){
       return obj.name.length  < 5 && obj.age > 30;
     }
 
-    trace(users.find({'age':{'$gt': 25}}));
+
 
     // test the filters
     trace('Example: View "Age" test');
@@ -107,7 +112,8 @@ window.runExample = function(){
     }
 
   } catch(err){
-    console.log(err);
+    console.error(err);
+    console.log(err.message);
   }
   
 };

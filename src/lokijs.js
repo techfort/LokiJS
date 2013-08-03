@@ -7,19 +7,6 @@
 'use strict';
 
 
-Uint32Array.prototype.push = function(a){
-  var self = this;
-  var size = self.length;
-  
-  var newarray = new Uint32Array(size + 1);
-  newarray.set(self, 0);
-  newarray[size] = a;
-  console.log(this);
-  console.log('newarray has length ' + newarray.length );
-  return newarray;
-
-};
-
 /**
  * Define library loki
  */
@@ -285,8 +272,7 @@ var loki = (function(){
       coll.indices.push(index);
       delete index.data;
 
-      index.data = (property == 'id') ? new Uint32Array() : [];
-      console.log('Property '  + index.name + ' typeof ' + typeof index.data);
+      index.data = [];
       var i = coll.data.length;
       while( i-- ){
         index.data.push( coll.data[i][index.name] );
@@ -529,20 +515,24 @@ var loki = (function(){
       }
     };
     /**
-     * Function similar to array.filter but optimized for array of objects
+     * Find method, api is similar to mongodb except for now it only supports one search parameter
      */
-    this.find = function(queyrObject){
+    this.find = function(queryObject){
+      queryObject = queryObject || 'getAll';
+      if(queryObject == 'getAll'){
+        return coll.data;
+      }
+
       var property, value, operator;
-      for(var p in queyrObject){
-        prop = p;
-        if(typeof queryObject[p] == 'string'){
+      for(var p in queryObject){
+        property = p;
+        if(typeof queryObject[p] != 'object'){
           operator = '$eq';
           value = queryObject[p];
         } else if (typeof queryObject[p] == 'object'){
           for(var key in queryObject[p]){
             operator = key;
             value = queryObject[p][key];
-            break;
           }
         } else {
           throw 'Do not know what you want to do.';
@@ -607,9 +597,7 @@ var loki = (function(){
       return coll.data.query(operator, property, value);
     }
 
-    this.find = function(){
-      return coll.data;     
-    }
+    
 
     this.no_op = function(){
       

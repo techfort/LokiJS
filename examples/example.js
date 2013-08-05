@@ -59,7 +59,8 @@ window.runExample = function(){
 
     // test the filters
     trace('Example: View "Age" test');
-    trace(users.view(ageView));
+    users.storeView('age', function(obj){ return obj.age > 30; });
+    trace(users.view('age'));
     trace('End view test');
     sep();
 

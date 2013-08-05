@@ -93,6 +93,9 @@ var loki = (function(){
     var elapsed = 0;
 
     var maxId = 1;
+    // view container is an object because each views gets a name
+    this.Views = {};
+
     // pointer to self to avoid this tricks
     var coll = this;
 
@@ -489,17 +492,33 @@ var loki = (function(){
     /**
      * Create view function - CouchDB style
      */
-    this.view = function(filterFunction){
+    this.view = function(fun){
+      var viewFunction;
+      if( ('string' == typeof fun) && ('function' == typeof coll.Views[fun]) ){
+        viewFunction = coll.Views[fun];
+      } else if('function' == typeof fun){
+        viewFunction = fun;
+      } else {
+        throw 'Argument is not a stored view or a function';
+      }
       try {
         var result = [];
         var i = coll.data.length;
         while(i--){
-          if( filterFunction( coll.data[i] ) ){
+          if( viewFunction( 
+            coll.data[i] ) ){
             result[i] = coll.data[i];
           };
         }
         return result;
       } catch(err){
+        
+      }
+    };
+
+    this.storeView = function(name, fun){
+      if(typeof fun == 'function'){
+        coll.Views[name] = fun;
         
       }
     };

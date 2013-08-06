@@ -17,8 +17,8 @@ var loki = (function(){
    * @constructor
    * The main database class
    */
-  function Loki(_name){
-    var name = _name;
+  function Loki(name){
+    var name = name || 'Loki';
     var collections = [];
 
     var self = this;

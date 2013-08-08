@@ -476,7 +476,7 @@ var loki = (function(){
         var i = coll.indices.length;
         while (i--) {
           var deletedIndex = coll.indices[i].data.splice( position ,1);
-          delete deletedIndex;
+          //delete deletedIndex;
         }
         coll.commit();
 

@@ -471,7 +471,7 @@ var loki = (function(){
         var position = obj.__pos__;
         delete obj.__pos__;
         var deleted = coll.data.splice(position,1);
-        delete deleted;
+        //delete deleted;
 
         var i = coll.indices.length;
         while (i--) {

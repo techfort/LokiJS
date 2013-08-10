@@ -13,20 +13,20 @@ window.runExample = function(){
 
     trace('Adding 6 users');
     // create six users
-    var odin = users.document( { name : 'odin', email: 'odin.soap@lokijs.org', age: 38 } );
-    var thor = users.document( { name : 'thor', email : 'thor.soap@lokijs.org', age: 25 } );
-    var stan = users.document( { name : 'stan', email : 'stan.soap@lokijs.org', age: 29 } );
-    var oliver = users.document( { name : 'oliver', email : 'oliver.soap@lokijs.org', age: 31 } );
-    var hector = users.document( { name : 'hector', email : 'hector.soap@lokijs.org', age: 15} );
-    var achilles = users.document( { name : 'achilles', email : 'achilles.soap@lokijs.org', age: 31 } );
-    var lugh = users.document( { name : 'lugh', email : 'lugh.soap@lokijs.org', age: 31 } );
-    var nuada = users.document( { name : 'nuada', email : 'nuada.soap@lokijs.org', age: 31 } );
-    var cuchullain = users.document( { name : 'cuchullain', email : 'cuchullain.soap@lokijs.org', age: 31 } );
+    var odin = users.insert( { name : 'odin', email: 'odin.soap@lokijs.org', age: 38 } );
+    var thor = users.insert( { name : 'thor', email : 'thor.soap@lokijs.org', age: 25 } );
+    var stan = users.insert( { name : 'stan', email : 'stan.soap@lokijs.org', age: 29 } );
+    var oliver = users.insert( { name : 'oliver', email : 'oliver.soap@lokijs.org', age: 31 } );
+    var hector = users.insert( { name : 'hector', email : 'hector.soap@lokijs.org', age: 15} );
+    var achilles = users.insert( { name : 'achilles', email : 'achilles.soap@lokijs.org', age: 31 } );
+    var lugh = users.insert( { name : 'lugh', email : 'lugh.soap@lokijs.org', age: 31 } );
+    var nuada = users.insert( { name : 'nuada', email : 'nuada.soap@lokijs.org', age: 31 } );
+    var cuchullain = users.insert( { name : 'cuchullain', email : 'cuchullain.soap@lokijs.org', age: 31 } );
 
     trace('Finished adding users');
     
     // create an example project
-    var prj = projects.document( { name : 'LokiJS', owner: stan });
+    var prj = projects.insert( { name : 'LokiJS', owner: stan });
 
     // query for user
     //trace( users.find('name','odin') );

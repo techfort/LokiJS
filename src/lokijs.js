@@ -247,6 +247,8 @@ var loki = (function(){
       coll.add(doc);
       return doc;
     };
+    // just an alias for compatibility with most APIs
+    this.insert = this.document;
 
     /**
      * Ensure indexes on a certain field

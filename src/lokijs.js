@@ -18,44 +18,49 @@ var loki = (function(){
    * The main database class
    */
   function Loki(name){
-    var name = name || 'Loki';
-    var collections = [];
+    this.name = name || 'Loki';
+    this.collections = [];
 
     var self = this;
     
     this.getName = function(){
-      return $getProperty.apply(this,['name']);
+      return this.name;
     };
 
     this.addCollection = function(name, objType, indexesArray, transactional, safeMode){
       var collection = new Collection(name, objType, indexesArray, transactional, safeMode);
-      collections.push(collection);
+      self.collections.push(collection);
       return collection;
     };
 
     this.loadCollection = function(collection){
-      collections.push(collection);
+      self.collections.push(collection);
     }
 
     this.listCollections = function(){
       
-      var i = collections.length;
+      var i = self.collections.length;
       
     };
 
     this.serialize = function(){
-      return JSON.stringify(collections);
+      return JSON.stringify(self);
     };
 
-    this.load = function(url){
+    this.load = function(serializedDb){
       // future use method for remote loading of db
+      var obj = JSON.parse(serializedDb);
+      self = obj;
+    };
+
+    this.persist = function(callback){
+      callback(this.serialize());
     };
 
     this.syncRemote = function(url){
       // future use for saving collections to remote db
     };
 
-    var $getProperty = function(prop){ return prop; }
   };
 
   /**

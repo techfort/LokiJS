@@ -31,6 +31,8 @@ window.runExample = function(){
     // query for user
     //trace( users.find('name','odin') );
     
+    var json = db.serialize();
+
     stan.name = 'Stan Laurel';
 
     // update object (this really only syncs the index)
@@ -101,6 +103,10 @@ window.runExample = function(){
     users.findAndModify(ageView, updateAge);
     trace(users.find());
     trace('End findAndModify example');
+
+    db.load(json);
+
+    trace(db.serialize());
 
     function sep(){
       trace('//---------------------------------------------//');

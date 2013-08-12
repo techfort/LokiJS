@@ -83,71 +83,37 @@ var loki = (function(){
     this.transactional = transactional || false;
     // private holders for cached data
     var cachedIndex = null, cachedData = null;
-    // safe mode
-    var safe = safeMode || false;
 
-    /**
-     * Collection write lock
-     * Javascript is single threaded but you can trigger async functions that may cause indexes
-     * to be out of sync with the collection data. This lock blocks write access to collection indexes
-     * and data. Operations will retry every 10ms until the lock is released
-     */
-    var writeLock = false;
-    // timeout property - if lock is used for more than this value the current operation will throw an error
-    var timeout = 5000;
-    var elapsed = 0;
-
-    var maxId = 1;
+    // currentMaxId - change manually at your own peril!
+    this.maxId = 0;
     // view container is an object because each views gets a name
     this.Views = {};
 
     // pointer to self to avoid this tricks
     var coll = this;
+    this.safeMode = safeMode || false;
 
-    this.setTimeOutValue = function(duration){
-      timeout = duration;
-    };
-    this.timeOutExceededHandler = function(){
-      throw 'Operation timed out';
-    };
+    // set these methods if you want to add a before and after handler when using safemode
+    this.onBeforeSafeModeOp = this.no_op;
+    // the onAfter handler could take the result of the current operation as optional value
+    this.onAfterSafeModeOp = function(result){};
 
-    // gets the current lock status
-    this.getLock = function(){
-      return writeLock;
-    };
-    // locks collection for writing
-    function lock(){
-      writeLock = true;
-    };
-    // releases lock on collection
-    function releaseLock(){
-      writeLock = false;
-      // reset the lock elapse counter
-      elapsed = 0;
-    };
+    this.onSafeModeError = this.no_op;
 
-    function acquireLock(){
-      elapsed += 10;
-      if(elapsed > timeout){
-        coll.timeOutExceededHandler();
-      }
-      if(coll.getLock()){
-        
-        setTimeout(acquireLock, 10);
-      } else {
-        lock();
-      }
+    function safeModeStart(callback()){
+      callback();
     }
     // wrapper for safe usage
     this._wrapCall = function( op, args ){
       
       try{
-        acquireLock();
+        coll.onBeforeSafeModeOp();
         var retval = coll[op].apply(coll, [args]);
-        releaseLock();
+        coll.onAfterSafeModeOp(retval);
         return retval;
       } catch(err){
         //console.error(err);
+        coll.onSafeModeError();
       }
       
     };
@@ -157,7 +123,7 @@ var loki = (function(){
     };
 
 
-    // async executor with callback
+    // async executor. This is only to enable callbacks at the end of the execution. 
     this.async = function( fun, callback){
       setTimeout(function(){
         if(typeof fun == 'function'){
@@ -204,8 +170,8 @@ var loki = (function(){
           try {
             
             coll.startTransaction();
-            maxId++;
-            obj.id = maxId;
+            this.maxId++;
+            obj.id = this.maxId;
             // add the object
             coll.data.push(obj);
 
@@ -245,6 +211,8 @@ var loki = (function(){
 
     /**
      * generate document method - ensure objects have id and objType properties
+     * Come to think of it, really unfortunate name because of what document normally refers to in js.
+     * that's why there's an alias below but until I have this implemented 
      */
     this.document = function(doc){
       doc.id == null;

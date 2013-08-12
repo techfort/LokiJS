@@ -21,6 +21,26 @@ var loki = (function(){
     this.name = name || 'Loki';
     this.collections = [];
 
+    this.ENV = (function(){
+      if(typeof module != 'undefined' && module.exports){
+        return 'NODEJS';
+      } else {
+        if(document){
+          if(document.URL.indexOf('http://') == -1 && document.URL.indexOf('https://') == -1 ){
+            return 'BROWSER';
+          } else {
+            return 'CORDOVA'
+          }
+        } else {
+          return 'CORDOVA';
+        }
+      }
+    })();
+
+    if(this.ENV=='NODEJS'){
+      this.fs = require('fs');
+    }
+
     var self = this;
     
     this.getName = function(){
@@ -45,6 +65,10 @@ var loki = (function(){
 
     this.serialize = function(){
       return JSON.stringify(self);
+    };
+
+    this.loadDatabase = function(file, loadFunction){
+      
     };
 
     this.load = function(serializedDb){
@@ -89,20 +113,21 @@ var loki = (function(){
     // view container is an object because each views gets a name
     this.Views = {};
 
+    this.safe = safeMode || false;
+
     // pointer to self to avoid this tricks
     var coll = this;
-    this.safeMode = safeMode || false;
+    
 
     // set these methods if you want to add a before and after handler when using safemode
-    this.onBeforeSafeModeOp = this.no_op;
+    this.onBeforeSafeModeOp = function(){ /* no op */};
     // the onAfter handler could take the result of the current operation as optional value
-    this.onAfterSafeModeOp = function(result){};
+    this.onAfterSafeModeOp = function(result){ /* no op */ };
 
-    this.onSafeModeError = this.no_op;
+    this.onSafeModeError = function(err){
+      console.error(err);
+    };
 
-    function safeModeStart(callback()){
-      callback();
-    }
     // wrapper for safe usage
     this._wrapCall = function( op, args ){
       
@@ -119,7 +144,7 @@ var loki = (function(){
     };
 
     this.execute = function(methodName, args){
-      return safe ? coll._wrapCall(methodName, args) : coll[methodName](args);
+      return coll.safe ? coll._wrapCall(methodName, args) : coll[methodName](args);
     };
 
 
@@ -300,11 +325,10 @@ var loki = (function(){
       var data = coll.idIndex.data;
       var max = data.length - 1;
       var min = 0, mid = Math.floor(min +  (max - min ) /2 );
-      console.log(data[min] + ' ' + data[max]);
+      
       while( data[min] < data[max] ){
         
         mid = Math.floor( (min + max )/2 );
-        console.log(max + ' ' + mid + ' ' + min + ' ' + data[mid]) ;
         
         if(data[mid] < id){
           
@@ -315,7 +339,7 @@ var loki = (function(){
         }
           
       }
-      console.log('stats : ' + max + ' ' + mid + ' ' + min);
+      
       if( max == min && data[min] == id)
         return coll.data[min];
       else

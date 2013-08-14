@@ -75,7 +75,17 @@ var loki = (function(){
     this.load = function(serializedDb){
       // future use method for remote loading of db
       var obj = JSON.parse(serializedDb);
-      self = obj;
+
+      self.name = obj.name;
+      self.collections = [];
+      for(var i = 0; i < obj.collections.length; i++){
+        var coll = obj.collections[i];
+        self.collections.push(self.addCollection(coll.name, coll.objType));
+        self.collections[i].data = coll.data;
+        self.collections[i].indices = coll.indices;
+        self.collections[i].transactional = coll.transactional;
+        self.collections[i].ensureAllIndexes();
+      }
     };
 
     this.persist = function(callback){

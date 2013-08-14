@@ -11,7 +11,8 @@ window.runExample = function(){
     // show collections in db
     db.listCollections();
 
-    trace('Adding 6 users');
+    trace('Adding 9 users');
+    
     // create six users
     var odin = users.insert( { name : 'odin', email: 'odin.soap@lokijs.org', age: 38 } );
     var thor = users.insert( { name : 'thor', email : 'thor.soap@lokijs.org', age: 25 } );

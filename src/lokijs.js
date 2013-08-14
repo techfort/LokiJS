@@ -68,7 +68,8 @@ var loki = (function(){
     };
 
     this.loadDatabase = function(file, loadFunction){
-      
+      var json = loadFunction(file);
+      this.load(json);
     };
 
     this.load = function(serializedDb){

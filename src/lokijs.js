@@ -291,8 +291,8 @@ var loki = (function(){
       }
 
       index.data = [];
-      var i = coll.data.length;
-      while( i-- ){
+      var len = coll.data.length;
+      for( var i=0; i < len ; i++ ){
         index.data.push( coll.data[i][index.name] );
       }
 
@@ -336,7 +336,7 @@ var loki = (function(){
      * Get by Id - faster than other methods because of the searching algorithm
      */
     this.get = function(id){
-      console.log(coll.idIndex);
+      
       var data = coll.idIndex.data;
       var max = data.length - 1;
       var min = 0, mid = Math.floor(min +  (max - min ) /2 );

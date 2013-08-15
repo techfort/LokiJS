@@ -279,13 +279,13 @@ var loki = (function(){
           index = coll.indices[i];
         } else {
           
-          // to do
-              
+          coll.indices.push(index);
+          delete index.data;
+
         }
       }
 
-      coll.indices.push(index);
-      delete index.data;
+      
 
       index.data = [];
       var i = coll.data.length;

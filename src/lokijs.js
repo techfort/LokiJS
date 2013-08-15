@@ -208,6 +208,11 @@ var loki = (function(){
             
             coll.startTransaction();
             this.maxId++;
+            
+            if(isNaN(this.maxId)){
+              this.maxId = (coll.data[ coll.data.length - 1 ].id + 1);
+            }
+
             obj.id = this.maxId;
             // add the object
             coll.data.push(obj);
@@ -278,14 +283,12 @@ var loki = (function(){
           
           index = coll.indices[i];
         } else {
-          
+
           coll.indices.push(index);
           delete index.data;
 
         }
       }
-
-      
 
       index.data = [];
       var i = coll.data.length;

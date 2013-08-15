@@ -82,6 +82,7 @@ var loki = (function(){
         var coll = obj.collections[i];
         self.collections.push(self.addCollection(coll.name, coll.objType));
         self.collections[i].data = coll.data;
+        self.collections[i].maxId = coll.data.maxId;
         self.collections[i].indices = coll.indices;
         self.collections[i].transactional = coll.transactional;
         self.collections[i].ensureAllIndexes();

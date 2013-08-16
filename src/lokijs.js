@@ -110,8 +110,8 @@ var loki = (function(){
     // load db from a file
     this.loadDatabase = function( filename, callback ){
       var callback = callback || function(){};
-      if(this.ENV=='NODEJS'){
-        this.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
+      if(self.ENV=='NODEJS'){
+        self.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
           self.loadJSON(data);
           callback(data);
         });
@@ -122,8 +122,8 @@ var loki = (function(){
     this.saveToDisk = function( filename, callback ){
       var callback = callback || function(){};
       // persist in nodejs
-      if(this.ENV=='NODEJS'){
-        this.fs.exists( filename, function(exists){
+      if(self.ENV=='NODEJS'){
+        self.fs.exists( filename, function(exists){
           
           if(exists){
             self.fs.unlink(filename);

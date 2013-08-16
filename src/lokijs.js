@@ -124,12 +124,15 @@ var loki = (function(){
       // persist in nodejs
       if(this.ENV=='NODEJS'){
         this.fs.exists( filename, function(exists){
+          
           if(exists){
-            self.fs.writeFile( filename, this.serialize(), function(err){
-              if(err) throw err;
-              callback();
-            });    
+            self.fs.unlink(filename);
           }
+
+          self.fs.writeFile( filename, this.serialize(), function(err){
+            if(err) throw err;
+            callback();
+          });
         });
       }
     };

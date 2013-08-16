@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "version": "0.0.502",
+  "version": "0.0.503",
   "description": "A document oriented javascript in-memory database",
   "main": "src/lokijs.js",
   "directories": {

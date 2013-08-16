@@ -57,6 +57,19 @@ var loki = (function(){
       self.collections.push(collection);
     }
 
+    this.getCollection = function(collectionName){
+      var found = false;
+      var len = this.collections.length;
+      for( var i =0; i < len; i++){
+        if(this.collections[i].name == collectionName){
+          found = true;
+          return this.collections[i];
+        }
+      }
+      if(!found) throw 'No such collection';
+
+    };
+
     this.listCollections = function(){
       
       var i = self.collections.length;
@@ -81,7 +94,13 @@ var loki = (function(){
       for(var i = 0; i < obj.collections.length; i++){
         var coll = obj.collections[i];
         self.collections.push(self.addCollection(coll.name, coll.objType));
-        self.collections[i].data = coll.data;
+
+        // load each element individually 
+        var len = coll.data.length;
+        for( var j = 0; j < len; j++){
+          self.collections[i].data[j] = coll.data[j];
+        }
+
         self.collections[i].maxId = coll.data.maxId;
         self.collections[i].indices = coll.indices;
         self.collections[i].transactional = coll.transactional;
@@ -320,6 +339,7 @@ var loki = (function(){
       while (i--) {
         coll.ensureIndex(coll.indices[i].name);
       };
+      if(i==0) ensureIndex('id');
     };
 
     this.ensureAllIndexesAsync = function(callback){

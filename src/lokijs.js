@@ -27,9 +27,9 @@ var loki = (function(){
       } else {
         if(document){
           if(document.URL.indexOf('http://') == -1 && document.URL.indexOf('https://') == -1 ){
-            return 'BROWSER';
+            return 'CORDOVA';
           } else {
-            return 'CORDOVA'
+            return 'BROWSER';
           }
         } else {
           return 'CORDOVA';
@@ -76,16 +76,14 @@ var loki = (function(){
       
     };
 
+    // toJson
     this.serialize = function(){
       return JSON.stringify(self);
     };
+    this.toJson = this.serialize;
 
-    this.loadDatabase = function(file, loadFunction){
-      var json = loadFunction(file);
-      this.load(json);
-    };
-
-    this.load = function(serializedDb){
+    // load Json function - db is saved to disk as json
+    this.loadJSON = function(serializedDb){
       // future use method for remote loading of db
       var obj = JSON.parse(serializedDb);
 
@@ -93,26 +91,50 @@ var loki = (function(){
       self.collections = [];
       for(var i = 0; i < obj.collections.length; i++){
         var coll = obj.collections[i];
-        self.collections.push(self.addCollection(coll.name, coll.objType));
+        var copyColl = self.addCollection(coll.name, coll.objType);
 
         // load each element individually 
         var len = coll.data.length;
         for( var j = 0; j < len; j++){
-          self.collections[i].data[j] = coll.data[j];
+          copyColl.data[j] = coll.data[j];
         }
 
-        self.collections[i].maxId = coll.data.maxId;
-        self.collections[i].indices = coll.indices;
-        self.collections[i].transactional = coll.transactional;
-        self.collections[i].ensureAllIndexes();
+        copyColl.maxId = coll.data.maxId;
+        copyColl.indices = coll.indices;
+        copyColl.idIndex = coll.indices.id;
+        copyColl.transactional = coll.transactional;
+        copyColl.ensureAllIndexes();
       }
     };
 
-    this.persist = function(callback){
-      callback(this.serialize());
+    // load db from a file
+    this.loadDatabase = function( file, callback ){
+      if(this.ENV=='NODEJS'){
+        this.fs.readFile( dbFile, {encoding: 'utf8'}, function(err, data){
+          this.loadJSON(data);
+          callback();
+        });
+      }
+      
     };
 
-    this.syncRemote = function(url){
+    // save file to disk as json
+    this.saveToDisk = function( filename, callback ){
+      var callback = callback || function(){};
+      // persist in nodejs
+      if(this.ENV=='NODEJS'){
+        this.fs.exists( filename, function(exists){
+          if(exists){
+            this.fs.writeFile( filename, this.serialize(), function(err){
+              if(err) throw err;
+              callback();
+            });    
+          }
+        });
+      }
+    };
+
+    this.saveRemote = function(url){
       // future use for saving collections to remote db
     };
 
@@ -128,7 +150,7 @@ var loki = (function(){
     // the data held by the collection
     this.data = [];
     // indices multi-dimensional array
-    this.indices = [];
+    this.indices = {};
     this.idIndex = {}; // index of idx
     // the object type of the collection
     this.objType = _objType || "";
@@ -237,10 +259,11 @@ var loki = (function(){
             coll.data.push(obj);
 
             // resync indexes to make sure all IDs are there
-            //coll.ensureAllIndexes();    
-            var i = coll.indices.length;
-            while (i--) {
-              coll.indices[i].data.push( obj[coll.indices[i].name ]);
+            //coll.ensureAllIndexes(); 
+            for (var i in coll.indices ) {
+
+              coll.indices[i].push( obj[ i ] );
+
             };
             coll.commit();
             return obj;
@@ -291,34 +314,21 @@ var loki = (function(){
       
       if (property == null || property === undefined) throw 'Attempting to set index without an associated property'; 
       
-      var index = {
-        name : property,
-        data : []
-      };
-
-      var i = coll.indices.length;
-      while( i-- ){
-        if( coll.indices[i].name == property){
-          
-          index = coll.indices[i];
-        } else {
-
-          coll.indices.push(index);
-          delete index.data;
-
-        }
+      var index;
+      if(coll.indices.hasOwnProperty(property) ) {
+        index = coll.indices[property];
+      } else {
+        coll.indices[property] = [];
+        index = coll.indices[property];
       }
 
-      index.data = [];
       var len = coll.data.length;
-      for( var i=0; i < len ; i++ ){
-        index.data.push( coll.data[i][index.name] );
+      for(var i=0; i < len; i++){
+        index.push( coll.data[i][property] );
       }
-
-      if(index.name == 'id'){
+      if(property == 'id'){
         coll.idIndex = index;
       }
-      
       
     };
 
@@ -348,6 +358,93 @@ var loki = (function(){
       }, callback);
     };
 
+
+    /**
+     * Update method
+     */
+    this._update = function(doc){
+      
+      // verify object is a properly formed document
+      if( doc.id == 'undefined' || doc.id == null || doc.id < 0){
+        throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
+      } else {
+
+        try{
+
+          coll.startTransaction();
+          var obj = coll.findOne('id', doc.id);
+          // get current position in data array
+          var position = obj.__pos__;
+          delete obj.__pos__;
+          // operate the update
+          coll.data[position] = doc;
+          
+          for( var i in coll.indices ) {
+            coll.indices[i][position] = obj[ i ];
+          };
+          coll.commit();
+
+        } catch(err){
+          coll.rollback();
+        }
+      }
+      
+    };
+
+    this.update = function(obj){
+      return coll.execute('_update', obj);
+    }
+
+    this.findAndModify = function(filterFunction, updateFunction ){
+      
+      var results = coll.view(filterFunction);
+      try {
+        for( var i in results){
+          var obj = updateFunction(results[i]);
+          coll.update(obj);
+        }
+
+      } catch(err){
+        coll.rollback();
+      }
+    };
+
+    /**
+     * Delete function
+     */
+    this._remove = function(doc){
+      
+      if('object' != typeof doc){
+        throw 'Parameter is not an object';
+      }
+
+      if(doc.id == null || doc.id == undefined){
+        throw 'Object is not a document stored in the collection';
+      }
+
+      try {
+        coll.startTransaction();
+        var obj = coll.findOne('id', doc.id);
+        var position = obj.__pos__;
+        delete obj.__pos__;
+        var deleted = coll.data.splice(position,1);
+        
+        for (i in coll.indices ) {
+          var deletedIndex = coll.indices[i].splice( position ,1);
+        }
+        coll.commit();
+
+      } catch(err){
+        coll.rollback();
+
+      }
+
+    };
+
+    this.remove = function(obj){
+      coll.execute('_remove', obj);
+    }
+
     /*---------------------+
     | Querying methods     |
     +----------------------*/
@@ -357,7 +454,7 @@ var loki = (function(){
      */
     this.get = function(id){
       
-      var data = coll.idIndex.data;
+      var data = coll.indices['id'];
       var max = data.length - 1;
       var min = 0, mid = Math.floor(min +  (max - min ) /2 );
       
@@ -434,97 +531,6 @@ var loki = (function(){
         return null;
       };
     };
-
-    /**
-     * Update method
-     */
-    this._update = function(doc){
-      
-      // verify object is a properly formed document
-      if( doc.id == 'undefined' || doc.id == null || doc.id < 0){
-        throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
-      } else {
-
-        try{
-
-          coll.startTransaction();
-          var obj = coll.findOne('id', doc.id);
-          // get current position in data array
-          var position = obj.__pos__;
-          delete obj.__pos__;
-          // operate the update
-          coll.data[position] = doc;
-          // coll.ensureAllIndexes();
-          var i = coll.indices.length;
-          while(i--) {
-            coll.indices[i].data[position] = obj[ coll.indices[i].name ];
-          };
-          coll.commit();
-
-        } catch(err){
-          coll.rollback();
-        }
-      }
-      
-    };
-
-    this.update = function(obj){
-      return coll.execute('_update', obj);
-    }
-
-    this.findAndModify = function(filterFunction, updateFunction ){
-      
-      var results = coll.view(filterFunction);
-      try {
-        for( var i in results){
-          var obj = updateFunction(results[i]);
-          coll.update(obj);
-        }
-
-      } catch(err){
-        coll.rollback();
-      }
-    };
-
-    /**
-     * Delete function
-     */
-    this._remove = function(doc){
-      
-      if('object' != typeof doc){
-        throw 'Parameter is not an object';
-      }
-
-      if(doc.id == null || doc.id == undefined){
-        throw 'Object is not a document stored in the collection';
-      }
-
-      try {
-        coll.startTransaction();
-        var obj = coll.findOne('id', doc.id);
-        var position = obj.__pos__;
-        delete obj.__pos__;
-        var deleted = coll.data.splice(position,1);
-        //delete deleted;
-
-        var i = coll.indices.length;
-        while (i--) {
-          var deletedIndex = coll.indices[i].data.splice( position ,1);
-          //delete deletedIndex;
-        }
-        coll.commit();
-
-      } catch(err){
-        coll.rollback();
-
-      }
-
-    };
-
-    this.remove = function(obj){
-      coll.execute('_remove', obj);
-    }
-
     /**
      * Create view function - CouchDB style
      */
@@ -687,7 +693,7 @@ var loki = (function(){
     };
 
     // handle the indexes passed
-    var indexesArray = indexesArray || [];
+    var indexesArray = indexesArray || ['id'];
     
 
     // initialize optional indexes from arguments passed to Collection

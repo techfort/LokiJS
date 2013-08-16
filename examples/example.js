@@ -17,6 +17,11 @@ window.runExample = function(){
     var odin = users.insert( { name : 'odin', email: 'odin.soap@lokijs.org', age: 38 } );
     var thor = users.insert( { name : 'thor', email : 'thor.soap@lokijs.org', age: 25 } );
     var stan = users.insert( { name : 'stan', email : 'stan.soap@lokijs.org', age: 29 } );
+    // we create a snapshot of the db here so that we can see the difference
+    // between the current state of the db and after the json has been reloaded
+    var json = db.serialize();
+
+
     var oliver = users.insert( { name : 'oliver', email : 'oliver.soap@lokijs.org', age: 31 } );
     var hector = users.insert( { name : 'hector', email : 'hector.soap@lokijs.org', age: 15} );
     var achilles = users.insert( { name : 'achilles', email : 'achilles.soap@lokijs.org', age: 31 } );
@@ -32,13 +37,14 @@ window.runExample = function(){
     // query for user
     //trace( users.find('name','odin') );
     
-    var json = db.serialize();
+    
 
     stan.name = 'Stan Laurel';
 
     // update object (this really only syncs the index)
     users.update(stan);
     users.remove(achilles);
+    
     // finding users with age greater than 25
     trace('Find by age > 25');
     trace(users.find( {'age':{'$gt': 25} } ));
@@ -105,7 +111,7 @@ window.runExample = function(){
     trace(users.find());
     trace('End findAndModify example');
 
-    db.load(json);
+    db.loadJSON(json);
 
     trace(db.serialize());
 

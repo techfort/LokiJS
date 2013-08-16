@@ -492,8 +492,8 @@ var loki = (function(){
 
       // iterate the indices to ascertain whether property is indexed
       var i = coll.indices.length;
-      while(i--){
-        if( coll.indices[i].name == prop){
+      for(i in indices){
+        if( i == prop){
           searchByIndex = true;
           indexObject = coll.indices[i];
           break;

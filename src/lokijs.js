@@ -108,9 +108,10 @@ var loki = (function(){
     };
 
     // load db from a file
-    this.loadDatabase = function( file, callback ){
+    this.loadDatabase = function( filename, callback ){
+      var callback = callback || function(){};
       if(this.ENV=='NODEJS'){
-        this.fs.readFile( dbFile, {encoding: 'utf8'}, function(err, data){
+        this.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
           this.loadJSON(data);
           callback();
         });

@@ -113,7 +113,7 @@ var loki = (function(){
       if(this.ENV=='NODEJS'){
         this.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
           self.loadJSON(data);
-          callback();
+          callback(data);
         });
       }
     };

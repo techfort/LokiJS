@@ -129,7 +129,7 @@ var loki = (function(){
             self.fs.unlink(filename);
           }
 
-          self.fs.writeFile( filename, this.serialize(), function(err){
+          self.fs.writeFile( filename, self.serialize(), function(err){
             if(err) throw err;
             callback();
           });

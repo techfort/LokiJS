@@ -112,11 +112,10 @@ var loki = (function(){
       var callback = callback || function(){};
       if(this.ENV=='NODEJS'){
         this.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
-          this.loadJSON(data);
+          self.loadJSON(data);
           callback();
         });
       }
-      
     };
 
     // save file to disk as json
@@ -126,7 +125,7 @@ var loki = (function(){
       if(this.ENV=='NODEJS'){
         this.fs.exists( filename, function(exists){
           if(exists){
-            this.fs.writeFile( filename, this.serialize(), function(err){
+            self.fs.writeFile( filename, this.serialize(), function(err){
               if(err) throw err;
               callback();
             });    

@@ -497,9 +497,10 @@ var loki = (function(){
         }
       }
       
-      if( max == min && data[min] == id)
+      if( max == min && data[min] == id){
+        coll.data[min].__pos__ = min;
         return coll.data[min];
-      else
+      } else
         return null;
 
     };

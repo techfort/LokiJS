@@ -102,14 +102,14 @@ window.runExample = function(){
     trace('End stringify example');
     sep();
 
-    trace('Example: findAndModify');
+    trace('Example: findAndUpdate');
     function updateAge(obj){
       obj.age *= 2;
       return obj;
     }
-    users.findAndModify(ageView, updateAge);
+    users.findAndUpdate(ageView, updateAge);
     trace(users.find());
-    trace('End findAndModify example');
+    trace('End findAndUpdate example');
 
     db.loadJSON(json);
 

@@ -136,7 +136,10 @@ var loki = (function(){
         });
       }
     };
+    // alias
+    this.save = this.saveToDisk;
 
+    
     this.saveRemote = function(url){
       // future use for saving collections to remote db
     };
@@ -310,6 +313,11 @@ var loki = (function(){
     // just an alias for compatibility with most APIs
     this.insert = this.document;
 
+
+    /*----------------------------+
+    | INDEXING                    |
+    +----------------------------*/
+
     /**
      * Ensure indexes on a certain field
      */
@@ -361,6 +369,10 @@ var loki = (function(){
       }, callback);
     };
 
+    /*----------------------------+
+    | CRUD                    |
+    +----------------------------*/
+    
 
     /**
      * Update method
@@ -394,11 +406,16 @@ var loki = (function(){
       
     };
 
+    /* update wrapped call */
     this.update = function(obj){
       return coll.execute('_update', obj);
     }
 
-    this.findAndModify = function(filterFunction, updateFunction ){
+    /**
+     * find and update: pass a filtering function to select elements to be updated
+     * and apply the updatefunctino to those elements iteratively
+     */
+    this.findAndUpdate = function(filterFunction, updateFunction ){
       
       var results = coll.view(filterFunction);
       try {
@@ -444,12 +461,15 @@ var loki = (function(){
 
     };
 
+    /**
+     * delete wrapped
+     */
     this.remove = function(obj){
       coll.execute('_remove', obj);
     }
 
     /*---------------------+
-    | Querying methods     |
+    | Finding methods     |
     +----------------------*/
 
     /**
@@ -466,13 +486,10 @@ var loki = (function(){
         mid = Math.floor( (min + max )/2 );
         
         if(data[mid] < id){
-          
           min = mid + 1;
         } else {
-          
           max = mid;
         }
-          
       }
       
       if( max == min && data[min] == id)
@@ -483,103 +500,8 @@ var loki = (function(){
     };
 
     /**
-     * Find one object by index property
-     */
-    this.findOne = function(prop, value){
-      
-      var searchByIndex = false;
-      var indexObject = null;
-
-      // iterate the indices to ascertain whether property is indexed
-      var i = coll.indices.length;
-      for(i in indices){
-        if( i == prop){
-          searchByIndex = true;
-          indexObject = coll.indices[i];
-          break;
-        }
-      }      
-      
-      if(searchByIndex){
-        // perform search based on index
-        var i = indexObject.data.length;
-        while (i--) {
-          
-          if(indexObject.data[i] == value){
-            var doc = coll.data[i];
-            doc.__pos__ = i;
-            return doc;
-          }
-        };;
-
-      } else {
-        // search all collection and find first matching result
-        return coll.findOneUnindexed(prop, value);
-      }
-      return null;
-    };
-
-    /**
-     * Find object by unindexed field
-     */
-    this.findOneUnindexed = function(prop, value){
-      
-      var i = coll.data.length;
-      while (i--) {
-        if(coll.data[i][prop]==value){
-          var doc = coll.data[i];
-          doc.__pos__ = i;
-          return doc;
-        }
-        return null;
-      };
-    };
-    /**
-     * Create view function - CouchDB style
-     */
-    this.view = function(fun){
-      var viewFunction;
-      if( ('string' == typeof fun) && ('function' == typeof coll.Views[fun]) ){
-        viewFunction = coll.Views[fun];
-      } else if('function' == typeof fun){
-        viewFunction = fun;
-      } else {
-        throw 'Argument is not a stored view or a function';
-      }
-      try {
-        var result = [];
-        var i = coll.data.length;
-        while(i--){
-          if( viewFunction( 
-            coll.data[i] ) ){
-            result[i] = coll.data[i];
-          };
-        }
-        return result;
-      } catch(err){
-        
-      }
-    };
-
-    this.storeView = function(name, fun){
-      if(typeof fun == 'function'){
-        coll.Views[name] = fun;
-        
-      }
-    };
-
-    /**
-     * Map Reduce placeholder (for now...)
-     */
-    this.mapReduce = function(mapFunction, reduceFunction){
-      try {
-        return reduceFunction( coll.data.map(mapFunction) );  
-      } catch(err) {
-        console.log(err)
-      }
-    };
-    /**
-     * Find method, api is similar to mongodb except for now it only supports one search parameter
+     * Find method, api is similar to mongodb except for now it only supports one search parameter.
+     * for more complex queries use view() and storeView()
      */
     this.find = function(queryObject){
       queryObject = queryObject || 'getAll';
@@ -603,8 +525,6 @@ var loki = (function(){
         }
         break;
       }
-
-      console.log('Op: ' + operator + ' value: ' + value + ' prop: ' + property);
       // comparison operators
       function $eq ( a, b){ return a == b; }
       function $gt ( a, b){ return a > b; }
@@ -657,6 +577,107 @@ var loki = (function(){
 
     };
 
+    /**
+     * Find one object by index property, by property equal to value
+     */
+    this.findOne = function(prop, value){
+      
+      var searchByIndex = false;
+      var indexObject = null;
+
+      // iterate the indices to ascertain whether property is indexed
+      var i = coll.indices.length;
+      for(i in indices){
+        if( i == prop){
+          searchByIndex = true;
+          indexObject = coll.indices[i];
+          break;
+        }
+      }      
+      
+      if(searchByIndex){
+        // perform search based on index
+        var i = indexObject.data.length;
+        while (i--) {
+          
+          if(indexObject.data[i] == value){
+            var doc = coll.data[i];
+            doc.__pos__ = i;
+            return doc;
+          }
+        };;
+
+      } else {
+        // search all collection and find first matching result
+        return coll.findOneUnindexed(prop, value);
+      }
+      return null;
+    };
+
+    /**
+     * Find object by unindexed field by property equal to value, 
+     * simply iterates and returns the first element matching the query
+     */
+    this.findOneUnindexed = function(prop, value){
+      
+      var i = coll.data.length;
+      while (i--) {
+        if(coll.data[i][prop]==value){
+          var doc = coll.data[i];
+          doc.__pos__ = i;
+          return doc;
+        }
+        return null;
+      };
+    };
+
+    /**
+     * Create view function - CouchDB style
+     */
+    this.view = function(fun){
+      var viewFunction;
+      if( ('string' == typeof fun) && ('function' == typeof coll.Views[fun]) ){
+        viewFunction = coll.Views[fun];
+      } else if('function' == typeof fun){
+        viewFunction = fun;
+      } else {
+        throw 'Argument is not a stored view or a function';
+      }
+      try {
+        var result = [];
+        var i = coll.data.length;
+        while(i--){
+          if( viewFunction( coll.data[i] ) ){
+            result[i] = coll.data[i];
+          };
+        }
+        return result;
+      } catch(err){
+        
+      }
+    };
+
+    /**
+     * store a view in the collection for later reuse
+     */
+    this.storeView = function(name, fun){
+      if(typeof fun == 'function'){
+        coll.Views[name] = fun;
+        
+      }
+    };
+
+    /**
+     * Map Reduce 
+     */
+    this.mapReduce = function(mapFunction, reduceFunction){
+      try {
+        return reduceFunction( coll.data.map(mapFunction) );  
+      } catch(err) {
+        console.log(err)
+      }
+    };
+    
     this.filter = function(operator, property, value){
       return coll.data.query(operator, property, value);
     }

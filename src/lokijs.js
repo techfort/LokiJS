@@ -73,13 +73,18 @@ var loki = (function(){
     this.listCollections = function(){
       
       var i = self.collections.length;
-      
+      var colls = [];
+      while(i--){
+        colls.push({ name: self.collections[i].name, type: self.collections[i].objType, count: self.collections[i].data.length } );
+      }
+      return colls;
     };
 
     // toJson
     this.serialize = function(){
       return JSON.stringify(self);
     };
+    // alias of serialize
     this.toJson = this.serialize;
 
     // load Json function - db is saved to disk as json

@@ -5,7 +5,7 @@ window.runExample = function(){
 
 
     // create two example collections
-    var users = db.addCollection('users','User', ['email'], true, true);
+    var users = db.addCollection('users','User', ['email'], true, false);
     var projects = db.addCollection('projects', 'Project', ['name']);
 
     // show collections in db
@@ -120,7 +120,7 @@ window.runExample = function(){
     }
 
     function trace(message){
-        if(typeof console !='undefined' && console.log){
+        if(typeof console !== 'undefined' && console.log){
             console.log(message);
         }
     }

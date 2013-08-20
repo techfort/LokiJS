@@ -4,745 +4,691 @@
  * 
  * A lightweight document oriented javascript database
  */
-'use strict';
 
 
 /**
  * Define library loki
  */
-var loki = (function(){
+var loki = (function () {
+  'use strict';
 
 
   /**
    * @constructor
    * The main database class
    */
-  function Loki(name){
+  function Loki(name) {
     this.name = name || 'Loki';
     this.collections = [];
 
-    this.ENV = (function(){
-      if(typeof module != 'undefined' && module.exports){
+    this.ENV = (function () {
+      if (!(typeof module === 'undefined') && module.exports) {
         return 'NODEJS';
-      } else {
-        if(document){
-          if(document.URL.indexOf('http://') == -1 && document.URL.indexOf('https://') == -1 ){
-            return 'CORDOVA';
-          } else {
-            return 'BROWSER';
-          }
-        } else {
+      }
+
+      if (!(document === 'undefined')) {
+        if (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1) {
           return 'CORDOVA';
         }
+        return 'BROWSER';
       }
+      return 'CORDOVA';
     })();
 
-    if(this.ENV=='NODEJS'){
+    if (this.ENV === 'NODEJS') {
       this.fs = require('fs');
     }
 
-    var self = this;
-    
-    this.getName = function(){
-      return this.name;
-    };
-
-    this.addCollection = function(name, objType, indexesArray, transactional, safeMode){
-      var collection = new Collection(name, objType, indexesArray, transactional, safeMode);
-      self.collections.push(collection);
-      return collection;
-    };
-
-    this.loadCollection = function(collection){
-      self.collections.push(collection);
-    }
-
-    this.getCollection = function(collectionName){
-      var found = false;
-      var len = this.collections.length;
-      for( var i =0; i < len; i++){
-        if(this.collections[i].name == collectionName){
-          found = true;
-          return this.collections[i];
-        }
-      }
-      if(!found) throw 'No such collection';
-
-    };
-
-    this.listCollections = function(){
-      
-      var i = self.collections.length;
-      var colls = [];
-      while(i--){
-        colls.push({ name: self.collections[i].name, type: self.collections[i].objType, count: self.collections[i].data.length } );
-      }
-      return colls;
-    };
-
-    // toJson
-    this.serialize = function(){
-      return JSON.stringify(self);
-    };
-    // alias of serialize
-    this.toJson = this.serialize;
-
-    // load Json function - db is saved to disk as json
-    this.loadJSON = function(serializedDb){
-      // future use method for remote loading of db
-      var obj = JSON.parse(serializedDb);
-
-      self.name = obj.name;
-      self.collections = [];
-      for(var i = 0; i < obj.collections.length; i++){
-        var coll = obj.collections[i];
-        var copyColl = self.addCollection(coll.name, coll.objType);
-
-        // load each element individually 
-        var len = coll.data.length;
-        for( var j = 0; j < len; j++){
-          copyColl.data[j] = coll.data[j];
-        }
-
-        copyColl.maxId = coll.data.maxId;
-        copyColl.indices = coll.indices;
-        copyColl.idIndex = coll.indices.id;
-        copyColl.transactional = coll.transactional;
-        copyColl.ensureAllIndexes();
-      }
-    };
-
-    // load db from a file
-    this.loadDatabase = function( filename, callback ){
-      var callback = callback || function(){};
-      if(self.ENV=='NODEJS'){
-        self.fs.readFile( filename, {encoding: 'utf8'}, function(err, data){
-          self.loadJSON(data);
-          callback(data);
-        });
-      }
-    };
-
-    // save file to disk as json
-    this.saveToDisk = function( filename, callback ){
-      var callback = callback || function(){};
-      // persist in nodejs
-      if(self.ENV=='NODEJS'){
-        self.fs.exists( filename, function(exists){
-          
-          if(exists){
-            self.fs.unlink(filename);
-          }
-
-          self.fs.writeFile( filename, self.serialize(), function(err){
-            if(err) throw err;
-            callback();
-          });
-        });
-      }
-    };
-    // alias
-    this.save = this.saveToDisk;
-
-    
-    this.saveRemote = function(url){
-      // future use for saving collections to remote db
-    };
-
-  };
+  }
 
   /**
    * @constructor 
    * Collection class that handles documents of same type
    */
-  function Collection(_name, _objType, indexesArray, transactional, safeMode ){
+  function Collection(name, objType, indices, transactional) {
     // the name of the collection 
-    this.name = _name;
+    this.name = name;
     // the data held by the collection
     this.data = [];
     // indices multi-dimensional array
     this.indices = {};
     this.idIndex = {}; // index of idx
     // the object type of the collection
-    this.objType = _objType || "";
+    this.objType = objType || "";
 
     /** Transactions properties */
     // is collection transactional
     this.transactional = transactional || false;
     // private holders for cached data
-    var cachedIndex = null, cachedData = null;
+    this.cachedIndex = null;
+    this.cachedData = null;
 
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
     // view container is an object because each views gets a name
     this.Views = {};
 
-    this.safe = safeMode || false;
-
     // pointer to self to avoid this tricks
-    var coll = this;
-    
+    var indexesArray = indices || ['id'],
+      i = indexesArray.length;
 
-    // set these methods if you want to add a before and after handler when using safemode
-    this.onBeforeSafeModeOp = function(){ /* no op */};
-    // the onAfter handler could take the result of the current operation as optional value
-    this.onAfterSafeModeOp = function(result){ /* no op */ };
-
-    this.onSafeModeError = function(err){
-      console.error(err);
-    };
-
-    // wrapper for safe usage
-    this._wrapCall = function( op, args ){
-      
-      try{
-        coll.onBeforeSafeModeOp();
-        var retval = coll[op].apply(coll, [args]);
-        coll.onAfterSafeModeOp(retval);
-        return retval;
-      } catch(err){
-        //console.error(err);
-        coll.onSafeModeError();
-      }
-      
-    };
-
-    this.execute = function(methodName, args){
-      return coll.safe ? coll._wrapCall(methodName, args) : coll[methodName](args);
-    };
-
-
-    // async executor. This is only to enable callbacks at the end of the execution. 
-    this.async = function( fun, callback){
-      setTimeout(function(){
-        if(typeof fun == 'function'){
-          fun();  
-        } else {
-          throw 'Argument passed for async execution is not a function'
-        }
-        if(typeof fun == 'callback') callback();
-      }, 0);
-    };
-
-    /**
-     * Add object to collection
-     */
-    this._add = function(obj){      
-
-      // if parameter isn't object exit with throw
-      if( 'object' != typeof obj) {
-        console.log(obj);
-        throw 'Object being added needs to be an object';
-      }
-      /*
-       * try adding object to collection
-       */
-      if(coll.objType=="" && coll.data.length == 0){
-
-        // set object type to that of the first object added to collection
-        coll.objType = obj.objType;
-
-      } else {
-        
-        // throw an error if the object added is not the same type as the collection's
-        if(coll.objType!=obj.objType) {
-          throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + coll.objType +']';
-        }
-        if(coll.objType=="") {
-          throw 'Object is not a model';
-        }
-        
-        if(obj.id != null && obj.id > 0){
-          throw 'Document is already in collection, please use update()';
-        } else {
-
-          try {
-            
-            coll.startTransaction();
-            this.maxId++;
-            
-            if(isNaN(this.maxId)){
-              this.maxId = (coll.data[ coll.data.length - 1 ].id + 1);
-            }
-
-            obj.id = this.maxId;
-            // add the object
-            coll.data.push(obj);
-
-            // resync indexes to make sure all IDs are there
-            //coll.ensureAllIndexes(); 
-            for (var i in coll.indices ) {
-
-              coll.indices[i].push( obj[ i ] );
-
-            };
-            coll.commit();
-            return obj;
-          } catch(err){
-            
-            coll.rollback();
-          }
-          
-        }
-
-      }
-    };
-
-    
-    this.add = function(obj){
-      return coll.execute('_add', obj);
-    };
-
-
-    /**
-     * iterate through arguments and add indexes 
-     */
-    this.addMany = function(){
-      var i = arguments.length;
-      while(i--){
-        coll.execute('_add',arguments[i]);
-      }
-    };
-
-    /**
-     * generate document method - ensure objects have id and objType properties
-     * Come to think of it, really unfortunate name because of what document normally refers to in js.
-     * that's why there's an alias below but until I have this implemented 
-     */
-    this.document = function(doc){
-      doc.id == null;
-      doc.objType = coll.objType;
-      coll.add(doc);
-      return doc;
-    };
-    // just an alias for compatibility with most APIs
-    this.insert = this.document;
-
-
-    /*----------------------------+
-    | INDEXING                    |
-    +----------------------------*/
-
-    /**
-     * Ensure indexes on a certain field
-     */
-    this.ensureIndex = function(property){
-      
-      if (property == null || property === undefined) throw 'Attempting to set index without an associated property'; 
-      
-      var index;
-      if(coll.indices.hasOwnProperty(property) ) {
-        index = coll.indices[property];
-      } else {
-        coll.indices[property] = [];
-        index = coll.indices[property];
-      }
-
-      var len = coll.data.length;
-      for(var i=0; i < len; i++){
-        index.push( coll.data[i][property] );
-      }
-      if(property == 'id'){
-        coll.idIndex = index;
-      }
-      
-    };
-
-    /**
-     * Ensure index async with callback - useful for background syncing with a remote server 
-     */
-    this.ensureIndexAsync = function(property, callback){
-      this.async(function(){
-        coll.ensureIndex(property);
-      }, callback);
-    };
-
-    /**
-     * Ensure all indexes
-     */
-    this.ensureAllIndexes = function(){
-      var i = coll.indices.length;
-      while (i--) {
-        coll.ensureIndex(coll.indices[i].name);
-      };
-      if(i==0) ensureIndex('id');
-    };
-
-    this.ensureAllIndexesAsync = function(callback){
-      this.async(function(){
-        coll.ensureAllIndexes();
-      }, callback);
-    };
-
-    /*----------------------------+
-    | CRUD                    |
-    +----------------------------*/
-    
-
-    /**
-     * Update method
-     */
-    this._update = function(doc){
-      
-      // verify object is a properly formed document
-      if( doc.id == 'undefined' || doc.id == null || doc.id < 0){
-        throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
-      } else {
-
-        try{
-
-          coll.startTransaction();
-          var obj = coll.findOne('id', doc.id);
-          // get current position in data array
-          var position = obj.__pos__;
-          delete obj.__pos__;
-          // operate the update
-          coll.data[position] = doc;
-          
-          for( var i in coll.indices ) {
-            coll.indices[i][position] = obj[ i ];
-          };
-          coll.commit();
-
-        } catch(err){
-          coll.rollback();
-        }
-      }
-      
-    };
-
-    /* update wrapped call */
-    this.update = function(obj){
-      return coll.execute('_update', obj);
+    while (i--) {    
+      this.ensureIndex(indexesArray[i]);
     }
 
-    /**
-     * find and update: pass a filtering function to select elements to be updated
-     * and apply the updatefunctino to those elements iteratively
-     */
-    this.findAndUpdate = function(filterFunction, updateFunction ){
-      
-      var results = coll.view(filterFunction);
-      try {
-        for( var i in results){
-          var obj = updateFunction(results[i]);
-          coll.update(obj);
+    // initialize the id index
+    this.ensureIndex('id');
+  }
+
+  Loki.prototype.addCollection = function (name, objType, indexesArray, transactional) {
+    var collection = new Collection(name, objType, indexesArray, transactional);
+    this.collections.push(collection);
+    return collection;
+  };
+
+  Loki.prototype.loadCollection = function (collection) {
+    this.collections.push(collection);
+  };
+
+  Loki.prototype.getCollection = function (collectionName) {
+    var found = false,
+      len = this.collections.length,
+      i;
+
+    for(i =0; i < len; i++) {
+      if (this.collections[i].name === collectionName) {
+        found = true;
+        return this.collections[i];
+      }
+    }
+    if (!found) { throw 'No such collection'; }
+  };
+
+  Loki.prototype.listCollections = function () {
+    
+    var i = this.collections.length,
+      colls = [];
+
+    while(i--) {
+      colls.push({ name: this.collections[i].name, type: this.collections[i].objType, count: this.collections[i].data.length });
+    }
+    return colls;
+  };
+
+  Loki.prototype.getName = function () {
+    return this.name;
+  };
+
+  // toJson
+  Loki.prototype.serialize = function () {
+    return JSON.stringify(this);
+  };
+  // alias of serialize
+  Loki.prototype.toJson = Loki.prototype.serialize;
+
+  // load Json function - db is saved to disk as json
+  Loki.prototype.loadJSON = function (serializedDb) {
+    
+
+    // future use method for remote loading of db
+    var obj = JSON.parse(serializedDb),
+      i = 0,
+      len = obj.collections.length,
+      coll,
+      copyColl;
+
+    this.name = obj.name;
+    this.collections = [];
+
+    for(i; i < len; i+=1) {
+      coll = obj.collections[i];
+      copyColl = this.addCollection(coll.name, coll.objType);
+
+      // load each element individually 
+      var clen = coll.data.length, j = 0;
+      for( j; j < clen; j++) {
+        copyColl.data[j] = coll.data[j];
+      }
+
+      copyColl.maxId = coll.data.maxId;
+      copyColl.indices = coll.indices;
+      copyColl.idIndex = coll.indices.id;
+      copyColl.transactional = coll.transactional;
+      copyColl.ensureAllIndexes();
+    }
+  };
+
+
+
+  // load db from a file
+  Loki.prototype.loadDatabase = function ( filename, callback) {
+    var cFun = callback || this.no_op,
+      self = this;
+
+    if (this.ENV === 'NODEJS') {
+      this.fs.readFile( filename, {encoding: 'utf8'}, function (err, data) {
+        self.loadJSON(data);
+        cFun(data);
+      });
+    }
+  };
+
+  // save file to disk as json
+  Loki.prototype.saveToDisk = function ( filename, callback) {
+    var cFun = callback || this.no_op,
+      self = this;
+    // persist in nodejs
+    if (this.ENV === 'NODEJS') {
+      this.fs.exists( filename, function (exists) {
+        
+        if (exists) {
+          self.fs.unlink(filename);
         }
 
-      } catch(err){
-        coll.rollback();
-      }
-    };
+        self.fs.writeFile( filename, self.serialize(), function (err) {
+          if (err) {
+            throw err;
+          }
+          cFun();
+        });
+      });
+    }
+  };
+  // alias
+  Loki.prototype.save = Loki.prototype.saveToDisk;
 
-    /**
-     * Delete function
+  // future use for saving collections to remote db
+  Loki.prototype.saveRemote = Loki.prototype.no_op;
+
+
+  /*----------------------------+
+  | INDEXING                    |
+  +----------------------------*/
+
+  /**
+   * Ensure indexes on a certain field
+   */
+  Collection.prototype.ensureIndex = function (property) {
+    
+    if (property === null || property === undefined) throw 'Attempting to set index without an associated property'; 
+    
+    var index;
+    if (this.indices.hasOwnProperty(property)) {
+      index = this.indices[property];
+    } else {
+      this.indices[property] = [];
+      index = this.indices[property];
+    }
+
+    var len = this.data.length;
+    for(var i=0; i < len; i++) {
+      index.push( this.data[i][property]);
+    }
+    if (property == 'id') {
+      this.idIndex = index;
+    }
+    
+  };
+
+  /**
+   * Ensure index async with callback - useful for background syncing with a remote server 
+   */
+  Collection.prototype.ensureIndexAsync = function (property, callback) {
+    this.async(function () {
+      this.ensureIndex(property);
+    }, callback);
+  };
+
+  /**
+   * Ensure all indexes
+   */
+  Collection.prototype.ensureAllIndexes = function () {
+    var i = this.indices.length;
+    while (i--) {
+      this.ensureIndex(this.indices[i].name);
+    };
+    if (i==0) ensureIndex('id');
+  };
+
+  Collection.prototype.ensureAllIndexesAsync = function (callback) {
+    this.async(function () {
+      this.ensureAllIndexes();
+    }, callback);
+  };
+
+  /**
+   * find and update: pass a filtering function to select elements to be updated
+   * and apply the updatefunctino to those elements iteratively
+   */
+  Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
+    
+    var results = this.view(filterFunction);
+    try {
+      for( var i in results) {
+        var obj = updateFunction (results[i]);
+        this.update(obj);
+      }
+
+    } catch(err) {
+      this.rollback();
+    }
+  };
+
+  /**
+   * generate document method - ensure objects have id and objType properties
+   * Come to think of it, really unfortunate name because of what document normally refers to in js.
+   * that's why there's an alias below but until I have this implemented 
+   */
+  Collection.prototype.insert = function (doc) {
+    doc.id == null;
+    doc.objType = this.objType;
+    this.add(doc);
+    return doc;
+  };
+
+  /**
+   * Update method
+   */
+  Collection.prototype.update = function (doc) {
+    
+    // verify object is a properly formed document
+    if ( doc.id == 'undefined' || doc.id == null || doc.id < 0) {
+      throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
+    } else {
+
+      try{
+
+        this.startTransaction();
+        var arr = this.get( doc.id, true);
+        var obj = arr[0];
+        // get current position in data array
+        var position = arr[1];
+        
+        // operate the update
+        this.data[position] = doc;
+        
+        for( var i in this.indices) {
+          this.indices[i][position] = obj[ i ];
+        };
+        this.commit();
+
+      } catch(err) {
+        this.rollback();
+      }
+    }
+    
+  };
+
+  /**
+   * Add object to collection
+   */
+  Collection.prototype.add = function (obj) {      
+
+    // if parameter isn't object exit with throw
+    if ( 'object' !== typeof obj) {
+      console.log(obj);
+      throw 'Object being added needs to be an object';
+    }
+    /*
+     * try adding object to collection
      */
-    this._remove = function(doc){
+    if (this.objType == "" && this.data.length == 0) {
+
+      // set object type to that of the first object added to collection
+      this.objType = obj.objType;
+
+    } else {
       
-      if('object' != typeof doc){
+      // throw an error if the object added is not the same type as the collection's
+      if (this.objType != obj.objType) {
+        throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + this.objType +']';
+      }
+      if (this.objType=="") {
+        throw 'Object is not a model';
+      }
+      
+      if (obj.id !== null && obj.id > 0) {
+        throw 'Document is already in collection, please use update()';
+      } else {
+
+        try {
+          
+          this.startTransaction();
+          this.maxId++;
+          
+          if ( isNaN( this.maxId)) {
+            this.maxId = (this.data[ this.data.length - 1 ].id + 1);
+          }
+
+          obj.id = this.maxId;
+          // add the object
+          this.data.push(obj);
+
+          // resync indexes to make sure all IDs are there
+          for (var i in this.indices) {
+
+            this.indices[i].push( obj[ i ]);
+
+          };
+          this.commit();
+          return obj;
+        } catch(err) {
+          
+          this.rollback();
+        }
+      }
+    }
+  };
+
+  /**
+   * iterate through arguments and add indexes 
+   */
+  Collection.prototype.addMany = function () {
+    var i = arguments.length;
+    while(i--) {
+      this.add(arguments[i]);
+    }
+  };
+
+
+  /**
+   * delete wrapped
+   */
+  Collection.prototype.remove = function ( doc) {
+    if ('object' !== typeof doc) {
         throw 'Parameter is not an object';
       }
 
-      if(doc.id == null || doc.id == undefined){
+      if (doc.id === null || doc.id === undefined) {
         throw 'Object is not a document stored in the collection';
       }
 
       try {
-        coll.startTransaction();
-        var obj = coll.get(doc.id);
-        var position = obj.__pos__;
-        delete obj.__pos__;
-        var deleted = coll.data.splice(position,1);
+        this.startTransaction();
+        var arr = this.get(doc.id, true);
+        var obj = arr[0];
+        var position = arr[1];
         
-        for (i in coll.indices ) {
-          var deletedIndex = coll.indices[i].splice( position ,1);
+        var deleted = this.data.splice(position,1);
+        
+        for (i in this.indices) {
+          var deletedIndex = this.indices[i].splice( position ,1);
         }
-        coll.commit();
+        this.commit();
 
-      } catch(err){
-        coll.rollback();
+      } catch(err) {
+        this.rollback();
 
       }
+  };
 
-    };
+  /*---------------------+
+  | Finding methods     |
+  +----------------------*/
 
-    /**
-     * delete wrapped
-     */
-    this.remove = function(obj){
-      coll.execute('_remove', obj);
+  /**
+   * Get by Id - faster than other methods because of the searching algorithm
+   */
+  Collection.prototype.get = function (id, returnPosition) {
+    var retpos = returnPosition || false;
+    var data = this.indices['id'];
+    var max = data.length - 1;
+    var min = 0, mid = Math.floor(min +  (max - min) /2);
+    
+    while( data[min] < data[max]) {
+      
+      mid = Math.floor( (min + max)/2);
+      
+      if (data[mid] < id) {
+        min = mid + 1;
+      } else {
+        max = mid;
+      }
     }
-
-    /*---------------------+
-    | Finding methods     |
-    +----------------------*/
-
-    /**
-     * Get by Id - faster than other methods because of the searching algorithm
-     */
-    this.get = function(id){
+    
+    if ( max == min && data[min] == id) {
       
-      var data = coll.indices['id'];
-      var max = data.length - 1;
-      var min = 0, mid = Math.floor(min +  (max - min ) /2 );
-      
-      while( data[min] < data[max] ){
-        
-        mid = Math.floor( (min + max )/2 );
-        
-        if(data[mid] < id){
-          min = mid + 1;
-        } else {
-          max = mid;
-        }
+      if (retpos) {
+        return [ this.data[min], min ];
+      } else {
+        return this.data[min];  
       }
       
-      if( max == min && data[min] == id){
-        coll.data[min].__pos__ = min;
-        return coll.data[min];
-      } else
-        return null;
+    } else
+      return null;
 
-    };
+  };
 
-    /**
-     * Find method, api is similar to mongodb except for now it only supports one search parameter.
-     * for more complex queries use view() and storeView()
-     */
-    this.find = function(queryObject){
-      queryObject = queryObject || 'getAll';
-      if(queryObject == 'getAll'){
-        return coll.data;
-      }
+  /**
+   * Find one object by index property, by property equal to value
+   */
+  Collection.prototype.findOne = function (prop, value) {
+    
+    var searchByIndex = false;
+    var indexObject = null;
 
-      var property, value, operator;
-      for(var p in queryObject){
-        property = p;
-        if(typeof queryObject[p] != 'object'){
-          operator = '$eq';
-          value = queryObject[p];
-        } else if (typeof queryObject[p] == 'object'){
-          for(var key in queryObject[p]){
-            operator = key;
-            value = queryObject[p][key];
-          }
-        } else {
-          throw 'Do not know what you want to do.';
-        }
+    // iterate the indices to ascertain whether property is indexed
+    var i = this.indices.length;
+    for(i in indices) {
+      if ( i == prop) {
+        searchByIndex = true;
+        indexObject = this.indices[i];
         break;
       }
-      // comparison operators
-      function $eq ( a, b){ return a == b; }
-      function $gt ( a, b){ return a > b; }
-      function $gte( a, b){ return a >= b; }
-      function $lt ( a, b){ return a < b; }
-      function $lte( a, b){ return a <= b; }
-      function $ne ( a, b){ return a != b; }
-
-      var operators = {
-        '$eq': $eq,
-        '$gt': $gt,
-        '$gte': $gte,
-        '$lt': $lt,
-        '$lte': $lte,
-        '$ne' : $ne
-      };
-
-      if (coll.data == null)
-          throw new TypeError();
-
-      var searchByIndex = false;
-      var index = null;
-      var len = coll.indices.length >>> 0;
-      while(len--){
-        if(coll.indices[len].name == property){
-          searchByIndex = true;
-          index = coll.indices[len];
-        }
-      }
-
-      // the result array
-      var res = [];
-      var fun = operators[operator];
-
-      if(!searchByIndex){
-        var t = coll.data;
-        var i = t.length;
-        while (i--) {
-          if( fun(t[i][property], value)) res.push(t[i]); 
-        }  
-      } else {
-        var t = index.data;
-        var i = t.length;
-        while(i--){
-          if( fun(t[i], value)) res.push(coll.data[i]);
-        }
-      }
-      
-      return res;
-
-    };
-
-    /**
-     * Find one object by index property, by property equal to value
-     */
-    this.findOne = function(prop, value){
-      
-      var searchByIndex = false;
-      var indexObject = null;
-
-      // iterate the indices to ascertain whether property is indexed
-      var i = coll.indices.length;
-      for(i in indices){
-        if( i == prop){
-          searchByIndex = true;
-          indexObject = coll.indices[i];
-          break;
-        }
-      }      
-      
-      if(searchByIndex){
-        // perform search based on index
-        var i = indexObject.data.length;
-        while (i--) {
-          
-          if(indexObject.data[i] == value){
-            var doc = coll.data[i];
-            doc.__pos__ = i;
-            return doc;
-          }
-        };;
-
-      } else {
-        // search all collection and find first matching result
-        return coll.findOneUnindexed(prop, value);
-      }
-      return null;
-    };
-
-    /**
-     * Find object by unindexed field by property equal to value, 
-     * simply iterates and returns the first element matching the query
-     */
-    this.findOneUnindexed = function(prop, value){
-      
-      var i = coll.data.length;
+    }      
+    
+    if (searchByIndex) {
+      // perform search based on index
+      var i = indexObject.data.length;
       while (i--) {
-        if(coll.data[i][prop]==value){
-          var doc = coll.data[i];
+        
+        if (indexObject.data[i] == value) {
+          var doc = this.data[i];
           doc.__pos__ = i;
           return doc;
         }
-        return null;
-      };
-    };
+      };;
 
-    /**
-     * Create view function - CouchDB style
-     */
-    this.view = function(fun){
-      var viewFunction;
-      if( ('string' == typeof fun) && ('function' == typeof coll.Views[fun]) ){
-        viewFunction = coll.Views[fun];
-      } else if('function' == typeof fun){
-        viewFunction = fun;
-      } else {
-        throw 'Argument is not a stored view or a function';
-      }
-      try {
-        var result = [];
-        var i = coll.data.length;
-        while(i--){
-          if( viewFunction( coll.data[i] ) ){
-            result[i] = coll.data[i];
-          };
-        }
-        return result;
-      } catch(err){
-        
-      }
-    };
+    } else {
+      // search all collection and find first matching result
+      return this.findOneUnindexed(prop, value);
+    }
+    return null;
+  };
 
-    /**
-     * store a view in the collection for later reuse
-     */
-    this.storeView = function(name, fun){
-      if(typeof fun == 'function'){
-        coll.Views[name] = fun;
-        
-      }
-    };
-
-    /**
-     * Map Reduce 
-     */
-    this.mapReduce = function(mapFunction, reduceFunction){
-      try {
-        return reduceFunction( coll.data.map(mapFunction) );  
-      } catch(err) {
-        console.log(err)
-      }
-    };
-    
-    this.filter = function(operator, property, value){
-      return coll.data.query(operator, property, value);
+  /**
+   * Find method, api is similar to mongodb except for now it only supports one search parameter.
+   * for more complex queries use view() and storeView()
+   */
+  Collection.prototype.find = function (queryObject) {
+    var queryObject = queryObject || 'getAll';
+    if (queryObject == 'getAll') {
+      return this.data;
     }
 
-    
-
-    this.no_op = function(){
-      
-    };
-
-    /**
-     * Transaction methods 
-     */
-    /** start the transation */
-    this.startTransaction = function(){
-      if(coll.transactional) {
-        cachedData = coll.data;
-        cachedIndex = coll.indices;  
+    var property, value, operator;
+    for(var p in queryObject) {
+      property = p;
+      if (typeof queryObject[p] !== 'object') {
+        operator = '$eq';
+        value = queryObject[p];
+      } else if (typeof queryObject[p] === 'object') {
+        for(var key in queryObject[p]) {
+          operator = key;
+          value = queryObject[p][key];
+        }
+      } else {
+        throw 'Do not know what you want to do.';
       }
+      break;
+    }
+    // comparison operators
+    function $eq ( a, b) { return a == b; }
+    function $gt ( a, b) { return a > b; }
+    function $gte( a, b) { return a >= b; }
+    function $lt ( a, b) { return a < b; }
+    function $lte( a, b) { return a <= b; }
+    function $ne ( a, b) { return a != b; }
+
+    var operators = {
+      '$eq': $eq,
+      '$gt': $gt,
+      '$gte': $gte,
+      '$lt': $lt,
+      '$lte': $lte,
+      '$ne' : $ne
     };
-    /** commit the transation */
-    this.commit = function(){
-      if(coll.transactional) { 
-        cachedData = null;
-        cachedIndex = null;
+
+    if (this.data == null)
+        throw new TypeError();
+
+    var searchByIndex = false;
+    var index = null;
+    var len = this.indices.length >>> 0;
+    while(len--) {
+      if (this.indices[len].name == property) {
+        searchByIndex = true;
+        index = this.indices[len];
       }
-    };
+    }
 
-    /** roll back the transation */
-    this.rollback = function(){
-      if(coll.transactional) {
-        if(cachedData != null && cachedIndex != null){
-          coll.data = cachedData;
-          coll.indices = cachedIndex;
-        }  
+    // the result array
+    var res = [];
+    var fun = operators[operator];
+
+    if (!searchByIndex) {
+      var t = this.data;
+      var i = t.length;
+      while (i--) {
+        if ( fun(t[i][property], value)) res.push(t[i]); 
+      }  
+    } else {
+      var t = index.data;
+      var i = t.length;
+      while(i--) {
+        if ( fun(t[i], value)) res.push(this.data[i]);
       }
-    };
+    }
+    return res;
 
-    // handle the indexes passed
-    var indexesArray = indexesArray || ['id'];
-    
-
-    // initialize optional indexes from arguments passed to Collection
-    var i = indexesArray.length;
-    while ( i--) {
-    
-      coll.ensureIndex(indexesArray[i]);
-    };
-
-    // initialize the id index
-    coll.ensureIndex('id');
   };
+
+  /**
+   * Find object by unindexed field by property equal to value, 
+   * simply iterates and returns the first element matching the query
+   */
+  Collection.prototype.findOneUnindexed = function (prop, value) {
+    
+    var i = this.data.length;
+    while (i--) {
+      if (this.data[i][prop]==value) {
+        var doc = this.data[i];
+        doc.__pos__ = i;
+        return doc;
+      }
+      return null;
+    };
+  };
+
+  /** roll back the transation */
+  Collection.prototype.rollback = function () {
+    if (this.transactional) {
+      if (this.cachedData != null && this.cachedIndex != null) {
+        this.data = this.cachedData;
+        this.indices = this.cachedIndex;
+      }  
+    }
+  };
+
+  /**
+   * Transaction methods 
+   */
+
+  /** start the transation */
+  Collection.prototype.startTransaction = function () {
+    if (this.transactional) {
+      this.cachedData = this.data;
+      this.cachedIndex = this.indices;  
+    }
+  };
+
+  /** commit the transation */
+  Collection.prototype.commit = function () {
+    if (this.transactional) { 
+      this.cachedData = null;
+      this.cachedIndex = null;
+    }
+  };
+
+
+  // async executor. This is only to enable callbacks at the end of the execution. 
+  Collection.prototype.async = function ( fun, callback) {
+    setTimeout(function () {
+      if (typeof fun === 'function') {
+        fun();  
+      } else {
+        throw 'Argument passed for async execution is not a function'
+      }
+      if (typeof fun === 'function') callback();
+    }, 0);
+  };
+
+
+  /**
+   * Create view function - CouchDB style
+   */
+  Collection.prototype.view = function (fun) {
+    var viewFunction;
+    if ( ('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
+      viewFunction = this.Views[fun];
+    } else if ('function' === typeof fun) {
+      viewFunction = fun;
+    } else {
+      throw 'Argument is not a stored view or a function';
+    }
+    try {
+      var result = [];
+      var i = this.data.length;
+      while(i--) {
+        if ( viewFunction ( this.data[i])) {
+          result[i] = this.data[i];
+        };
+      }
+      return result;
+    } catch(err) {
+      
+    }
+  };
+
+  /**
+   * store a view in the collection for later reuse
+   */
+  Collection.prototype.storeView = function (name, fun) {
+    if (typeof fun == 'function') {
+      this.Views[name] = fun;
+      
+    }
+  };
+
+  /**
+   * Map Reduce 
+   */
+  Collection.prototype.mapReduce = function (mapFunction, reduceFunction) {
+    try {
+      return reduceFunction ( this.data.map(mapFunction));  
+    } catch(err) {
+      console.log(err)
+    }
+  };  
+
+  Collection.prototype.no_op = function () {};
 
   return Loki;
 }());
 
 
 
-if(typeof module !== 'undefined' && module.exports){
+if (typeof module !== 'undefined' && module.exports) {
 
   module.exports = loki;
 }

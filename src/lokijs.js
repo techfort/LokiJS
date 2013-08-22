@@ -12,7 +12,6 @@
 var loki = (function () {
   'use strict';
 
-
   /**
    * @constructor
    * The main database class
@@ -21,19 +20,21 @@ var loki = (function () {
     this.name = name || 'Loki';
     this.collections = [];
 
-    this.ENV = (function () {
-      if (!(typeof module === 'undefined') && module.exports) {
+    var getENV = function () {
+      if ((typeof module !== 'undefined') && module.exports) {
         return 'NODEJS';
       }
 
-      if (!(document === 'undefined')) {
+      if (!(document === undefined)) {
         if (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1) {
           return 'CORDOVA';
         }
         return 'BROWSER';
       }
       return 'CORDOVA';
-    })();
+    };
+
+    this.ENV = getENV();
 
     if (this.ENV === 'NODEJS') {
       this.fs = require('fs');
@@ -72,7 +73,7 @@ var loki = (function () {
     var indexesArray = indices || ['id'],
       i = indexesArray.length;
 
-    while (i--) {    
+    while (i--) {
       this.ensureIndex(indexesArray[i]);
     }
 
@@ -95,7 +96,7 @@ var loki = (function () {
       len = this.collections.length,
       i;
 
-    for(i =0; i < len; i++) {
+    for (i = 0; i < len; i += 1) {
       if (this.collections[i].name === collectionName) {
         found = true;
         return this.collections[i];
@@ -105,11 +106,11 @@ var loki = (function () {
   };
 
   Loki.prototype.listCollections = function () {
-    
+
     var i = this.collections.length,
       colls = [];
 
-    while(i--) {
+    while (i--) {
       colls.push({ name: this.collections[i].name, type: this.collections[i].objType, count: this.collections[i].data.length });
     }
     return colls;
@@ -128,25 +129,26 @@ var loki = (function () {
 
   // load Json function - db is saved to disk as json
   Loki.prototype.loadJSON = function (serializedDb) {
-    
 
-    // future use method for remote loading of db
     var obj = JSON.parse(serializedDb),
       i = 0,
       len = obj.collections.length,
       coll,
-      copyColl;
+      copyColl,
+      clen,
+      j;
 
     this.name = obj.name;
     this.collections = [];
 
-    for(i; i < len; i+=1) {
+    for (i; i < len; i += 1) {
       coll = obj.collections[i];
       copyColl = this.addCollection(coll.name, coll.objType);
 
       // load each element individually 
-      var clen = coll.data.length, j = 0;
-      for( j; j < clen; j++) {
+      clen = coll.data.length;
+      j = 0;
+      for (j; j < clen; j++) {
         copyColl.data[j] = coll.data[j];
       }
 
@@ -161,12 +163,15 @@ var loki = (function () {
 
 
   // load db from a file
-  Loki.prototype.loadDatabase = function ( filename, callback) {
+  Loki.prototype.loadDatabase = function (filename, callback) {
     var cFun = callback || this.no_op,
       self = this;
 
     if (this.ENV === 'NODEJS') {
-      this.fs.readFile( filename, {encoding: 'utf8'}, function (err, data) {
+      this.fs.readFile(filename, {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
         self.loadJSON(data);
         cFun(data);
       });
@@ -174,18 +179,18 @@ var loki = (function () {
   };
 
   // save file to disk as json
-  Loki.prototype.saveToDisk = function ( filename, callback) {
+  Loki.prototype.saveToDisk = function (filename, callback) {
     var cFun = callback || this.no_op,
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
-      this.fs.exists( filename, function (exists) {
-        
+      this.fs.exists(filename, function (exists) {
+
         if (exists) {
           self.fs.unlink(filename);
         }
 
-        self.fs.writeFile( filename, self.serialize(), function (err) {
+        self.fs.writeFile(filename, self.serialize(), function (err) {
           if (err) {
             throw err;
           }
@@ -209,10 +214,12 @@ var loki = (function () {
    * Ensure indexes on a certain field
    */
   Collection.prototype.ensureIndex = function (property) {
-    
-    if (property === null || property === undefined) throw 'Attempting to set index without an associated property'; 
-    
-    var index;
+
+    if (property === null || property === undefined) {
+      throw 'Attempting to set index without an associated property';
+    }
+
+    var index, len = this.data.length, i = 0;
     if (this.indices.hasOwnProperty(property)) {
       index = this.indices[property];
     } else {
@@ -220,14 +227,12 @@ var loki = (function () {
       index = this.indices[property];
     }
 
-    var len = this.data.length;
-    for(var i=0; i < len; i++) {
-      index.push( this.data[i][property]);
+    for (i; i < len; i += 1) {
+      index.push(this.data[i][property]);
     }
-    if (property == 'id') {
+    if (property === 'id') {
       this.idIndex = index;
     }
-    
   };
 
   /**
@@ -246,8 +251,11 @@ var loki = (function () {
     var i = this.indices.length;
     while (i--) {
       this.ensureIndex(this.indices[i].name);
-    };
-    if (i==0) ensureIndex('id');
+    }
+
+    if (i === 0) {
+      this.ensureIndex('id');
+    }
   };
 
   Collection.prototype.ensureAllIndexesAsync = function (callback) {
@@ -261,15 +269,15 @@ var loki = (function () {
    * and apply the updatefunctino to those elements iteratively
    */
   Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
-    
-    var results = this.view(filterFunction);
+
+    var results = this.view(filterFunction), i = 0, obj;
     try {
-      for( var i in results) {
-        var obj = updateFunction (results[i]);
+      for (i; i < results.length; i++) {
+        obj = updateFunction(results[i]);
         this.update(obj);
       }
 
-    } catch(err) {
+    } catch (err) {
       this.rollback();
     }
   };
@@ -280,7 +288,7 @@ var loki = (function () {
    * that's why there's an alias below but until I have this implemented 
    */
   Collection.prototype.insert = function (doc) {
-    doc.id == null;
+    doc.id = null;
     doc.objType = this.objType;
     this.add(doc);
     return doc;
@@ -290,92 +298,83 @@ var loki = (function () {
    * Update method
    */
   Collection.prototype.update = function (doc) {
-    
+
     // verify object is a properly formed document
-    if ( doc.id == 'undefined' || doc.id == null || doc.id < 0) {
+    if (!doc.hasOwnProperty('id')) {
       throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
-    } else {
-
-      try{
-
-        this.startTransaction();
-        var arr = this.get( doc.id, true);
-        var obj = arr[0];
-        // get current position in data array
-        var position = arr[1];
-        
-        // operate the update
-        this.data[position] = doc;
-        
-        for( var i in this.indices) {
-          this.indices[i][position] = obj[ i ];
-        };
-        this.commit();
-
-      } catch(err) {
-        this.rollback();
-      }
     }
-    
+    try {
+      this.startTransaction();
+      var i, arr = this.get(doc.id, true), obj = arr[0],
+      // get current position in data array
+        position = arr[1];
+      // operate the update
+      this.data[position] = doc;
+      for (i in this.indices) {
+        if (this.indices.hasOwnProperty(i)) {
+          this.indices[i][position] = obj[i];
+        }
+      }
+      this.commit();
+    } catch (err) {
+      this.rollback();
+    }
   };
 
   /**
    * Add object to collection
    */
-  Collection.prototype.add = function (obj) {      
+  Collection.prototype.add = function (obj) {
 
     // if parameter isn't object exit with throw
-    if ( 'object' !== typeof obj) {
-      console.log(obj);
+    if ('object' !== typeof obj) {
       throw 'Object being added needs to be an object';
     }
     /*
      * try adding object to collection
      */
-    if (this.objType == "" && this.data.length == 0) {
+    if (this.objType === "" && this.data.length === 0) {
 
       // set object type to that of the first object added to collection
       this.objType = obj.objType;
 
     } else {
-      
+
       // throw an error if the object added is not the same type as the collection's
-      if (this.objType != obj.objType) {
-        throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + this.objType +']';
+      if (this.objType !== obj.objType) {
+        throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + this.objType + ']';
       }
-      if (this.objType=="") {
+      if (this.objType === '') {
         throw 'Object is not a model';
       }
-      
+
       if (obj.id !== null && obj.id > 0) {
         throw 'Document is already in collection, please use update()';
-      } else {
+      }
+      try {
 
-        try {
-          
-          this.startTransaction();
-          this.maxId++;
-          
-          if ( isNaN( this.maxId)) {
-            this.maxId = (this.data[ this.data.length - 1 ].id + 1);
-          }
+        this.startTransaction();
+        this.maxId++;
+        var i;
 
-          obj.id = this.maxId;
-          // add the object
-          this.data.push(obj);
-
-          // resync indexes to make sure all IDs are there
-          for (var i in this.indices) {
-
-            this.indices[i].push( obj[ i ]);
-
-          };
-          this.commit();
-          return obj;
-        } catch(err) {
-          
-          this.rollback();
+        if (isNaN(this.maxId)) {
+          this.maxId = (this.data[this.data.length - 1].id + 1);
         }
+
+        obj.id = this.maxId;
+        // add the object
+        this.data.push(obj);
+
+        // resync indexes to make sure all IDs are there
+        for (i in this.indices) {
+          if (this.indices.hasOwnProperty(i)) {
+            this.indices[i].push(obj[i]);
+          }
+        }
+        this.commit();
+        return obj;
+      } catch (err) {
+        this.rollback();
       }
     }
   };
@@ -385,7 +384,7 @@ var loki = (function () {
    */
   Collection.prototype.addMany = function () {
     var i = arguments.length;
-    while(i--) {
+    while (i--) {
       this.add(arguments[i]);
     }
   };
@@ -394,32 +393,34 @@ var loki = (function () {
   /**
    * delete wrapped
    */
-  Collection.prototype.remove = function ( doc) {
+  Collection.prototype.remove = function (doc) {
     if ('object' !== typeof doc) {
-        throw 'Parameter is not an object';
-      }
+      throw 'Parameter is not an object';
+    }
 
-      if (doc.id === null || doc.id === undefined) {
-        throw 'Object is not a document stored in the collection';
-      }
+    if (!doc.hasOwnProperty('id')) {
+      throw 'Object is not a document stored in the collection';
+    }
 
-      try {
-        this.startTransaction();
-        var arr = this.get(doc.id, true);
-        var obj = arr[0];
-        var position = arr[1];
-        
-        var deleted = this.data.splice(position,1);
-        
-        for (i in this.indices) {
-          var deletedIndex = this.indices[i].splice( position ,1);
+    try {
+      this.startTransaction();
+      var arr = this.get(doc.id, true),
+        // obj = arr[0],
+        position = arr[1],
+        i;
+
+      this.data.splice(position, 1);
+
+      for (i in this.indices) {
+        if (this.indices.hasOwnProperty(i)) {
+          this.indices[i].splice(position, 1);
         }
-        this.commit();
-
-      } catch(err) {
-        this.rollback();
-
       }
+      this.commit();
+
+    } catch (err) {
+      this.rollback();
+    }
   };
 
   /*---------------------+
@@ -430,32 +431,31 @@ var loki = (function () {
    * Get by Id - faster than other methods because of the searching algorithm
    */
   Collection.prototype.get = function (id, returnPosition) {
-    var retpos = returnPosition || false;
-    var data = this.indices['id'];
-    var max = data.length - 1;
-    var min = 0, mid = Math.floor(min +  (max - min) /2);
-    
-    while( data[min] < data[max]) {
-      
-      mid = Math.floor( (min + max)/2);
-      
+    var retpos = returnPosition || false,
+      data = this.indices.id,
+      max = data.length - 1,
+      min = 0,
+      mid = Math.floor(min + (max - min) / 2);
+
+    while (data[min] < data[max]) {
+
+      mid = Math.floor((min + max) / 2);
+
       if (data[mid] < id) {
         min = mid + 1;
       } else {
         max = mid;
       }
     }
-    
-    if ( max == min && data[min] == id) {
-      
+
+    if (max === min && data[min] === id) {
+
       if (retpos) {
-        return [ this.data[min], min ];
-      } else {
-        return this.data[min];  
+        return [this.data[min], min];
       }
-      
-    } else
-      return null;
+      return this.data[min];
+    }
+    return null;
 
   };
 
@@ -463,31 +463,32 @@ var loki = (function () {
    * Find one object by index property, by property equal to value
    */
   Collection.prototype.findOne = function (prop, value) {
-    
-    var searchByIndex = false;
-    var indexObject = null;
 
-    // iterate the indices to ascertain whether property is indexed
-    var i = this.indices.length;
-    for(i in indices) {
-      if ( i == prop) {
-        searchByIndex = true;
-        indexObject = this.indices[i];
-        break;
+    var searchByIndex = false,
+      indexObject = null,
+      // iterate the indices to ascertain whether property is indexed
+      i = this.indices.length,
+      len,
+      doc;
+    for (i in this.indices) {
+      if (this.indices.hasOwnProperty(i)) {
+        if (i === prop) {
+          searchByIndex = true;
+          indexObject = this.indices[i];
+          break;
+        }
       }
-    }      
-    
+    }
+
     if (searchByIndex) {
       // perform search based on index
-      var i = indexObject.data.length;
-      while (i--) {
-        
-        if (indexObject.data[i] == value) {
-          var doc = this.data[i];
-          doc.__pos__ = i;
+      len = indexObject.data.length;
+      while (len--) {
+        if (indexObject.data[len] === value) {
+          doc = this.data[len];
           return doc;
         }
-      };;
+      }
 
     } else {
       // search all collection and find first matching result
@@ -500,73 +501,95 @@ var loki = (function () {
    * Find method, api is similar to mongodb except for now it only supports one search parameter.
    * for more complex queries use view() and storeView()
    */
-  Collection.prototype.find = function (queryObject) {
-    var queryObject = queryObject || 'getAll';
-    if (queryObject == 'getAll') {
+  Collection.prototype.find = function (query) {
+    // comparison operators
+    function $eq(a, b) { return a === b; }
+    function $gt(a, b) { return a > b; }
+    function $gte(a, b) { return a >= b; }
+    function $lt(a, b) { return a < b; }
+    function $lte(a, b) { return a <= b; }
+    function $ne(a, b) { return a !== b; }
+
+    var queryObject = query || 'getAll',
+      property,
+      value,
+      operator,
+      p,
+      key,
+      operators = {
+        '$eq': $eq,
+        '$gt': $gt,
+        '$gte': $gte,
+        '$lt': $lt,
+        '$lte': $lte,
+        '$ne' : $ne
+      },
+      searchByIndex = false,
+      index = null,
+      len = this.indices.length,
+      // the result array
+      res = [],
+      // comparison function
+      fun,
+      // collection data
+      t,
+      // collection data length
+      i;
+
+    if (queryObject === 'getAll') {
       return this.data;
     }
 
-    var property, value, operator;
-    for(var p in queryObject) {
-      property = p;
-      if (typeof queryObject[p] !== 'object') {
-        operator = '$eq';
-        value = queryObject[p];
-      } else if (typeof queryObject[p] === 'object') {
-        for(var key in queryObject[p]) {
-          operator = key;
-          value = queryObject[p][key];
+    for (p in queryObject) {
+
+      if (queryObject.hasOwnProperty(p)) {
+        property = p;
+        if (typeof queryObject[p] !== 'object') {
+          operator = '$eq';
+          value = queryObject[p];
+        } else if (typeof queryObject[p] === 'object') {
+          for (key in queryObject[p]) {
+            if (queryObject[p].hasOwnProperty(key)) {
+              operator = key;
+              value = queryObject[p][key];
+            }
+          }
+        } else {
+          throw 'Do not know what you want to do.';
         }
-      } else {
-        throw 'Do not know what you want to do.';
+        break;
       }
-      break;
     }
-    // comparison operators
-    function $eq ( a, b) { return a == b; }
-    function $gt ( a, b) { return a > b; }
-    function $gte( a, b) { return a >= b; }
-    function $lt ( a, b) { return a < b; }
-    function $lte( a, b) { return a <= b; }
-    function $ne ( a, b) { return a != b; }
 
-    var operators = {
-      '$eq': $eq,
-      '$gt': $gt,
-      '$gte': $gte,
-      '$lt': $lt,
-      '$lte': $lte,
-      '$ne' : $ne
-    };
+    if (this.data === null) {
+      throw new TypeError();
+    }
 
-    if (this.data == null)
-        throw new TypeError();
-
-    var searchByIndex = false;
-    var index = null;
-    var len = this.indices.length >>> 0;
-    while(len--) {
-      if (this.indices[len].name == property) {
+    while (len--) {
+      if (this.indices[len].name === property) {
         searchByIndex = true;
         index = this.indices[len];
       }
     }
 
-    // the result array
-    var res = [];
-    var fun = operators[operator];
+    // the comparison function
+    fun = operators[operator];
 
     if (!searchByIndex) {
-      var t = this.data;
-      var i = t.length;
+      t = this.data;
+      i = t.length;
       while (i--) {
-        if ( fun(t[i][property], value)) res.push(t[i]); 
-      }  
+        if (fun(t[i][property], value)) {
+          res.push(t[i]);
+        }
+      }
     } else {
-      var t = index.data;
-      var i = t.length;
-      while(i--) {
-        if ( fun(t[i], value)) res.push(this.data[i]);
+      t = index.data;
+      i = t.length;
+      while (i--) {
+        if (fun(t[i], value)) {
+          res.push(this.data[i]);
+        }
       }
     }
     return res;
@@ -578,25 +601,25 @@ var loki = (function () {
    * simply iterates and returns the first element matching the query
    */
   Collection.prototype.findOneUnindexed = function (prop, value) {
-    
-    var i = this.data.length;
+
+    var i = this.data.length, doc;
     while (i--) {
-      if (this.data[i][prop]==value) {
-        var doc = this.data[i];
-        doc.__pos__ = i;
+      if (this.data[i][prop] === value) {
+        doc = this.data[i];
         return doc;
       }
-      return null;
-    };
+
+    }
+    return null;
   };
 
   /** roll back the transation */
   Collection.prototype.rollback = function () {
     if (this.transactional) {
-      if (this.cachedData != null && this.cachedIndex != null) {
+      if (this.cachedData !== null && this.cachedIndex !== null) {
         this.data = this.cachedData;
         this.indices = this.cachedIndex;
-      }  
+      }
     }
   };
 
@@ -608,13 +631,13 @@ var loki = (function () {
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
       this.cachedData = this.data;
-      this.cachedIndex = this.indices;  
+      this.cachedIndex = this.indices;
     }
   };
 
   /** commit the transation */
   Collection.prototype.commit = function () {
-    if (this.transactional) { 
+    if (this.transactional) {
       this.cachedData = null;
       this.cachedIndex = null;
     }
@@ -622,14 +645,14 @@ var loki = (function () {
 
 
   // async executor. This is only to enable callbacks at the end of the execution. 
-  Collection.prototype.async = function ( fun, callback) {
+  Collection.prototype.async = function (fun, callback) {
     setTimeout(function () {
       if (typeof fun === 'function') {
-        fun();  
+        fun();
+        callback();
       } else {
-        throw 'Argument passed for async execution is not a function'
+        throw 'Argument passed for async execution is not a function';
       }
-      if (typeof fun === 'function') callback();
     }, 0);
   };
 
@@ -638,8 +661,11 @@ var loki = (function () {
    * Create view function - CouchDB style
    */
   Collection.prototype.view = function (fun) {
-    var viewFunction;
-    if ( ('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
+    var viewFunction,
+      result = [],
+      i = this.data.length;
+
+    if (('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
       viewFunction = this.Views[fun];
     } else if ('function' === typeof fun) {
       viewFunction = fun;
@@ -647,16 +673,14 @@ var loki = (function () {
       throw 'Argument is not a stored view or a function';
     }
     try {
-      var result = [];
-      var i = this.data.length;
-      while(i--) {
-        if ( viewFunction ( this.data[i])) {
+      while (i--) {
+        if (viewFunction(this.data[i]) === true) {
           result[i] = this.data[i];
-        };
+        }
       }
       return result;
-    } catch(err) {
-      
+    } catch (err) {
+      throw err;
     }
   };
 
@@ -664,9 +688,8 @@ var loki = (function () {
    * store a view in the collection for later reuse
    */
   Collection.prototype.storeView = function (name, fun) {
-    if (typeof fun == 'function') {
+    if (typeof fun === 'function') {
       this.Views[name] = fun;
-      
     }
   };
 
@@ -675,20 +698,19 @@ var loki = (function () {
    */
   Collection.prototype.mapReduce = function (mapFunction, reduceFunction) {
     try {
-      return reduceFunction ( this.data.map(mapFunction));  
-    } catch(err) {
-      console.log(err)
+      return reduceFunction(this.data.map(mapFunction));
+    } catch (err) {
+      throw err;
     }
-  };  
+  };
 
-  Collection.prototype.no_op = function () {};
+  Collection.prototype.no_op = function () {
+    return;
+  };
 
   return Loki;
 }());
 
-
-
-if (typeof module !== 'undefined' && module.exports) {
-
+if ('undefined' !== typeof module && module.exports) {
   module.exports = loki;
 }

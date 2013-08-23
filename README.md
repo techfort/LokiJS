@@ -20,11 +20,16 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 ## Current state
 
 LokiJS is currently at an alpha stage, it is stable but not 100% feature complete.
+As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
 
 ## Roadmap
 
-Wider and more specific support for indexes such as unique, compound.
-Replication across nodes.
+* Wider and more specific support for indexes such as unique, compound.
+* Replication across nodes.
+
+## Contact
+
+For help / enquiries contact joe.minichino@gmail.com
 
 ## License
 

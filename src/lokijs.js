@@ -9,6 +9,9 @@
 /**
  * Define library loki
  */
+
+/*jslint browser: true, node: true, plusplus: true, indent: 2 */
+ 
 var loki = (function () {
   'use strict';
 

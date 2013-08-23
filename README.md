@@ -22,6 +22,14 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 LokiJS is currently at an alpha stage, it is stable but not 100% feature complete.
 As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
 
+## Installation
+
+For browser environments you simply need the lokijs.js file contained in src/
+
+You can use bower to install lokijs with `bower install lokijs`
+
+For node environments you can install through `npm install lokijs`.
+
 ## Roadmap
 
 * Wider and more specific support for indexes such as unique, compound.

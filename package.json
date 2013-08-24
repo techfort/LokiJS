@@ -5,7 +5,7 @@
   "homepage": {
     "url": "http://lokijs.org",
     "email": "joe.minichino@gmail.com"
-  }
+  },
   "main": "src/lokijs.js",
   "directories": {
     "example": "examples"

@@ -19,8 +19,8 @@ var loki = (function () {
    * @constructor
    * The main database class
    */
-  function Loki(name) {
-    this.name = name || 'Loki';
+  function Loki(filename) {
+    this.filename = filename || 'loki.db';
     this.collections = [];
 
     var getENV = function () {
@@ -166,12 +166,12 @@ var loki = (function () {
 
 
   // load db from a file
-  Loki.prototype.loadDatabase = function (filename, callback) {
+  Loki.prototype.loadDatabase = function (callback) {
     var cFun = callback || this.no_op,
       self = this;
 
     if (this.ENV === 'NODEJS') {
-      this.fs.readFile(filename, {encoding: 'utf8'}, function (err, data) {
+      this.fs.readFile(this.filename, {encoding: 'utf8'}, function (err, data) {
         if (err) {
           throw err;
         }
@@ -182,18 +182,18 @@ var loki = (function () {
   };
 
   // save file to disk as json
-  Loki.prototype.saveToDisk = function (filename, callback) {
+  Loki.prototype.saveToDisk = function (callback) {
     var cFun = callback || this.no_op,
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
-      this.fs.exists(filename, function (exists) {
+      this.fs.exists(this.filename, function (exists) {
 
         if (exists) {
-          self.fs.unlink(filename);
+          self.fs.unlink(self.filename);
         }
 
-        self.fs.writeFile(filename, self.serialize(), function (err) {
+        self.fs.writeFile(self.filename, self.serialize(), function (err) {
           if (err) {
             throw err;
           }

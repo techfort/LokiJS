@@ -1,11 +1,8 @@
 {
   "name": "lokijs",
-  "version": "0.1.22",
+  "version": "0.1.24",
   "description": "A document oriented javascript in-memory database",
-  "homepage": {
-    "url": "http://lokijs.org",
-    "email": "joe.minichino@gmail.com"
-  },
+  "homepage": "http://lokijs.org",
   "main": "src/lokijs.js",
   "directories": {
     "example": "examples"
@@ -20,6 +17,7 @@
   "keywords": [
     "javascript",
     "document-oriented",
+    "mmdb",
     "json",
     "nosql",
     "lokijs",

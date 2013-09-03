@@ -440,6 +440,13 @@ var loki = (function () {
       min = 0,
       mid = Math.floor(min + (max - min) / 2);
 
+    if(isNaN(id)){
+      id = parseInt(id);
+      if(isNaN(id)){
+        throw 'Passed id is not an integer';
+      }
+    }
+
     while (data[min] < data[max]) {
 
       mid = Math.floor((min + max) / 2);

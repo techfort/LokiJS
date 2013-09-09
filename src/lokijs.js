@@ -167,7 +167,7 @@ var loki = (function () {
 
   // load db from a file
   Loki.prototype.loadDatabase = function (callback) {
-    var cFun = callback || this.no_op,
+    var cFun = callback || function() { return; },
       self = this;
 
     if (this.ENV === 'NODEJS') {
@@ -183,7 +183,7 @@ var loki = (function () {
 
   // save file to disk as json
   Loki.prototype.saveToDisk = function (callback) {
-    var cFun = callback || this.no_op,
+    var cFun = callback || function() { return; },
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
@@ -206,7 +206,7 @@ var loki = (function () {
   Loki.prototype.save = Loki.prototype.saveToDisk;
 
   // future use for saving collections to remote db
-  Loki.prototype.saveRemote = Loki.prototype.no_op;
+  // Loki.prototype.saveRemote = Loki.prototype.no_op;
 
 
   /*----------------------------+

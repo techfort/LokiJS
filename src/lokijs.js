@@ -119,6 +119,15 @@ var loki = (function () {
     return colls;
   };
 
+  Loki.prototype.removeCollection = function (name) {
+    var i = 0, len = this.collections.length;
+    for (i; i < len; i += 1) {
+      if (this.collections[i].name === name) {
+        this.collections.splice(i, 1);
+      }
+    }
+  };
+
   Loki.prototype.getName = function () {
     return this.name;
   };
@@ -295,6 +304,16 @@ var loki = (function () {
     doc.objType = this.objType;
     this.add(doc);
     return doc;
+  };
+
+  Collection.prototype.clear = function () {
+    this.data = [];
+    this.indices = {};
+    this.idIndex = {};
+    this.cachedIndex = null;
+    this.cachedData = null;
+    this.maxId = 0;
+    this.Views = {};
   };
 
   /**

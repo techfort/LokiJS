@@ -124,6 +124,7 @@ var loki = (function () {
     for (i; i < len; i += 1) {
       if (this.collections[i].name === name) {
         this.collections.splice(i, 1);
+        break;
       }
     }
   };

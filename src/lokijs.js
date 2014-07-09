@@ -165,7 +165,7 @@ var loki = (function () {
         copyColl.data[j] = coll.data[j];
       }
 
-      copyColl.maxId = coll.data.maxId;
+      copyColl.maxId = (coll.data.length == 0)?0:coll.data.maxId;
       copyColl.indices = coll.indices;
       copyColl.idIndex = coll.indices.id;
       copyColl.transactional = coll.transactional;

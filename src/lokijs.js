@@ -556,7 +556,6 @@ var loki = (function () {
       },
       searchByIndex = false,
       index = null,
-      len = this.indices.length,
       // the result array
       res = [],
       // comparison function
@@ -595,11 +594,10 @@ var loki = (function () {
       throw new TypeError();
     }
 
-    while (len--) {
-      if (this.indices[len].name === property) {
-        searchByIndex = true;
-        index = this.indices[len];
-      }
+	// if an index exists for the property being queried against, use it
+    if (this.indices.hasOwnProperty(property)) {
+       searchByIndex = true;
+       index = this.indices[property];
     }
 
     // the comparison function
@@ -614,7 +612,7 @@ var loki = (function () {
         }
       }
     } else {
-      t = index.data;
+      t = index;
       i = t.length;
       while (i--) {
         if (fun(t[i], value)) {

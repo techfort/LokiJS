@@ -28,9 +28,10 @@
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
-  "dependencies": {
-    "grunt": "~0.4.1",
-    "grunt-contrib-uglify": "~0.2.2"
-  },
-  "devDependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "gulp-uglify": "^0.3.1",
+    "gulp": "^3.8.6",
+    "gulp-concat": "^2.3.4"
+  }
 }

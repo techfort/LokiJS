@@ -46,6 +46,164 @@ var loki = (function () {
   }
 
   /**
+   * @constructor
+   * Resultset class allowing chainable queries.  Intended to be instanced internally.
+   *
+   * Collection.find() and Collection.view() instantiate this resultset as entrypoint into Resultset
+   * Example use mycollection.view("Toyota").find({ doors : 4 }).data();
+   * Any number of view() and data() calls can be chained together to further filter resultset, ending
+   * the chain with a data() call to return filtered rows as an array of collection document objects.
+   */
+  function Resultset(collection, queryObj, queryFunc) {
+	// retain reference to collection we are querying against
+	this.collection = collection;
+	
+	// may need to revisit this
+	// using Object.keys (on an always generated idindex) to get initial array of all data array idx's
+	this.originalrows = Object.keys(this.collection.idIndex);	
+	this.filteredrows = [];
+
+	// 
+	if (queryObj != null) return this.find(queryObj);
+	if (queryFunc != null) return this.view(queryFunc);
+	
+	return;
+  }
+  
+  // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
+  Resultset.prototype.find = function(query) {
+    // comparison operators
+    function $eq(a, b) { return a === b; }
+    function $gt(a, b) { return a > b; }
+    function $gte(a, b) { return a >= b; }
+    function $lt(a, b) { return a < b; }
+    function $lte(a, b) { return a <= b; }
+    function $ne(a, b) { return a !== b; }
+
+    var queryObject = query || 'getAll',
+      property,
+      value,
+      operator,
+      p,
+      key,
+      operators = {
+        '$eq': $eq,
+        '$gt': $gt,
+        '$gte': $gte,
+        '$lt': $lt,
+        '$lte': $lte,
+        '$ne' : $ne
+      },
+      searchByIndex = false,
+      index = null,
+      // comparison function
+      fun,
+      // collection data
+      t,
+      // collection data length
+      i;
+
+    if (queryObject === 'getAll') {
+      return this.collection.data;
+    }
+
+    for (p in queryObject) {
+
+      if (queryObject.hasOwnProperty(p)) {
+        property = p;
+        if (typeof queryObject[p] !== 'object') {
+          operator = '$eq';
+          value = queryObject[p];
+        } else if (typeof queryObject[p] === 'object') {
+          for (key in queryObject[p]) {
+            if (queryObject[p].hasOwnProperty(key)) {
+              operator = key;
+              value = queryObject[p][key];
+            }
+          }
+        } else {
+          throw 'Do not know what you want to do.';
+        }
+        break;
+      }
+    }
+
+    if (this.collection.data === null) {
+      throw new TypeError();
+    }
+
+	// if an index exists for the property being queried against, use it
+    if (this.collection.indices.hasOwnProperty(property)) {
+       searchByIndex = true;
+       index = this.collection.indices[property];
+    }
+
+    // the comparison function
+    fun = operators[operator];
+
+    if (!searchByIndex) {
+      t = this.collection.data;
+      i = this.originalrows.length; //t.length;
+      while (i--) {
+        if (fun(t[this.originalrows[i]][property], value)) {
+          this.filteredrows.push(this.originalrows[i]);
+        }
+      }
+    } else {
+      t = index;
+      i = this.originalrows.length; //t.length;
+      while (i--) {
+        if (fun(t[this.originalrows[i]], value)) {
+          this.filteredrows.push(this.originalrows[i]);
+        }
+      }
+    }
+	
+	this.originalrows = this.filteredrows;
+	this.filteredrows = [];
+	
+    return this;
+  }
+  
+  // Resultset.view() returns reference to 'this' Resultset, use data() to get rowdata
+  Resultset.prototype.view = function(fun) { 
+    var viewFunction,
+      i = this.originalrows.length;
+
+    if (('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
+      viewFunction = this.Views[fun];
+    } else if ('function' === typeof fun) {
+      viewFunction = fun;
+    } else {
+      throw 'Argument is not a stored view or a function';
+    }
+    try {
+      while (i--) {
+        if (viewFunction(this.collection.data[this.originalrows[i]]) === true) {
+          this.filteredrows.push(this.originalrows[i]);
+        }
+      }
+	  
+	  this.originalrows = this.filteredrows;
+	  this.filteredrows = [];
+      return this;
+    } catch (err) {
+      throw err;
+    }
+  }
+  
+  // Resultset.data() returns array or filtered documents 
+  Resultset.prototype.data = function() {
+	var result = [];
+	
+	for(var i in this.originalrows) {
+		result.push(this.collection.data[this.originalrows[i]]);
+	}
+	
+	return result;
+  }
+  
+  /**
    * @constructor 
    * Collection class that handles documents of same type
    */
@@ -532,96 +690,8 @@ var loki = (function () {
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
-    // comparison operators
-    function $eq(a, b) { return a === b; }
-    function $gt(a, b) { return a > b; }
-    function $gte(a, b) { return a >= b; }
-    function $lt(a, b) { return a < b; }
-    function $lte(a, b) { return a <= b; }
-    function $ne(a, b) { return a !== b; }
-
-    var queryObject = query || 'getAll',
-      property,
-      value,
-      operator,
-      p,
-      key,
-      operators = {
-        '$eq': $eq,
-        '$gt': $gt,
-        '$gte': $gte,
-        '$lt': $lt,
-        '$lte': $lte,
-        '$ne' : $ne
-      },
-      searchByIndex = false,
-      index = null,
-      // the result array
-      res = [],
-      // comparison function
-      fun,
-      // collection data
-      t,
-      // collection data length
-      i;
-
-    if (queryObject === 'getAll') {
-      return this.data;
-    }
-
-    for (p in queryObject) {
-
-      if (queryObject.hasOwnProperty(p)) {
-        property = p;
-        if (typeof queryObject[p] !== 'object') {
-          operator = '$eq';
-          value = queryObject[p];
-        } else if (typeof queryObject[p] === 'object') {
-          for (key in queryObject[p]) {
-            if (queryObject[p].hasOwnProperty(key)) {
-              operator = key;
-              value = queryObject[p][key];
-            }
-          }
-        } else {
-          throw 'Do not know what you want to do.';
-        }
-        break;
-      }
-    }
-
-    if (this.data === null) {
-      throw new TypeError();
-    }
-
-	// if an index exists for the property being queried against, use it
-    if (this.indices.hasOwnProperty(property)) {
-       searchByIndex = true;
-       index = this.indices[property];
-    }
-
-    // the comparison function
-    fun = operators[operator];
-
-    if (!searchByIndex) {
-      t = this.data;
-      i = t.length;
-      while (i--) {
-        if (fun(t[i][property], value)) {
-          res.push(t[i]);
-        }
-      }
-    } else {
-      t = index;
-      i = t.length;
-      while (i--) {
-        if (fun(t[i], value)) {
-          res.push(this.data[i]);
-        }
-      }
-    }
-    return res;
-
+		// Utilize new Resultset class to support chainable queries
+		return new Resultset(this, query, null);
   };
 
   /**
@@ -689,27 +759,8 @@ var loki = (function () {
    * Create view function - CouchDB style
    */
   Collection.prototype.view = function (fun) {
-    var viewFunction,
-      result = [],
-      i = this.data.length;
-
-    if (('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
-      viewFunction = this.Views[fun];
-    } else if ('function' === typeof fun) {
-      viewFunction = fun;
-    } else {
-      throw 'Argument is not a stored view or a function';
-    }
-    try {
-      while (i--) {
-        if (viewFunction(this.data[i]) === true) {
-          result[i] = this.data[i];
-        }
-      }
-      return result;
-    } catch (err) {
-      throw err;
-    }
+		// Utilize new Resultset class to support chainable queries
+		return new Resultset(this, null, fun);
   };
 
   /**

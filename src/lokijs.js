@@ -58,16 +58,24 @@ var loki = (function () {
 	// retain reference to collection we are querying against
 	this.collection = collection;
 	
-	// may need to revisit this
-	// using Object.keys (on an always generated idindex) to get initial array of all data array idx's
-	this.originalrows = Object.keys(this.collection.idIndex);	
-	this.filteredrows = [];
+	// using Object.keys (on an always generated idIndex) to get initial array of all data array idx's
+	this.filteredrows = Object.keys(this.collection.idIndex);	
 
-	// 
+	// if user supplied initial queryObj or queryFunc, apply it 
 	if (queryObj != null) return this.find(queryObj);
 	if (queryFunc != null) return this.view(queryFunc);
 	
-	return;
+	// otherwise return unfiltered Resultset for future filtering 
+	return this;
+  }
+  
+  // To support reuse of resultset in forked query situations use copy()
+  Resultset.prototype.copy = function() {
+		var result = new Resultset(this.collection, null, null);
+		
+		result.filteredrows = this.filteredrows;
+		
+		return result;
   }
   
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
@@ -95,6 +103,7 @@ var loki = (function () {
         '$ne' : $ne
       },
       searchByIndex = false,
+	  result = [],
       index = null,
       // comparison function
       fun,
@@ -103,8 +112,9 @@ var loki = (function () {
       // collection data length
       i;
 
+	// apply no filters if they want all
     if (queryObject === 'getAll') {
-      return this.collection.data;
+		return this;
     }
 
     for (p in queryObject) {
@@ -143,24 +153,23 @@ var loki = (function () {
 
     if (!searchByIndex) {
       t = this.collection.data;
-      i = this.originalrows.length; //t.length;
+      i = this.filteredrows.length; //t.length;
       while (i--) {
-        if (fun(t[this.originalrows[i]][property], value)) {
-          this.filteredrows.push(this.originalrows[i]);
+        if (fun(t[this.filteredrows[i]][property], value)) {
+          result.push(this.filteredrows[i]);
         }
       }
     } else {
       t = index;
-      i = this.originalrows.length; //t.length;
+      i = this.filteredrows.length; //t.length;
       while (i--) {
-        if (fun(t[this.originalrows[i]], value)) {
-          this.filteredrows.push(this.originalrows[i]);
+        if (fun(t[this.filteredrows[i]], value)) {
+          result.push(this.filteredrows[i]);
         }
       }
     }
 	
-	this.originalrows = this.filteredrows;
-	this.filteredrows = [];
+	this.filteredrows = result;
 	
     return this;
   }
@@ -168,7 +177,8 @@ var loki = (function () {
   // Resultset.view() returns reference to 'this' Resultset, use data() to get rowdata
   Resultset.prototype.view = function(fun) { 
     var viewFunction,
-      i = this.originalrows.length;
+	  result = [],
+      i = this.filteredrows.length;
 
     if (('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
       viewFunction = this.Views[fun];
@@ -179,13 +189,13 @@ var loki = (function () {
     }
     try {
       while (i--) {
-        if (viewFunction(this.collection.data[this.originalrows[i]]) === true) {
-          this.filteredrows.push(this.originalrows[i]);
+        if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
+          result.push(this.filteredrows[i]);
         }
       }
 	  
-	  this.originalrows = this.filteredrows;
-	  this.filteredrows = [];
+	  this.filteredrows = result;
+	  
       return this;
     } catch (err) {
       throw err;
@@ -196,8 +206,8 @@ var loki = (function () {
   Resultset.prototype.data = function() {
 	var result = [];
 	
-	for(var i in this.originalrows) {
-		result.push(this.collection.data[this.originalrows[i]]);
+	for(var i in this.filteredrows) {
+		result.push(this.collection.data[this.filteredrows[i]]);
 	}
 	
 	return result;
@@ -684,14 +694,22 @@ var loki = (function () {
     }
     return null;
   };
+  
+  /**
+   * Chain method, used for beginning a series of chained find() and/or view() operations 
+   * on a collection.
+   */
+  Collection.prototype.chain = function (query) {
+		return new Resultset(this, null, null);
+  };
 
   /**
    * Find method, api is similar to mongodb except for now it only supports one search parameter.
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
-		// Utilize new Resultset class to support chainable queries
-		return new Resultset(this, query, null);
+		// find logic moved into Resultset class
+		return new Resultset(this, query, null).data();
   };
 
   /**
@@ -759,8 +777,8 @@ var loki = (function () {
    * Create view function - CouchDB style
    */
   Collection.prototype.view = function (fun) {
-		// Utilize new Resultset class to support chainable queries
-		return new Resultset(this, null, fun);
+		// find logic moved into Resultset class
+		return new Resultset(this, null, fun).data();
   };
 
   /**

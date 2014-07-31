@@ -63,10 +63,13 @@ var loki = (function () {
 
 	// if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
 	this.searchIsChained = (!queryObj & !queryFunc);
-
+	this.filteredrows = [];
+	this.filterInitialized = false;
+	
 	// for old-style (non-chained) queries, we will bypass initializing and using filteredrows array
 	// using Object.keys (on an always generated idIndex) to get initial array of all data array idx's
-	if (this.searchIsChained) this.filteredrows = Object.keys(this.collection.idIndex);	
+	//if (this.searchIsChained) this.filteredrows = Object.keys(this.collection.idIndex);	
+	
 
 	// if user supplied initial queryObj or queryFunc, apply it 
 	if (queryObj != null) return this.find(queryObj);
@@ -158,51 +161,91 @@ var loki = (function () {
     // the comparison function
     fun = operators[operator];
 
-	// if not a chained query, bypass filteredrows and work directly against data
+	// Query executed differently depending on :
+	//		- whether it is chained or not
+	//		- whether the property being queried has an index defined
+	//		- if chained, we handle first pass differently for initial filteredrows[] population
+	// 
+	// For performance reasons, each case has its own if block to minimize in-loop calculations
+	
+	// If not a chained query, bypass filteredrows and work directly against data
 	if (!this.searchIsChained) {
 		if (!searchByIndex) {
-		  t = this.collection.data;
-		  i = t.length;
-		  while (i--) {
-			if (fun(t[i][property], value)) {
-			  result.push(t[i]);
+			t = this.collection.data;
+			i = t.length;
+			while (i--) {
+				if (fun(t[i][property], value)) {
+					result.push(t[i]);
+				}
 			}
-		  }
-		} else {
-		  t = index;
-		  i = index.length; 
-		  while (i--) {
-			if (fun(t[i], value)) {
-			  result.push(this.collection.data[i]);
+		} 
+		else {
+			t = index;
+			i = index.length; 
+			while (i--) {
+				if (fun(t[i], value)) {
+					result.push(this.collection.data[i]);
+				}
 			}
-		  }
 		}
 		
 		// not a chained query so return result as data[]
 		return result;
 	}
+	// Otherwise this is a chained query
 	else {
-		if (!searchByIndex) {
-		  t = this.collection.data;
-		  i = this.filteredrows.length;
-		  while (i--) {
-			if (fun(t[this.filteredrows[i]][property], value)) {
-			  result.push(this.filteredrows[i]);
+		// If the filteredrows[] is already initialized, use it
+		if (this.filterInitialized) {
+			if (!searchByIndex) {
+				t = this.collection.data;
+				i = this.filteredrows.length;
+				while (i--) {
+					if (fun(t[this.filteredrows[i]][property], value)) {
+						result.push(this.filteredrows[i]);
+					}
+				}
+			} 
+			else {
+				t = index;
+				i = this.filteredrows.length; //t.length;
+				while (i--) {
+					if (fun(t[this.filteredrows[i]], value)) {
+						result.push(this.filteredrows[i]);
+					}
+				}
 			}
-		  }
-		} else {
-		  t = index;
-		  i = this.filteredrows.length; //t.length;
-		  while (i--) {
-			if (fun(t[this.filteredrows[i]], value)) {
-			  result.push(this.filteredrows[i]);
+			
+			this.filteredrows = result;
+			
+			return this;
+		}
+		// first chained query so work against data[] but put results in filteredrows
+		else {
+			if (!searchByIndex) {
+				t = this.collection.data;
+				i = t.length;
+				while (i--) {
+					if (fun(t[i][property], value)) {
+						result.push(i);
+					}
+				}
+			} 
+			else {
+				t = index;
+				i = t.length; 
+				while (i--) {
+					if (fun(t[i], value)) {
+						result.push(i);
+					}
+				}
 			}
-		  }
+			
+			this.filteredrows = result;
+			this.filterInitialized = true;   // next time work against filteredrows[]
+			
+			return this;
 		}
 		
-		this.filteredrows = result;
-		
-		return this;
 	}
   }
   
@@ -219,7 +262,7 @@ var loki = (function () {
       throw 'Argument is not a stored view or a function';
     }
     try {
-		// if not a chained query then forget run directly against data[]
+		// if not a chained query then run directly against data[] and return object []
 		if (!this.searchIsChained) {
 			var i = this.collection.data.length;
 			
@@ -234,21 +277,39 @@ var loki = (function () {
 		}
 		// else chained query, so run against filteredrows
 		else {
-			var i = this.filteredrows.length;
+			// If the filteredrows[] is already initialized, use it
+			if (this.filterInitialized) {
+				var i = this.filteredrows.length;
 
-			while (i--) {
-				if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
-					result.push(this.filteredrows[i]);
+				while (i--) {
+					if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
+						result.push(this.filteredrows[i]);
+					}
 				}
+				
+				this.filteredrows = result;
+			  
+				return this;
 			}
-		  
-			// chained query, so update filteredrows array and return reference to 'this' for subsequent chain ops to use
-			this.filteredrows = result;
-		  
-			return this;
+			// otherwise this is initial chained op, work against data, push into filteredrows[]
+			else {
+				var i = this.collection.data.length;
+
+				while (i--) {
+					if (viewFunction(this.collection.data[i]) === true) {
+						result.push(i);
+					}
+				}
+				
+				this.filteredrows = result;
+				this.filterInitialized = true;
+				
+				return this;
+			}
 		}
-    } catch (err) {
-      throw err;
+    } 
+	catch (err) {
+		throw err;
     }
   }
   

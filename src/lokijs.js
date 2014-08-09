@@ -62,15 +62,10 @@ var loki = (function () {
 	this.collection = collection;
 
 	// if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
-	this.searchIsChained = (!queryObj & !queryFunc);
+	this.searchIsChained = (!queryObj && !queryFunc);
 	this.filteredrows = [];
 	this.filterInitialized = false;
 	
-	// for old-style (non-chained) queries, we will bypass initializing and using filteredrows array
-	// using Object.keys (on an always generated idIndex) to get initial array of all data array idx's
-	//if (this.searchIsChained) this.filteredrows = Object.keys(this.collection.idIndex);	
-	
-
 	// if user supplied initial queryObj or queryFunc, apply it 
 	if (queryObj != null) return this.find(queryObj);
 	if (queryFunc != null) return this.view(queryFunc);

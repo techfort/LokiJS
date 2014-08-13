@@ -1,0 +1,9 @@
+{
+  "name": "lokijs_nw_demo",
+  "window": {
+    "width": 800,
+    "height": 600,
+    "toolbar": false
+  },
+  "main": "index.html"
+}

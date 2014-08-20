@@ -244,8 +244,8 @@ var loki = (function () {
 	}
   }
   
-  // Resultset.view() returns reference to 'this' Resultset, use data() to get rowdata
-  Resultset.prototype.view = function(fun) { 
+  // Resultset.where() returns reference to 'this' Resultset, use data() to get rowdata
+  Resultset.prototype.where = function(fun) { 
     var viewFunction,
 	  result = [];
 
@@ -319,6 +319,82 @@ var loki = (function () {
 	return result;
   }
   
+  /**
+   * @constructor
+   * DynamicView class is a versatile 'live' view class which is optionally persistent
+   */
+ function DynamicView(collection, name, persistent) {
+	this.collection = collection;
+	this.name = name;
+	
+	this.persistent = false;
+	if (typeof(persistent) != "undefined") this.persistent = persistent;	
+	
+	this.resultset = new Resultset(collection)
+	this.resultdata = [];
+	this.resultsdirty = true;
+	this.resultsInitialized = false;
+	
+	// keep ordered filter pipeline
+	this.filterPipeline = [];
+	
+	// may add sortPipeline, map and reduce phases later
+ }
+ 
+ DynamicView.prototype.applyFind(query) {
+	this.filterPipeline.append['find', query];
+	
+	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
+	this.resultset.find(query);
+ }
+ 
+ DynamicView.prototype.applyWhere(fun) {
+	this.filterPipeline.append['where', fun];
+	
+	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
+	this.resultset.where(fun);
+ }
+ 
+ // will either build a resultset array or (if persistent) return reference to persistent data array
+ DynamicView.prototype.data() {
+	// if nonpersistent return resultset data evaluation
+	if (!this.persistent) return Resultset.data();
+
+	// Persistent Views - we keep Resultset updated dynamically, so 'rebuilding' and 'initializing'
+	// the internal resuldata array means we pay cost of row copy now.
+	if (!this.resultsInitialized || this.resultsdirty) {
+		this.resultdata = Resultset.data();
+		return this.resultdata;
+	}
+ }
+
+ // internal function called on collection.insert() and collection.update()
+ DynamicView.prototype.evaluateDocument(objId) {
+	// Basic live resultset logic :
+	// see if item exists in existing Resultset
+	// see if item passes all filters in filterPipeline
+	// add or remove from resultset
+	// set dirty flag
+
+	
+	// [Possible future optimizations to persistent view]
+	// I was originally thinking that repeated splicing a javascript array as rows enter/leave
+	// resultset would be the less performant option versus just caching a Resultset.data() eval 
+	// when dirty flag is set, however...
+	// Since our 'filterPipeline' is unsorted (they may arrive in later pipline phases)
+	// we might handle :
+	// inserts by appending to end of array
+	// updates by overwriting old data in that array element with new data
+	// delete by copying old 'last' item to newly deleted location and deleting the last element
+ }
+ 
+ // internal function called on collection.delete()
+ DynamicView.prototype.deleteDocument(objId) {
+	// if objId exists within Resultset rowfilter, splice from Resultset (and resultdata[] if persistent)
+	
+	// set dirty flag
+ }
+ 
   /**
    * @constructor 
    * Collection class that handles documents of same type

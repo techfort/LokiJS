@@ -332,24 +332,44 @@ var loki = (function () {
 	
 	this.resultset = new Resultset(collection)
 	this.resultdata = [];
-	this.resultsdirty = true;
 	this.resultsInitialized = false;
 	
+	this.cachedresultset = null;
+
 	// keep ordered filter pipeline
 	this.filterPipeline = [];
 	
 	// may add sortPipeline, map and reduce phases later
  }
  
+ DynamicView.prototype.startTransaction() {
+	this.cachedresultset = this.resultset;
+ }
+ 
+ DynamicView.prototype.commit() {
+	this.cachedresultset = null;
+ }
+ 
+ DynamicView.prototype.rollback() {
+	this.resultset = this.cachedresultset;
+	
+	if (this.persistent) {
+		// i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
+		// so we will for now just rebuild the persistent dynamic view data in this worst case scenario
+		// (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
+		this.resultdata = this.resultset.data();
+	}
+ }
+ 
  DynamicView.prototype.applyFind(query) {
-	this.filterPipeline.append['find', query];
+	this.filterPipeline.push['find', query];
 	
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.find(query);
  }
  
  DynamicView.prototype.applyWhere(fun) {
-	this.filterPipeline.append['where', fun];
+	this.filterPipeline.push['where', fun];
 	
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.where(fun);
@@ -369,30 +389,82 @@ var loki = (function () {
  }
 
  // internal function called on collection.insert() and collection.update()
- DynamicView.prototype.evaluateDocument(objId) {
-	// Basic live resultset logic :
-	// see if item exists in existing Resultset
-	// see if item passes all filters in filterPipeline
-	// add or remove from resultset
-	// set dirty flag
+ DynamicView.prototype.evaluateDocument(objIndex) {
+	var ofr = this.resultset.filteredrows;
+	var oldPos = ofr.indexOf(objIndex);
+	var oldlen = ofr.length;
 
+	// creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
+	// mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
+	var evalResultset = new Resultset(this.collection);
+	evalResultset.filteredrows = [objIndex];
+	evalResultset.filterInitialized = true;
+	for(var idx=0; idx < this.filterPipeline.length; idx++) {
+		switch(this.filterPipeline[idx][0]) {
+			case "find": evalResultset.find(this.filterPipeline[idx][1]);
+			case "where": evalResultset.where(this.filterPipeline[idx][1]);
+		}
+	}
 	
-	// [Possible future optimizations to persistent view]
-	// I was originally thinking that repeated splicing a javascript array as rows enter/leave
-	// resultset would be the less performant option versus just caching a Resultset.data() eval 
-	// when dirty flag is set, however...
-	// Since our 'filterPipeline' is unsorted (they may arrive in later pipline phases)
-	// we might handle :
-	// inserts by appending to end of array
-	// updates by overwriting old data in that array element with new data
-	// delete by copying old 'last' item to newly deleted location and deleting the last element
+	var newPos = (ofr.length == 0) ? -1: 0;
+	
+	// wasn't in old, shouldn't be now... do nothing
+	if (oldPos == -1 && newPos == -1) return;
+	
+	// wan't in resultset, should be now... add
+	if (oldPos == -1 && newPos != -1) {
+		ofr.push(objIndex);
+		this.resultdata.push(this.collection.data[objIndex]);
+		
+		return;
+	}
+	
+	// was in resultset, shouldn't be now... delete
+	if (oldPos != -1 && newPos == -1) {
+		if (oldPos < oldlen-1) {
+			// http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
+			ofr[oldPos] = ofr[oldlen-1];
+			ofr.length(oldlen-1);
+			
+			this.resultdata[oldPos] = this.resultdata[oldlen-1];
+			this.resultdata.length(oldlen-1);
+		}
+		else {
+			ofr.length(oldlen-1);
+			this.resultdata.length(oldlen-1);
+		}
+	}
+	
+	// was in resultset, should still be now... (update persistent only?)
+	if (oldPos != -1 && newPos != -1) {
+		if (this.persistent) {
+			// in case document changed, replace persistent view data with the latest collection.data document
+			this.resultdata[oldPos] = this.collection.data[oldPos];
+		}
+		
+		return;
+	}
  }
  
  // internal function called on collection.delete()
- DynamicView.prototype.deleteDocument(objId) {
-	// if objId exists within Resultset rowfilter, splice from Resultset (and resultdata[] if persistent)
+ DynamicView.prototype.removeDocument(objIndex) {
+	var ofr = this.resultset.filteredrows;
+	var oldPos = ofr.indexOf(objId);
+	var oldlen = ofr.length;
 	
-	// set dirty flag
+	if (oldPos != -1) {
+		if (oldPos < oldlen-1) {
+			ofr[oldPos] = ofr[oldlen-1];
+			ofr.length(oldlen-1);
+			
+			this.resultdata[oldPos] = this.resultdata[oldlen-1];
+			this.resultdata.length(oldlen-1);
+		}
+		else {
+			ofr.length(oldlen-1);
+			this.resultdata.length(oldlen-1);
+		}
+	}
  }
  
   /**
@@ -421,6 +493,8 @@ var loki = (function () {
     this.maxId = 0;
     // view container is an object because each views gets a name
     this.Views = {};
+	
+	this.DynamicViews = [];
 
     // pointer to self to avoid this tricks
     var indexesArray = indices || ['id'],
@@ -628,6 +702,21 @@ var loki = (function () {
   };
 
   /**
+   * Each collection maintains a list of DynamicViews associated with it
+   **/
+  Collection.prototype.addDynamicView(name, persistent) {
+	this.DynamicViews.push(new DynamicView(this, name, persistent);
+  }
+  
+  Collection.prototype.removeDynamicView(name) {
+	for(var idx=0; idx < this.DynamicViews.length; idx++) {
+		if (this.DynamicViews[idx] == name) {
+			this.DynamicViews.splice(idx, 1);
+		}
+	}
+  }
+  
+  /**
    * find and update: pass a filtering function to select elements to be updated
    * and apply the updatefunctino to those elements iteratively
    */
@@ -654,6 +743,7 @@ var loki = (function () {
     doc.id = null;
     doc.objType = this.objType;
     this.add(doc);
+	
     return doc;
   };
 
@@ -737,6 +827,12 @@ var loki = (function () {
         obj.id = this.maxId;
         // add the object
         this.data.push(obj);
+		
+		// now that we can efficiently determine the data[] position of newly added document,
+		// submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].evaluateDocument(this.data.length);
+		}
 
         // resync indexes to make sure all IDs are there
         for (i in this.indices) {
@@ -777,11 +873,18 @@ var loki = (function () {
 
     try {
       this.startTransaction();
+	  
       var arr = this.get(doc.id, true),
         // obj = arr[0],
         position = arr[1],
         i;
 
+		// now that we can efficiently determine the data[] position of newly added document,
+		// submit it for all registered DynamicViews to remove
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].removeDocument(position);
+		}
+		
       this.data.splice(position, 1);
 
       for (i in this.indices) {
@@ -918,6 +1021,11 @@ var loki = (function () {
         this.data = this.cachedData;
         this.indices = this.cachedIndex;
       }
+	  
+		// propagate rollback to dynamic views
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].rollback();
+		}
     }
   };
 
@@ -928,16 +1036,26 @@ var loki = (function () {
   /** start the transation */
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
-      this.cachedData = this.data;
-      this.cachedIndex = this.indices;
+		this.cachedData = this.data;
+		this.cachedIndex = this.indices;
+
+		// propagate startTransaction to dynamic views
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].startTransaction();
+		}
     }
   };
 
   /** commit the transation */
   Collection.prototype.commit = function () {
     if (this.transactional) {
-      this.cachedData = null;
-      this.cachedIndex = null;
+		this.cachedData = null;
+		this.cachedIndex = null;
+
+		// propagate commit to dynamic views
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].commit();
+		}
     }
   };
 

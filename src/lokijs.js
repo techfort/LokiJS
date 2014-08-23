@@ -322,6 +322,16 @@ var loki = (function () {
   /**
    * @constructor
    * DynamicView class is a versatile 'live' view class which is optionally persistent
+   *
+   * Example usage testcollection.addDynamicView("4door
+   * Collection.addDynamicView(name) instantiate this DynamicView object
+   * Examples:
+   *	var mydv = mycollection.addDynamicView("test");  // default is non-persistent
+   *	mydv.applyWhere(function(obj) { return obj.name == "Toyota"; });
+   *	mydv.applyFind({ "doors" : 4 });
+   * 	var results = mydv.data();
+   *
+   * Chaining is supported on apply functions : applyWhere().applyFind().data() is valid
    */
  function DynamicView(collection, name, persistent) {
 	this.collection = collection;
@@ -332,7 +342,7 @@ var loki = (function () {
 	
 	this.resultset = new Resultset(collection)
 	this.resultdata = [];
-	this.resultsInitialized = false;
+	this.resultsdirty = false;
 	
 	this.cachedresultset = null;
 
@@ -342,15 +352,15 @@ var loki = (function () {
 	// may add sortPipeline, map and reduce phases later
  }
  
- DynamicView.prototype.startTransaction() {
+ DynamicView.prototype.startTransaction = function() {
 	this.cachedresultset = this.resultset;
  }
  
- DynamicView.prototype.commit() {
+ DynamicView.prototype.commit = function() {
 	this.cachedresultset = null;
  }
  
- DynamicView.prototype.rollback() {
+ DynamicView.prototype.rollback = function() {
 	this.resultset = this.cachedresultset;
 	
 	if (this.persistent) {
@@ -361,35 +371,44 @@ var loki = (function () {
 	}
  }
  
- DynamicView.prototype.applyFind(query) {
-	this.filterPipeline.push['find', query];
+ DynamicView.prototype.applyFind = function(query) {
+	this.filterPipeline.push({ type: 'find', val: query });
 	
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.find(query);
+	
+	if (this.persistent) this.resultsdirty = true;
+	
+	return this;
  }
  
- DynamicView.prototype.applyWhere(fun) {
-	this.filterPipeline.push['where', fun];
+ DynamicView.prototype.applyWhere = function(fun) {
+	this.filterPipeline.push({ type: 'where', val: fun });
 	
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.where(fun);
+	
+	if (this.persistent) this.resultsdirty = true;
+	
+	return this;
  }
  
  // will either build a resultset array or (if persistent) return reference to persistent data array
- DynamicView.prototype.data() {
+ DynamicView.prototype.data = function() {
 	// if nonpersistent return resultset data evaluation
-	if (!this.persistent) return Resultset.data();
+	if (!this.persistent) return this.resultset.data();
 
-	// Persistent Views - we keep Resultset updated dynamically, so 'rebuilding' and 'initializing'
-	// the internal resuldata array means we pay cost of row copy now.
-	if (!this.resultsInitialized || this.resultsdirty) {
-		this.resultdata = Resultset.data();
-		return this.resultdata;
+	// Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
+	if (this.resultsdirty) {
+		this.resultdata = this.resultset.data();
+		this.resultsdirty = false;
 	}
+	
+	return this.resultdata;
  }
 
  // internal function called on collection.insert() and collection.update()
- DynamicView.prototype.evaluateDocument(objIndex) {
+ DynamicView.prototype.evaluateDocument = function(objIndex) {
 	var ofr = this.resultset.filteredrows;
 	var oldPos = ofr.indexOf(objIndex);
 	var oldlen = ofr.length;
@@ -400,13 +419,14 @@ var loki = (function () {
 	evalResultset.filteredrows = [objIndex];
 	evalResultset.filterInitialized = true;
 	for(var idx=0; idx < this.filterPipeline.length; idx++) {
-		switch(this.filterPipeline[idx][0]) {
-			case "find": evalResultset.find(this.filterPipeline[idx][1]);
-			case "where": evalResultset.where(this.filterPipeline[idx][1]);
+		switch(this.filterPipeline[idx].type) {
+			case "find": evalResultset.find(this.filterPipeline[idx].val); break;
+			case "where": evalResultset.where(this.filterPipeline[idx].val); break;
 		}
 	}
 	
-	var newPos = (ofr.length == 0) ? -1: 0;
+	// not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
+	var newPos = (evalResultset.filteredrows.length == 0) ? -1: 0;
 	
 	// wasn't in old, shouldn't be now... do nothing
 	if (oldPos == -1 && newPos == -1) return;
@@ -424,14 +444,14 @@ var loki = (function () {
 		if (oldPos < oldlen-1) {
 			// http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
 			ofr[oldPos] = ofr[oldlen-1];
-			ofr.length(oldlen-1);
+			ofr.length = oldlen-1;
 			
 			this.resultdata[oldPos] = this.resultdata[oldlen-1];
-			this.resultdata.length(oldlen-1);
+			this.resultdata.length = oldlen-1;
 		}
 		else {
 			ofr.length(oldlen-1);
-			this.resultdata.length(oldlen-1);
+			this.resultdata.length = oldlen-1;
 		}
 	}
 	
@@ -447,7 +467,7 @@ var loki = (function () {
  }
  
  // internal function called on collection.delete()
- DynamicView.prototype.removeDocument(objIndex) {
+ DynamicView.prototype.removeDocument = function(objIndex) {
 	var ofr = this.resultset.filteredrows;
 	var oldPos = ofr.indexOf(objId);
 	var oldlen = ofr.length;
@@ -704,14 +724,25 @@ var loki = (function () {
   /**
    * Each collection maintains a list of DynamicViews associated with it
    **/
-  Collection.prototype.addDynamicView(name, persistent) {
-	this.DynamicViews.push(new DynamicView(this, name, persistent);
+  Collection.prototype.addDynamicView = function(name, persistent) {
+	var dv = new DynamicView(this, name, persistent);
+	this.DynamicViews.push(dv);
+	
+	return dv;
   }
   
-  Collection.prototype.removeDynamicView(name) {
+  Collection.prototype.removeDynamicView = function(name) {
 	for(var idx=0; idx < this.DynamicViews.length; idx++) {
-		if (this.DynamicViews[idx] == name) {
+		if (this.DynamicViews[idx].name == name) {
 			this.DynamicViews.splice(idx, 1);
+		}
+	}
+  }
+  
+  Collection.prototype.getDynamicView = function(name) {
+	for(var idx=0; idx < this.DynamicViews.length; idx++) {
+		if (this.DynamicViews[idx].name == name) {
+			return this.DynamicViews[idx];
 		}
 	}
   }
@@ -773,6 +804,13 @@ var loki = (function () {
         position = arr[1];
       // operate the update
       this.data[position] = doc;
+
+		// now that we can efficiently determine the data[] position of newly added document,
+		// submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+		for (var idx=0; idx < this.DynamicViews.length; idx++) {
+			this.DynamicViews[idx].evaluateDocument(position);
+		}
+	  
       for (i in this.indices) {
         if (this.indices.hasOwnProperty(i)) {
           this.indices[i][position] = obj[i];
@@ -831,7 +869,7 @@ var loki = (function () {
 		// now that we can efficiently determine the data[] position of newly added document,
 		// submit it for all registered DynamicViews to evaluate for inclusion/exclusion
 		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].evaluateDocument(this.data.length);
+			this.DynamicViews[idx].evaluateDocument(this.data.length-1);
 		}
 
         // resync indexes to make sure all IDs are there

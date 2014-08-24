@@ -74,11 +74,18 @@ var loki = (function () {
 	return this;
   }
   
+  Resultset.prototype.toJSON = function() {
+	var copy = this.copy();
+	copy.collection = null;
+	return copy;
+  }
+  
   // To support reuse of resultset in forked query situations use copy()
   Resultset.prototype.copy = function() {
 		var result = new Resultset(this.collection, null, null);
 		
 		result.filteredrows = this.filteredrows;
+		result.filterInitialized = this.filterInitialized;
 		
 		return result;
   }
@@ -352,6 +359,20 @@ var loki = (function () {
 	// may add sortPipeline, map and reduce phases later
  }
  
+ DynamicView.prototype.toJSON = function() {
+	var copy = new DynamicView(this.collection, this.name, this.persistent);
+
+	copy.resultset = this.resultset;
+	copy.resultdata = this.resultdata;
+	copy.resultsdirty = this.resultsdirty;
+	copy.filterPipeline = this.filterPipeline;
+	
+	// avoid circular reference, reapply in db.loadJSON()
+	copy.collection = null;		
+	
+	return copy;
+ }
+  
  DynamicView.prototype.startTransaction = function() {
 	this.cachedresultset = this.resultset;
  }
@@ -431,10 +452,11 @@ var loki = (function () {
 	// wasn't in old, shouldn't be now... do nothing
 	if (oldPos == -1 && newPos == -1) return;
 	
-	// wan't in resultset, should be now... add
+	// wans't in resultset, should be now... add
 	if (oldPos == -1 && newPos != -1) {
 		ofr.push(objIndex);
-		this.resultdata.push(this.collection.data[objIndex]);
+		
+		if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
 		
 		return;
 	}
@@ -446,13 +468,18 @@ var loki = (function () {
 			ofr[oldPos] = ofr[oldlen-1];
 			ofr.length = oldlen-1;
 			
-			this.resultdata[oldPos] = this.resultdata[oldlen-1];
-			this.resultdata.length = oldlen-1;
+			if (this.persistent) {
+				this.resultdata[oldPos] = this.resultdata[oldlen-1];
+				this.resultdata.length = oldlen-1;
+			}
 		}
 		else {
 			ofr.length(oldlen-1);
-			this.resultdata.length = oldlen-1;
+			
+			if (this.persistent) this.resultdata.length = oldlen-1;
 		}
+		
+		return;
 	}
 	
 	// was in resultset, should still be now... (update persistent only?)
@@ -614,6 +641,19 @@ var loki = (function () {
       copyColl.idIndex = coll.indices.id;
       copyColl.transactional = coll.transactional;
       copyColl.ensureAllIndexes();
+	  
+	  // reinflate DynamicViews and attached Resultsets
+	  for(var idx = 0; idx < coll.DynamicViews.length; idx++) {
+		var colldv = coll.DynamicViews[idx];
+		
+		var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
+		dv.resultdata = colldv.resultdata;
+		dv.resultsdirty = colldv.resultsdirty;
+		dv.filterPipeline = colldv.filterPipeline;
+		dv.resultset.filteredrows = colldv.resultset.filteredrows;
+		dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
+		dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
+	  }
     }
   };
 

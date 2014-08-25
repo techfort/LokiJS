@@ -452,7 +452,7 @@ var loki = (function () {
 	// wasn't in old, shouldn't be now... do nothing
 	if (oldPos == -1 && newPos == -1) return;
 	
-	// wans't in resultset, should be now... add
+	// wasn't in resultset, should be now... add
 	if (oldPos == -1 && newPos != -1) {
 		ofr.push(objIndex);
 		
@@ -486,7 +486,7 @@ var loki = (function () {
 	if (oldPos != -1 && newPos != -1) {
 		if (this.persistent) {
 			// in case document changed, replace persistent view data with the latest collection.data document
-			this.resultdata[oldPos] = this.collection.data[oldPos];
+			this.resultdata[oldPos] = this.collection.data[objIndex];
 		}
 		
 		return;
@@ -496,20 +496,22 @@ var loki = (function () {
  // internal function called on collection.delete()
  DynamicView.prototype.removeDocument = function(objIndex) {
 	var ofr = this.resultset.filteredrows;
-	var oldPos = ofr.indexOf(objId);
+	var oldPos = ofr.indexOf(objIndex);
 	var oldlen = ofr.length;
 	
 	if (oldPos != -1) {
+		// if not last row in resultdata, swap last to hole and truncate last row
 		if (oldPos < oldlen-1) {
 			ofr[oldPos] = ofr[oldlen-1];
-			ofr.length(oldlen-1);
+			ofr.length = oldlen-1;
 			
 			this.resultdata[oldPos] = this.resultdata[oldlen-1];
-			this.resultdata.length(oldlen-1);
+			this.resultdata.length = oldlen-1;
 		}
+		// last row, so just truncate last row
 		else {
-			ofr.length(oldlen-1);
-			this.resultdata.length(oldlen-1);
+			ofr.length = oldlen-1;
+			this.resultdata.length = oldlen-1;
 		}
 	}
  }

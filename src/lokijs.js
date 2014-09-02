@@ -68,7 +68,7 @@ var loki = (function () {
 	
 	// if user supplied initial queryObj or queryFunc, apply it 
 	if (queryObj != null) return this.find(queryObj);
-	if (queryFunc != null) return this.view(queryFunc);
+	if (queryFunc != null) return this.where(queryFunc);
 	
 	// otherwise return unfiltered Resultset for future filtering 
 	return this;
@@ -88,6 +88,46 @@ var loki = (function () {
 		result.filterInitialized = this.filterInitialized;
 		
 		return result;
+  }
+  
+  // User supplied compare function is provided two documents to compare;
+  // Example:
+  // rslt.sort(function(obj1, obj2) { 
+  //   if (obj1.name == obj2.name) return 0;
+  //   if (obj1.name > obj2.name) return 1;
+  //   if (obj1.name < obj2.name) return -1;
+  // });
+  Resultset.prototype.sort = function(comparefun) {
+	var wrappedComparer = 
+			(function(userComparer, rslt) {
+				return function(a, b) {
+					var obj1 = rslt.collection.data[a];
+					var obj2 = rslt.collection.data[b];
+					
+					return userComparer(obj1, obj2);
+				}
+			})(comparefun, this);  
+  
+	this.filteredrows.sort(wrappedComparer);
+  }
+  
+  // Simpler, loose evaluation for user to sort based on a property name
+  // Example :
+  // rslt.simplesort("name");
+  Resultset.prototype.simplesort = function(propname) {
+	var wrappedComparer = 
+		(function(prop, rslt) {
+			return function(a, b) {
+				var obj1 = rslt.collection.data[a];
+				var obj2 = rslt.collection.data[b];
+				
+				if (obj1[prop] == obj2[prop]) return 0;
+				if (obj1[prop] > obj2[prop]) return 1;
+				if (obj1[prop] < obj2[prop]) return -1;
+			}
+		})(propname, this);
+		
+	this.filteredrows.sort(wrappedComparer);
   }
   
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
@@ -330,8 +370,8 @@ var loki = (function () {
    * @constructor
    * DynamicView class is a versatile 'live' view class which is optionally persistent
    *
-   * Example usage testcollection.addDynamicView("4door
-   * Collection.addDynamicView(name) instantiate this DynamicView object
+   * Collection.addDynamicView(name) instantiates this DynamicView object
+   *
    * Examples:
    *	var mydv = mycollection.addDynamicView("test");  // default is non-persistent
    *	mydv.applyWhere(function(obj) { return obj.name == "Toyota"; });

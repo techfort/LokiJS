@@ -80,6 +80,31 @@ var loki = (function () {
 	return copy;
   }
   
+  // limit() : allows you to limit the number of documents in the resultset (starting at 0).
+  // A resultset copy() is made to avoid altering original resultset, 
+  //   so future chain ops will not propagate back to original resultset
+  //
+  // Example :
+  //   - You establish your resultset (directly or via a DynamicView)
+  //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
+  Resultset.prototype.limit = function(qty) {
+	var rscopy = this.copy();
+	
+	rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
+	
+	return rscopy;
+  }
+  
+  // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
+  // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
+  Resultset.prototype.offset = function(pos) {
+	var rscopy = this.copy();
+	
+	rscopy.filteredrows = rscopy.filteredrows.splice(pos);
+	
+	return rscopy;
+  }
+  
   // To support reuse of resultset in forked query situations use copy()
   Resultset.prototype.copy = function() {
 		var result = new Resultset(this.collection, null, null);
@@ -90,7 +115,7 @@ var loki = (function () {
 		return result;
   }
   
-  // User supplied compare function is provided two documents to compare;
+  // User supplied compare function is provided two documents to compare. (chainable)
   // Example:
   // rslt.sort(function(obj1, obj2) { 
   //   if (obj1.name == obj2.name) return 0;
@@ -109,25 +134,38 @@ var loki = (function () {
 			})(comparefun, this);  
   
 	this.filteredrows.sort(wrappedComparer);
+	
+	return this;
   }
   
-  // Simpler, loose evaluation for user to sort based on a property name
+  // Simpler, loose evaluation for user to sort based on a property name. (chainable)
   // Example :
   // rslt.simplesort("name");
-  Resultset.prototype.simplesort = function(propname) {
+  Resultset.prototype.simplesort = function(propname, isdesc) {
+	if (typeof(isdesc) == "undefined") isdesc = false;
+	
 	var wrappedComparer = 
-		(function(prop, rslt) {
+		(function(prop, desc, rslt) {
 			return function(a, b) {
 				var obj1 = rslt.collection.data[a];
 				var obj2 = rslt.collection.data[b];
 				
 				if (obj1[prop] == obj2[prop]) return 0;
-				if (obj1[prop] > obj2[prop]) return 1;
-				if (obj1[prop] < obj2[prop]) return -1;
+				
+				if (desc) {
+					if (obj1[prop] < obj2[prop]) return 1;
+					if (obj1[prop] > obj2[prop]) return -1;
+				}
+				else {
+					if (obj1[prop] > obj2[prop]) return 1;
+					if (obj1[prop] < obj2[prop]) return -1;
+				}
 			}
-		})(propname, this);
+		})(propname, isdesc, this);
 		
 	this.filteredrows.sort(wrappedComparer);
+	
+	return this;
   }
   
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
@@ -396,7 +434,14 @@ var loki = (function () {
 	// keep ordered filter pipeline
 	this.filterPipeline = [];
 	
-	// may add sortPipeline, map and reduce phases later
+	// sorting member variables 
+	// we only support one active search, applied using applySort() or applySimpleSort()
+	this.sortFunction = null;
+	this.sortColumn = null;
+	this.sortColumnDesc = false;
+	this.sortDirty = false;
+	
+	// may add map and reduce phases later
  }
  
  DynamicView.prototype.toJSON = function() {
@@ -406,6 +451,10 @@ var loki = (function () {
 	copy.resultdata = this.resultdata;
 	copy.resultsdirty = this.resultsdirty;
 	copy.filterPipeline = this.filterPipeline;
+	copy.sortFunction = this.sortFunction;
+	copy.sortColumn = this.sortColumn;
+	copy.sortColumnDesc = this.sortColumnDesc;
+	copy.sortDirty = this.sortDirty;
 	
 	// avoid circular reference, reapply in db.loadJSON()
 	copy.collection = null;		
@@ -413,6 +462,32 @@ var loki = (function () {
 	return copy;
  }
   
+ DynamicView.prototype.applySort = function(comparefun) {
+	this.sortFunction = comparefun;
+	this.sortColumn = null;
+	this.sortColumnDesc = false;
+	
+	this.resultset.sort(comparefun);
+	
+	this.sortDirty = false;
+	
+	return this;
+ }
+ 
+ DynamicView.prototype.applySimpleSort = function(propname, isdesc) {
+	if (typeof(isdesc) == "undefined") isdesc = false;
+	
+	this.sortColumn = propname;
+	this.sortColumnDesc = isdesc;
+	this.sortFunction = null;
+	
+	this.resultset.simplesort(propname, isdesc);
+	
+	this.sortDirty = false;
+	
+	return this;
+ }
+ 
  DynamicView.prototype.startTransaction = function() {
 	this.cachedresultset = this.resultset;
  }
@@ -465,6 +540,12 @@ var loki = (function () {
 		this.resultsdirty = false;
 	}
 	
+	if (this.sortDirty) {
+		if (this.sortFunction) this.resultset.sort(this.sortFunction);
+		if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+		this.sortDirty = false;
+	}
+	
 	return this.resultdata;
  }
 
@@ -498,6 +579,9 @@ var loki = (function () {
 		
 		if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
 		
+		// need to re-sort to sort new document
+		if (sortFunction || sortColumn) sortDirty;
+		
 		return;
 	}
 	
@@ -529,6 +613,9 @@ var loki = (function () {
 			this.resultdata[oldPos] = this.collection.data[objIndex];
 		}
 		
+		// in case changes to data altered a sort column
+		if (sortFunction || sortColumn) sortDirty;
+
 		return;
 	}
  }
@@ -692,6 +779,10 @@ var loki = (function () {
 		dv.resultdata = colldv.resultdata;
 		dv.resultsdirty = colldv.resultsdirty;
 		dv.filterPipeline = colldv.filterPipeline;
+		dv.sortColumn = colldv.sortColumn;
+		dv.sortColumnDesc = colldv.sortColumnDesc;
+		dv.sortFunction = colldv.sortFunction;
+		dv.sortDirty = colldv.sortDirty;
 		dv.resultset.filteredrows = colldv.resultset.filteredrows;
 		dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
 		dv.resultset.filterInitialized = colldv.resultset.filterInitialized;

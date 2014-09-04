@@ -334,8 +334,8 @@ var loki = (function () {
     var viewFunction,
 	  result = [];
 
-    if (('string' === typeof fun) && ('function' === typeof this.Views[fun])) {
-      viewFunction = this.Views[fun];
+    if (('string' === typeof fun) && ('function' === typeof this.collection.Views[fun])) {
+      viewFunction = this.collection.Views[fun];
     } else if ('function' === typeof fun) {
       viewFunction = fun;
     } else {

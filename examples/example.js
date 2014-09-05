@@ -111,6 +111,13 @@ window.runExample = function(){
     trace(users.find());
     trace('End findAndUpdate example');
 
+    // revert ages back for future tests
+    function revertAge(obj) {
+    	obj.age /= 2;
+        return obj;
+    }
+    users.findAndUpdate(ageView, revertAge);
+    
 	// test chain() operations via resultset
     sep();
     trace('Example: Resultset chained operations');

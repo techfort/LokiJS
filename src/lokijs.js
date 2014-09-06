@@ -513,6 +513,7 @@ var loki = (function () {
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.find(query);
 	
+	this.sortDirty = true;
 	if (this.persistent) this.resultsdirty = true;
 	
 	return this;
@@ -524,6 +525,7 @@ var loki = (function () {
 	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
 	this.resultset.where(fun);
 	
+	this.sortDirty = true;
 	if (this.persistent) this.resultsdirty = true;
 	
 	return this;
@@ -531,6 +533,12 @@ var loki = (function () {
  
  // will either build a resultset array or (if persistent) return reference to persistent data array
  DynamicView.prototype.data = function() {
+	if (this.sortDirty) {
+		if (this.sortFunction) this.resultset.sort(this.sortFunction);
+		if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+		this.sortDirty = false;
+	}
+	
 	// if nonpersistent return resultset data evaluation
 	if (!this.persistent) return this.resultset.data();
 
@@ -538,12 +546,6 @@ var loki = (function () {
 	if (this.resultsdirty) {
 		this.resultdata = this.resultset.data();
 		this.resultsdirty = false;
-	}
-	
-	if (this.sortDirty) {
-		if (this.sortFunction) this.resultset.sort(this.sortFunction);
-		if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
-		this.sortDirty = false;
 	}
 	
 	return this.resultdata;

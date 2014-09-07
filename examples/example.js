@@ -1,5 +1,16 @@
 window.runExample = function(){
   try {
+	// firefox needs these helper functions defined before they are used
+    function sep(){
+      trace('//---------------------------------------------//');
+    }
+
+    function trace(message){
+        if(typeof console !== 'undefined' && console.log){
+            console.log(message);
+        }
+    }
+
     // init db
     var db = new loki('Example');
 
@@ -204,16 +215,6 @@ window.runExample = function(){
     db.loadJSON(json);
 
     trace(db.serialize());
-
-    function sep(){
-      trace('//---------------------------------------------//');
-    }
-
-    function trace(message){
-        if(typeof console !== 'undefined' && console.log){
-            console.log(message);
-        }
-    }
 
   } catch(err){
     console.error(err);

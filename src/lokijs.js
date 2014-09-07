@@ -540,7 +540,9 @@ var loki = (function () {
 	}
 	
 	// if nonpersistent return resultset data evaluation
-	if (!this.persistent) return this.resultset.data();
+	if (!this.persistent) {
+		return this.resultset.data();
+	}
 
 	// Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
 	if (this.resultsdirty) {
@@ -772,6 +774,9 @@ var loki = (function () {
       copyColl.idIndex = coll.indices.id;
       copyColl.transactional = coll.transactional;
       copyColl.ensureAllIndexes();
+	  
+	  // in case they are loading a database created before we added dynamic views, handle undefined
+	  if (typeof(coll.DynamicViews) == "undefined") continue;
 	  
 	  // reinflate DynamicViews and attached Resultsets
 	  for(var idx = 0; idx < coll.DynamicViews.length; idx++) {

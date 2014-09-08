@@ -22,7 +22,7 @@
           <th>first language</th>
           <th></th>
           </thead>
-          <tr ng-repeat="c in contacts.data">
+          <tr ng-repeat="c in contacts.data track by $index">
             <td>{{ c.name }}</td>
             <td>{{ c.age }}</td>
             <td>{{ c.firstLanguage }}</td>
@@ -35,9 +35,15 @@
   <script>
     
     var lokijs = require('lokijs'),
+      fs = require('fs'),
       app = angular.module('lokidemo', []);
     app.controller('DemoController', function ($scope) {
+      
+      var DB_FILE = 'demo.json';
+
       $scope.newContact = {};
+      $scope.contacts;
+      $scope.db;
 
       $scope.quit = function () {
         window.close();
@@ -54,14 +60,28 @@
         $scope.db.saveToDisk();
       };
 
-      $scope.db = new lokijs('demo.json');
-      $scope.contacts = $scope.db.addCollection('contacts', 'Contact');
-      $scope.contacts.insert({name: 'joe', age: 39, firstLanguage: 'italian'});
-      $scope.contacts.insert({name: 'dave', age: 30, firstLanguage: 'english'});
-      $scope.contacts.insert({name: 'tim', age: 30, firstLanguage: 'english'});
-      $scope.contacts.insert({name: 'jonas', age: 30, firstLanguage: 'swedish'});
-      $scope.contacts.insert({name: 'pedro', age: 30, firstLanguage: 'spanish'});
+      $scope.db = new lokijs(DB_FILE);
 
+
+      fs.exists(DB_FILE, function (exists) {
+          if (exists) {
+            $scope.db.loadDatabase(function (data) {
+              console.log(data);
+              $scope.contacts = $scope.db.getCollection('contacts');              
+              $scope.$apply();
+            });
+            
+          } else {
+            $scope.contacts = $scope.db.addCollection('contacts', 'Contact');
+            $scope.contacts.insert({name: 'joe', age: 39, firstLanguage: 'italian'});
+            $scope.contacts.insert({name: 'dave', age: 30, firstLanguage: 'english'});
+            $scope.contacts.insert({name: 'tim', age: 30, firstLanguage: 'english'});
+            $scope.contacts.insert({name: 'jonas', age: 30, firstLanguage: 'swedish'});
+            $scope.contacts.insert({name: 'pedro', age: 30, firstLanguage: 'spanish'});
+            $scope.$apply();    
+          }
+
+      });
     });
     
   </script>

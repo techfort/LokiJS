@@ -109,7 +109,7 @@ var loki = (function () {
   Resultset.prototype.copy = function () {
     var result = new Resultset(this.collection, null, null);
 
-    result.filteredrows = this.filteredrows;
+    result.filteredrows = this.filteredrows.slice();
     result.filterInitialized = this.filterInitialized;
 
     return result;
@@ -755,7 +755,7 @@ var loki = (function () {
   }
 
   DynamicView.prototype.startTransaction = function () {
-    this.cachedresultset = this.resultset;
+    this.cachedresultset = this.resultset.copy();
   }
 
   DynamicView.prototype.commit = function () {

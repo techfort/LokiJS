@@ -1,0 +1,69 @@
+<html>
+  <head>
+  <link href="main.css" rel="stylesheet" />
+  <script src="bower_components/angular/angular.min.js"></script>
+  </head>
+  <body ng-app="lokidemo">
+  <div class="container" ng-controller="DemoController">
+    <div id="header">LokiJS Demo App
+    </div>
+    <div style="clear: both"></div>
+    <div id="main">
+      <h4>Insert data</h4>
+      <span>name: </span><input type="text" ng-model="newContact.name" />
+      <span>age: </span><input type="number" ng-model="newContact.age" />
+      <span>first language: </span><input type="text" ng-model="newContact.firstLanguage" /> 
+      <button ng-click="insert()" style="vertical-align: middle">Insert</button>
+      <div id="results">
+        <table style="border: 0">
+          <thead>
+          <th>name</th>
+          <th>age</th>
+          <th>first language</th>
+          <th></th>
+          </thead>
+          <tr ng-repeat="c in contacts.data">
+            <td>{{ c.name }}</td>
+            <td>{{ c.age }}</td>
+            <td>{{ c.firstLanguage }}</td>
+            <td><button ng-click="delete(c)">delete</button>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    
+    var lokijs = require('lokijs'),
+      app = angular.module('lokidemo', []);
+    app.controller('DemoController', function ($scope) {
+      $scope.newContact = {};
+
+      $scope.quit = function () {
+        window.close();
+      };
+
+      $scope.insert = function () {
+        $scope.contacts.insert($scope.newContact);
+        $scope.newContact = {};
+        $scope.db.saveToDisk();
+      };
+
+      $scope.delete = function (i) {
+        $scope.contacts.remove(i);
+        $scope.db.saveToDisk();
+      };
+
+      $scope.db = new lokijs('demo.json');
+      $scope.contacts = $scope.db.addCollection('contacts', 'Contact');
+      $scope.contacts.insert({name: 'joe', age: 39, firstLanguage: 'italian'});
+      $scope.contacts.insert({name: 'dave', age: 30, firstLanguage: 'english'});
+      $scope.contacts.insert({name: 'tim', age: 30, firstLanguage: 'english'});
+      $scope.contacts.insert({name: 'jonas', age: 30, firstLanguage: 'swedish'});
+      $scope.contacts.insert({name: 'pedro', age: 30, firstLanguage: 'spanish'});
+
+    });
+    
+  </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 /**
  * LokiJS
  * @author Joe Minichino <joe@dsforge.net>
- * 
+ *
  * A lightweight document oriented javascript database
  */
 
@@ -11,7 +11,7 @@
  */
 
 /*jslint browser: true, node: true, plusplus: true, indent: 2 */
- 
+
 var loki = (function () {
   'use strict';
 
@@ -49,37 +49,37 @@ var loki = (function () {
    * @constructor
    * Resultset class allowing chainable queries.  Intended to be instanced internally.
    *
-   * Collection.find(), Collection.view(), and Collection.chain() instantiate this resultset 
+   * Collection.find(), Collection.view(), and Collection.chain() instantiate this resultset
    * Examples:
-   *	mycollection.chain().view("Toyota").find({ "doors" : 4 }).data();
-   * 	mycollection.view("Toyota");
-   *	mycollection.find({ "doors": 4 });
-   * When using .chain(), any number of view() and data() calls can be chained together to further filter 
+   *  mycollection.chain().view("Toyota").find({ "doors" : 4 }).data();
+   *  mycollection.view("Toyota");
+   *  mycollection.find({ "doors": 4 });
+   * When using .chain(), any number of view() and data() calls can be chained together to further filter
    * resultset, ending the chain with a .data() call to return as an array of collection document objects.
    */
   function Resultset(collection, queryObj, queryFunc) {
-	// retain reference to collection we are querying against
-	this.collection = collection;
+    // retain reference to collection we are querying against
+    this.collection = collection;
 
-	// if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
-	this.searchIsChained = (!queryObj && !queryFunc);
-	this.filteredrows = [];
-	this.filterInitialized = false;
-	
-	// if user supplied initial queryObj or queryFunc, apply it 
-	if (queryObj != null) return this.find(queryObj);
-	if (queryFunc != null) return this.where(queryFunc);
-	
-	// otherwise return unfiltered Resultset for future filtering 
-	return this;
+    // if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
+    this.searchIsChained = (!queryObj && !queryFunc);
+    this.filteredrows = [];
+    this.filterInitialized = false;
+
+    // if user supplied initial queryObj or queryFunc, apply it 
+    if (queryObj != null) return this.find(queryObj);
+    if (queryFunc != null) return this.where(queryFunc);
+
+    // otherwise return unfiltered Resultset for future filtering 
+    return this;
   }
-  
-  Resultset.prototype.toJSON = function() {
-	var copy = this.copy();
-	copy.collection = null;
-	return copy;
+
+  Resultset.prototype.toJSON = function () {
+    var copy = this.copy();
+    copy.collection = null;
+    return copy;
   }
-  
+
   // limit() : allows you to limit the number of documents in the resultset (starting at 0).
   // A resultset copy() is made to avoid altering original resultset, 
   //   so future chain ops will not propagate back to original resultset
@@ -87,34 +87,34 @@ var loki = (function () {
   // Example :
   //   - You establish your resultset (directly or via a DynamicView)
   //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
-  Resultset.prototype.limit = function(qty) {
-	var rscopy = this.copy();
-	
-	rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
-	
-	return rscopy;
+  Resultset.prototype.limit = function (qty) {
+    var rscopy = this.copy();
+
+    rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
+
+    return rscopy;
   }
-  
+
   // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
   // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
-  Resultset.prototype.offset = function(pos) {
-	var rscopy = this.copy();
-	
-	rscopy.filteredrows = rscopy.filteredrows.splice(pos);
-	
-	return rscopy;
+  Resultset.prototype.offset = function (pos) {
+    var rscopy = this.copy();
+
+    rscopy.filteredrows = rscopy.filteredrows.splice(pos);
+
+    return rscopy;
   }
-  
+
   // To support reuse of resultset in forked query situations use copy()
-  Resultset.prototype.copy = function() {
-		var result = new Resultset(this.collection, null, null);
-		
-		result.filteredrows = this.filteredrows;
-		result.filterInitialized = this.filterInitialized;
-		
-		return result;
+  Resultset.prototype.copy = function () {
+    var result = new Resultset(this.collection, null, null);
+
+    result.filteredrows = this.filteredrows;
+    result.filterInitialized = this.filterInitialized;
+
+    return result;
   }
-  
+
   // User supplied compare function is provided two documents to compare. (chainable)
   // Example:
   // rslt.sort(function(obj1, obj2) { 
@@ -122,61 +122,77 @@ var loki = (function () {
   //   if (obj1.name > obj2.name) return 1;
   //   if (obj1.name < obj2.name) return -1;
   // });
-  Resultset.prototype.sort = function(comparefun) {
-	var wrappedComparer = 
-			(function(userComparer, rslt) {
-				return function(a, b) {
-					var obj1 = rslt.collection.data[a];
-					var obj2 = rslt.collection.data[b];
-					
-					return userComparer(obj1, obj2);
-				}
-			})(comparefun, this);  
-  
-	this.filteredrows.sort(wrappedComparer);
-	
-	return this;
+  Resultset.prototype.sort = function (comparefun) {
+    var wrappedComparer =
+      (function (userComparer, rslt) {
+        return function (a, b) {
+          var obj1 = rslt.collection.data[a];
+          var obj2 = rslt.collection.data[b];
+
+          return userComparer(obj1, obj2);
+        }
+      })(comparefun, this);
+
+    this.filteredrows.sort(wrappedComparer);
+
+    return this;
   }
-  
+
   // Simpler, loose evaluation for user to sort based on a property name. (chainable)
   // Example :
   // rslt.simplesort("name");
-  Resultset.prototype.simplesort = function(propname, isdesc) {
-	if (typeof(isdesc) == "undefined") isdesc = false;
-	
-	var wrappedComparer = 
-		(function(prop, desc, rslt) {
-			return function(a, b) {
-				var obj1 = rslt.collection.data[a];
-				var obj2 = rslt.collection.data[b];
-				
-				if (obj1[prop] == obj2[prop]) return 0;
-				
-				if (desc) {
-					if (obj1[prop] < obj2[prop]) return 1;
-					if (obj1[prop] > obj2[prop]) return -1;
-				}
-				else {
-					if (obj1[prop] > obj2[prop]) return 1;
-					if (obj1[prop] < obj2[prop]) return -1;
-				}
-			}
-		})(propname, isdesc, this);
-		
-	this.filteredrows.sort(wrappedComparer);
-	
-	return this;
+  Resultset.prototype.simplesort = function (propname, isdesc) {
+    if (typeof (isdesc) == "undefined") isdesc = false;
+
+    var wrappedComparer =
+      (function (prop, desc, rslt) {
+        return function (a, b) {
+          var obj1 = rslt.collection.data[a];
+          var obj2 = rslt.collection.data[b];
+
+          if (obj1[prop] == obj2[prop]) return 0;
+
+          if (desc) {
+            if (obj1[prop] < obj2[prop]) return 1;
+            if (obj1[prop] > obj2[prop]) return -1;
+          } else {
+            if (obj1[prop] > obj2[prop]) return 1;
+            if (obj1[prop] < obj2[prop]) return -1;
+          }
+        }
+      })(propname, isdesc, this);
+
+    this.filteredrows.sort(wrappedComparer);
+
+    return this;
   }
-  
+
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
-  Resultset.prototype.find = function(query) {
+  Resultset.prototype.find = function (query) {
     // comparison operators
-    function $eq(a, b) { return a === b; }
-    function $gt(a, b) { return a > b; }
-    function $gte(a, b) { return a >= b; }
-    function $lt(a, b) { return a < b; }
-    function $lte(a, b) { return a <= b; }
-    function $ne(a, b) { return a !== b; }
+    function $eq(a, b) {
+      return a === b;
+    }
+
+    function $gt(a, b) {
+      return a > b;
+    }
+
+    function $gte(a, b) {
+      return a >= b;
+    }
+
+    function $lt(a, b) {
+      return a < b;
+    }
+
+    function $lte(a, b) {
+      return a <= b;
+    }
+
+    function $ne(a, b) {
+      return a !== b;
+    }
 
     var queryObject = query || 'getAll',
       property,
@@ -190,10 +206,10 @@ var loki = (function () {
         '$gte': $gte,
         '$lt': $lt,
         '$lte': $lte,
-        '$ne' : $ne
+        '$ne': $ne
       },
       searchByIndex = false,
-	  result = [],
+      result = [],
       index = null,
       // comparison function
       fun,
@@ -202,9 +218,9 @@ var loki = (function () {
       // collection data length
       i;
 
-	// apply no filters if they want all
+    // apply no filters if they want all
     if (queryObject === 'getAll') {
-		return this;
+      return this;
     }
 
     for (p in queryObject) {
@@ -232,107 +248,106 @@ var loki = (function () {
       throw new TypeError();
     }
 
-	// if an index exists for the property being queried against, use it
+    // if an index exists for the property being queried against, use it
     if (this.collection.indices.hasOwnProperty(property)) {
-       searchByIndex = true;
-       index = this.collection.indices[property];
+      searchByIndex = true;
+      index = this.collection.indices[property];
     }
 
     // the comparison function
     fun = operators[operator];
 
-	// Query executed differently depending on :
-	//		- whether it is chained or not
-	//		- whether the property being queried has an index defined
-	//		- if chained, we handle first pass differently for initial filteredrows[] population
-	// 
-	// For performance reasons, each case has its own if block to minimize in-loop calculations
-	
-	// If not a chained query, bypass filteredrows and work directly against data
-	if (!this.searchIsChained) {
-		if (!searchByIndex) {
-			t = this.collection.data;
-			i = t.length;
-			while (i--) {
-				if (fun(t[i][property], value)) {
-					result.push(t[i]);
-				}
-			}
-		} 
-		else {
-			t = index;
-			i = index.length; 
-			while (i--) {
-				if (fun(t[i], value)) {
-					result.push(this.collection.data[i]);
-				}
-			}
-		}
-		
-		// not a chained query so return result as data[]
-		return result;
-	}
-	// Otherwise this is a chained query
-	else {
-		// If the filteredrows[] is already initialized, use it
-		if (this.filterInitialized) {
-			if (!searchByIndex) {
-				t = this.collection.data;
-				i = this.filteredrows.length;
-				while (i--) {
-					if (fun(t[this.filteredrows[i]][property], value)) {
-						result.push(this.filteredrows[i]);
-					}
-				}
-			} 
-			else {
-				t = index;
-				i = this.filteredrows.length; //t.length;
-				while (i--) {
-					if (fun(t[this.filteredrows[i]], value)) {
-						result.push(this.filteredrows[i]);
-					}
-				}
-			}
-			
-			this.filteredrows = result;
-			
-			return this;
-		}
-		// first chained query so work against data[] but put results in filteredrows
-		else {
-			if (!searchByIndex) {
-				t = this.collection.data;
-				i = t.length;
-				while (i--) {
-					if (fun(t[i][property], value)) {
-						result.push(i);
-					}
-				}
-			} 
-			else {
-				t = index;
-				i = t.length; 
-				while (i--) {
-					if (fun(t[i], value)) {
-						result.push(i);
-					}
-				}
-			}
-			
-			this.filteredrows = result;
-			this.filterInitialized = true;   // next time work against filteredrows[]
-			
-			return this;
-		}
-		
-	}
+    // Query executed differently depending on :
+    //    - whether it is chained or not
+    //    - whether the property being queried has an index defined
+    //    - if chained, we handle first pass differently for initial filteredrows[] population
+    // 
+    // For performance reasons, each case has its own if block to minimize in-loop calculations
+
+    // If not a chained query, bypass filteredrows and work directly against data
+    if (!this.searchIsChained) {
+      if (!searchByIndex) {
+        t = this.collection.data;
+        i = t.length;
+        while (i--) {
+          if (fun(t[i][property], value)) {
+            result.push(t[i]);
+          }
+        }
+      } else {
+        t = index;
+        i = index.length;
+        while (i--) {
+          if (fun(t[i], value)) {
+            result.push(this.collection.data[i]);
+          }
+        }
+      }
+
+      // not a chained query so return result as data[]
+      return result;
+    }
+    // Otherwise this is a chained query
+    else {
+      // If the filteredrows[] is already initialized, use it
+      if (this.filterInitialized) {
+        if (!searchByIndex) {
+          t = this.collection.data;
+          i = this.filteredrows.length;
+          while (i--) {
+            if (fun(t[this.filteredrows[i]][property], value)) {
+              result.push(this.filteredrows[i]);
+            }
+          }
+        } else {
+          t = index;
+          i = this.filteredrows.length; //t.length;
+          while (i--) {
+            if (fun(t[this.filteredrows[i]], value)) {
+              result.push(this.filteredrows[i]);
+            }
+          }
+        }
+
+        this.filteredrows = result;
+
+        return this;
+      }
+      // first chained query so work against data[] but put results in filteredrows
+      else {
+        if (!searchByIndex) {
+          t = this.collection.data;
+          i = t.length;
+          while (i--) {
+            if (fun(t[i][property], value)) {
+              result.push(i);
+            }
+          }
+        } else {
+          t = index;
+          i = t.length;
+          while (i--) {
+            if (fun(t[i], value)) {
+              result.push(i);
+            }
+          }
+        }
+
+        this.filteredrows = result;
+        this.filterInitialized = true; // next time work against filteredrows[]
+
+        return this;
+      }
+
+    }
   }
-  
+
+
   // Resultset.where() returns reference to 'this' Resultset, use data() to get rowdata
-  Resultset.prototype.where = function(fun) { 
+  Resultset.prototype.where = function (fun) {
+
     var viewFunction,
-	  result = [];
+      result = [];
 
     if (('string' === typeof fun) && ('function' === typeof this.collection.Views[fun])) {
       viewFunction = this.collection.Views[fun];
@@ -342,68 +357,319 @@ var loki = (function () {
       throw 'Argument is not a stored view or a function';
     }
     try {
-		// if not a chained query then run directly against data[] and return object []
-		if (!this.searchIsChained) {
-			var i = this.collection.data.length;
-			
-			while (i--) {
-				if (viewFunction(this.collection.data[i]) === true) {
-					result.push(this.collection.data[i]);
-				}
-			}
-		  
-			// not a chained query so returning result as data[]
-			return result;
-		}
-		// else chained query, so run against filteredrows
-		else {
-			// If the filteredrows[] is already initialized, use it
-			if (this.filterInitialized) {
-				var i = this.filteredrows.length;
+      // if not a chained query then run directly against data[] and return object []
+      if (!this.searchIsChained) {
+        var i = this.collection.data.length;
 
-				while (i--) {
-					if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
-						result.push(this.filteredrows[i]);
-					}
-				}
-				
-				this.filteredrows = result;
-			  
-				return this;
-			}
-			// otherwise this is initial chained op, work against data, push into filteredrows[]
-			else {
-				var i = this.collection.data.length;
+        while (i--) {
+          if (viewFunction(this.collection.data[i]) === true) {
+            result.push(this.collection.data[i]);
+          }
+        }
 
-				while (i--) {
-					if (viewFunction(this.collection.data[i]) === true) {
-						result.push(i);
-					}
-				}
-				
-				this.filteredrows = result;
-				this.filterInitialized = true;
-				
-				return this;
-			}
-		}
-    } 
-	catch (err) {
-		throw err;
+        // not a chained query so returning result as data[]
+        return result;
+      }
+      // else chained query, so run against filteredrows
+      else {
+        // If the filteredrows[] is already initialized, use it
+        if (this.filterInitialized) {
+          var i = this.filteredrows.length;
+
+          while (i--) {
+            if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
+              result.push(this.filteredrows[i]);
+            }
+          }
+
+          this.filteredrows = result;
+
+          return this;
+        }
+        // otherwise this is initial chained op, work against data, push into filteredrows[]
+        else {
+          var i = this.collection.data.length;
+
+          while (i--) {
+            if (viewFunction(this.collection.data[i]) === true) {
+              result.push(i);
+            }
+          }
+
+          this.filteredrows = result;
+          this.filterInitialized = true;
+
+          return this;
+        }
+      }
+    } catch (err) {
+      throw err;
     }
   }
-  
+
   // Resultset.data() returns array or filtered documents 
-  Resultset.prototype.data = function() {
-	var result = [];
-	
-	for(var i in this.filteredrows) {
-		result.push(this.collection.data[this.filteredrows[i]]);
-	}
-	
-	return result;
+  Resultset.prototype.data = function () {
+    var result = [];
+
+    for (var i in this.filteredrows) {
+      result.push(this.collection.data[this.filteredrows[i]]);
+    }
+
+    return result;
   }
-  
+
+  /**
+   * @constructor
+   * DynamicView class is a versatile 'live' view class which is optionally persistent
+   *
+   * Collection.addDynamicView(name) instantiates this DynamicView object
+   *
+   * Examples:
+   *  var mydv = mycollection.addDynamicView("test");  // default is non-persistent
+   *  mydv.applyWhere(function(obj) { return obj.name == "Toyota"; });
+   *  mydv.applyFind({ "doors" : 4 });
+   *  var results = mydv.data();
+   *
+   * Chaining is supported on apply functions : applyWhere().applyFind().data() is valid
+   */
+  function DynamicView(collection, name, persistent) {
+    this.collection = collection;
+    this.name = name;
+
+    this.persistent = false;
+    if (typeof (persistent) != "undefined") this.persistent = persistent;
+
+    this.resultset = new Resultset(collection)
+    this.resultdata = [];
+    this.resultsdirty = false;
+
+    this.cachedresultset = null;
+
+    // keep ordered filter pipeline
+    this.filterPipeline = [];
+
+    // sorting member variables 
+    // we only support one active search, applied using applySort() or applySimpleSort()
+    this.sortFunction = null;
+    this.sortColumn = null;
+    this.sortColumnDesc = false;
+    this.sortDirty = false;
+
+    // may add map and reduce phases later
+  }
+
+  DynamicView.prototype.toJSON = function () {
+    var copy = new DynamicView(this.collection, this.name, this.persistent);
+
+    copy.resultset = this.resultset;
+    copy.resultdata = this.resultdata;
+    copy.resultsdirty = this.resultsdirty;
+    copy.filterPipeline = this.filterPipeline;
+    copy.sortFunction = this.sortFunction;
+    copy.sortColumn = this.sortColumn;
+    copy.sortColumnDesc = this.sortColumnDesc;
+    copy.sortDirty = this.sortDirty;
+
+    // avoid circular reference, reapply in db.loadJSON()
+    copy.collection = null;
+
+    return copy;
+  }
+
+  DynamicView.prototype.applySort = function (comparefun) {
+    this.sortFunction = comparefun;
+    this.sortColumn = null;
+    this.sortColumnDesc = false;
+
+    this.resultset.sort(comparefun);
+
+    this.sortDirty = false;
+
+    return this;
+  }
+
+  DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
+    if (typeof (isdesc) == "undefined") isdesc = false;
+
+    this.sortColumn = propname;
+    this.sortColumnDesc = isdesc;
+    this.sortFunction = null;
+
+    this.resultset.simplesort(propname, isdesc);
+
+    this.sortDirty = false;
+
+    return this;
+  }
+
+  DynamicView.prototype.startTransaction = function () {
+    this.cachedresultset = this.resultset;
+  }
+
+  DynamicView.prototype.commit = function () {
+    this.cachedresultset = null;
+  }
+
+  DynamicView.prototype.rollback = function () {
+    this.resultset = this.cachedresultset;
+
+    if (this.persistent) {
+      // i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
+      // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
+      // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
+      this.resultdata = this.resultset.data();
+    }
+  }
+
+  DynamicView.prototype.applyFind = function (query) {
+    this.filterPipeline.push({
+      type: 'find',
+      val: query
+    });
+
+    // Apply immediately to Resultset; if persistent we will wait until later to build internal data
+    this.resultset.find(query);
+
+    this.sortDirty = true;
+    if (this.persistent) this.resultsdirty = true;
+
+    return this;
+  }
+
+  DynamicView.prototype.applyWhere = function (fun) {
+    this.filterPipeline.push({
+      type: 'where',
+      val: fun
+    });
+
+    // Apply immediately to Resultset; if persistent we will wait until later to build internal data
+    this.resultset.where(fun);
+
+    this.sortDirty = true;
+    if (this.persistent) this.resultsdirty = true;
+
+    return this;
+  }
+
+  // will either build a resultset array or (if persistent) return reference to persistent data array
+  DynamicView.prototype.data = function () {
+    if (this.sortDirty) {
+      if (this.sortFunction) this.resultset.sort(this.sortFunction);
+      if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+      this.sortDirty = false;
+    }
+
+    // if nonpersistent return resultset data evaluation
+    if (!this.persistent) {
+      return this.resultset.data();
+    }
+
+    // Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
+    if (this.resultsdirty) {
+      this.resultdata = this.resultset.data();
+      this.resultsdirty = false;
+    }
+
+    return this.resultdata;
+  }
+
+  // internal function called on collection.insert() and collection.update()
+  DynamicView.prototype.evaluateDocument = function (objIndex) {
+    var ofr = this.resultset.filteredrows;
+    var oldPos = ofr.indexOf(objIndex);
+    var oldlen = ofr.length;
+
+    // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
+    // mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
+    var evalResultset = new Resultset(this.collection);
+    evalResultset.filteredrows = [objIndex];
+    evalResultset.filterInitialized = true;
+    for (var idx = 0; idx < this.filterPipeline.length; idx++) {
+      switch (this.filterPipeline[idx].type) {
+      case "find":
+        evalResultset.find(this.filterPipeline[idx].val);
+        break;
+      case "where":
+        evalResultset.where(this.filterPipeline[idx].val);
+        break;
+      }
+    }
+
+    // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
+    var newPos = (evalResultset.filteredrows.length == 0) ? -1 : 0;
+
+    // wasn't in old, shouldn't be now... do nothing
+    if (oldPos == -1 && newPos == -1) return;
+
+    // wasn't in resultset, should be now... add
+    if (oldPos == -1 && newPos != -1) {
+      ofr.push(objIndex);
+
+      if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
+
+      // need to re-sort to sort new document
+      if (sortFunction || sortColumn) sortDirty;
+
+      return;
+    }
+
+    // was in resultset, shouldn't be now... delete
+    if (oldPos != -1 && newPos == -1) {
+      if (oldPos < oldlen - 1) {
+        // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
+        ofr[oldPos] = ofr[oldlen - 1];
+        ofr.length = oldlen - 1;
+
+        if (this.persistent) {
+          this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+          this.resultdata.length = oldlen - 1;
+        }
+      } else {
+        ofr.length(oldlen - 1);
+
+        if (this.persistent) this.resultdata.length = oldlen - 1;
+      }
+
+      return;
+    }
+
+    // was in resultset, should still be now... (update persistent only?)
+    if (oldPos != -1 && newPos != -1) {
+      if (this.persistent) {
+        // in case document changed, replace persistent view data with the latest collection.data document
+        this.resultdata[oldPos] = this.collection.data[objIndex];
+      }
+
+      // in case changes to data altered a sort column
+      if (sortFunction || sortColumn) sortDirty;
+
+      return;
+    }
+  }
+
+  // internal function called on collection.delete()
+  DynamicView.prototype.removeDocument = function (objIndex) {
+    var ofr = this.resultset.filteredrows;
+    var oldPos = ofr.indexOf(objIndex);
+    var oldlen = ofr.length;
+
+    if (oldPos != -1) {
+      // if not last row in resultdata, swap last to hole and truncate last row
+      if (oldPos < oldlen - 1) {
+        ofr[oldPos] = ofr[oldlen - 1];
+        ofr.length = oldlen - 1;
+
+        this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+        this.resultdata.length = oldlen - 1;
+      }
+      // last row, so just truncate last row
+      else {
+        ofr.length = oldlen - 1;
+        this.resultdata.length = oldlen - 1;
+      }
+    }
+  }
+
   /**
    * @constructor
    * DynamicView class is a versatile 'live' view class which is optionally persistent
@@ -418,237 +684,246 @@ var loki = (function () {
    *
    * Chaining is supported on apply functions : applyWhere().applyFind().data() is valid
    */
- function DynamicView(collection, name, persistent) {
-	this.collection = collection;
-	this.name = name;
-	
-	this.persistent = false;
-	if (typeof(persistent) != "undefined") this.persistent = persistent;	
-	
-	this.resultset = new Resultset(collection)
-	this.resultdata = [];
-	this.resultsdirty = false;
-	
-	this.cachedresultset = null;
+  function DynamicView(collection, name, persistent) {
+    this.collection = collection;
+    this.name = name;
 
-	// keep ordered filter pipeline
-	this.filterPipeline = [];
-	
-	// sorting member variables 
-	// we only support one active search, applied using applySort() or applySimpleSort()
-	this.sortFunction = null;
-	this.sortColumn = null;
-	this.sortColumnDesc = false;
-	this.sortDirty = false;
-	
-	// may add map and reduce phases later
- }
- 
- DynamicView.prototype.toJSON = function() {
-	var copy = new DynamicView(this.collection, this.name, this.persistent);
+    this.persistent = false;
+    if (typeof (persistent) != "undefined") this.persistent = persistent;
 
-	copy.resultset = this.resultset;
-	copy.resultdata = this.resultdata;
-	copy.resultsdirty = this.resultsdirty;
-	copy.filterPipeline = this.filterPipeline;
-	copy.sortFunction = this.sortFunction;
-	copy.sortColumn = this.sortColumn;
-	copy.sortColumnDesc = this.sortColumnDesc;
-	copy.sortDirty = this.sortDirty;
-	
-	// avoid circular reference, reapply in db.loadJSON()
-	copy.collection = null;		
-	
-	return copy;
- }
-  
- DynamicView.prototype.applySort = function(comparefun) {
-	this.sortFunction = comparefun;
-	this.sortColumn = null;
-	this.sortColumnDesc = false;
-	
-	this.resultset.sort(comparefun);
-	
-	this.sortDirty = false;
-	
-	return this;
- }
- 
- DynamicView.prototype.applySimpleSort = function(propname, isdesc) {
-	if (typeof(isdesc) == "undefined") isdesc = false;
-	
-	this.sortColumn = propname;
-	this.sortColumnDesc = isdesc;
-	this.sortFunction = null;
-	
-	this.resultset.simplesort(propname, isdesc);
-	
-	this.sortDirty = false;
-	
-	return this;
- }
- 
- DynamicView.prototype.startTransaction = function() {
-	this.cachedresultset = this.resultset;
- }
- 
- DynamicView.prototype.commit = function() {
-	this.cachedresultset = null;
- }
- 
- DynamicView.prototype.rollback = function() {
-	this.resultset = this.cachedresultset;
-	
-	if (this.persistent) {
-		// i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
-		// so we will for now just rebuild the persistent dynamic view data in this worst case scenario
-		// (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
-		this.resultdata = this.resultset.data();
-	}
- }
- 
- DynamicView.prototype.applyFind = function(query) {
-	this.filterPipeline.push({ type: 'find', val: query });
-	
-	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
-	this.resultset.find(query);
-	
-	this.sortDirty = true;
-	if (this.persistent) this.resultsdirty = true;
-	
-	return this;
- }
- 
- DynamicView.prototype.applyWhere = function(fun) {
-	this.filterPipeline.push({ type: 'where', val: fun });
-	
-	// Apply immediately to Resultset; if persistent we will wait until later to build internal data
-	this.resultset.where(fun);
-	
-	this.sortDirty = true;
-	if (this.persistent) this.resultsdirty = true;
-	
-	return this;
- }
- 
- // will either build a resultset array or (if persistent) return reference to persistent data array
- DynamicView.prototype.data = function() {
-	if (this.sortDirty) {
-		if (this.sortFunction) this.resultset.sort(this.sortFunction);
-		if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
-		this.sortDirty = false;
-	}
-	
-	// if nonpersistent return resultset data evaluation
-	if (!this.persistent) {
-		return this.resultset.data();
-	}
+    this.resultset = new Resultset(collection)
+    this.resultdata = [];
+    this.resultsdirty = false;
 
-	// Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
-	if (this.resultsdirty) {
-		this.resultdata = this.resultset.data();
-		this.resultsdirty = false;
-	}
-	
-	return this.resultdata;
- }
+    this.cachedresultset = null;
 
- // internal function called on collection.insert() and collection.update()
- DynamicView.prototype.evaluateDocument = function(objIndex) {
-	var ofr = this.resultset.filteredrows;
-	var oldPos = ofr.indexOf(objIndex);
-	var oldlen = ofr.length;
+    // keep ordered filter pipeline
+    this.filterPipeline = [];
 
-	// creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
-	// mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
-	var evalResultset = new Resultset(this.collection);
-	evalResultset.filteredrows = [objIndex];
-	evalResultset.filterInitialized = true;
-	for(var idx=0; idx < this.filterPipeline.length; idx++) {
-		switch(this.filterPipeline[idx].type) {
-			case "find": evalResultset.find(this.filterPipeline[idx].val); break;
-			case "where": evalResultset.where(this.filterPipeline[idx].val); break;
-		}
-	}
-	
-	// not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
-	var newPos = (evalResultset.filteredrows.length == 0) ? -1: 0;
-	
-	// wasn't in old, shouldn't be now... do nothing
-	if (oldPos == -1 && newPos == -1) return;
-	
-	// wasn't in resultset, should be now... add
-	if (oldPos == -1 && newPos != -1) {
-		ofr.push(objIndex);
-		
-		if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
-		
-		// need to re-sort to sort new document
-		if (sortFunction || sortColumn) sortDirty;
-		
-		return;
-	}
-	
-	// was in resultset, shouldn't be now... delete
-	if (oldPos != -1 && newPos == -1) {
-		if (oldPos < oldlen-1) {
-			// http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
-			ofr[oldPos] = ofr[oldlen-1];
-			ofr.length = oldlen-1;
-			
-			if (this.persistent) {
-				this.resultdata[oldPos] = this.resultdata[oldlen-1];
-				this.resultdata.length = oldlen-1;
-			}
-		}
-		else {
-			ofr.length(oldlen-1);
-			
-			if (this.persistent) this.resultdata.length = oldlen-1;
-		}
-		
-		return;
-	}
-	
-	// was in resultset, should still be now... (update persistent only?)
-	if (oldPos != -1 && newPos != -1) {
-		if (this.persistent) {
-			// in case document changed, replace persistent view data with the latest collection.data document
-			this.resultdata[oldPos] = this.collection.data[objIndex];
-		}
-		
-		// in case changes to data altered a sort column
-		if (sortFunction || sortColumn) sortDirty;
+    // sorting member variables 
+    // we only support one active search, applied using applySort() or applySimpleSort()
+    this.sortFunction = null;
+    this.sortColumn = null;
+    this.sortColumnDesc = false;
+    this.sortDirty = false;
 
-		return;
-	}
- }
- 
- // internal function called on collection.delete()
- DynamicView.prototype.removeDocument = function(objIndex) {
-	var ofr = this.resultset.filteredrows;
-	var oldPos = ofr.indexOf(objIndex);
-	var oldlen = ofr.length;
-	
-	if (oldPos != -1) {
-		// if not last row in resultdata, swap last to hole and truncate last row
-		if (oldPos < oldlen-1) {
-			ofr[oldPos] = ofr[oldlen-1];
-			ofr.length = oldlen-1;
-			
-			this.resultdata[oldPos] = this.resultdata[oldlen-1];
-			this.resultdata.length = oldlen-1;
-		}
-		// last row, so just truncate last row
-		else {
-			ofr.length = oldlen-1;
-			this.resultdata.length = oldlen-1;
-		}
-	}
- }
- 
+    // may add map and reduce phases later
+  }
+
+  DynamicView.prototype.toJSON = function () {
+    var copy = new DynamicView(this.collection, this.name, this.persistent);
+
+    copy.resultset = this.resultset;
+    copy.resultdata = this.resultdata;
+    copy.resultsdirty = this.resultsdirty;
+    copy.filterPipeline = this.filterPipeline;
+    copy.sortFunction = this.sortFunction;
+    copy.sortColumn = this.sortColumn;
+    copy.sortColumnDesc = this.sortColumnDesc;
+    copy.sortDirty = this.sortDirty;
+
+    // avoid circular reference, reapply in db.loadJSON()
+    copy.collection = null;
+
+    return copy;
+  }
+
+  DynamicView.prototype.applySort = function (comparefun) {
+    this.sortFunction = comparefun;
+    this.sortColumn = null;
+    this.sortColumnDesc = false;
+
+    this.resultset.sort(comparefun);
+
+    this.sortDirty = false;
+
+    return this;
+  }
+
+  DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
+    if (typeof (isdesc) == "undefined") isdesc = false;
+
+    this.sortColumn = propname;
+    this.sortColumnDesc = isdesc;
+    this.sortFunction = null;
+
+    this.resultset.simplesort(propname, isdesc);
+
+    this.sortDirty = false;
+
+    return this;
+  }
+
+  DynamicView.prototype.startTransaction = function () {
+    this.cachedresultset = this.resultset;
+  }
+
+  DynamicView.prototype.commit = function () {
+    this.cachedresultset = null;
+  }
+
+  DynamicView.prototype.rollback = function () {
+    this.resultset = this.cachedresultset;
+
+    if (this.persistent) {
+      // i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
+      // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
+      // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
+      this.resultdata = this.resultset.data();
+    }
+  }
+
+  DynamicView.prototype.applyFind = function (query) {
+    this.filterPipeline.push({
+      type: 'find',
+      val: query
+    });
+
+    // Apply immediately to Resultset; if persistent we will wait until later to build internal data
+    this.resultset.find(query);
+
+    this.sortDirty = true;
+    if (this.persistent) this.resultsdirty = true;
+
+    return this;
+  }
+
+  DynamicView.prototype.applyWhere = function (fun) {
+    this.filterPipeline.push({
+      type: 'where',
+      val: fun
+    });
+
+    // Apply immediately to Resultset; if persistent we will wait until later to build internal data
+    this.resultset.where(fun);
+
+    this.sortDirty = true;
+    if (this.persistent) this.resultsdirty = true;
+
+    return this;
+  }
+
+  // will either build a resultset array or (if persistent) return reference to persistent data array
+  DynamicView.prototype.data = function () {
+    if (this.sortDirty) {
+      if (this.sortFunction) this.resultset.sort(this.sortFunction);
+      if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+      this.sortDirty = false;
+    }
+
+    // if nonpersistent return resultset data evaluation
+    if (!this.persistent) {
+      return this.resultset.data();
+    }
+
+    // Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
+    if (this.resultsdirty) {
+      this.resultdata = this.resultset.data();
+      this.resultsdirty = false;
+    }
+
+    return this.resultdata;
+  }
+
+  // internal function called on collection.insert() and collection.update()
+  DynamicView.prototype.evaluateDocument = function (objIndex) {
+    var ofr = this.resultset.filteredrows;
+    var oldPos = ofr.indexOf(objIndex);
+    var oldlen = ofr.length;
+
+    // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
+    // mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
+    var evalResultset = new Resultset(this.collection);
+    evalResultset.filteredrows = [objIndex];
+    evalResultset.filterInitialized = true;
+    for (var idx = 0; idx < this.filterPipeline.length; idx++) {
+      switch (this.filterPipeline[idx].type) {
+      case "find":
+        evalResultset.find(this.filterPipeline[idx].val);
+        break;
+      case "where":
+        evalResultset.where(this.filterPipeline[idx].val);
+        break;
+      }
+    }
+
+    // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
+    var newPos = (evalResultset.filteredrows.length == 0) ? -1 : 0;
+
+    // wasn't in old, shouldn't be now... do nothing
+    if (oldPos == -1 && newPos == -1) return;
+
+    // wasn't in resultset, should be now... add
+    if (oldPos == -1 && newPos != -1) {
+      ofr.push(objIndex);
+
+      if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
+
+      // need to re-sort to sort new document
+      if (sortFunction || sortColumn) sortDirty;
+
+      return;
+    }
+
+    // was in resultset, shouldn't be now... delete
+    if (oldPos != -1 && newPos == -1) {
+      if (oldPos < oldlen - 1) {
+        // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
+        ofr[oldPos] = ofr[oldlen - 1];
+        ofr.length = oldlen - 1;
+
+        if (this.persistent) {
+          this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+          this.resultdata.length = oldlen - 1;
+        }
+      } else {
+        ofr.length(oldlen - 1);
+
+        if (this.persistent) this.resultdata.length = oldlen - 1;
+      }
+
+      return;
+    }
+
+    // was in resultset, should still be now... (update persistent only?)
+    if (oldPos != -1 && newPos != -1) {
+      if (this.persistent) {
+        // in case document changed, replace persistent view data with the latest collection.data document
+        this.resultdata[oldPos] = this.collection.data[objIndex];
+      }
+
+      // in case changes to data altered a sort column
+      if (sortFunction || sortColumn) sortDirty;
+
+      return;
+    }
+  }
+
+  // internal function called on collection.delete()
+  DynamicView.prototype.removeDocument = function (objIndex) {
+    var ofr = this.resultset.filteredrows;
+    var oldPos = ofr.indexOf(objIndex);
+    var oldlen = ofr.length;
+
+    if (oldPos != -1) {
+      // if not last row in resultdata, swap last to hole and truncate last row
+      if (oldPos < oldlen - 1) {
+        ofr[oldPos] = ofr[oldlen - 1];
+        ofr.length = oldlen - 1;
+
+        this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+        this.resultdata.length = oldlen - 1;
+      }
+      // last row, so just truncate last row
+      else {
+        ofr.length = oldlen - 1;
+        this.resultdata.length = oldlen - 1;
+      }
+    }
+  }
+
   /**
-   * @constructor 
+   * @constructor
    * Collection class that handles documents of same type
    */
   function Collection(name, objType, indices, transactional) {
@@ -673,8 +948,8 @@ var loki = (function () {
     this.maxId = 0;
     // view container is an object because each views gets a name
     this.Views = {};
-	
-	this.DynamicViews = [];
+
+    this.DynamicViews = [];
 
     // pointer to self to avoid this tricks
     var indexesArray = indices || ['id'],
@@ -709,7 +984,9 @@ var loki = (function () {
         return this.collections[i];
       }
     }
-    if (!found) { throw 'No such collection'; }
+    if (!found) {
+      throw 'No such collection';
+    }
   };
 
   Loki.prototype.listCollections = function () {
@@ -718,13 +995,18 @@ var loki = (function () {
       colls = [];
 
     while (i--) {
-      colls.push({ name: this.collections[i].name, type: this.collections[i].objType, count: this.collections[i].data.length });
+      colls.push({
+        name: this.collections[i].name,
+        type: this.collections[i].objType,
+        count: this.collections[i].data.length
+      });
     }
     return colls;
   };
 
   Loki.prototype.removeCollection = function (name) {
-    var i = 0, len = this.collections.length;
+    var i = 0,
+      len = this.collections.length;
     for (i; i < len; i += 1) {
       if (this.collections[i].name === name) {
         this.collections.splice(i, 1);
@@ -769,31 +1051,31 @@ var loki = (function () {
         copyColl.data[j] = coll.data[j];
       }
 
-      copyColl.maxId = (coll.data.length == 0)?0:coll.data.maxId;
+      copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
       copyColl.indices = coll.indices;
       copyColl.idIndex = coll.indices.id;
       copyColl.transactional = coll.transactional;
       copyColl.ensureAllIndexes();
-	  
-	  // in case they are loading a database created before we added dynamic views, handle undefined
-	  if (typeof(coll.DynamicViews) == "undefined") continue;
-	  
-	  // reinflate DynamicViews and attached Resultsets
-	  for(var idx = 0; idx < coll.DynamicViews.length; idx++) {
-		var colldv = coll.DynamicViews[idx];
-		
-		var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
-		dv.resultdata = colldv.resultdata;
-		dv.resultsdirty = colldv.resultsdirty;
-		dv.filterPipeline = colldv.filterPipeline;
-		dv.sortColumn = colldv.sortColumn;
-		dv.sortColumnDesc = colldv.sortColumnDesc;
-		dv.sortFunction = colldv.sortFunction;
-		dv.sortDirty = colldv.sortDirty;
-		dv.resultset.filteredrows = colldv.resultset.filteredrows;
-		dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
-		dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
-	  }
+
+      // in case they are loading a database created before we added dynamic views, handle undefined
+      if (typeof (coll.DynamicViews) == "undefined") continue;
+
+      // reinflate DynamicViews and attached Resultsets
+      for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
+        var colldv = coll.DynamicViews[idx];
+
+        var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
+        dv.resultdata = colldv.resultdata;
+        dv.resultsdirty = colldv.resultsdirty;
+        dv.filterPipeline = colldv.filterPipeline;
+        dv.sortColumn = colldv.sortColumn;
+        dv.sortColumnDesc = colldv.sortColumnDesc;
+        dv.sortFunction = colldv.sortFunction;
+        dv.sortDirty = colldv.sortDirty;
+        dv.resultset.filteredrows = colldv.resultset.filteredrows;
+        dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
+        dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
+      }
     }
   };
 
@@ -801,11 +1083,15 @@ var loki = (function () {
 
   // load db from a file
   Loki.prototype.loadDatabase = function (callback) {
-    var cFun = callback || function() { return; },
+    var cFun = callback || function () {
+        return;
+      },
       self = this;
 
     if (this.ENV === 'NODEJS') {
-      this.fs.readFile(this.filename, {encoding: 'utf8'}, function (err, data) {
+      this.fs.readFile(this.filename, {
+        encoding: 'utf8'
+      }, function (err, data) {
         if (err) {
           throw err;
         }
@@ -817,7 +1103,9 @@ var loki = (function () {
 
   // save file to disk as json
   Loki.prototype.saveToDisk = function (callback) {
-    var cFun = callback || function() { return; },
+    var cFun = callback || function () {
+        return;
+      },
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
@@ -856,7 +1144,8 @@ var loki = (function () {
       throw 'Attempting to set index without an associated property';
     }
 
-    var index, len = this.data.length, i = 0;
+    var index, len = this.data.length,
+      i = 0;
     if (this.indices.hasOwnProperty(property)) {
       index = this.indices[property];
     } else {
@@ -873,7 +1162,7 @@ var loki = (function () {
   };
 
   /**
-   * Ensure index async with callback - useful for background syncing with a remote server 
+   * Ensure index async with callback - useful for background syncing with a remote server
    */
   Collection.prototype.ensureIndexAsync = function (property, callback) {
     this.async(function () {
@@ -904,36 +1193,39 @@ var loki = (function () {
   /**
    * Each collection maintains a list of DynamicViews associated with it
    **/
-  Collection.prototype.addDynamicView = function(name, persistent) {
-	var dv = new DynamicView(this, name, persistent);
-	this.DynamicViews.push(dv);
-	
-	return dv;
+
+  Collection.prototype.addDynamicView = function (name, persistent) {
+    var dv = new DynamicView(this, name, persistent);
+    this.DynamicViews.push(dv);
+
+    return dv;
   }
-  
-  Collection.prototype.removeDynamicView = function(name) {
-	for(var idx=0; idx < this.DynamicViews.length; idx++) {
-		if (this.DynamicViews[idx].name == name) {
-			this.DynamicViews.splice(idx, 1);
-		}
-	}
+
+  Collection.prototype.removeDynamicView = function (name) {
+    for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+      if (this.DynamicViews[idx].name == name) {
+        this.DynamicViews.splice(idx, 1);
+      }
+    }
   }
-  
-  Collection.prototype.getDynamicView = function(name) {
-	for(var idx=0; idx < this.DynamicViews.length; idx++) {
-		if (this.DynamicViews[idx].name == name) {
-			return this.DynamicViews[idx];
-		}
-	}
+
+  Collection.prototype.getDynamicView = function (name) {
+    for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+      if (this.DynamicViews[idx].name == name) {
+        return this.DynamicViews[idx];
+      }
+    }
   }
-  
+
   /**
    * find and update: pass a filtering function to select elements to be updated
    * and apply the updatefunctino to those elements iteratively
    */
   Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
 
-    var results = this.view(filterFunction), i = 0, obj;
+    var results = this.view(filterFunction),
+      i = 0,
+      obj;
     try {
       for (i; i < results.length; i++) {
         obj = updateFunction(results[i]);
@@ -948,13 +1240,12 @@ var loki = (function () {
   /**
    * generate document method - ensure objects have id and objType properties
    * Come to think of it, really unfortunate name because of what document normally refers to in js.
-   * that's why there's an alias below but until I have this implemented 
+   * that's why there's an alias below but until I have this implemented
    */
   Collection.prototype.insert = function (doc) {
     doc.id = null;
     doc.objType = this.objType;
     this.add(doc);
-	
     return doc;
   };
 
@@ -979,18 +1270,19 @@ var loki = (function () {
     }
     try {
       this.startTransaction();
-      var i, arr = this.get(doc.id, true), obj = arr[0],
-      // get current position in data array
+      var i, arr = this.get(doc.id, true),
+        obj = arr[0],
+        // get current position in data array
         position = arr[1];
       // operate the update
       this.data[position] = doc;
 
-		// now that we can efficiently determine the data[] position of newly added document,
-		// submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].evaluateDocument(position);
-		}
-	  
+      // now that we can efficiently determine the data[] position of newly added document,
+      // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].evaluateDocument(position);
+      }
+
       for (i in this.indices) {
         if (this.indices.hasOwnProperty(i)) {
           this.indices[i][position] = obj[i];
@@ -1045,12 +1337,18 @@ var loki = (function () {
         obj.id = this.maxId;
         // add the object
         this.data.push(obj);
-		
-		// now that we can efficiently determine the data[] position of newly added document,
-		// submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].evaluateDocument(this.data.length-1);
-		}
+
+        // now that we can efficiently determine the data[] position of newly added document,
+        // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+        for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+          this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
+        }
+
+        // now that we can efficiently determine the data[] position of newly added document,
+        // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+        for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+          this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
+        }
 
         // resync indexes to make sure all IDs are there
         for (i in this.indices) {
@@ -1067,7 +1365,7 @@ var loki = (function () {
   };
 
   /**
-   * iterate through arguments and add indexes 
+   * iterate through arguments and add indexes
    */
   Collection.prototype.addMany = function () {
     var i = arguments.length;
@@ -1091,18 +1389,17 @@ var loki = (function () {
 
     try {
       this.startTransaction();
-	  
       var arr = this.get(doc.id, true),
         // obj = arr[0],
         position = arr[1],
         i;
 
-		// now that we can efficiently determine the data[] position of newly added document,
-		// submit it for all registered DynamicViews to remove
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].removeDocument(position);
-		}
-		
+      // now that we can efficiently determine the data[] position of newly added document,
+      // submit it for all registered DynamicViews to remove
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].removeDocument(position);
+      }
+
       this.data.splice(position, 1);
 
       for (i in this.indices) {
@@ -1131,9 +1428,9 @@ var loki = (function () {
       min = 0,
       mid = Math.floor(min + (max - min) / 2);
 
-    if(isNaN(id)){
+    if (isNaN(id)) {
       id = parseInt(id);
-      if(isNaN(id)){
+      if (isNaN(id)) {
         throw 'Passed id is not an integer';
       }
     }
@@ -1197,13 +1494,13 @@ var loki = (function () {
     }
     return null;
   };
-  
+
   /**
-   * Chain method, used for beginning a series of chained find() and/or view() operations 
+   * Chain method, used for beginning a series of chained find() and/or view() operations
    * on a collection.
    */
   Collection.prototype.chain = function (query) {
-		return new Resultset(this, null, null);
+    return new Resultset(this, null, null);
   };
 
   /**
@@ -1211,17 +1508,18 @@ var loki = (function () {
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
-		// find logic moved into Resultset class
-		return new Resultset(this, query, null);
+    // find logic moved into Resultset class
+    return new Resultset(this, query, null);
   };
 
   /**
-   * Find object by unindexed field by property equal to value, 
+   * Find object by unindexed field by property equal to value,
    * simply iterates and returns the first element matching the query
    */
   Collection.prototype.findOneUnindexed = function (prop, value) {
 
-    var i = this.data.length, doc;
+    var i = this.data.length,
+      doc;
     while (i--) {
       if (this.data[i][prop] === value) {
         doc = this.data[i];
@@ -1239,41 +1537,41 @@ var loki = (function () {
         this.data = this.cachedData;
         this.indices = this.cachedIndex;
       }
-	  
-		// propagate rollback to dynamic views
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].rollback();
-		}
+
+      // propagate rollback to dynamic views
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].rollback();
+      }
     }
   };
 
   /**
-   * Transaction methods 
+   * Transaction methods
    */
 
   /** start the transation */
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
-		this.cachedData = this.data;
-		this.cachedIndex = this.indices;
+      this.cachedData = this.data;
+      this.cachedIndex = this.indices;
 
-		// propagate startTransaction to dynamic views
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].startTransaction();
-		}
+      // propagate startTransaction to dynamic views
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].startTransaction();
+      }
     }
   };
 
   /** commit the transation */
   Collection.prototype.commit = function () {
     if (this.transactional) {
-		this.cachedData = null;
-		this.cachedIndex = null;
+      this.cachedData = null;
+      this.cachedIndex = null;
 
-		// propagate commit to dynamic views
-		for (var idx=0; idx < this.DynamicViews.length; idx++) {
-			this.DynamicViews[idx].commit();
-		}
+      // propagate commit to dynamic views
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].commit();
+      }
     }
   };
 
@@ -1295,8 +1593,8 @@ var loki = (function () {
    * Create view function - CouchDB style
    */
   Collection.prototype.view = function (fun) {
-		// find logic moved into Resultset class
-		return new Resultset(this, null, fun);
+    // find logic moved into Resultset class
+    return new Resultset(this, null, fun);
   };
 
   /**
@@ -1309,7 +1607,7 @@ var loki = (function () {
   };
 
   /**
-   * Map Reduce 
+   * Map Reduce
    */
   Collection.prototype.mapReduce = function (mapFunction, reduceFunction) {
     try {

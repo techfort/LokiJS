@@ -15,6 +15,18 @@
 var loki = (function () {
   'use strict';
 
+  function clone(data, method) {
+    var cloneMethod = method || 'parse-stringify',
+      cloned;
+    if (cloneMethod === 'parse-stringify') {
+      cloned = JSON.parse(JSON.stringify(data));
+    } else if (cloneMethod === 'create') {
+      cloned = Object.create(data);
+    }
+    return cloned;
+  }
+
+
   /**
    * @constructor
    * The main database class
@@ -674,7 +686,7 @@ var loki = (function () {
    * @constructor
    * Collection class that handles documents of same type
    */
-  function Collection(name, objType, indices, transactional) {
+  function Collection(name, objType, indices, transactionOptions) {
     // the name of the collection 
     this.name = name;
     // the data held by the collection
@@ -687,7 +699,7 @@ var loki = (function () {
 
     /** Transactions properties */
     // is collection transactional
-    this.transactional = transactional || false;
+    this.transactional = transactionOptions.method || false;
     // private holders for cached data
     this.cachedIndex = null;
     this.cachedData = null;
@@ -1300,7 +1312,7 @@ var loki = (function () {
   /** start the transation */
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
-      this.cachedData = this.data;
+      this.cachedData = clone(this.data, this.transactional);
       this.cachedIndex = this.indices;
 
       // propagate startTransaction to dynamic views

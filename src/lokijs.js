@@ -697,7 +697,7 @@ var loki = (function () {
 
     /** Transactions properties */
     // is collection transactional
-    this.transactional = transactionOptions.method || false;
+    this.transactional = transactionOptions || false;
     // private holders for cached data
     this.cachedIndex = null;
     this.cachedData = null;
@@ -1288,20 +1288,7 @@ var loki = (function () {
     return null;
   };
 
-  /** roll back the transation */
-  Collection.prototype.rollback = function () {
-    if (this.transactional) {
-      if (this.cachedData !== null && this.cachedIndex !== null) {
-        this.data = this.cachedData;
-        this.indices = this.cachedIndex;
-      }
 
-      // propagate rollback to dynamic views
-      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-        this.DynamicViews[idx].rollback();
-      }
-    }
-  };
 
   /**
    * Transaction methods
@@ -1333,6 +1320,20 @@ var loki = (function () {
     }
   };
 
+  /** roll back the transation */
+  Collection.prototype.rollback = function () {
+    if (this.transactional) {
+      if (this.cachedData !== null && this.cachedIndex !== null) {
+        this.data = this.cachedData;
+        this.indices = this.cachedIndex;
+      }
+
+      // propagate rollback to dynamic views
+      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
+        this.DynamicViews[idx].rollback();
+      }
+    }
+  };
 
   // async executor. This is only to enable callbacks at the end of the execution. 
   Collection.prototype.async = function (fun, callback) {

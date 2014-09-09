@@ -20,8 +20,6 @@ var loki = (function () {
       cloned;
     if (cloneMethod === 'parse-stringify') {
       cloned = JSON.parse(JSON.stringify(data));
-    } else if (cloneMethod === 'create') {
-      cloned = Object.create(data);
     }
     return cloned;
   }

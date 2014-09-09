@@ -421,6 +421,17 @@ var loki = (function () {
   Resultset.prototype.data = function () {
     var result = [];
 
+	// if this is chained resultset with no filters applied, just return collection.data
+	if (this.searchIsChained && !this.filterInitialized) {
+		if (this.filteredrows.length == 0) {
+			return this.collection.data;
+		}
+		else {
+			// filteredrows must have been set manually, so use it
+			this.filterInitialized = true;
+		}
+	}
+	
     for (var i in this.filteredrows) {
       result.push(this.collection.data[this.filteredrows[i]]);
     }

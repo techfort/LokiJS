@@ -37,6 +37,21 @@ query = {
 
 view.applyFind(query);
 
+
+suite.assertStrictEqual('Resultset chain operations'
+, users.chain().find({'age': { '$gte': 30 }}).where(function(obj) { return obj.lang === 'Swedish'; }).data().length
+, 1);
+
+suite.assertStrictEqual('Offset/Skip first item of chain() with no filters'
+, users.chain().offset(1).data().length
+, users.data.length-1
+);
+
+suite.assertStrictEqual('Limit results to two documents'
+, users.chain().limit(2).data().length
+, 2
+);
+
 suite.assertEqual('Result data Equality', users.find(query), view.data());
 suite.assertNotStrictEqual('Strict Equality', users.find(query), view.data());
 suite.assertEqual('View data equality', view.resultset, view.resultset.copy());

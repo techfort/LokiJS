@@ -100,6 +100,11 @@ var loki = (function () {
   Resultset.prototype.limit = function (qty) {
     var rscopy = this.copy();
 
+	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
+	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+		rscopy.filteredrows = Object.keys(this.collection.data);
+	}
+	
     rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
 
     return rscopy;
@@ -110,8 +115,13 @@ var loki = (function () {
   Resultset.prototype.offset = function (pos) {
     var rscopy = this.copy();
 
-    rscopy.filteredrows = rscopy.filteredrows.splice(pos);
-
+	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
+	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+		rscopy.filteredrows = Object.keys(this.collection.data);
+	}
+	
+	rscopy.filteredrows = rscopy.filteredrows.splice(pos);
+	
     return rscopy;
   }
 

@@ -143,6 +143,11 @@ var loki = (function () {
   //   if (obj1.name < obj2.name) return -1;
   // });
   Resultset.prototype.sort = function (comparefun) {
+	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
+	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+		this.filteredrows = Object.keys(this.collection.data);
+	}
+	
     var wrappedComparer =
       (function (userComparer, rslt) {
         return function (a, b) {
@@ -162,6 +167,11 @@ var loki = (function () {
   // Example :
   // rslt.simplesort("name");
   Resultset.prototype.simplesort = function (propname, isdesc) {
+	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
+	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+		this.filteredrows = Object.keys(this.collection.data);
+	}
+	
     if (typeof (isdesc) == "undefined") isdesc = false;
 
     var wrappedComparer =

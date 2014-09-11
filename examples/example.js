@@ -208,7 +208,7 @@ window.runExample = function(){
     
     sep();
     trace("Example : offset/limit");
-    trace(dynViewPersistent.resultset.copy().offset(2).limit(4).data());
+    trace(dynViewPersistent.resultset.offset(2).limit(4).data());
 
 	sep();
 	

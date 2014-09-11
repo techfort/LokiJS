@@ -98,13 +98,13 @@ var loki = (function () {
   //   - You establish your resultset (directly or via a DynamicView)
   //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
   Resultset.prototype.limit = function (qty) {
-    var rscopy = this.copy();
-
 	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
 	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		rscopy.filteredrows = Object.keys(this.collection.data);
+		this.filteredrows = Object.keys(this.collection.data);
 	}
 	
+    var rscopy = this.copy();
+
     rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
 
     return rscopy;
@@ -113,13 +113,13 @@ var loki = (function () {
   // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
   // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
   Resultset.prototype.offset = function (pos) {
-    var rscopy = this.copy();
-
 	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
 	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		rscopy.filteredrows = Object.keys(this.collection.data);
+		this.filteredrows = Object.keys(this.collection.data);
 	}
 	
+    var rscopy = this.copy();
+
 	rscopy.filteredrows = rscopy.filteredrows.splice(pos);
 	
     return rscopy;
@@ -1288,7 +1288,7 @@ var loki = (function () {
    * Chain method, used for beginning a series of chained find() and/or view() operations
    * on a collection.
    */
-  Collection.prototype.chain = function (query) {
+  Collection.prototype.chain = function () {
     return new Resultset(this, null, null);
   };
 

@@ -649,7 +649,7 @@ var loki = (function () {
       if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
 
       // need to re-sort to sort new document
-      if (sortFunction || sortColumn) sortDirty;
+      if (this.sortFunction || this.sortColumn) sortDirty;
 
       return;
     }
@@ -682,7 +682,7 @@ var loki = (function () {
       }
 
       // in case changes to data altered a sort column
-      if (sortFunction || sortColumn) sortDirty;
+      if (this.sortFunction || this.sortColumn) sortDirty;
 
       return;
     }
@@ -1328,7 +1328,7 @@ var loki = (function () {
   /** start the transation */
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
-      this.cachedData = clone(this.data, this.transactional);
+      this.cachedData = clone(this.data, 'parse-stringify');	
       this.cachedIndex = this.indices;
 
       // propagate startTransaction to dynamic views

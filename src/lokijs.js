@@ -666,7 +666,7 @@ var loki = (function () {
           this.resultdata.length = oldlen - 1;
         }
       } else {
-        ofr.length(oldlen - 1);
+        ofr.length = oldlen - 1;
 
         if (this.persistent) this.resultdata.length = oldlen - 1;
       }
@@ -1023,6 +1023,7 @@ var loki = (function () {
 
     } catch (err) {
       this.rollback();
+	  console.error(err.message);
     }
   };
 
@@ -1080,6 +1081,7 @@ var loki = (function () {
       this.commit();
     } catch (err) {
       this.rollback();
+	  console.error(err.message);
     }
   };
 
@@ -1149,6 +1151,7 @@ var loki = (function () {
         return obj;
       } catch (err) {
         this.rollback();
+	    console.error(err.message);
       }
     }
   };
@@ -1200,6 +1203,7 @@ var loki = (function () {
 
     } catch (err) {
       this.rollback();
+	  console.error(err.message);
     }
   };
 

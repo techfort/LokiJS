@@ -598,7 +598,7 @@ var loki = (function () {
       if (this.sortFunction) this.resultset.sort(this.sortFunction);
       if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
       this.sortDirty = false;
-	  this.resultsdirty = true;	// newly sorted, if persistent we need to rebuild resultdata
+	  if (this.persistent) this.resultsdirty = true;	// newly sorted, if persistent we need to rebuild resultdata
     }
 
     // if nonpersistent return resultset data evaluation

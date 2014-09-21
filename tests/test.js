@@ -79,4 +79,46 @@ suite.assertEqual('Result data Equality', users.find(query).sort(docCompare), vi
 suite.assertNotStrictEqual('Strict Equality', users.find(query), view.data());
 suite.assertEqual('View data equality', view.resultset, view.resultset.copy());
 suite.assertNotStrictEqual('View data copy strict equality', view.resultset, view.resultset.copy());
+
+// Dynamic, Persistent view ... verify deferred sorting
+
+view2 = users.addDynamicView('test2', true);
+view2.applyFind(query);
+
+// filteredrows should be updated but not sorted after each insert
+// compare how many documents are in results before adding new ones
+var v2frl = view2.resultset.filteredrows.length;
+
+users.insert({
+  name: 'abc',
+  age: 21,
+  lang: 'English'
+});
+
+users.insert({
+  name: 'def',
+  age: 25,
+  lang: 'English'
+});
+
+// now see how many are in results (without rebuilding persistent view)
+var v2frl2 = view2.resultset.filteredrows.length;
+
+// only one document should have been added to resultset (1 was filtered out)
+suite.assertStrictEqual("dv resultset is 'set' valid", v2frl+1, v2frl2);
+
+// examine the view's filteredrows before calling data() to rebuild data
+var frcopy = view2.resultset.filteredrows.slice();
+view2.data();
+// examine the view's filteredrows now after lazy sorting
+var frcopy2 = view2.resultset.filteredrows.slice();
+// verify filteredrows logically matches resultdata
+for(var idxFR=0; idxFR < frcopy2.length; idxFR++) {
+	suite.assertEqual("resultset/resultdata consistency", view2.resultdata[idxFR], view2.collection.data[frcopy2[idxFR]]);
+}
+// verify the sort had an effect on filteredrows
+suite.assertNotEqual('Deferred Sort made changes', frcopy, frcopy2);
+
+// End Dynamic, Persistent view tests
+
 suite.report();

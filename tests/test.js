@@ -84,6 +84,7 @@ suite.assertNotStrictEqual('View data copy strict equality', view.resultset, vie
 
 view2 = users.addDynamicView('test2', true);
 view2.applyFind(query);
+view2.applySimpleSort("age");
 
 // filteredrows should be updated but not sorted after each insert
 // compare how many documents are in results before adding new ones

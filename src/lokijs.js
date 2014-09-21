@@ -598,6 +598,7 @@ var loki = (function () {
       if (this.sortFunction) this.resultset.sort(this.sortFunction);
       if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
       this.sortDirty = false;
+	  this.resultsdirty = true;	// newly sorted, if persistent we need to rebuild resultdata
     }
 
     // if nonpersistent return resultset data evaluation
@@ -649,7 +650,7 @@ var loki = (function () {
       if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
 
       // need to re-sort to sort new document
-      if (this.sortFunction || this.sortColumn) sortDirty;
+      if (this.sortFunction || this.sortColumn) this.sortDirty = true;
 
       return;
     }
@@ -682,7 +683,7 @@ var loki = (function () {
       }
 
       // in case changes to data altered a sort column
-      if (this.sortFunction || this.sortColumn) sortDirty;
+      if (this.sortFunction || this.sortColumn) this.sortDirty = true;
 
       return;
     }

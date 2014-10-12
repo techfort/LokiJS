@@ -98,11 +98,11 @@ var loki = (function () {
   //   - You establish your resultset (directly or via a DynamicView)
   //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
   Resultset.prototype.limit = function (qty) {
-	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
-	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		this.filteredrows = Object.keys(this.collection.data);
-	}
-	
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     var rscopy = this.copy();
 
     rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
@@ -113,15 +113,15 @@ var loki = (function () {
   // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
   // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
   Resultset.prototype.offset = function (pos) {
-	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
-	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		this.filteredrows = Object.keys(this.collection.data);
-	}
-	
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     var rscopy = this.copy();
 
-	rscopy.filteredrows = rscopy.filteredrows.splice(pos);
-	
+    rscopy.filteredrows = rscopy.filteredrows.splice(pos);
+
     return rscopy;
   }
 
@@ -143,11 +143,11 @@ var loki = (function () {
   //   if (obj1.name < obj2.name) return -1;
   // });
   Resultset.prototype.sort = function (comparefun) {
-	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
-	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		this.filteredrows = Object.keys(this.collection.data);
-	}
-	
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     var wrappedComparer =
       (function (userComparer, rslt) {
         return function (a, b) {
@@ -167,11 +167,11 @@ var loki = (function () {
   // Example :
   // rslt.simplesort("name");
   Resultset.prototype.simplesort = function (propname, isdesc) {
-	// if this is chained resultset with no filters applied, just we need to populate filteredrows first
-	if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
-		this.filteredrows = Object.keys(this.collection.data);
-	}
-	
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     if (typeof (isdesc) == "undefined") isdesc = false;
 
     var wrappedComparer =
@@ -441,17 +441,16 @@ var loki = (function () {
   Resultset.prototype.data = function () {
     var result = [];
 
-	// if this is chained resultset with no filters applied, just return collection.data
-	if (this.searchIsChained && !this.filterInitialized) {
-		if (this.filteredrows.length == 0) {
-			return this.collection.data;
-		}
-		else {
-			// filteredrows must have been set manually, so use it
-			this.filterInitialized = true;
-		}
-	}
-	
+    // if this is chained resultset with no filters applied, just return collection.data
+    if (this.searchIsChained && !this.filterInitialized) {
+      if (this.filteredrows.length == 0) {
+        return this.collection.data;
+      } else {
+        // filteredrows must have been set manually, so use it
+        this.filterInitialized = true;
+      }
+    }
+
     for (var i in this.filteredrows) {
       result.push(this.collection.data[this.filteredrows[i]]);
     }
@@ -598,7 +597,7 @@ var loki = (function () {
       if (this.sortFunction) this.resultset.sort(this.sortFunction);
       if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
       this.sortDirty = false;
-	  if (this.persistent) this.resultsdirty = true;	// newly sorted, if persistent we need to rebuild resultdata
+      if (this.persistent) this.resultsdirty = true; // newly sorted, if persistent we need to rebuild resultdata
     }
 
     // if nonpersistent return resultset data evaluation
@@ -1024,7 +1023,7 @@ var loki = (function () {
 
     } catch (err) {
       this.rollback();
-	  console.error(err.message);
+      console.error(err.message);
     }
   };
 
@@ -1034,10 +1033,24 @@ var loki = (function () {
    * that's why there's an alias below but until I have this implemented
    */
   Collection.prototype.insert = function (doc) {
-    doc.id = null;
-    doc.objType = this.objType;
-    this.add(doc);
-    return doc;
+    if (Array.isArray(doc)) {
+      doc.forEach(function (d) {
+        d.id = null;
+        d.objType = this.objType;
+        this.add(d);
+      });
+      return doc;
+    } else {
+      if (typeof doc !== 'object') {
+        throw new TypeError("Document needs to be an object");
+        return;
+      }
+      doc.id = null;
+      doc.objType = this.objType;
+      this.add(doc);
+      return doc;
+    }
+
   };
 
   Collection.prototype.clear = function () {
@@ -1082,7 +1095,7 @@ var loki = (function () {
       this.commit();
     } catch (err) {
       this.rollback();
-	  console.error(err.message);
+      console.error(err.message);
     }
   };
 
@@ -1152,7 +1165,7 @@ var loki = (function () {
         return obj;
       } catch (err) {
         this.rollback();
-	    console.error(err.message);
+        console.error(err.message);
       }
     }
   };
@@ -1204,7 +1217,7 @@ var loki = (function () {
 
     } catch (err) {
       this.rollback();
-	  console.error(err.message);
+      console.error(err.message);
     }
   };
 
@@ -1333,7 +1346,7 @@ var loki = (function () {
   /** start the transation */
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
-      this.cachedData = clone(this.data, 'parse-stringify');	
+      this.cachedData = clone(this.data, 'parse-stringify');
       this.cachedIndex = this.indices;
 
       // propagate startTransaction to dynamic views

@@ -1033,10 +1033,11 @@ var loki = (function () {
    * that's why there's an alias below but until I have this implemented
    */
   Collection.prototype.insert = function (doc) {
+    var self = this;
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
         d.id = null;
-        d.objType = this.objType;
+        d.objType = self.objType;
         this.add(d);
       });
       return doc;

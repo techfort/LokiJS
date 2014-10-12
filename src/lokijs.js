@@ -1038,7 +1038,7 @@ var loki = (function () {
       doc.forEach(function (d) {
         d.id = null;
         d.objType = self.objType;
-        this.add(d);
+        self.add(d);
       });
       return doc;
     } else {

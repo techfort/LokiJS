@@ -24,6 +24,41 @@ var loki = (function () {
     return cloned;
   }
 
+  function EventEmitter() {}
+
+  EventEmitter.prototype.events = {};
+
+  EventEmitter.prototype.on = function (eventName, listener) {
+    var event = this.events[eventName];
+    if (!event) {
+      event = this.events[eventName] = [];
+    }
+    return event.push(listener) - 1;
+  };
+
+  EventEmitter.prototype.emit = function (eventName, arg) {
+    if (this.events[eventName]) {
+      var self = this;
+      setTimeout(function () {
+        self.events[eventName].forEach(function (listener) {
+          if (Array.isArray(arg)) {
+            listener.apply(null, arg);
+          } else {
+            listener.call(null, arg);
+          }
+        });
+      }, 1);
+      return;
+    } else {
+      throw new Error('No event ' + eventName + ' defined');
+    }
+  };
+
+  EventEmitter.prototype.remove = function (eventName, index) {
+    if (this.events[eventName]) {
+      this.events[eventName].splice(index, 1);
+    }
+  };
 
   /**
    * @constructor
@@ -32,6 +67,9 @@ var loki = (function () {
   function Loki(filename) {
     this.filename = filename || 'loki.db';
     this.collections = [];
+    this.events = {
+      'close': []
+    };
 
     var getENV = function () {
       if ((typeof module !== 'undefined') && module.exports) {
@@ -54,6 +92,14 @@ var loki = (function () {
     }
 
   }
+
+  Loki.prototype = new EventEmitter;
+  Loki.prototype.close = function (callback) {
+    if (callback) {
+      this.on('close', callback);
+    }
+    this.emit('close');
+  };
 
   /**
    * @constructor
@@ -740,6 +786,15 @@ var loki = (function () {
 
     this.DynamicViews = [];
 
+    // events 
+    this.events = {
+      'insert': [],
+      'update': [],
+      'close': [],
+      'flushbuffer': [],
+      'error': []
+    };
+
     // pointer to self to avoid this tricks
     var indexesArray = indices || ['id'],
       i = indexesArray.length;
@@ -751,6 +806,8 @@ var loki = (function () {
     // initialize the id index
     this.ensureIndex('id');
   }
+
+  Collection.prototype = new EventEmitter;
 
   Loki.prototype.addCollection = function (name, objType, indexesArray, transactional) {
     var collection = new Collection(name, objType, indexesArray, transactional);
@@ -1040,15 +1097,22 @@ var loki = (function () {
         d.objType = self.objType;
         self.add(d);
       });
+      this.emit('insert', doc);
       return doc;
     } else {
       if (typeof doc !== 'object') {
         throw new TypeError("Document needs to be an object");
         return;
       }
+      if (!doc) {
+        var error = new Error('Object cannot be null');
+        this.emit('error', error);
+        throw error;
+      }
       doc.id = null;
       doc.objType = this.objType;
       this.add(doc);
+      this.emit('insert', doc);
       return doc;
     }
 
@@ -1094,9 +1158,11 @@ var loki = (function () {
         }
       }
       this.commit();
+      this.emit('update', doc);
     } catch (err) {
       this.rollback();
       console.error(err.message);
+      this.emit('error', err);
     }
   };
 
@@ -1215,10 +1281,11 @@ var loki = (function () {
         }
       }
       this.commit();
-
+      this.emit('delete');
     } catch (err) {
       this.rollback();
       console.error(err.message);
+      this.emit('error', err);
     }
   };
 
@@ -1399,7 +1466,7 @@ var loki = (function () {
 
 
   /**
-   * Create view function - CouchDB style
+   * Create view function - filter
    */
   Collection.prototype.view = function (fun) {
     // find logic moved into Resultset class

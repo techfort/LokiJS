@@ -243,42 +243,51 @@ var loki = (function () {
     return this;
   }
 
-  Resultset.prototype.calcseg = function calcseg (op, prop, val, rst) {
-	var rcd = rst.collection.data;
-	var index = rst.collection.binaryIndices[prop].values;
-	var min = 0;
-	var max = index.length-1;
-	var mid = null; 
-		
-	var minVal = rcd[index[min]][prop];
-	var maxVal = rcd[index[max]][prop];
-	
-	if (val < minVal || val > maxVal) return [0, -1];
-	
-	while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
-		mid = Math.floor((min + max) / 2);
-			
-		if (rcd[index[mid]][prop] < val) {
-			min = mid + 1;
-		}
-		else {
-			max = mid;
-		}
-	}
+  Resultset.prototype.calcseg = function calcseg(op, prop, val, rst) {
+    var rcd = rst.collection.data;
+    var index = rst.collection.binaryIndices[prop].values;
+    var min = 0;
+    var max = index.length - 1;
+    var mid = null;
 
-	switch (op) {
-		case "$eq" : return [min, max]; 
-		case "$gt" : return [max, rcd.length];
-		case "$gte" : 	if (max == rcd.length) { return [0, -1]; }
-						else { return [max, rcd.length]; }
-		case "$lt" : return [0, min-1]; 
-		case "$lte" : return [0, min];
-		case "$ne" : return [0, rcd.length];
-		default : return [min, max];
-	}
-	//return [min, max];
+    var minVal = rcd[index[min]][prop];
+    var maxVal = rcd[index[max]][prop];
+
+    if (val < minVal || val > maxVal) return [0, -1];
+
+    while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
+      mid = Math.floor((min + max) / 2);
+
+      if (rcd[index[mid]][prop] < val) {
+        min = mid + 1;
+      } else {
+        max = mid;
+      }
+    }
+
+    switch (op) {
+    case "$eq":
+      return [min, max];
+    case "$gt":
+      return [max, rcd.length];
+    case "$gte":
+      if (max == rcd.length) {
+        return [0, -1];
+      } else {
+        return [max, rcd.length];
+      }
+    case "$lt":
+      return [0, min - 1];
+    case "$lte":
+      return [0, min];
+    case "$ne":
+      return [0, rcd.length];
+    default:
+      return [min, max];
+    }
+    //return [min, max];
   }
-	
+
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
   Resultset.prototype.find = function (query) {
     // comparison operators
@@ -361,12 +370,12 @@ var loki = (function () {
     }
 
     // if an index exists for the property being queried against, use it
-	// for now only enabling for non-chained query (who's set of docs matches index)
+    // for now only enabling for non-chained query (who's set of docs matches index)
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && this.collection.binaryIndices.hasOwnProperty(property)) {
-		if (this.binaryIndicesDirty) this.ensureBinaryIndex(property);
-		
-		searchByIndex = true;
-		index = this.collection.binaryIndices[property];
+      if (this.binaryIndicesDirty) this.ensureBinaryIndex(property);
+
+      searchByIndex = true;
+      index = this.collection.binaryIndices[property];
     }
 
     // the comparison function
@@ -390,15 +399,15 @@ var loki = (function () {
           }
         }
       } else {
-		// searching by binary index via calcseg() util method
+        // searching by binary index via calcseg() util method
         t = this.collection.data;
-		var seg = this.calcseg (operator, property, value, this); 
-		
-		for(var idx = seg[0]; idx <= seg[1]; idx++) {
-			result.push(t[index.values[idx]]);
-		}
-		
-		this.filteredrows = result;
+        var seg = this.calcseg(operator, property, value, this);
+
+        for (var idx = seg[0]; idx <= seg[1]; idx++) {
+          result.push(t[index.values[idx]]);
+        }
+
+        this.filteredrows = result;
       }
 
       // not a chained query so return result as data[]
@@ -441,14 +450,14 @@ var loki = (function () {
             }
           }
         } else {
-			t = this.collection.data;
-			var seg = this.calcseg (operator, property, value, this); 
-			
-			for(var idx = seg[0]; idx <= seg[1]; idx++) {
-				result.push(t[index.values[idx]]);
-			}
-			
-			this.filteredrows = result;
+          t = this.collection.data;
+          var seg = this.calcseg(operator, property, value, this);
+
+          for (var idx = seg[0]; idx <= seg[1]; idx++) {
+            result.push(t[index.values[idx]]);
+          }
+
+          this.filteredrows = result;
         }
 
         this.filteredrows = result;
@@ -810,8 +819,8 @@ var loki = (function () {
     this.data = [];
     // indices multi-dimensional array
     this.indices = {};
-	this.binaryIndices = {};
-	this.binaryIndicesDirty = false;
+    this.binaryIndices = {};
+    this.binaryIndicesDirty = false;
     this.idIndex = {}; // index of idx
     // the object type of the collection
     this.objType = objType || "";
@@ -836,7 +845,8 @@ var loki = (function () {
       'update': [],
       'close': [],
       'flushbuffer': [],
-      'error': []
+      'error': [],
+      'delete': []
     };
 
     // pointer to self to avoid this tricks
@@ -944,7 +954,7 @@ var loki = (function () {
       copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
       copyColl.indices = coll.indices;
       copyColl.idIndex = coll.indices.id;
-	  if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
+      if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
       copyColl.transactional = coll.transactional;
       copyColl.ensureAllIndexes();
 
@@ -1037,16 +1047,19 @@ var loki = (function () {
 
     var index, len = this.data.length,
       i = 0;
-	  
+
     //if (this.binaryIndices.hasOwnProperty(property)) 
-    this.binaryIndices[property] = { "name": property, "values" : [] };
-	index = this.binaryIndices[property];
-	
-	// initialize index values
+    this.binaryIndices[property] = {
+      "name": property,
+      "values": []
+    };
+    index = this.binaryIndices[property];
+
+    // initialize index values
     for (i; i < len; i += 1) {
-	  index.values.push(i);
+      index.values.push(i);
     }
-	
+
     var wrappedComparer =
       (function (prop, coll) {
         return function (a, b) {
@@ -1061,14 +1074,14 @@ var loki = (function () {
 
     index.values.sort(wrappedComparer);
   };
-  
+
   Collection.prototype.ensureAllBinaryIndexes = function () {
     var i = this.binaryIndices.length;
     while (i--) {
       this.ensureBinaryIndex(this.binaryIndices[i].name);
     }
-	
-	this.binaryIndicesDirty = false;
+
+    this.binaryIndicesDirty = false;
   };
 
   /**
@@ -1181,8 +1194,8 @@ var loki = (function () {
    */
   Collection.prototype.insert = function (doc) {
     var self = this;
-	
-	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+
+    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
 
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
@@ -1226,8 +1239,8 @@ var loki = (function () {
    */
   Collection.prototype.update = function (doc) {
 
-	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
-	
+    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+
     // verify object is a properly formed document
     if (!doc.hasOwnProperty('id')) {
       throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
@@ -1355,8 +1368,8 @@ var loki = (function () {
       throw 'Object is not a document stored in the collection';
     }
 
-	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
-	
+    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+
     try {
       this.startTransaction();
       var arr = this.get(doc.id, true),

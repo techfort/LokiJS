@@ -243,6 +243,78 @@ var loki = (function () {
     return this;
   }
 
+  Resultset.prototype.get = function (id, returnPosition) {
+    var retpos = returnPosition || false,
+      data = this.indices.id,
+      max = data.length - 1,
+      min = 0,
+      mid = Math.floor(min + (max - min) / 2);
+
+    if (isNaN(id)) {
+      id = parseInt(id);
+      if (isNaN(id)) {
+        throw 'Passed id is not an integer';
+      }
+    }
+
+    while (data[min] < data[max]) {
+
+      mid = Math.floor((min + max) / 2);
+
+      if (data[mid] < id) {
+        min = mid + 1;
+      } else {
+        max = mid;
+      }
+    }
+
+    if (max === min && data[min] === id) {
+
+      if (retpos) {
+        return [this.data[min], min];
+      }
+      return this.data[min];
+    }
+    return null;
+
+  };
+  
+  Resultset.prototype.calcseg = function calcseg (op, prop, val, rst) {
+	var rcd = rst.collection.data;
+	var index = rst.collection.binaryIndices[prop].values;
+	var min = 0;
+	var max = index.length-1;
+	var mid = null; 
+		
+	var minVal = rcd[index[min]][prop];
+	var maxVal = rcd[index[max]][prop];
+	
+	if (val < minVal || val > maxVal) return [0, -1];
+	
+	while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
+		mid = Math.floor((min + max) / 2);
+			
+		if (rcd[index[mid]][prop] < val) {
+			min = mid + 1;
+		}
+		else {
+			max = mid;
+		}
+	}
+
+	switch (op) {
+		case "$eq" : return [min, max]; 
+		case "$gt" : return [max, rcd.length];
+		case "$gte" : 	if (max == rcd.length) { return [0, -1]; }
+						else { return [max, rcd.length]; }
+		case "$lt" : return [0, min-1]; 
+		case "$lte" : return [0, min];
+		case "$ne" : return [0, rcd.length];
+		default : return [min, max];
+	}
+	//return [min, max];
+  }
+	
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
   Resultset.prototype.find = function (query) {
     // comparison operators
@@ -325,9 +397,10 @@ var loki = (function () {
     }
 
     // if an index exists for the property being queried against, use it
-    if (this.collection.indices.hasOwnProperty(property)) {
+	// for now only enabling for non-chained query (who's set of docs matches index)
+    if (!this.searchIsChained && this.collection.binaryIndices.hasOwnProperty(property)) {
       searchByIndex = true;
-      index = this.collection.indices[property];
+      index = this.collection.binaryIndices[property];
     }
 
     // the comparison function
@@ -351,13 +424,15 @@ var loki = (function () {
           }
         }
       } else {
-        t = index;
-        i = index.length;
-        while (i--) {
-          if (fun(t[i], value)) {
-            result.push(this.collection.data[i]);
-          }
-        }
+		// searching by binary index via calcseg() util method
+        t = this.collection.data;
+		var seg = this.calcseg (operator, property, value, this); 
+		
+		for(var idx = seg[0]; idx <= seg[1]; idx++) {
+			result.push(t[index.values[idx]]);
+		}
+		
+		this.filteredrows = result;
       }
 
       // not a chained query so return result as data[]
@@ -768,6 +843,8 @@ var loki = (function () {
     this.data = [];
     // indices multi-dimensional array
     this.indices = {};
+	this.binaryIndices = {};
+	this.binaryIndicesDirty = false;
     this.idIndex = {}; // index of idx
     // the object type of the collection
     this.objType = objType || "";
@@ -980,6 +1057,50 @@ var loki = (function () {
   /*----------------------------+
   | INDEXING                    |
   +----------------------------*/
+
+  /**
+   * Ensure binary indexes on a certain field
+   */
+  Collection.prototype.ensureBinaryIndex = function (property) {
+
+    if (property === null || property === undefined) {
+      throw 'Attempting to set index without an associated property';
+    }
+
+    var index, len = this.data.length,
+      i = 0;
+	  
+    if (!this.binaryIndices.hasOwnProperty(property)) {
+	  this.binaryIndices[property] = { "name": property, "values" : [] };
+	  index = this.binaryIndices[property].values;
+    }
+    index = this.binaryIndices[property];
+
+    for (i; i < len; i += 1) {
+	  index.values.push(i);
+    }
+	
+    var wrappedComparer =
+      (function (prop, coll) {
+        return function (a, b) {
+          var obj1 = coll.data[a];
+          var obj2 = coll.data[b];
+
+          if (obj1[prop] == obj2[prop]) return 0;
+          if (obj1[prop] > obj2[prop]) return 1;
+          if (obj1[prop] < obj2[prop]) return -1;
+        }
+      })(property, this);
+
+    index.values.sort(wrappedComparer);
+  };
+  
+  Collection.prototype.ensureAllBinaryIndexes = function () {
+    var i = this.binaryIndices.length;
+    while (i--) {
+      this.ensureBinaryIndex(this.binaryIndices[i].name);
+    }
+  };
 
   /**
    * Ensure indexes on a certain field

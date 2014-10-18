@@ -75,12 +75,17 @@ function testperfGet() {
 	console.log("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
-function testperfFind() {
+function testperfFind(multiplier) {
 	var start, end;
 	var totalTimes = [];
 	var totalMS = 0;
+
+	var loopIterations = totalIterations;
+	if (typeof(multiplier) != "undefined") {
+		loopIterations = loopIterations * multiplier;
+	}
 	
-	for (var idx=0; idx < totalIterations; idx++) {
+	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
         
 		start = process.hrtime();
@@ -94,9 +99,9 @@ function testperfFind() {
 	}
 	
 	totalMS = totalMS.toFixed(2);
-	var rate = totalIterations / (totalMS / 1000);
+	var rate = loopIterations / (totalMS / 1000);
 	rate = rate.toFixed(2);
-	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s)");
+	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function testperfRS() {
@@ -120,7 +125,7 @@ function testperfRS() {
 	totalMS = totalMS.toFixed(2);
 	var rate = totalIterations / (totalMS / 1000);
 	rate = rate.toFixed(2);
-	console.log("coll.chain().find() :  " + totalMS + "ms (" + rate + " ops/s)");
+	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s)");
 }
 
 function testperfDV() {
@@ -168,14 +173,14 @@ function testperfDV() {
 
 initializeDB();
 
-console.log("Benchmarking query on non-indexed column");
+console.log("-- Benchmarking query on non-indexed column --");
 testperfGet();	// get bechmark on id field
 testperfFind();	// find benchmark on unindexed customid field
 testperfRS();	// resultset find benchmark on unindexed customid field
 testperfDV();	// dataview find benchmarks on unindexed customid field
 
-console.log("Adding index to query column and repeating benchmarks");
-samplecoll.ensureIndex("customId");
-testperfFind();
+console.log("-- Adding binary index to query column and repeating benchmarks --");
+samplecoll.ensureBinaryIndex("customId");
+testperfFind(10);
 testperfRS();
 testperfDV();

@@ -104,12 +104,17 @@ function testperfFind(multiplier) {
 	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
-function testperfRS() {
+function testperfRS(multiplier) {
 	var start, end;
 	var totalTimes = [];
 	var totalMS = 0;
 
-	for (var idx=0; idx < totalIterations; idx++) {
+	var loopIterations = totalIterations;
+	if (typeof(multiplier) != "undefined") {
+		loopIterations = loopIterations * multiplier;
+	}
+	
+	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
         
 		start = process.hrtime();
@@ -123,12 +128,12 @@ function testperfRS() {
 	}
 	
 	totalMS = totalMS.toFixed(2);
-	var rate = totalIterations / (totalMS / 1000);
+	var rate = loopIterations / (totalMS / 1000);
 	rate = rate.toFixed(2);
-	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s)");
+	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s)" + loopIterations + " iterations");
 }
 
-function testperfDV() {
+function testperfDV(multiplier) {
 	var start, end;
 	var start2, end2, totalTime2 = 0.0;
 	var totalTimes = [];
@@ -136,7 +141,12 @@ function testperfDV() {
 	var totalMS = 0;
 	var totalMS2 = 0;
     
-	for (var idx=0; idx < totalIterations; idx++) {
+	var loopIterations = totalIterations;
+	if (typeof(multiplier) != "undefined") {
+		loopIterations = loopIterations * multiplier;
+	}
+	
+	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
        
 		start = process.hrtime();
@@ -162,13 +172,13 @@ function testperfDV() {
 	
 	totalMS = totalMS.toFixed(2);
 	totalMS2 = totalMS2.toFixed(2);
-	var rate = totalIterations / (totalMS / 1000);
-	var rate2 = totalIterations / (totalMS2 / 1000);
+	var rate = loopIterations / (totalMS / 1000);
+	var rate2 = loopIterations / (totalMS2 / 1000);
 	rate = rate.toFixed(2);
 	rate2 = rate2.toFixed(2);
 	
-	console.log("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s)");
-	console.log("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s)");
+	console.log("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+	console.log("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s) " + loopIterations + " iterations");
 }
 
 initializeDB();
@@ -182,5 +192,5 @@ testperfDV();	// dataview find benchmarks on unindexed customid field
 console.log("-- Adding binary index to query column and repeating benchmarks --");
 samplecoll.ensureBinaryIndex("customId");
 testperfFind(10);
-testperfRS();
-testperfDV();
+testperfRS(10);
+testperfDV(10);

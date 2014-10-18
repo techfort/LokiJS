@@ -362,7 +362,7 @@ var loki = (function () {
 
     // if an index exists for the property being queried against, use it
 	// for now only enabling for non-chained query (who's set of docs matches index)
-    if (!this.searchIsChained && this.collection.binaryIndices.hasOwnProperty(property)) {
+    if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && this.collection.binaryIndices.hasOwnProperty(property)) {
 		if (this.binaryIndicesDirty) this.ensureBinaryIndex(property);
 		
 		searchByIndex = true;
@@ -441,13 +441,14 @@ var loki = (function () {
             }
           }
         } else {
-          t = index;
-          i = t.length;
-          while (i--) {
-            if (fun(t[i], value)) {
-              result.push(i);
-            }
-          }
+			t = this.collection.data;
+			var seg = this.calcseg (operator, property, value, this); 
+			
+			for(var idx = seg[0]; idx <= seg[1]; idx++) {
+				result.push(t[index.values[idx]]);
+			}
+			
+			this.filteredrows = result;
         }
 
         this.filteredrows = result;

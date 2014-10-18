@@ -243,42 +243,6 @@ var loki = (function () {
     return this;
   }
 
-  Resultset.prototype.get = function (id, returnPosition) {
-    var retpos = returnPosition || false,
-      data = this.indices.id,
-      max = data.length - 1,
-      min = 0,
-      mid = Math.floor(min + (max - min) / 2);
-
-    if (isNaN(id)) {
-      id = parseInt(id);
-      if (isNaN(id)) {
-        throw 'Passed id is not an integer';
-      }
-    }
-
-    while (data[min] < data[max]) {
-
-      mid = Math.floor((min + max) / 2);
-
-      if (data[mid] < id) {
-        min = mid + 1;
-      } else {
-        max = mid;
-      }
-    }
-
-    if (max === min && data[min] === id) {
-
-      if (retpos) {
-        return [this.data[min], min];
-      }
-      return this.data[min];
-    }
-    return null;
-
-  };
-  
   Resultset.prototype.calcseg = function calcseg (op, prop, val, rst) {
 	var rcd = rst.collection.data;
 	var index = rst.collection.binaryIndices[prop].values;
@@ -399,8 +363,10 @@ var loki = (function () {
     // if an index exists for the property being queried against, use it
 	// for now only enabling for non-chained query (who's set of docs matches index)
     if (!this.searchIsChained && this.collection.binaryIndices.hasOwnProperty(property)) {
-      searchByIndex = true;
-      index = this.collection.binaryIndices[property];
+		if (this.binaryIndicesDirty) this.ensureBinaryIndex(property);
+		
+		searchByIndex = true;
+		index = this.collection.binaryIndices[property];
     }
 
     // the comparison function
@@ -977,6 +943,7 @@ var loki = (function () {
       copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
       copyColl.indices = coll.indices;
       copyColl.idIndex = coll.indices.id;
+	  if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
       copyColl.transactional = coll.transactional;
       copyColl.ensureAllIndexes();
 
@@ -1070,12 +1037,11 @@ var loki = (function () {
     var index, len = this.data.length,
       i = 0;
 	  
-    if (!this.binaryIndices.hasOwnProperty(property)) {
-	  this.binaryIndices[property] = { "name": property, "values" : [] };
-	  index = this.binaryIndices[property].values;
-    }
-    index = this.binaryIndices[property];
-
+    //if (this.binaryIndices.hasOwnProperty(property)) 
+    this.binaryIndices[property] = { "name": property, "values" : [] };
+	index = this.binaryIndices[property];
+	
+	// initialize index values
     for (i; i < len; i += 1) {
 	  index.values.push(i);
     }
@@ -1100,6 +1066,8 @@ var loki = (function () {
     while (i--) {
       this.ensureBinaryIndex(this.binaryIndices[i].name);
     }
+	
+	this.binaryIndicesDirty = false;
   };
 
   /**
@@ -1212,6 +1180,9 @@ var loki = (function () {
    */
   Collection.prototype.insert = function (doc) {
     var self = this;
+	
+	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
         d.id = null;
@@ -1254,6 +1225,8 @@ var loki = (function () {
    */
   Collection.prototype.update = function (doc) {
 
+	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+	
     // verify object is a properly formed document
     if (!doc.hasOwnProperty('id')) {
       throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
@@ -1381,6 +1354,8 @@ var loki = (function () {
       throw 'Object is not a document stored in the collection';
     }
 
+	if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+	
     try {
       this.startTransaction();
       var arr = this.get(doc.id, true),

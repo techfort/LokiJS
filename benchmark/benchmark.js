@@ -44,7 +44,11 @@ function initializeDB() {
     
 	end = process.hrtime(start);
     
-    console.log("data load time : " + end[0] + "s " + end[1]/1e6 + "ms");
+	var totalMS = end[0] * 1e3 + end[1]/1e6;
+	totalMS = totalMS.toFixed(2);
+	var rate = arraySize / (totalMS / 1000);
+	rate = rate.toFixed(2);
+    console.log("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 function testperfGet() {
@@ -64,7 +68,11 @@ function testperfGet() {
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	console.log("loki coll.get() benchmark " + totalMS + "ms");
+	
+	totalMS = totalMS.toFixed(2);
+	var rate = getIterations / (totalMS / 1000);
+	rate = rate.toFixed(2);
+	console.log("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 function testperfFind() {
@@ -84,7 +92,11 @@ function testperfFind() {
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	console.log("loki coll.find() benchmark " + totalMS + "ms");
+	
+	totalMS = totalMS.toFixed(2);
+	var rate = totalIterations / (totalMS / 1000);
+	rate = rate.toFixed(2);
+	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s)");
 }
 
 function testperfRS() {
@@ -105,7 +117,10 @@ function testperfRS() {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
 	
-	console.log("loki coll.chain().find() benchmark " + totalMS + "ms");
+	totalMS = totalMS.toFixed(2);
+	var rate = totalIterations / (totalMS / 1000);
+	rate = rate.toFixed(2);
+	console.log("coll.chain().find() :  " + totalMS + "ms (" + rate + " ops/s)");
 }
 
 function testperfDV() {
@@ -140,8 +155,15 @@ function testperfDV() {
 		totalMS2 += totalTimes2[idx][0] * 1e3 + totalTimes2[idx][1]/1e6;
 	}
 	
-	console.log("loki dynamic view first find benchmark : " + totalMS + "ms");
-	console.log("loki dynamic view subsequent find benchmark : " + totalMS2 + "ms");
+	totalMS = totalMS.toFixed(2);
+	totalMS2 = totalMS2.toFixed(2);
+	var rate = totalIterations / (totalMS / 1000);
+	var rate2 = totalIterations / (totalMS2 / 1000);
+	rate = rate.toFixed(2);
+	rate2 = rate2.toFixed(2);
+	
+	console.log("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s)");
+	console.log("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s)");
 }
 
 initializeDB();

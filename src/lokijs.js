@@ -243,6 +243,11 @@ var loki = (function () {
     return this;
   }
 
+  // binary search utility method to find segment of values matching criteria
+  // this is used for collection.find() and first find filter of resultset/dynview
+  // slightly different than get() binary search in that get() hones in on 1 value,
+  // but we have to hone in on many (range)
+  // returns array of [start, end] index array positions 
   Resultset.prototype.calcseg = function calcseg(op, prop, val, rst) {
     var rcd = rst.collection.data;
     var index = rst.collection.binaryIndices[prop].values;
@@ -253,8 +258,11 @@ var loki = (function () {
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
+	// if value falls outside of our range return [0, -1] to designate
+	// no results
     if (val < minVal || val > maxVal) return [0, -1];
 
+	// hone in on start and end positions of value
     while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
       mid = Math.floor((min + max) / 2);
 
@@ -271,21 +279,18 @@ var loki = (function () {
     case "$gt":
       return [max, rcd.length];
     case "$gte":
-      if (max == rcd.length) {
-        return [0, -1];
-      } else {
-        return [max, rcd.length];
-      }
+      return [max, rcd.length - 1]; // should be at least 1 or we would have existed at beginning
     case "$lt":
-      return [0, min - 1];
+      return [0, min - 1]; // should be at least 1 or we would have existed at beginning
     case "$lte":
       return [0, min];
-    case "$ne":
+    case "$ne": 
+	  // ne is weird case we may be able to return two ranges before[] and after[]
+	  // but for now just do full array scan
       return [0, rcd.length];
     default:
-      return [min, max];
+      return [0, rcd.length];
     }
-    //return [min, max];
   }
 
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
@@ -371,8 +376,13 @@ var loki = (function () {
 
     // if an index exists for the property being queried against, use it
     // for now only enabling for non-chained query (who's set of docs matches index)
+	// or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && this.collection.binaryIndices.hasOwnProperty(property)) {
-      if (this.binaryIndicesDirty) this.ensureBinaryIndex(property);
+	  // this is where our lazy index rebuilding will take place
+	  // basically we will leave all indexes dirty until we need them
+	  // so here we will rebuild only the index tied to this property
+	  // ensureBinaryIndex() will only rebuild if flagged as dirty since we are not passing force=true param
+      this.collection.ensureBinaryIndex(property);
 
       searchByIndex = true;
       index = this.collection.binaryIndices[property];
@@ -820,7 +830,6 @@ var loki = (function () {
     // indices multi-dimensional array
     this.indices = {};
     this.binaryIndices = {};
-    this.binaryIndicesDirty = false;
     this.idIndex = {}; // index of idx
     // the object type of the collection
     this.objType = objType || "";
@@ -1037,22 +1046,30 @@ var loki = (function () {
   +----------------------------*/
 
   /**
-   * Ensure binary indexes on a certain field
+   * Ensure binary index on a certain field
    */
-  Collection.prototype.ensureBinaryIndex = function (property) {
+  Collection.prototype.ensureBinaryIndex = function (property, force) {
+    // optional parameter to force rebuild whether flagged as dirty or not
+    if (typeof(force) == "undefined") force = false;
 
     if (property === null || property === undefined) {
       throw 'Attempting to set index without an associated property';
     }
+	
+	if (this.binaryIndices.hasOwnProperty(property) && !force) {
+	  if (!this.binaryIndices[property].dirty) return;
+	}
+	else {
+      this.binaryIndices[property] = {
+        "name": property,
+	    "dirty": true,
+        "values": []
+      };
+	}
 
     var index, len = this.data.length,
       i = 0;
 
-    //if (this.binaryIndices.hasOwnProperty(property)) 
-    this.binaryIndices[property] = {
-      "name": property,
-      "values": []
-    };
     index = this.binaryIndices[property];
 
     // initialize index values
@@ -1073,16 +1090,27 @@ var loki = (function () {
       })(property, this);
 
     index.values.sort(wrappedComparer);
+	index.dirty = false;
   };
 
-  Collection.prototype.ensureAllBinaryIndexes = function () {
+  /**
+   * Ensure all binary indices
+   */
+  Collection.prototype.ensureAllBinaryIndexes = function (force) {
     var i = this.binaryIndices.length;
     while (i--) {
-      this.ensureBinaryIndex(this.binaryIndices[i].name);
+	  this.ensureBinaryIndex(this.binaryIndices[i].name, force);
     }
 
     this.binaryIndicesDirty = false;
   };
+  
+  Collection.prototype.flagBinaryIndexesDirty = function () {
+    var i = this.binaryIndices.length;
+    while (i--) {
+	  this.binaryIndices[i].dirty = true;
+    }
+  }
 
   /**
    * Ensure indexes on a certain field

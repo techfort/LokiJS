@@ -1223,7 +1223,7 @@ var loki = (function () {
   Collection.prototype.insert = function (doc) {
     var self = this;
 
-    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
 
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
@@ -1267,7 +1267,7 @@ var loki = (function () {
    */
   Collection.prototype.update = function (doc) {
 
-    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
 
     // verify object is a properly formed document
     if (!doc.hasOwnProperty('id')) {
@@ -1396,7 +1396,7 @@ var loki = (function () {
       throw 'Object is not a document stored in the collection';
     }
 
-    if (this.binaryIndices.length > 0) this.binaryIndicesDirty = true;
+    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
 
     try {
       this.startTransaction();

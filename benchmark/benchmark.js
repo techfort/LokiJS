@@ -26,27 +26,33 @@ function initializeDB() {
 	db = new loki('perftest');
   
 	var start, end, totalTime;
-    
-	start = process.hrtime();
+	var totalTimes = [];
+	var totalMS = 0.0;
 
 	samplecoll = db.addCollection('samplecoll', 'samplecoll');
     
 	for (var idx=0; idx < arraySize; idx++) {
-    	//var v1 = genRandomVal();
-        //var v2 = genRandomVal();
+    	var v1 = genRandomVal();
+        var v2 = genRandomVal();
+		start = process.hrtime();
     	samplecoll.insert({ 
-			customId: idx//, 
-			//val: v1, 
-			//val2: v2, 
-			//val3: "more data 1234567890"
+			customId: idx, 
+			val: v1, 
+			val2: v2, 
+			val3: "more data 1234567890"
 		});
-    }
+		end = process.hrtime(start);
+ 		totalTimes.push(end);
+   }
     
-	end = process.hrtime(start);
+	for(var idx=0; idx < totalTimes.length; idx++) {
+		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
+	}
+	
     
-	var totalMS = end[0] * 1e3 + end[1]/1e6;
+	//var totalMS = end[0] * 1e3 + end[1]/1e6;
 	totalMS = totalMS.toFixed(2);
-	var rate = arraySize / (totalMS / 1000);
+	var rate = arraySize * 1000 / totalMS;
 	rate = rate.toFixed(2);
     console.log("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
 }
@@ -54,7 +60,7 @@ function initializeDB() {
 function testperfGet() {
 	var start, end;
 	var totalTimes = [];
-	var totalMS = 0;
+	var totalMS = 0.0;
 	
 	for (var idx=0; idx < getIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
@@ -70,7 +76,7 @@ function testperfGet() {
 	}
 	
 	totalMS = totalMS.toFixed(2);
-	var rate = getIterations / (totalMS / 1000);
+	var rate = getIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
 	console.log("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
 }
@@ -99,7 +105,7 @@ function testperfFind(multiplier) {
 	}
 	
 	totalMS = totalMS.toFixed(2);
-	var rate = loopIterations / (totalMS / 1000);
+	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
 	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
@@ -128,9 +134,9 @@ function testperfRS(multiplier) {
 	}
 	
 	totalMS = totalMS.toFixed(2);
-	var rate = loopIterations / (totalMS / 1000);
+	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
-	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s)" + loopIterations + " iterations");
+	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function testperfDV(multiplier) {
@@ -172,8 +178,8 @@ function testperfDV(multiplier) {
 	
 	totalMS = totalMS.toFixed(2);
 	totalMS2 = totalMS2.toFixed(2);
-	var rate = loopIterations / (totalMS / 1000);
-	var rate2 = loopIterations / (totalMS2 / 1000);
+	var rate = loopIterations * 1000 / totalMS;
+	var rate2 = loopIterations * 1000 / totalMS2;
 	rate = rate.toFixed(2);
 	rate2 = rate2.toFixed(2);
 	
@@ -191,6 +197,6 @@ testperfDV();	// dataview find benchmarks on unindexed customid field
 
 console.log("-- Adding binary index to query column and repeating benchmarks --");
 samplecoll.ensureBinaryIndex("customId");
-testperfFind(10);
-testperfRS(10);
-testperfDV(10);
+testperfFind(20);
+testperfRS(15);
+testperfDV(15);

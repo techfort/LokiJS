@@ -829,7 +829,7 @@ var loki = (function () {
     // the data held by the collection
     this.data = [];
     // indices multi-dimensional array
-    this.indices = {};
+    //this.indices = {};
     this.binaryIndices = {};
     this.idIndex = {}; // index of idx
     // the object type of the collection
@@ -840,6 +840,7 @@ var loki = (function () {
     this.transactional = transactionOptions || false;
     // private holders for cached data
     this.cachedIndex = null;
+	this.cachedBinaryIndex = null;
     this.cachedData = null;
 
     // currentMaxId - change manually at your own peril!
@@ -859,16 +860,8 @@ var loki = (function () {
       'delete': []
     };
 
-    // pointer to self to avoid this tricks
-    var indexesArray = indices || ['id'],
-      i = indexesArray.length;
-
-    while (i--) {
-      this.ensureIndex(indexesArray[i]);
-    }
-
     // initialize the id index
-    this.ensureIndex('id');
+    this.ensureIndex();
   }
 
   Collection.prototype = new EventEmitter;
@@ -962,11 +955,12 @@ var loki = (function () {
       }
 
       copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
-      copyColl.indices = coll.indices;
-      copyColl.idIndex = coll.indices.id;
+	  copyColl.idIndex = coll.idIndex;
+	  // if saved in previous format recover id index out of it
+	  if (typeof (coll.indices) != "undefined") copyColl.idIndex = coll.indices.id;
       if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
       copyColl.transactional = coll.transactional;
-      copyColl.ensureAllIndexes();
+      copyColl.ensureIndex();
 
       // in case they are loading a database created before we added dynamic views, handle undefined
       if (typeof (coll.DynamicViews) == "undefined") continue;
@@ -1113,57 +1107,24 @@ var loki = (function () {
   }
 
   /**
-   * Ensure indexes on a certain field
+   * Rebuild idIndex 
    */
-  Collection.prototype.ensureIndex = function (property) {
+  Collection.prototype.ensureIndex = function () {
 
-    if (property === null || property === undefined) {
-      throw 'Attempting to set index without an associated property';
-    }
+	var len = this.data.length, i = 0;
 
-    var index, len = this.data.length,
-      i = 0;
-    if (this.indices.hasOwnProperty(property)) {
-      index = this.indices[property];
-    } else {
-      this.indices[property] = [];
-      index = this.indices[property];
-    }
-
+	this.idIndex = [];
     for (i; i < len; i += 1) {
-      index.push(this.data[i][property]);
-    }
-    if (property === 'id') {
-      this.idIndex = index;
+      this.idIndex.push(this.data[i].id);
     }
   };
 
   /**
-   * Ensure index async with callback - useful for background syncing with a remote server
+   * Rebuild idIndex async with callback - useful for background syncing with a remote server
    */
-  Collection.prototype.ensureIndexAsync = function (property, callback) {
+  Collection.prototype.ensureIndexAsync = function (callback) {
     this.async(function () {
-      this.ensureIndex(property);
-    }, callback);
-  };
-
-  /**
-   * Ensure all indexes
-   */
-  Collection.prototype.ensureAllIndexes = function () {
-    var i = this.indices.length;
-    while (i--) {
-      this.ensureIndex(this.indices[i].name);
-    }
-
-    if (i === 0) {
-      this.ensureIndex('id');
-    }
-  };
-
-  Collection.prototype.ensureAllIndexesAsync = function (callback) {
-    this.async(function () {
-      this.ensureAllIndexes();
+      this.ensureIndex();
     }, callback);
   };
 
@@ -1288,11 +1249,8 @@ var loki = (function () {
         this.DynamicViews[idx].evaluateDocument(position);
       }
 
-      for (i in this.indices) {
-        if (this.indices.hasOwnProperty(i)) {
-          this.indices[i][position] = obj[i];
-        }
-      }
+      this.idIndex[position] = obj.id;
+		  
       this.commit();
       this.emit('update', doc);
     } catch (err) {
@@ -1358,12 +1316,9 @@ var loki = (function () {
           this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
         }
 
-        // resync indexes to make sure all IDs are there
-        for (i in this.indices) {
-          if (this.indices.hasOwnProperty(i)) {
-            this.indices[i].push(obj[i]);
-          }
-        }
+		// add new obj id to idIndex
+        this.idIndex.push(obj.id);
+		
         this.commit();
         return obj;
       } catch (err) {
@@ -1413,11 +1368,9 @@ var loki = (function () {
 
       this.data.splice(position, 1);
 
-      for (i in this.indices) {
-        if (this.indices.hasOwnProperty(i)) {
-          this.indices[i].splice(position, 1);
-        }
-      }
+	  // remove id from idIndex
+      this.idIndex.splice(position, 1);
+		  
       this.commit();
       this.emit('delete');
     } catch (err) {
@@ -1436,7 +1389,7 @@ var loki = (function () {
    */
   Collection.prototype.get = function (id, returnPosition) {
     var retpos = returnPosition || false,
-      data = this.indices.id,
+      data = this.idIndex, 
       max = data.length - 1,
       min = 0,
       mid = Math.floor(min + (max - min) / 2);
@@ -1481,31 +1434,11 @@ var loki = (function () {
       i = this.indices.length,
       len,
       doc;
-    for (i in this.indices) {
-      if (this.indices.hasOwnProperty(i)) {
-        if (i === prop) {
-          searchByIndex = true;
-          indexObject = this.indices[i];
-          break;
-        }
-      }
-    }
-
-    if (searchByIndex) {
-      // perform search based on index
-      len = indexObject.data.length;
-      while (len--) {
-        if (indexObject.data[len] === value) {
-          doc = this.data[len];
-          return doc;
-        }
-      }
-
-    } else {
-      // search all collection and find first matching result
+	  
+	  // this method will probably be replaced with find() overload 
+	  // for now just run unindexed since no value-cache indexes exist anymore 
+	  // if finding by id, use get instead
       return this.findOneUnindexed(prop, value);
-    }
-    return null;
   };
 
   /**
@@ -1543,8 +1476,6 @@ var loki = (function () {
     return null;
   };
 
-
-
   /**
    * Transaction methods
    */
@@ -1553,7 +1484,8 @@ var loki = (function () {
   Collection.prototype.startTransaction = function () {
     if (this.transactional) {
       this.cachedData = clone(this.data, 'parse-stringify');
-      this.cachedIndex = this.indices;
+      this.cachedIndex = this.idIndex;
+	  this.cachedBinaryIndex = this.binaryIndices;
 
       // propagate startTransaction to dynamic views
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1567,6 +1499,7 @@ var loki = (function () {
     if (this.transactional) {
       this.cachedData = null;
       this.cachedIndex = null;
+	  this.cachedBinaryIndices = null;
 
       // propagate commit to dynamic views
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1580,7 +1513,8 @@ var loki = (function () {
     if (this.transactional) {
       if (this.cachedData !== null && this.cachedIndex !== null) {
         this.data = this.cachedData;
-        this.indices = this.cachedIndex;
+        this.idIndex = this.cachedIndex;
+		this.binaryIndices = this.cachedBinaryIndex;
       }
 
       // propagate rollback to dynamic views

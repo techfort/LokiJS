@@ -258,11 +258,11 @@ var loki = (function () {
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
-	// if value falls outside of our range return [0, -1] to designate
-	// no results
+    // if value falls outside of our range return [0, -1] to designate
+    // no results
     if (val < minVal || val > maxVal) return [0, -1];
 
-	// hone in on start and end positions of value
+    // hone in on start and end positions of value
     while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
       mid = Math.floor((min + max) / 2);
 
@@ -284,9 +284,9 @@ var loki = (function () {
       return [0, min - 1]; // should be at least 1 or we would have existed at beginning
     case "$lte":
       return [0, min];
-    case "$ne": 
-	  // ne is weird case we may be able to return two ranges before[] and after[]
-	  // but for now just do full array scan
+    case "$ne":
+      // ne is weird case we may be able to return two ranges before[] and after[]
+      // but for now just do full array scan
       return [0, rcd.length];
     default:
       return [0, rcd.length];
@@ -376,12 +376,12 @@ var loki = (function () {
 
     // if an index exists for the property being queried against, use it
     // for now only enabling for non-chained query (who's set of docs matches index)
-	// or chained queries where it is the first filter applied and prop is indexed
+    // or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && this.collection.binaryIndices.hasOwnProperty(property)) {
-	  // this is where our lazy index rebuilding will take place
-	  // basically we will leave all indexes dirty until we need them
-	  // so here we will rebuild only the index tied to this property
-	  // ensureBinaryIndex() will only rebuild if flagged as dirty since we are not passing force=true param
+      // this is where our lazy index rebuilding will take place
+      // basically we will leave all indexes dirty until we need them
+      // so here we will rebuild only the index tied to this property
+      // ensureBinaryIndex() will only rebuild if flagged as dirty since we are not passing force=true param
       this.collection.ensureBinaryIndex(property);
 
       searchByIndex = true;
@@ -818,6 +818,7 @@ var loki = (function () {
     }
   }
 
+
   /**
    * @constructor
    * Collection class that handles documents of same type
@@ -1050,22 +1051,21 @@ var loki = (function () {
    */
   Collection.prototype.ensureBinaryIndex = function (property, force) {
     // optional parameter to force rebuild whether flagged as dirty or not
-    if (typeof(force) == "undefined") force = false;
+    if (typeof (force) == "undefined") force = false;
 
     if (property === null || property === undefined) {
       throw 'Attempting to set index without an associated property';
     }
-	
-	if (this.binaryIndices.hasOwnProperty(property) && !force) {
-	  if (!this.binaryIndices[property].dirty) return;
-	}
-	else {
+
+    if (this.binaryIndices.hasOwnProperty(property) && !force) {
+      if (!this.binaryIndices[property].dirty) return;
+    } else {
       this.binaryIndices[property] = {
         "name": property,
-	    "dirty": true,
+        "dirty": true,
         "values": []
       };
-	}
+    }
 
     var index, len = this.data.length,
       i = 0;
@@ -1090,7 +1090,7 @@ var loki = (function () {
       })(property, this);
 
     index.values.sort(wrappedComparer);
-	index.dirty = false;
+    index.dirty = false;
   };
 
   /**
@@ -1099,16 +1099,16 @@ var loki = (function () {
   Collection.prototype.ensureAllBinaryIndexes = function (force) {
     var i = this.binaryIndices.length;
     while (i--) {
-	  this.ensureBinaryIndex(this.binaryIndices[i].name, force);
+      this.ensureBinaryIndex(this.binaryIndices[i].name, force);
     }
 
     this.binaryIndicesDirty = false;
   };
-  
+
   Collection.prototype.flagBinaryIndexesDirty = function () {
     var i = this.binaryIndices.length;
     while (i--) {
-	  this.binaryIndices[i].dirty = true;
+      this.binaryIndices[i].dirty = true;
     }
   }
 

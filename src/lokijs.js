@@ -840,7 +840,7 @@ var loki = (function () {
     this.transactional = transactionOptions || false;
     // private holders for cached data
     this.cachedIndex = null;
-	this.cachedBinaryIndex = null;
+    this.cachedBinaryIndex = null;
     this.cachedData = null;
 
     // currentMaxId - change manually at your own peril!
@@ -1240,6 +1240,7 @@ var loki = (function () {
         obj = arr[0],
         // get current position in data array
         position = arr[1];
+        
       // operate the update
       this.data[position] = doc;
 
@@ -1316,7 +1317,7 @@ var loki = (function () {
           this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
         }
 
-		// add new obj id to idIndex
+        // add new obj id to idIndex
         this.idIndex.push(obj.id);
 		
         this.commit();
@@ -1471,7 +1472,6 @@ var loki = (function () {
         doc = this.data[i];
         return doc;
       }
-
     }
     return null;
   };
@@ -1485,7 +1485,7 @@ var loki = (function () {
     if (this.transactional) {
       this.cachedData = clone(this.data, 'parse-stringify');
       this.cachedIndex = this.idIndex;
-	  this.cachedBinaryIndex = this.binaryIndices;
+      this.cachedBinaryIndex = this.binaryIndices;
 
       // propagate startTransaction to dynamic views
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1499,7 +1499,7 @@ var loki = (function () {
     if (this.transactional) {
       this.cachedData = null;
       this.cachedIndex = null;
-	  this.cachedBinaryIndices = null;
+      this.cachedBinaryIndices = null;
 
       // propagate commit to dynamic views
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1514,7 +1514,7 @@ var loki = (function () {
       if (this.cachedData !== null && this.cachedIndex !== null) {
         this.data = this.cachedData;
         this.idIndex = this.cachedIndex;
-		this.binaryIndices = this.cachedBinaryIndex;
+        this.binaryIndices = this.cachedBinaryIndex;
       }
 
       // propagate rollback to dynamic views

@@ -42,6 +42,9 @@ window.runExample = function(){
 
     trace('Finished adding users');
     
+    trace('--- test regexp--------------');
+    trace(users.find({ name : {'$regex': /in/ }}));
+    trace('--- test regexp finished-----');
     // create an example project
     var prj = projects.insert( { name : 'LokiJS', owner: stan });
 

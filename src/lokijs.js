@@ -171,7 +171,7 @@ var loki = (function () {
     return rscopy;
   }
 
-  // To support reuse of resultset in forked query situations use copy()
+  // To support reuse of resultset in branched query situations use copy()
   Resultset.prototype.copy = function () {
     var result = new Resultset(this.collection, null, null);
 
@@ -261,7 +261,7 @@ var loki = (function () {
     // if value falls outside of our range return [0, -1] to designate
     // no results
     if (val < minVal || val > maxVal) return [0, -1];
-
+    
     // hone in on start and end positions of value
     while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
       mid = Math.floor((min + max) / 2);
@@ -279,15 +279,11 @@ var loki = (function () {
     case "$gt":
       return [max, rcd.length];
     case "$gte":
-      return [max, rcd.length - 1]; // should be at least 1 or we would have existed at beginning
+      return [max, rcd.length - 1]; // should be at least 1 or we would have exited at beginning
     case "$lt":
-      return [0, min - 1]; // should be at least 1 or we would have existed at beginning
+      return [0, min - 1]; // should be at least 1 or we would have exited at beginning
     case "$lte":
       return [0, min];
-    case "$ne":
-      // ne is weird case we may be able to return two ranges before[] and after[]
-      // but for now just do full array scan
-      return [0, rcd.length];
     default:
       return [0, rcd.length];
     }
@@ -320,6 +316,11 @@ var loki = (function () {
       return a !== b;
     }
 
+    // regexp needs value to be real regular expression such as /abc/ not "/abc/"
+    function $regex(a, b) {
+      return b.test(a);
+    }
+    
     var queryObject = query || 'getAll',
       property,
       value,
@@ -332,7 +333,8 @@ var loki = (function () {
         '$gte': $gte,
         '$lt': $lt,
         '$lte': $lte,
-        '$ne': $ne
+        '$ne': $ne,
+        '$regex': $regex
       },
       searchByIndex = false,
       result = [],
@@ -342,7 +344,8 @@ var loki = (function () {
       // collection data
       t,
       // collection data length
-      i;
+      i,
+      len;
 
     // apply no filters if they want all
     if (queryObject === 'getAll') {
@@ -369,6 +372,9 @@ var loki = (function () {
         break;
       }
     }
+    
+    // for regex ops, precompile 
+    if (operator == "$regex") value = RegExp(value);
 
     if (this.collection.data === null) {
       throw new TypeError();
@@ -377,7 +383,8 @@ var loki = (function () {
     // if an index exists for the property being queried against, use it
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
-    if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && this.collection.binaryIndices.hasOwnProperty(property)) {
+    if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && 
+          operator != "$ne" && operator != "$regex" && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -411,10 +418,12 @@ var loki = (function () {
       } else {
         // searching by binary index via calcseg() util method
         t = this.collection.data;
+        len = t.length;
+        
         var seg = this.calcseg(operator, property, value, this);
 
-        for (var idx = seg[0]; idx <= seg[1]; idx++) {
-          result.push(t[index.values[idx]]);
+        for (i = seg[0]; i <= seg[1]; i++) {
+          result.push(t[index.values[i]]);
         }
 
         this.filteredrows = result;
@@ -828,12 +837,10 @@ var loki = (function () {
     this.name = name;
     // the data held by the collection
     this.data = [];
-    // indices multi-dimensional array
-    //this.indices = {};
-    this.binaryIndices = {};
-    this.idIndex = {}; // index of idx
+    this.idIndex = {}; // index of id
+    this.binaryIndices = {};  // user defined indexes
     // the object type of the collection
-    this.objType = objType || "";
+    this.objType = objType || name;
 
     /** Transactions properties */
     // is collection transactional
@@ -862,6 +869,13 @@ var loki = (function () {
 
     // initialize the id index
     this.ensureIndex();
+    
+    // initialize optional user-supplied indices array ['age', 'lname', 'zip']
+    if(typeof(indices) != "undefined") {
+      for(var idx=0; idx < indices.length; idx++) {
+        this.ensureBinaryIndex(idx);
+      };
+    }
   }
 
   Collection.prototype = new EventEmitter;

@@ -44,6 +44,10 @@ query = {
 
 view.applyFind(query);
 
+// look for all users with 'o' in name
+suite.assertStrictEqual('RegExp find op'
+, users.find({ "name": { '$regex': /o/ }}).length
+, 2);
 
 suite.assertStrictEqual('Resultset chain operations'
 , users.chain().find({'age': { '$gte': 30 }}).where(function(obj) { return obj.lang === 'Swedish'; }).data().length

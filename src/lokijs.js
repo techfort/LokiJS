@@ -24,11 +24,11 @@ var loki = (function () {
     return cloned;
   }
 
-  function EventEmitter() {}
+  function LokiEventEmitter() {}
 
-  EventEmitter.prototype.events = {};
+  LokiEventEmitter.prototype.events = {};
 
-  EventEmitter.prototype.on = function (eventName, listener) {
+  LokiEventEmitter.prototype.on = function (eventName, listener) {
     var event = this.events[eventName];
     if (!event) {
       event = this.events[eventName] = [];
@@ -36,7 +36,7 @@ var loki = (function () {
     return event.push(listener) - 1;
   };
 
-  EventEmitter.prototype.emit = function (eventName, arg) {
+  LokiEventEmitter.prototype.emit = function (eventName, arg) {
     if (this.events[eventName]) {
       var self = this;
       setTimeout(function () {
@@ -54,7 +54,7 @@ var loki = (function () {
     }
   };
 
-  EventEmitter.prototype.remove = function (eventName, index) {
+  LokiEventEmitter.prototype.remove = function (eventName, index) {
     if (this.events[eventName]) {
       this.events[eventName].splice(index, 1);
     }
@@ -93,7 +93,7 @@ var loki = (function () {
 
   }
 
-  Loki.prototype = new EventEmitter;
+  Loki.prototype = new LokiEventEmitter;
   Loki.prototype.close = function (callback) {
     if (callback) {
       this.on('close', callback);
@@ -261,7 +261,7 @@ var loki = (function () {
     // if value falls outside of our range return [0, -1] to designate
     // no results
     if (val < minVal || val > maxVal) return [0, -1];
-    
+
     // hone in on start and end positions of value
     while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
       mid = Math.floor((min + max) / 2);
@@ -320,7 +320,7 @@ var loki = (function () {
     function $regex(a, b) {
       return b.test(a);
     }
-    
+
     var queryObject = query || 'getAll',
       property,
       value,
@@ -372,7 +372,7 @@ var loki = (function () {
         break;
       }
     }
-    
+
     // for regex ops, precompile 
     if (operator == "$regex") value = RegExp(value);
 
@@ -383,8 +383,8 @@ var loki = (function () {
     // if an index exists for the property being queried against, use it
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
-    if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) && 
-          operator != "$ne" && operator != "$regex" && this.collection.binaryIndices.hasOwnProperty(property)) {
+    if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
+      operator != "$ne" && operator != "$regex" && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -419,7 +419,7 @@ var loki = (function () {
         // searching by binary index via calcseg() util method
         t = this.collection.data;
         len = t.length;
-        
+
         var seg = this.calcseg(operator, property, value, this);
 
         for (i = seg[0]; i <= seg[1]; i++) {
@@ -838,7 +838,7 @@ var loki = (function () {
     // the data held by the collection
     this.data = [];
     this.idIndex = {}; // index of id
-    this.binaryIndices = {};  // user defined indexes
+    this.binaryIndices = {}; // user defined indexes
     // the object type of the collection
     this.objType = objType || name;
 
@@ -869,16 +869,32 @@ var loki = (function () {
 
     // initialize the id index
     this.ensureIndex();
-    
+
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
-    if(typeof(indices) != "undefined") {
-      for(var idx=0; idx < indices.length; idx++) {
+    if (typeof (indices) != "undefined") {
+      for (var idx = 0; idx < indices.length; idx++) {
         this.ensureBinaryIndex(idx);
       };
     }
+    this.on('insert', function (obj) {
+      console.log('Passed to on-insert', obj);
+      setTimeout(function () {
+
+        console.log('On insert single object...');
+        obj.meta.created = (new Date()).getTime();
+        obj.meta.revision = 0;
+
+      }, 1);
+    });
+    this.on('update', function (obj) {
+      setTimeout(function () {
+        obj.meta.updated = (new Date()).getTime();
+        obj.meta.revision += 1;
+      }, 1);
+    });
   }
 
-  Collection.prototype = new EventEmitter;
+  Collection.prototype = new LokiEventEmitter;
 
   Loki.prototype.addCollection = function (name, objType, indexesArray, transactional) {
     var collection = new Collection(name, objType, indexesArray, transactional);
@@ -969,9 +985,9 @@ var loki = (function () {
       }
 
       copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
-	  copyColl.idIndex = coll.idIndex;
-	  // if saved in previous format recover id index out of it
-	  if (typeof (coll.indices) != "undefined") copyColl.idIndex = coll.indices.id;
+      copyColl.idIndex = coll.idIndex;
+      // if saved in previous format recover id index out of it
+      if (typeof (coll.indices) != "undefined") copyColl.idIndex = coll.indices.id;
       if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
       copyColl.transactional = coll.transactional;
       copyColl.ensureIndex();
@@ -1121,13 +1137,14 @@ var loki = (function () {
   }
 
   /**
-   * Rebuild idIndex 
+   * Rebuild idIndex
    */
   Collection.prototype.ensureIndex = function () {
 
-	var len = this.data.length, i = 0;
+    var len = this.data.length,
+      i = 0;
 
-	this.idIndex = [];
+    this.idIndex = [];
     for (i; i < len; i += 1) {
       this.idIndex.push(this.data[i].id);
     }
@@ -1198,15 +1215,19 @@ var loki = (function () {
   Collection.prototype.insert = function (doc) {
     var self = this;
 
-    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
+    if (this.binaryIndices.length > 0) {
+      this.flagBinaryIndexesDirty();
+    }
 
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
         d.id = null;
         d.objType = self.objType;
+        d.meta = {};
+
         self.add(d);
+        self.emit('insert', d);
       });
-      this.emit('insert', doc);
       return doc;
     } else {
       if (typeof doc !== 'object') {
@@ -1242,11 +1263,22 @@ var loki = (function () {
    */
   Collection.prototype.update = function (doc) {
 
-    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
+    if (this.binaryIndices.length > 0) {
+      this.flagBinaryIndexesDirty();
+    }
+
+    if (Array.isArray(doc)) {
+      var k = 0,
+        len = doc.length;
+      for (k; k < len; k += 1) {
+        this.update(doc[k]);
+      }
+      return;
+    }
 
     // verify object is a properly formed document
     if (!doc.hasOwnProperty('id')) {
-      throw 'Trying to update unsynced document. Please save the document first by using add() or addMany()';
+      throw 'Trying to update unsynced document. Please save the document first by using insert() or addMany()';
     }
     try {
       this.startTransaction();
@@ -1254,7 +1286,7 @@ var loki = (function () {
         obj = arr[0],
         // get current position in data array
         position = arr[1];
-        
+
       // operate the update
       this.data[position] = doc;
 
@@ -1265,7 +1297,7 @@ var loki = (function () {
       }
 
       this.idIndex[position] = obj.id;
-		  
+
       this.commit();
       this.emit('update', doc);
     } catch (err) {
@@ -1333,7 +1365,7 @@ var loki = (function () {
 
         // add new obj id to idIndex
         this.idIndex.push(obj.id);
-		
+
         this.commit();
         return obj;
       } catch (err) {
@@ -1361,12 +1393,22 @@ var loki = (function () {
     if ('object' !== typeof doc) {
       throw 'Parameter is not an object';
     }
+    if (Array.isArray(doc)) {
+      var k = 0,
+        len = doc.length;
+      for (k; k < len; k += 1) {
+        this.remove(doc[k]);
+      }
+      return;
+    }
 
     if (!doc.hasOwnProperty('id')) {
       throw 'Object is not a document stored in the collection';
     }
 
-    if (this.binaryIndices.length > 0) this.flagBinaryIndexesDirty();
+    if (this.binaryIndices.length > 0) {
+      this.flagBinaryIndexesDirty();
+    }
 
     try {
       this.startTransaction();
@@ -1383,9 +1425,9 @@ var loki = (function () {
 
       this.data.splice(position, 1);
 
-	  // remove id from idIndex
+      // remove id from idIndex
       this.idIndex.splice(position, 1);
-		  
+
       this.commit();
       this.emit('delete');
     } catch (err) {
@@ -1404,7 +1446,7 @@ var loki = (function () {
    */
   Collection.prototype.get = function (id, returnPosition) {
     var retpos = returnPosition || false,
-      data = this.idIndex, 
+      data = this.idIndex,
       max = data.length - 1,
       min = 0,
       mid = Math.floor(min + (max - min) / 2);
@@ -1449,11 +1491,11 @@ var loki = (function () {
       i = this.indices.length,
       len,
       doc;
-	  
-	  // this method will probably be replaced with find() overload 
-	  // for now just run unindexed since no value-cache indexes exist anymore 
-	  // if finding by id, use get instead
-      return this.findOneUnindexed(prop, value);
+
+    // this method will probably be replaced with find() overload 
+    // for now just run unindexed since no value-cache indexes exist anymore 
+    // if finding by id, use get instead
+    return this.findOneUnindexed(prop, value);
   };
 
   /**

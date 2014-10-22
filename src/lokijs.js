@@ -321,6 +321,21 @@ var loki = (function () {
       return b.test(a);
     }
 
+    function $contains(a, b) {
+      if (Array.isArray(a)) {
+        return a.indexOf(b) !== -1;
+      }
+
+      if (typeof a === 'string') {
+        return a.indexOf(b) !== -1;
+      }
+
+      if (typeof a === 'object') {
+        return a.hasOwnProperty(b);
+      }
+
+    }
+
     var queryObject = query || 'getAll',
       property,
       value,
@@ -334,7 +349,8 @@ var loki = (function () {
         '$lt': $lt,
         '$lte': $lte,
         '$ne': $ne,
-        '$regex': $regex
+        '$regex': $regex,
+        '$contains': $contains
       },
       searchByIndex = false,
       result = [],
@@ -1241,6 +1257,7 @@ var loki = (function () {
       }
       doc.id = null;
       doc.objType = this.objType;
+      doc.meta = {};
       this.add(doc);
       this.emit('insert', doc);
       return doc;

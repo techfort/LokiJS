@@ -112,8 +112,9 @@ var loki = (function () {
    *  mycollection.find({ "doors": 4 });
    * When using .chain(), any number of view() and data() calls can be chained together to further filter
    * resultset, ending the chain with a .data() call to return as an array of collection document objects.
+   * firstOnly param intended for non-chained queries such as when invoked by collection.findOne().
    */
-  function Resultset(collection, queryObj, queryFunc) {
+  function Resultset(collection, queryObj, queryFunc, firstOnly) {
     // retain reference to collection we are querying against
     this.collection = collection;
 
@@ -123,7 +124,7 @@ var loki = (function () {
     this.filterInitialized = false;
 
     // if user supplied initial queryObj or queryFunc, apply it 
-    if (queryObj != null) return this.find(queryObj);
+    if (queryObj != null) return this.find(queryObj, firstOnly);
     if (queryFunc != null) return this.where(queryFunc);
 
     // otherwise return unfiltered Resultset for future filtering 
@@ -144,7 +145,7 @@ var loki = (function () {
   //   - You establish your resultset (directly or via a DynamicView)
   //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
   Resultset.prototype.limit = function (qty) {
-    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
@@ -159,7 +160,7 @@ var loki = (function () {
   // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
   // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
   Resultset.prototype.offset = function (pos) {
-    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
@@ -243,12 +244,12 @@ var loki = (function () {
     return this;
   }
 
-  // binary search utility method to find segment of values matching criteria
+  // binary search utility method to find range/segment of values matching criteria
   // this is used for collection.find() and first find filter of resultset/dynview
   // slightly different than get() binary search in that get() hones in on 1 value,
   // but we have to hone in on many (range)
   // returns array of [start, end] index array positions 
-  Resultset.prototype.calcseg = function calcseg(op, prop, val, rst) {
+  Resultset.prototype.calculateRange = function (op, prop, val, rst) {
     var rcd = rst.collection.data;
     var index = rst.collection.binaryIndices[prop].values;
     var min = 0;
@@ -290,7 +291,8 @@ var loki = (function () {
   }
 
   // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
-  Resultset.prototype.find = function (query) {
+  // firstOnly is optional parameter only used if this is not a chained operation. used by collection.findOne()
+  Resultset.prototype.find = function (query, firstOnly) {
     // comparison operators
     function $eq(a, b) {
       return a === b;
@@ -362,10 +364,23 @@ var loki = (function () {
       // collection data length
       i,
       len;
+      
+    if (typeof(firstOnly) == "undefined") {
+      firstOnly = false;
+    }
 
     // apply no filters if they want all
     if (queryObject === 'getAll') {
-      return this;
+      // chained queries can just do coll.chain().data() but let's
+      // be versatile and allow this also coll.chain().find().data()
+      if (this.searchIsChained) {
+        this.filteredrows = Object.keys(this.collection.data);
+        return this;
+      }
+      // not chained, so return collection data array
+      else {
+        return this.collection.data;
+      }
     }
 
     for (p in queryObject) {
@@ -400,7 +415,7 @@ var loki = (function () {
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-      operator != "$ne" && operator != "$regex" && this.collection.binaryIndices.hasOwnProperty(property)) {
+      operator != "$ne" && operator != "$regex" && operator != "$contains" && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -426,9 +441,19 @@ var loki = (function () {
       if (!searchByIndex) {
         t = this.collection.data;
         i = t.length;
-        while (i--) {
-          if (fun(t[i][property], value)) {
-            result.push(t[i]);
+        
+        if (firstOnly) {
+          while (i--) {
+            if (fun(t[i][property], value)) {
+              return(t[i]);
+            }
+          }
+        }
+        else {
+          while (i--) {
+            if (fun(t[i][property], value)) {
+              result.push(t[i]);
+            }
           }
         }
       } else {
@@ -436,12 +461,20 @@ var loki = (function () {
         t = this.collection.data;
         len = t.length;
 
-        var seg = this.calcseg(operator, property, value, this);
+        var seg = this.calculateRange(operator, property, value, this);
 
+        // not chained so this 'find' was designated in Resultset constructor
+        // so return object itself
+        if (firstOnly) {
+          if (seg[1] != -1) {
+            return this.data[seg[0]];
+          }
+        }
+        
         for (i = seg[0]; i <= seg[1]; i++) {
           result.push(t[index.values[i]]);
         }
-
+        
         this.filteredrows = result;
       }
 
@@ -455,6 +488,7 @@ var loki = (function () {
         if (!searchByIndex) {
           t = this.collection.data;
           i = this.filteredrows.length;
+          
           while (i--) {
             if (fun(t[this.filteredrows[i]][property], value)) {
               result.push(this.filteredrows[i]);
@@ -486,7 +520,7 @@ var loki = (function () {
           }
         } else {
           t = this.collection.data;
-          var seg = this.calcseg(operator, property, value, this);
+          var seg = this.calculateRange(operator, property, value, this);
 
           for (var idx = seg[0]; idx <= seg[1]; idx++) {
             result.push(t[index.values[idx]]);
@@ -583,8 +617,11 @@ var loki = (function () {
       }
     }
 
+    var data = this.collection.data,
+      fr = this.filteredrows;
+    
     for (var i in this.filteredrows) {
-      result.push(this.collection.data[this.filteredrows[i]]);
+      result.push(data[fr[i]]);
     }
 
     return result;
@@ -893,10 +930,10 @@ var loki = (function () {
       };
     }
     this.on('insert', function (obj) {
-      console.log('Passed to on-insert', obj);
+      //console.log('Passed to on-insert', obj);
       setTimeout(function () {
 
-        console.log('On insert single object...');
+        //console.log('On insert single object...');
         obj.meta.created = (new Date()).getTime();
         obj.meta.revision = 0;
 
@@ -1500,19 +1537,9 @@ var loki = (function () {
   /**
    * Find one object by index property, by property equal to value
    */
-  Collection.prototype.findOne = function (prop, value) {
-
-    var searchByIndex = false,
-      indexObject = null,
-      // iterate the indices to ascertain whether property is indexed
-      i = this.indices.length,
-      len,
-      doc;
-
-    // this method will probably be replaced with find() overload 
-    // for now just run unindexed since no value-cache indexes exist anymore 
-    // if finding by id, use get instead
-    return this.findOneUnindexed(prop, value);
+  Collection.prototype.findOne = function (query) {
+    // Instantiate Resultset and exec find op passing firstOnly = true param
+    return new Resultset(this, query, null, true);
   };
 
   /**
@@ -1528,6 +1555,9 @@ var loki = (function () {
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
+    if (typeof(query) == "undefined") {
+      query = 'getAll';
+    }
     // find logic moved into Resultset class
     return new Resultset(this, query, null);
   };

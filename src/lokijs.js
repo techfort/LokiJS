@@ -107,9 +107,9 @@ var loki = (function () {
    *
    * Collection.find(), Collection.view(), and Collection.chain() instantiate this resultset
    * Examples:
-   *  mycollection.chain().view("Toyota").find({ "doors" : 4 }).data();
-   *  mycollection.view("Toyota");
-   *  mycollection.find({ "doors": 4 });
+   *  mycollection.chain().view('Toyota').find({ 'doors' : 4 }).data();
+   *  mycollection.view('Toyota');
+   *  mycollection.find({ 'doors': 4 });
    * When using .chain(), any number of view() and data() calls can be chained together to further filter
    * resultset, ending the chain with a .data() call to return as an array of collection document objects.
    * firstOnly param intended for non-chained queries such as when invoked by collection.findOne().
@@ -124,8 +124,8 @@ var loki = (function () {
     this.filterInitialized = false;
 
     // if user supplied initial queryObj or queryFunc, apply it 
-    if (queryObj != null) return this.find(queryObj, firstOnly);
-    if (queryFunc != null) return this.where(queryFunc);
+    if (queryObj !== null) return this.find(queryObj, firstOnly);
+    if (queryFunc !== null) return this.where(queryFunc);
 
     // otherwise return unfiltered Resultset for future filtering 
     return this;
@@ -212,14 +212,14 @@ var loki = (function () {
 
   // Simpler, loose evaluation for user to sort based on a property name. (chainable)
   // Example :
-  // rslt.simplesort("name");
+  // rslt.simplesort('name');
   Resultset.prototype.simplesort = function (propname, isdesc) {
     // if this is chained resultset with no filters applied, just we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
-    if (typeof (isdesc) == "undefined") isdesc = false;
+    if (typeof (isdesc) == 'undefined') isdesc = false;
 
     var wrappedComparer =
       (function (prop, desc, rslt) {
@@ -275,15 +275,15 @@ var loki = (function () {
     }
 
     switch (op) {
-    case "$eq":
+    case '$eq':
       return [min, max];
-    case "$gt":
+    case '$gt':
       return [max, rcd.length];
-    case "$gte":
+    case '$gte':
       return [max, rcd.length - 1]; // should be at least 1 or we would have exited at beginning
-    case "$lt":
+    case '$lt':
       return [0, min - 1]; // should be at least 1 or we would have exited at beginning
-    case "$lte":
+    case '$lte':
       return [0, min];
     default:
       return [0, rcd.length];
@@ -318,7 +318,7 @@ var loki = (function () {
       return a !== b;
     }
 
-    // regexp needs value to be real regular expression such as /abc/ not "/abc/"
+    // regexp needs value to be real regular expression such as /abc/ not '/abc/'
     function $regex(a, b) {
       return b.test(a);
     }
@@ -364,8 +364,8 @@ var loki = (function () {
       // collection data length
       i,
       len;
-      
-    if (typeof(firstOnly) == "undefined") {
+
+    if (typeof (firstOnly) == 'undefined') {
       firstOnly = false;
     }
 
@@ -405,7 +405,7 @@ var loki = (function () {
     }
 
     // for regex ops, precompile 
-    if (operator == "$regex") value = RegExp(value);
+    if (operator == '$regex') value = RegExp(value);
 
     if (this.collection.data === null) {
       throw new TypeError();
@@ -415,7 +415,7 @@ var loki = (function () {
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-      operator != "$ne" && operator != "$regex" && operator != "$contains" && this.collection.binaryIndices.hasOwnProperty(property)) {
+      operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -441,15 +441,14 @@ var loki = (function () {
       if (!searchByIndex) {
         t = this.collection.data;
         i = t.length;
-        
+
         if (firstOnly) {
           while (i--) {
             if (fun(t[i][property], value)) {
-              return(t[i]);
+              return (t[i]);
             }
           }
-        }
-        else {
+        } else {
           while (i--) {
             if (fun(t[i][property], value)) {
               result.push(t[i]);
@@ -466,15 +465,15 @@ var loki = (function () {
         // not chained so this 'find' was designated in Resultset constructor
         // so return object itself
         if (firstOnly) {
-          if (seg[1] != -1) {
+          if (seg[1] !== -1) {
             return this.data[seg[0]];
           }
         }
-        
+
         for (i = seg[0]; i <= seg[1]; i++) {
           result.push(t[index.values[i]]);
         }
-        
+
         this.filteredrows = result;
       }
 
@@ -488,7 +487,7 @@ var loki = (function () {
         if (!searchByIndex) {
           t = this.collection.data;
           i = this.filteredrows.length;
-          
+
           while (i--) {
             if (fun(t[this.filteredrows[i]][property], value)) {
               result.push(this.filteredrows[i]);
@@ -619,7 +618,7 @@ var loki = (function () {
 
     var data = this.collection.data,
       fr = this.filteredrows;
-    
+
     for (var i in this.filteredrows) {
       result.push(data[fr[i]]);
     }
@@ -634,9 +633,9 @@ var loki = (function () {
    * Collection.addDynamicView(name) instantiates this DynamicView object
    *
    * Examples:
-   *	var mydv = mycollection.addDynamicView("test");  // default is non-persistent
-   *	mydv.applyWhere(function(obj) { return obj.name == "Toyota"; });
-   *	mydv.applyFind({ "doors" : 4 });
+   *	var mydv = mycollection.addDynamicView('test');  // default is non-persistent
+   *	mydv.applyWhere(function(obj) { return obj.name == 'Toyota'; });
+   *	mydv.applyFind({ 'doors' : 4 });
    * 	var results = mydv.data();
    *
    * Chaining is supported on apply functions : applyWhere().applyFind().data() is valid
@@ -646,7 +645,7 @@ var loki = (function () {
     this.name = name;
 
     this.persistent = false;
-    if (typeof (persistent) != "undefined") this.persistent = persistent;
+    if (typeof (persistent) !== 'undefined') this.persistent = persistent;
 
     this.resultset = new Resultset(collection)
     this.resultdata = [];
@@ -698,7 +697,7 @@ var loki = (function () {
   }
 
   DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
-    if (typeof (isdesc) == "undefined") isdesc = false;
+    if (typeof (isdesc) == 'undefined') isdesc = false;
 
     this.sortColumn = propname;
     this.sortColumnDesc = isdesc;
@@ -796,10 +795,10 @@ var loki = (function () {
     evalResultset.filterInitialized = true;
     for (var idx = 0; idx < this.filterPipeline.length; idx++) {
       switch (this.filterPipeline[idx].type) {
-      case "find":
+      case 'find':
         evalResultset.find(this.filterPipeline[idx].val);
         break;
-      case "where":
+      case 'where':
         evalResultset.where(this.filterPipeline[idx].val);
         break;
       }
@@ -812,7 +811,7 @@ var loki = (function () {
     if (oldPos == -1 && newPos == -1) return;
 
     // wasn't in resultset, should be now... add
-    if (oldPos == -1 && newPos != -1) {
+    if (oldPos == -1 && newPos !== -1) {
       ofr.push(objIndex);
 
       if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
@@ -824,7 +823,7 @@ var loki = (function () {
     }
 
     // was in resultset, shouldn't be now... delete
-    if (oldPos != -1 && newPos == -1) {
+    if (oldPos !== -1 && newPos == -1) {
       if (oldPos < oldlen - 1) {
         // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
         ofr[oldPos] = ofr[oldlen - 1];
@@ -844,7 +843,7 @@ var loki = (function () {
     }
 
     // was in resultset, should still be now... (update persistent only?)
-    if (oldPos != -1 && newPos != -1) {
+    if (oldPos !== -1 && newPos !== -1) {
       if (this.persistent) {
         // in case document changed, replace persistent view data with the latest collection.data document
         this.resultdata[oldPos] = this.collection.data[objIndex];
@@ -863,7 +862,7 @@ var loki = (function () {
     var oldPos = ofr.indexOf(objIndex);
     var oldlen = ofr.length;
 
-    if (oldPos != -1) {
+    if (oldPos !== -1) {
       // if not last row in resultdata, swap last to hole and truncate last row
       if (oldPos < oldlen - 1) {
         ofr[oldPos] = ofr[oldlen - 1];
@@ -924,7 +923,7 @@ var loki = (function () {
     this.ensureIndex();
 
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
-    if (typeof (indices) != "undefined") {
+    if (typeof (indices) !== 'undefined') {
       for (var idx = 0; idx < indices.length; idx++) {
         this.ensureBinaryIndex(idx);
       };
@@ -1040,13 +1039,13 @@ var loki = (function () {
       copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
       copyColl.idIndex = coll.idIndex;
       // if saved in previous format recover id index out of it
-      if (typeof (coll.indices) != "undefined") copyColl.idIndex = coll.indices.id;
-      if (typeof (coll.binaryIndices) != "undefined") copyColl.binaryIndices = coll.binaryIndices;
+      if (typeof (coll.indices) !== 'undefined') copyColl.idIndex = coll.indices.id;
+      if (typeof (coll.binaryIndices) !== 'undefined') copyColl.binaryIndices = coll.binaryIndices;
       copyColl.transactional = coll.transactional;
       copyColl.ensureIndex();
 
       // in case they are loading a database created before we added dynamic views, handle undefined
-      if (typeof (coll.DynamicViews) == "undefined") continue;
+      if (typeof (coll.DynamicViews) == 'undefined') continue;
 
       // reinflate DynamicViews and attached Resultsets
       for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
@@ -1128,7 +1127,7 @@ var loki = (function () {
    */
   Collection.prototype.ensureBinaryIndex = function (property, force) {
     // optional parameter to force rebuild whether flagged as dirty or not
-    if (typeof (force) == "undefined") force = false;
+    if (typeof (force) == 'undefined') force = false;
 
     if (property === null || property === undefined) {
       throw 'Attempting to set index without an associated property';
@@ -1138,9 +1137,9 @@ var loki = (function () {
       if (!this.binaryIndices[property].dirty) return;
     } else {
       this.binaryIndices[property] = {
-        "name": property,
-        "dirty": true,
-        "values": []
+        'name': property,
+        'dirty': true,
+        'values': []
       };
     }
 
@@ -1284,7 +1283,7 @@ var loki = (function () {
       return doc;
     } else {
       if (typeof doc !== 'object') {
-        throw new TypeError("Document needs to be an object");
+        throw new TypeError('Document needs to be an object');
         return;
       }
       if (!doc) {
@@ -1373,7 +1372,7 @@ var loki = (function () {
     /*
      * try adding object to collection
      */
-    if (this.objType === "" && this.data.length === 0) {
+    if (this.objType === '' && this.data.length === 0) {
 
       // set object type to that of the first object added to collection
       this.objType = obj.objType;
@@ -1555,7 +1554,7 @@ var loki = (function () {
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
-    if (typeof(query) == "undefined") {
+    if (typeof (query) == 'undefined') {
       query = 'getAll';
     }
     // find logic moved into Resultset class

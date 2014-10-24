@@ -124,8 +124,8 @@ var loki = (function () {
     this.filterInitialized = false;
 
     // if user supplied initial queryObj or queryFunc, apply it 
-    if (queryObj !== null) return this.find(queryObj, firstOnly);
-    if (queryFunc !== null) return this.where(queryFunc);
+    if (typeof (queryObj) !== "undefined" && queryObj !== null) return this.find(queryObj, firstOnly);
+    if (typeof (queryFunc) !== "undefined" && queryFunc !== null) return this.where(queryFunc);
 
     // otherwise return unfiltered Resultset for future filtering 
     return this;
@@ -456,7 +456,7 @@ var loki = (function () {
           }
         }
       } else {
-        // searching by binary index via calcseg() util method
+        // searching by binary index via calculateRange() utility method
         t = this.collection.data;
         len = t.length;
 
@@ -522,7 +522,7 @@ var loki = (function () {
           var seg = this.calculateRange(operator, property, value, this);
 
           for (var idx = seg[0]; idx <= seg[1]; idx++) {
-            result.push(t[index.values[idx]]);
+            result.push(index.values[idx]);
           }
 
           this.filteredrows = result;
@@ -619,7 +619,10 @@ var loki = (function () {
     var data = this.collection.data,
       fr = this.filteredrows;
 
-    for (var i in this.filteredrows) {
+    var i, 
+      len = this.filteredrows.length;
+      
+    for (i=0; i < len; i++) {
       result.push(data[fr[i]]);
     }
 
@@ -738,8 +741,13 @@ var loki = (function () {
     // Apply immediately to Resultset; if persistent we will wait until later to build internal data
     this.resultset.find(query);
 
-    this.sortDirty = true;
-    if (this.persistent) this.resultsdirty = true;
+    if (this.sortFunction || this.sortColumn) {
+      this.sortDirty = true;
+    }
+    
+    if (this.persistent) {
+      this.resultsdirty = true;
+    }
 
     return this;
   }
@@ -753,7 +761,7 @@ var loki = (function () {
     // Apply immediately to Resultset; if persistent we will wait until later to build internal data
     this.resultset.where(fun);
 
-    this.sortDirty = true;
+    if (this.sortFunction || this.sortColumn) this.sortDirty = true;
     if (this.persistent) this.resultsdirty = true;
 
     return this;
@@ -884,7 +892,7 @@ var loki = (function () {
    * @constructor
    * Collection class that handles documents of same type
    */
-  function Collection(name, objType, indices, transactionOptions) {
+  function Collection(name, indices, transactionOptions) {
     // the name of the collection 
     this.name = name;
     // the data held by the collection
@@ -892,7 +900,7 @@ var loki = (function () {
     this.idIndex = {}; // index of id
     this.binaryIndices = {}; // user defined indexes
     // the object type of the collection
-    this.objType = objType || name;
+    this.objType = name;
 
     /** Transactions properties */
     // is collection transactional
@@ -948,8 +956,8 @@ var loki = (function () {
 
   Collection.prototype = new LokiEventEmitter;
 
-  Loki.prototype.addCollection = function (name, objType, indexesArray, transactional) {
-    var collection = new Collection(name, objType, indexesArray, transactional);
+  Loki.prototype.addCollection = function (name, indexesArray, transactional) {
+    var collection = new Collection(name, indexesArray, transactional);
     this.collections.push(collection);
     return collection;
   };
@@ -1027,7 +1035,7 @@ var loki = (function () {
 
     for (i; i < len; i += 1) {
       coll = obj.collections[i];
-      copyColl = this.addCollection(coll.name, coll.objType);
+      copyColl = this.addCollection(coll.name);
 
       // load each element individually 
       clen = coll.data.length;
@@ -1364,7 +1372,9 @@ var loki = (function () {
    * Add object to collection
    */
   Collection.prototype.add = function (obj) {
-
+    var i, 
+      dvlen = this.DynamicViews.length;
+      
     // if parameter isn't object exit with throw
     if ('object' !== typeof obj) {
       throw 'Object being added needs to be an object';
@@ -1372,72 +1382,46 @@ var loki = (function () {
     /*
      * try adding object to collection
      */
-    if (this.objType === '' && this.data.length === 0) {
+     
+    if (obj.id !== null && obj.id > 0) {
+      throw 'Document is already in collection, please use update()';
+    }
+    try {
 
-      // set object type to that of the first object added to collection
-      this.objType = obj.objType;
+      this.startTransaction();
+      this.maxId++;
+      var i;
 
-    } else {
-
-      // throw an error if the object added is not the same type as the collection's
-      if (this.objType !== obj.objType) {
-        throw 'Object type [' + obj.objType + '] is incongruent with collection type [' + this.objType + ']';
+      if (isNaN(this.maxId)) {
+        this.maxId = (this.data[this.data.length - 1].id + 1);
       }
-      if (this.objType === '') {
-        throw 'Object is not a model';
+
+      obj.id = this.maxId;
+      // add the object
+      this.data.push(obj);
+
+      // now that we can efficiently determine the data[] position of newly added document,
+      // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+      for (i = 0; i < dvlen; i++) {
+        this.DynamicViews[i].evaluateDocument(this.data.length - 1);
       }
 
-      if (obj.id !== null && obj.id > 0) {
-        throw 'Document is already in collection, please use update()';
+      // now that we can efficiently determine the data[] position of newly added document,
+      // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+      for (i = 0; i < dvlen; i++) {
+        this.DynamicViews[i].evaluateDocument(this.data.length - 1);
       }
-      try {
 
-        this.startTransaction();
-        this.maxId++;
-        var i;
+      // add new obj id to idIndex
+      this.idIndex.push(obj.id);
 
-        if (isNaN(this.maxId)) {
-          this.maxId = (this.data[this.data.length - 1].id + 1);
-        }
-
-        obj.id = this.maxId;
-        // add the object
-        this.data.push(obj);
-
-        // now that we can efficiently determine the data[] position of newly added document,
-        // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-        for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-          this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
-        }
-
-        // now that we can efficiently determine the data[] position of newly added document,
-        // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-        for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-          this.DynamicViews[idx].evaluateDocument(this.data.length - 1);
-        }
-
-        // add new obj id to idIndex
-        this.idIndex.push(obj.id);
-
-        this.commit();
-        return obj;
-      } catch (err) {
-        this.rollback();
-        console.error(err.message);
-      }
+      this.commit();
+      return obj;
+    } catch (err) {
+      this.rollback();
+      console.error(err.message);
     }
   };
-
-  /**
-   * iterate through arguments and add indexes
-   */
-  Collection.prototype.addMany = function () {
-    var i = arguments.length;
-    while (i--) {
-      this.add(arguments[i]);
-    }
-  };
-
 
   /**
    * delete wrapped
@@ -1642,18 +1626,9 @@ var loki = (function () {
   /**
    * Create view function - filter
    */
-  Collection.prototype.view = function (fun) {
+  Collection.prototype.where = function (fun) {
     // find logic moved into Resultset class
     return new Resultset(this, null, fun);
-  };
-
-  /**
-   * store a view in the collection for later reuse
-   */
-  Collection.prototype.storeView = function (name, fun) {
-    if (typeof fun === 'function') {
-      this.Views[name] = fun;
-    }
   };
 
   /**

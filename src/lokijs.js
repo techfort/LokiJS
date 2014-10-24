@@ -146,7 +146,7 @@ var loki = (function () {
   //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
   Resultset.prototype.limit = function (qty) {
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
-    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
@@ -161,7 +161,7 @@ var loki = (function () {
   // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
   Resultset.prototype.offset = function (pos) {
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
-    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
@@ -185,13 +185,13 @@ var loki = (function () {
   // User supplied compare function is provided two documents to compare. (chainable)
   // Example:
   // rslt.sort(function(obj1, obj2) { 
-  //   if (obj1.name == obj2.name) return 0;
+  //   if (obj1.name === obj2.name) return 0;
   //   if (obj1.name > obj2.name) return 1;
   //   if (obj1.name < obj2.name) return -1;
   // });
   Resultset.prototype.sort = function (comparefun) {
     // if this is chained resultset with no filters applied, just we need to populate filteredrows first
-    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
@@ -215,11 +215,11 @@ var loki = (function () {
   // rslt.simplesort('name');
   Resultset.prototype.simplesort = function (propname, isdesc) {
     // if this is chained resultset with no filters applied, just we need to populate filteredrows first
-    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length == 0) {
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
-    if (typeof (isdesc) == 'undefined') isdesc = false;
+    if (typeof (isdesc) === 'undefined') isdesc = false;
 
     var wrappedComparer =
       (function (prop, desc, rslt) {
@@ -227,7 +227,7 @@ var loki = (function () {
           var obj1 = rslt.collection.data[a];
           var obj2 = rslt.collection.data[b];
 
-          if (obj1[prop] == obj2[prop]) return 0;
+          if (obj1[prop] === obj2[prop]) return 0;
 
           if (desc) {
             if (obj1[prop] < obj2[prop]) return 1;
@@ -365,7 +365,7 @@ var loki = (function () {
       i,
       len;
 
-    if (typeof (firstOnly) == 'undefined') {
+    if (typeof (firstOnly) === 'undefined') {
       firstOnly = false;
     }
 
@@ -405,7 +405,7 @@ var loki = (function () {
     }
 
     // for regex ops, precompile 
-    if (operator == '$regex') value = RegExp(value);
+    if (operator === '$regex') value = RegExp(value);
 
     if (this.collection.data === null) {
       throw new TypeError();
@@ -608,7 +608,7 @@ var loki = (function () {
 
     // if this is chained resultset with no filters applied, just return collection.data
     if (this.searchIsChained && !this.filterInitialized) {
-      if (this.filteredrows.length == 0) {
+      if (this.filteredrows.length === 0) {
         return this.collection.data;
       } else {
         // filteredrows must have been set manually, so use it
@@ -619,10 +619,10 @@ var loki = (function () {
     var data = this.collection.data,
       fr = this.filteredrows;
 
-    var i, 
+    var i,
       len = this.filteredrows.length;
-      
-    for (i=0; i < len; i++) {
+
+    for (i = 0; i < len; i++) {
       result.push(data[fr[i]]);
     }
 
@@ -637,7 +637,7 @@ var loki = (function () {
    *
    * Examples:
    *	var mydv = mycollection.addDynamicView('test');  // default is non-persistent
-   *	mydv.applyWhere(function(obj) { return obj.name == 'Toyota'; });
+   *	mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
    *	mydv.applyFind({ 'doors' : 4 });
    * 	var results = mydv.data();
    *
@@ -700,7 +700,7 @@ var loki = (function () {
   }
 
   DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
-    if (typeof (isdesc) == 'undefined') isdesc = false;
+    if (typeof (isdesc) === 'undefined') isdesc = false;
 
     this.sortColumn = propname;
     this.sortColumnDesc = isdesc;
@@ -744,7 +744,7 @@ var loki = (function () {
     if (this.sortFunction || this.sortColumn) {
       this.sortDirty = true;
     }
-    
+
     if (this.persistent) {
       this.resultsdirty = true;
     }
@@ -770,10 +770,16 @@ var loki = (function () {
   // will either build a resultset array or (if persistent) return reference to persistent data array
   DynamicView.prototype.data = function () {
     if (this.sortDirty) {
-      if (this.sortFunction) this.resultset.sort(this.sortFunction);
-      if (this.sortColumn) this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+      if (this.sortFunction) {
+        this.resultset.sort(this.sortFunction);
+      }
+      if (this.sortColumn) {
+        this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+      }
       this.sortDirty = false;
-      if (this.persistent) this.resultsdirty = true; // newly sorted, if persistent we need to rebuild resultdata
+      if (this.persistent) {
+        this.resultsdirty = true; // newly sorted, if persistent we need to rebuild resultdata
+      }
     }
 
     // if nonpersistent return resultset data evaluation
@@ -813,13 +819,13 @@ var loki = (function () {
     }
 
     // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
-    var newPos = (evalResultset.filteredrows.length == 0) ? -1 : 0;
+    var newPos = (evalResultset.filteredrows.length === 0) ? -1 : 0;
 
     // wasn't in old, shouldn't be now... do nothing
     if (oldPos == -1 && newPos == -1) return;
 
     // wasn't in resultset, should be now... add
-    if (oldPos == -1 && newPos !== -1) {
+    if (oldPos === -1 && newPos !== -1) {
       ofr.push(objIndex);
 
       if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
@@ -831,7 +837,7 @@ var loki = (function () {
     }
 
     // was in resultset, shouldn't be now... delete
-    if (oldPos !== -1 && newPos == -1) {
+    if (oldPos !== -1 && newPos === -1) {
       if (oldPos < oldlen - 1) {
         // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
         ofr[oldPos] = ofr[oldlen - 1];
@@ -1044,7 +1050,7 @@ var loki = (function () {
         copyColl.data[j] = coll.data[j];
       }
 
-      copyColl.maxId = (coll.data.length == 0) ? 0 : coll.data.maxId;
+      copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
       copyColl.idIndex = coll.idIndex;
       // if saved in previous format recover id index out of it
       if (typeof (coll.indices) !== 'undefined') copyColl.idIndex = coll.indices.id;
@@ -1053,7 +1059,7 @@ var loki = (function () {
       copyColl.ensureIndex();
 
       // in case they are loading a database created before we added dynamic views, handle undefined
-      if (typeof (coll.DynamicViews) == 'undefined') continue;
+      if (typeof (coll.DynamicViews) === 'undefined') continue;
 
       // reinflate DynamicViews and attached Resultsets
       for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
@@ -1135,7 +1141,7 @@ var loki = (function () {
    */
   Collection.prototype.ensureBinaryIndex = function (property, force) {
     // optional parameter to force rebuild whether flagged as dirty or not
-    if (typeof (force) == 'undefined') force = false;
+    if (typeof (force) === 'undefined') force = false;
 
     if (property === null || property === undefined) {
       throw 'Attempting to set index without an associated property';
@@ -1167,7 +1173,7 @@ var loki = (function () {
           var obj1 = coll.data[a];
           var obj2 = coll.data[b];
 
-          if (obj1[prop] == obj2[prop]) return 0;
+          if (obj1[prop] === obj2[prop]) return 0;
           if (obj1[prop] > obj2[prop]) return 1;
           if (obj1[prop] < obj2[prop]) return -1;
         }
@@ -1232,7 +1238,7 @@ var loki = (function () {
 
   Collection.prototype.removeDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-      if (this.DynamicViews[idx].name == name) {
+      if (this.DynamicViews[idx].name === name) {
         this.DynamicViews.splice(idx, 1);
       }
     }
@@ -1240,7 +1246,7 @@ var loki = (function () {
 
   Collection.prototype.getDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-      if (this.DynamicViews[idx].name == name) {
+      if (this.DynamicViews[idx].name === name) {
         return this.DynamicViews[idx];
       }
     }
@@ -1372,9 +1378,9 @@ var loki = (function () {
    * Add object to collection
    */
   Collection.prototype.add = function (obj) {
-    var i, 
+    var i,
       dvlen = this.DynamicViews.length;
-      
+
     // if parameter isn't object exit with throw
     if ('object' !== typeof obj) {
       throw 'Object being added needs to be an object';
@@ -1382,7 +1388,7 @@ var loki = (function () {
     /*
      * try adding object to collection
      */
-     
+
     if (obj.id !== null && obj.id > 0) {
       throw 'Document is already in collection, please use update()';
     }
@@ -1538,7 +1544,7 @@ var loki = (function () {
    * for more complex queries use view() and storeView()
    */
   Collection.prototype.find = function (query) {
-    if (typeof (query) == 'undefined') {
+    if (typeof (query) === 'undefined') {
       query = 'getAll';
     }
     // find logic moved into Resultset class

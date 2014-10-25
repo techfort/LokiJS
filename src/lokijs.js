@@ -105,10 +105,10 @@ var loki = (function () {
    * @constructor
    * Resultset class allowing chainable queries.  Intended to be instanced internally.
    *
-   * Collection.find(), Collection.view(), and Collection.chain() instantiate this resultset
+   * Collection.find(), Collection.where(), and Collection.chain() instantiate this resultset
    * Examples:
-   *  mycollection.chain().view('Toyota').find({ 'doors' : 4 }).data();
-   *  mycollection.view('Toyota');
+   *  mycollection.chain().find({ 'doors' : 4 }).where(function(obj) { return obj.name === 'Toyota' }).data();
+   *  mycollection.where(function(obj) { return (obj.name === 'Toyota' && obj.doors === 4) } );
    *  mycollection.find({ 'doors': 4 });
    * When using .chain(), any number of view() and data() calls can be chained together to further filter
    * resultset, ending the chain with a .data() call to return as an array of collection document objects.
@@ -544,9 +544,7 @@ var loki = (function () {
     var viewFunction,
       result = [];
 
-    if (('string' === typeof fun) && ('function' === typeof this.collection.Views[fun])) {
-      viewFunction = this.collection.Views[fun];
-    } else if ('function' === typeof fun) {
+    if ('function' === typeof fun) {
       viewFunction = fun;
     } else {
       throw 'Argument is not a stored view or a function';
@@ -919,7 +917,6 @@ var loki = (function () {
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
     // view container is an object because each views gets a name
-    this.Views = {};
 
     this.DynamicViews = [];
 
@@ -1258,7 +1255,7 @@ var loki = (function () {
    */
   Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
 
-    var results = this.view(filterFunction),
+    var results = this.where(filterFunction),
       i = 0,
       obj;
     try {
@@ -1317,12 +1314,12 @@ var loki = (function () {
 
   Collection.prototype.clear = function () {
     this.data = [];
-    this.indices = {};
     this.idIndex = {};
+    this.binaryIndices = {};
     this.cachedIndex = null;
     this.cachedData = null;
     this.maxId = 0;
-    this.Views = {};
+    this.DynamicViews = [];
   };
 
   /**
@@ -1405,12 +1402,6 @@ var loki = (function () {
       obj.id = this.maxId;
       // add the object
       this.data.push(obj);
-
-      // now that we can efficiently determine the data[] position of newly added document,
-      // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-      for (i = 0; i < dvlen; i++) {
-        this.DynamicViews[i].evaluateDocument(this.data.length - 1);
-      }
 
       // now that we can efficiently determine the data[] position of newly added document,
       // submit it for all registered DynamicViews to evaluate for inclusion/exclusion

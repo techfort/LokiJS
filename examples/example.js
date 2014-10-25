@@ -81,14 +81,13 @@ window.runExample = function(){
 
 
     // test the filters
-    trace('Example: View "Age" test');
-    users.storeView('age', function(obj){ return obj.age > 30; });
-    trace(users.view('age'));
+    trace('Example: where test');
+    trace(users.where(function(obj){ return obj.age > 30; }));
     trace('End view test');
     sep();
 
     trace('Example: Custom filter test');
-    trace(users.view(aCustomFilter));
+    trace(users.where(aCustomFilter));
     trace('End of custom filter');
     sep();
     

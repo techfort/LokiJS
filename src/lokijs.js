@@ -383,11 +383,16 @@ var loki = (function () {
       }
     }
 
+    // if user is deep querying the object such as find('name.first': 'odin')
+    var usingDotNotation = false;
+    
     for (p in queryObject) {
-
       if (queryObject.hasOwnProperty(p)) {
         property = p;
-        if (typeof queryObject[p] !== 'object') {
+        if (p.indexOf('.') != -1) {
+          usingDotNotation = true;
+        }
+       if (typeof queryObject[p] !== 'object') {
           operator = '$eq';
           value = queryObject[p];
         } else if (typeof queryObject[p] === 'object') {
@@ -449,9 +454,26 @@ var loki = (function () {
             }
           }
         } else {
-          while (i--) {
-            if (fun(t[i][property], value)) {
-              result.push(t[i]);
+          // if using dot notation then treat property as keypath such as 'name.first'.
+          // currently supporting dot notation for non-indexed conditions only
+          if (usingDotNotation) {
+            var root, paths;
+            while (i--) {
+              root = t[i];
+              paths = property.split('.');
+              paths.forEach(function(path) {
+                root = root[path];
+              });
+              if (fun(root, value)) {
+                result.push(t[i]);
+              }
+            }
+          }
+          else {
+            while (i--) {
+              if (fun(t[i][property], value)) {
+                result.push(t[i]);
+              }
             }
           }
         }
@@ -484,16 +506,34 @@ var loki = (function () {
     else {
       // If the filteredrows[] is already initialized, use it
       if (this.filterInitialized) {
+        // not searching by index
         if (!searchByIndex) {
           t = this.collection.data;
           i = this.filteredrows.length;
 
-          while (i--) {
-            if (fun(t[this.filteredrows[i]][property], value)) {
-              result.push(this.filteredrows[i]);
+          // currently supporting dot notation for non-indexed conditions only
+          if (usingDotNotation) {
+            var root, paths;
+            while (i--) {
+              root = t[this.filteredrows[i]];
+              paths = property.split('.');
+              paths.forEach(function(path) {
+                root = root[path];
+              });
+              if (fun(root, value)) {
+                result.push(this.filteredrows[i]);
+              }
+            }
+          }
+          else {
+            while (i--) {
+              if (fun(t[this.filteredrows[i]][property], value)) {
+                result.push(this.filteredrows[i]);
+              }
             }
           }
         } else {
+          // search by index
           t = index;
           i = this.filteredrows.length; //t.length;
           while (i--) {
@@ -509,15 +549,34 @@ var loki = (function () {
       }
       // first chained query so work against data[] but put results in filteredrows
       else {
+        // if not searching by index
         if (!searchByIndex) {
           t = this.collection.data;
           i = t.length;
-          while (i--) {
-            if (fun(t[i][property], value)) {
-              result.push(i);
+          
+          if (usingDotNotation) {
+            var root, paths;
+            
+            while (i--) {
+              root = t[i];
+              paths = property.split('.');
+              paths.forEach(function(path) {
+                root = root[path];
+              });
+              if (fun(root, value)) {
+                result.push(i);
+              }
+            }
+          }
+          else {
+            while (i--) {
+              if (fun(t[i][property], value)) {
+                result.push(i);
+              }
             }
           }
         } else {
+          // search by index
           t = this.collection.data;
           var seg = this.calculateRange(operator, property, value, this);
 

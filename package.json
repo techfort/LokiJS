@@ -35,8 +35,7 @@
     "url": "https://github.com/techfort/LokiJS/issues"
   },
   "dependencies": {
-    "gordian": "0.0.7",
-    "nedb": "^0.11.1"
+    "gordian": "0.0.7"
   },
   "devDependencies": {
     "gulp-uglify": "^0.3.1",

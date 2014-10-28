@@ -1,13 +1,16 @@
 var loki = require('../src/lokijs.js'),
-Datastore = require('./nedb.js'),
+Datastore = require('nedb'),
 	//db = new loki('perftest'),
   ndb = new Datastore(),
     samplecoll = null,
     arraySize = 10000,			// how large of a dataset to generate
-    totalIterations = 2000,	// how many times we search it
+    totalIterations = 200,	// how many times we search it
     results = [],
 	getIterations = 2000,	// get is crazy fast due to binary search so this needs separate scale
-  gCallbackCount = 0;
+  gAsyncCount = 0,
+  startTime,
+  endTime,
+  isIndexed = false;;
   
 function genRandomVal()
 {
@@ -18,6 +21,9 @@ function genRandomVal()
         text += possible.charAt(Math.floor(Math.random() * possible.length));
 
     return text;
+}
+
+function insertNext() {
 }
 
 // in addition to the loki id we will create a key of our own
@@ -34,23 +40,31 @@ function initializeDB() {
 
 	//samplecoll = db.addCollection('samplecoll', 'samplecoll');
     
-  gCallbackCount = 0;
+  gAsyncCount = 0;
   
+  startTime = process.hrtime();
+
+  // nedb uses async callbacks so we will not time each operation but 
+  // use globals to count when the last async op has finished
 	for (var idx=0; idx < arraySize; idx++) {
-   	var v1 = genRandomVal();
-    var v2 = genRandomVal();
-		//start = process.hrtime();
+   	var v1 = '12345'; //genRandomVal();
+    var v2 = '23456'; //genRandomVal();
+    
    	ndb.insert({ 
 			customId: idx, 
 			val: v1, 
 			val2: v2, 
 			val3: "more data 1234567890"
 		}, function (err, newDoc) {   // Callback is optional
-      if (++gCallbackCount == arraySize) {
-        console.log("insert complete");
+      if (++gAsyncCount == arraySize) {
+        endTime = process.hrtime(startTime);
+        var totalMS = endTime[0] * 1e3 + endTime[1] / 1e6;
+        var rate = arraySize * 1000 / totalMS;
+        rate = rate.toFixed(2);
+        console.log("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
+        
+        testperfFind();
       }
-      // newDoc is the newly inserted document, including its _id
-      // newDoc has no key called notToBeSaved since its value was undefined
     });
 
 		//end = process.hrtime(start);
@@ -65,8 +79,6 @@ function initializeDB() {
 	//var totalMS = end[0] * 1e3 + end[1]/1e6;
 	//totalMS = totalMS.toFixed(2);
 	//var rate = arraySize * 1000 / totalMS;
-	//rate = rate.toFixed(2);
-  //  console.log("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 // function testperfGet() {
@@ -93,24 +105,46 @@ function initializeDB() {
 	// console.log("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
 // }
 
-// function testperfFind(multiplier) {
+ function testperfFind(multiplier) {
 	// var start, end;
 	// var totalTimes = [];
 	// var totalMS = 0;
 
-	// var loopIterations = totalIterations;
-	// if (typeof(multiplier) != "undefined") {
-		// loopIterations = loopIterations * multiplier;
-	// }
+	var loopIterations = totalIterations;
+	if (typeof(multiplier) != "undefined") {
+		loopIterations = loopIterations * multiplier;
+	}
 	
-	// for (var idx=0; idx < loopIterations; idx++) {
-    	// var customidx = Math.floor(Math.random() * arraySize) + 1;
+  gAsyncCount = 0;
+  
+  startTime = process.hrtime();
+  
+	for (var idx=0; idx < loopIterations; idx++) {
+    var customidx = Math.floor(Math.random() * arraySize) + 1;
         
 		// start = process.hrtime();
-        // var results = samplecoll.find({ 'customId': customidx });
+        //var results = samplecoll.find({ 'customId': customidx });
+    ndb.find({ customId: customidx }, function (err, docs) {
+      ++gAsyncCount;
+      
+      if ((!isIndexed && gAsyncCount == totalIterations) || (isIndexed && gAsyncCount == totalIterations * 200) ) {
+        endTime = process.hrtime(startTime);
+        var totalMS = endTime[0] * 1e3 + endTime[1] / 1e6;
+        var rate = (isIndexed?totalIterations*200:totalIterations) * 1000 / totalMS;
+        rate = rate.toFixed(2);
+        console.log("find (indexed : " + isIndexed + ") : " + totalMS + "ms (" + rate + ") ops/s");
+
+        if (!isIndexed) {
+          isIndexed = true;
+          ndb.ensureIndex({ fieldName: 'customId' }, function (err) {
+            testperfFind(200);
+          });
+        }
+      }
+    });
 		// end = process.hrtime(start);
 		// totalTimes.push(end);
-    // }
+  }
     
 	// for(var idx=0; idx < totalTimes.length; idx++) {
 		// totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
@@ -120,7 +154,7 @@ function initializeDB() {
 	// var rate = loopIterations * 1000 / totalMS;
 	// rate = rate.toFixed(2);
 	// console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
-// }
+}
 
 // function testperfRS(multiplier) {
 	// var start, end;
@@ -203,7 +237,7 @@ initializeDB();
 
 // console.log("-- Benchmarking query on non-indexed column --");
 // testperfGet();	// get bechmark on id field
-// testperfFind();	// find benchmark on unindexed customid field
+//testperfFind();	// find benchmark on unindexed customid field
 // testperfRS();	// resultset find benchmark on unindexed customid field
 // testperfDV();	// dataview find benchmarks on unindexed customid field
 

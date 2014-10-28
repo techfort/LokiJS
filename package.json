@@ -24,16 +24,19 @@
     "in-memory"
   ],
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "admin@obeliskos.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave",
+      "email": "admin@obeliskos.com"
+    }
+  ],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
   "dependencies": {
-    "gordian": "0.0.7"
+    "gordian": "0.0.7",
+    "nedb": "^0.11.1"
   },
   "devDependencies": {
     "gulp-uglify": "^0.3.1",

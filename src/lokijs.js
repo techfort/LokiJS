@@ -686,6 +686,41 @@ var loki = (function () {
     return result;
   }
 
+  // Resultset.update() : used to run an update operation on all documents currently in the resultset.
+  // User supplied updateFunction(obj) will be executed for each document object.
+  Resultset.prototype.update = function (updateFunction) {
+  
+    if (typeof (updateFunction) !== "function") {
+      throw 'Argument is not a function';
+    }
+  
+    var len = this.filteredrows.length,
+      rcd = this.collection.data;
+    
+    for(var idx = 0; idx < len; idx++) {
+      // pass in each document object currently in resultset to user supplied updateFunction
+      updateFunction(rcd[this.filteredrows[idx]]);
+      
+      // notify collection we have changed this object so it can update meta and allow DynamicViews to re-evaluate
+      this.collection.update(rcd[this.filteredrows[idx]]);
+    }
+    
+    return this;
+  }
+  
+  // removes all document objects which are currently in resultset from collection (as well as resultset)
+  Resultset.prototype.remove = function() {
+    var len = this.filteredrows.length;
+    
+    for (var idx = 0; idx < len; idx++) {
+      this.collection.remove(this.filteredrows[idx]);
+    }
+    
+    this.filteredrows = [];
+    
+    return this;
+  }
+  
   /**
    * @constructor
    * DynamicView class is a versatile 'live' view class which is optionally persistent

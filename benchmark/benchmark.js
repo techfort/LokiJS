@@ -189,13 +189,16 @@ function testperfDV(multiplier) {
 
 initializeDB();
 
-console.log("-- Benchmarking query on non-indexed column --");
 testperfGet();	// get bechmark on id field
+
+console.log("");
+console.log("-- Benchmarking query on NON-INDEXED column --");
 testperfFind();	// find benchmark on unindexed customid field
 testperfRS();	// resultset find benchmark on unindexed customid field
 testperfDV();	// dataview find benchmarks on unindexed customid field
 
-console.log("-- Adding binary index to query column and repeating benchmarks --");
+console.log("");
+console.log("-- ADDING BINARY INDEX to query column and repeating benchmarks --");
 samplecoll.ensureBinaryIndex("customId");
 testperfFind(20);
 testperfRS(15);

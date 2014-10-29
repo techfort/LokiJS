@@ -694,6 +694,11 @@ var loki = (function () {
       throw 'Argument is not a function';
     }
   
+    // if this is chained resultset with no filters applied, we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     var len = this.filteredrows.length,
       rcd = this.collection.data;
     
@@ -710,6 +715,12 @@ var loki = (function () {
   
   // removes all document objects which are currently in resultset from collection (as well as resultset)
   Resultset.prototype.remove = function() {
+  
+    // if this is chained resultset with no filters applied, we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
     var len = this.filteredrows.length;
     
     for (var idx = 0; idx < len; idx++) {
@@ -1378,7 +1389,6 @@ var loki = (function () {
 
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
-        d.id = null;
         d.objType = self.objType;
         d.meta = {};
 
@@ -1396,7 +1406,6 @@ var loki = (function () {
         this.emit('error', error);
         throw error;
       }
-      doc.id = null;
       doc.objType = this.objType;
       doc.meta = {};
       this.add(doc);
@@ -1480,9 +1489,16 @@ var loki = (function () {
      * try adding object to collection
      */
 
-    if (obj.id !== null && obj.id > 0) {
-      throw 'Document is already in collection, please use update()';
+    // if object you are adding already has id column, instead of assuming they are
+    // calling insert rather than update, lets assume they might be loading objects from
+    // another source which already have that common fieldname.  In this case we will rename
+    // the id property to originalId, and delete the old id so we add add ours.  If the
+    // user wants to work with the old column, they will need to use the originalId name
+    if (typeof (obj.id) !== "undefined") {
+      obj.originalId = obj.id;
+      delete obj.id;
     }
+    
     try {
 
       this.startTransaction();

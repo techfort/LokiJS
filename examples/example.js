@@ -16,8 +16,8 @@ window.runExample = function(){
 
 
     // create two example collections
-    var users = db.addCollection('users','User', ['email'], true, false);
-    var projects = db.addCollection('projects', 'Project', ['name']);
+    var users = db.addCollection('users', ['email'], true, false);
+    var projects = db.addCollection('projects', ['name']);
 
     // show collections in db
     db.listCollections();

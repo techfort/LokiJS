@@ -15,7 +15,7 @@ function docCompare(a, b) {
 }
 
 db = new loki('test.json');
-users = db.addCollection('user', 'User');
+users = db.addCollection('user');
 
 users.insert({
   name: 'dave',

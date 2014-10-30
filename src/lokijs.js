@@ -1041,7 +1041,7 @@ var loki = (function () {
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
     if (typeof (indices) !== 'undefined') {
       for (var idx = 0; idx < indices.length; idx++) {
-        this.ensureBinaryIndex(idx);
+        this.ensureBinaryIndex(indices[idx]);
       };
     }
     this.on('insert', function (obj) {
@@ -1289,18 +1289,20 @@ var loki = (function () {
    * Ensure all binary indices
    */
   Collection.prototype.ensureAllBinaryIndexes = function (force) {
-    var i = this.binaryIndices.length;
+    var objKeys = Object.keys(this.binaryIndices);
+    
+    var i = objKeys.length;
     while (i--) {
-      this.ensureBinaryIndex(this.binaryIndices[i].name, force);
+      this.ensureBinaryIndex(objKeys[i], force);
     }
-
-    this.binaryIndicesDirty = false;
   };
 
   Collection.prototype.flagBinaryIndexesDirty = function () {
-    var i = this.binaryIndices.length;
+    var objKeys = Object.keys(this.binaryIndices);
+    
+    var i = objKeys.length;
     while (i--) {
-      this.binaryIndices[i].dirty = true;
+      this.binaryIndices[objKeys[i]].dirty = true;
     }
   }
 
@@ -1383,10 +1385,6 @@ var loki = (function () {
   Collection.prototype.insert = function (doc) {
     var self = this;
 
-    if (this.binaryIndices.length > 0) {
-      this.flagBinaryIndexesDirty();
-    }
-
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
         d.objType = self.objType;
@@ -1430,7 +1428,7 @@ var loki = (function () {
    */
   Collection.prototype.update = function (doc) {
 
-    if (this.binaryIndices.length > 0) {
+    if (Object.keys(this.binaryIndices).length > 0) {
       this.flagBinaryIndexesDirty();
     }
 
@@ -1488,6 +1486,10 @@ var loki = (function () {
     /*
      * try adding object to collection
      */
+
+    if (Object.keys(this.binaryIndices).length > 0) {
+      this.flagBinaryIndexesDirty();
+    }
 
     // if object you are adding already has id column, instead of assuming they are
     // calling insert rather than update, lets assume they might be loading objects from
@@ -1550,7 +1552,7 @@ var loki = (function () {
       throw 'Object is not a document stored in the collection';
     }
 
-    if (this.binaryIndices.length > 0) {
+    if (Object.keys(this.binaryIndices).length > 0) {
       this.flagBinaryIndexesDirty();
     }
 

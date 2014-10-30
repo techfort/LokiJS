@@ -29,7 +29,7 @@ function initializeDB() {
 	var totalTimes = [];
 	var totalMS = 0.0;
 
-	samplecoll = db.addCollection('samplecoll', 'samplecoll');
+	samplecoll = db.addCollection('samplecoll');
     
 	for (var idx=0; idx < arraySize; idx++) {
     	var v1 = genRandomVal();

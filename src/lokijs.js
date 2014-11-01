@@ -275,7 +275,7 @@ var loki = (function () {
    *    but we have to hone in on many (range)
    * @param {string} op - operation, such as $eq
    * @param {string} prop - name of property to calculate range for
-   * @val {object} val - value to use for range calculation.
+   * @param {object} val - value to use for range calculation.
    * @returns {array} [start, end] index array positions 
    */
   Resultset.prototype.calculateRange = function (op, prop, val) {
@@ -784,6 +784,21 @@ var loki = (function () {
   }
   
   /**
+   * mapReduce() - data transformation via user supplied functions
+   *
+   * @param {function} mapFunction - this function accepts a single document for you to transform and return
+   * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
+   * @returns The output of your reduceFunction
+   */
+  Resultset.prototype.mapReduce  = function (mapFunction, reduceFunction) {
+    try {
+      return reduceFunction(this.data().map(mapFunction));
+    } catch (err) {
+      throw err;
+    }
+  };
+  
+  /**
    * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.  
    *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
    *    whenever documents are add/updated/removed so it can remain up-to-date. (chainable)
@@ -1110,6 +1125,21 @@ var loki = (function () {
     }
   }
 
+  /**
+   * mapReduce() - data transformation via user supplied functions
+   *
+   * @param {function} mapFunction - this function accepts a single document for you to transform and return
+   * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
+   * @returns The output of your reduceFunction
+   */
+  DynamicView.prototype.mapReduce  = function (mapFunction, reduceFunction) {
+    try {
+      return reduceFunction(this.data().map(mapFunction));
+    } catch (err) {
+      throw err;
+    }
+  };
+  
 
   /**
    * @constructor

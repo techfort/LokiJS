@@ -102,17 +102,20 @@ var loki = (function () {
   };
 
   /**
-   * @constructor
    * Resultset class allowing chainable queries.  Intended to be instanced internally.
+   *    Collection.find(), Collection.where(), and Collection.chain() instantiate this.
    *
-   * Collection.find(), Collection.where(), and Collection.chain() instantiate this resultset
-   * Examples:
-   *  mycollection.chain().find({ 'doors' : 4 }).where(function(obj) { return obj.name === 'Toyota' }).data();
-   *  mycollection.where(function(obj) { return (obj.name === 'Toyota' && obj.doors === 4) } );
-   *  mycollection.find({ 'doors': 4 });
-   * When using .chain(), any number of view() and data() calls can be chained together to further filter
-   * resultset, ending the chain with a .data() call to return as an array of collection document objects.
-   * firstOnly param intended for non-chained queries such as when invoked by collection.findOne().
+   *    Example:
+   *    mycollection.chain()
+   *      .find({ 'doors' : 4 })
+   *      .where(function(obj) { return obj.name === 'Toyota' })
+   *      .data();
+   *
+   * @constructor
+   * @param {Collection} collection - The collection which this Resultset will query against.
+   * @param {string} queryObj - Optional mongo-style query object to initialize resultset with.
+   * @param {function} queryFunc - Optional javascript filter function to initialize resultset with.
+   * @param {bool} firstOnly - Optional boolean used by collection.findOne().
    */
   function Resultset(collection, queryObj, queryFunc, firstOnly) {
     // retain reference to collection we are querying against
@@ -131,19 +134,23 @@ var loki = (function () {
     return this;
   }
 
+  /**
+   * toJSON() - Override of toJSON to avoid circular references
+   *
+   */
   Resultset.prototype.toJSON = function () {
     var copy = this.copy();
     copy.collection = null;
     return copy;
   }
 
-  // limit() : allows you to limit the number of documents in the resultset (starting at 0).
-  // A resultset copy() is made to avoid altering original resultset, 
-  //   so future chain ops will not propagate back to original resultset
-  //
-  // Example :
-  //   - You establish your resultset (directly or via a DynamicView)
-  //   - You can then get documents 10-15 (array pos 9..14) via : results.offset(10).limit(5).data();
+  /**
+   * limit() - Allows you to limit the number of documents passed to next chain operation.
+   *    A resultset copy() is made to avoid altering original resultset.
+   *
+   * @param {int} qty - The number of documents to return.
+   * @returns {Resultset} Returns a copy of the resultset, limited by qty, for subsequent chain ops.
+   */
   Resultset.prototype.limit = function (qty) {
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
@@ -157,8 +164,12 @@ var loki = (function () {
     return rscopy;
   }
 
-  // offset() : zero based pos allows you to skip the first pos+1 documents in the resultset
-  // An offset(5) will start at the sixth document at array resultset.filteredrows[5]
+  /**
+   * offset() - Used for skipping 'pos' number of documents in the resultset.
+   *
+   * @param {int} pos - Number of documents to skip; all preceding documents are filtered out.
+   * @returns {Resultset} Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.
+   */
   Resultset.prototype.offset = function (pos) {
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
@@ -172,7 +183,11 @@ var loki = (function () {
     return rscopy;
   }
 
-  // To support reuse of resultset in branched query situations use copy()
+  /**
+   * copy() - To support reuse of resultset in branched query situations.
+   *
+   * @returns {Resultset} Returns a copy of the resultset (set) but the underlying document references will be the same.
+   */
   Resultset.prototype.copy = function () {
     var result = new Resultset(this.collection, null, null);
 
@@ -182,13 +197,18 @@ var loki = (function () {
     return result;
   }
 
-  // User supplied compare function is provided two documents to compare. (chainable)
-  // Example:
-  // rslt.sort(function(obj1, obj2) { 
-  //   if (obj1.name === obj2.name) return 0;
-  //   if (obj1.name > obj2.name) return 1;
-  //   if (obj1.name < obj2.name) return -1;
-  // });
+  /**
+   * sort() - User supplied compare function is provided two documents to compare. (chainable)
+   *    Example:
+   *    rslt.sort(function(obj1, obj2) { 
+   *      if (obj1.name === obj2.name) return 0;
+   *      if (obj1.name > obj2.name) return 1;
+   *      if (obj1.name < obj2.name) return -1;
+   *    });
+   *
+   * @param {function} comparefun - A javascript compare function used for sorting.
+   * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+   */
   Resultset.prototype.sort = function (comparefun) {
     // if this is chained resultset with no filters applied, just we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
@@ -210,9 +230,13 @@ var loki = (function () {
     return this;
   }
 
-  // Simpler, loose evaluation for user to sort based on a property name. (chainable)
-  // Example :
-  // rslt.simplesort('name');
+  /**
+   * simplesort() - Simpler, loose evaluation for user to sort based on a property name. (chainable)
+   *
+   * @param {string} propname - name of property to sort by.
+   * @param {bool} isdesc - (Optional) If true, the property will be sorted in descending order
+   * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+   */
   Resultset.prototype.simplesort = function (propname, isdesc) {
     // if this is chained resultset with no filters applied, just we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
@@ -244,14 +268,19 @@ var loki = (function () {
     return this;
   }
 
-  // binary search utility method to find range/segment of values matching criteria
-  // this is used for collection.find() and first find filter of resultset/dynview
-  // slightly different than get() binary search in that get() hones in on 1 value,
-  // but we have to hone in on many (range)
-  // returns array of [start, end] index array positions 
-  Resultset.prototype.calculateRange = function (op, prop, val, rst) {
-    var rcd = rst.collection.data;
-    var index = rst.collection.binaryIndices[prop].values;
+  /**
+   * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
+   *    this is used for collection.find() and first find filter of resultset/dynview
+   *    slightly different than get() binary search in that get() hones in on 1 value,
+   *    but we have to hone in on many (range)
+   * @param {string} op - operation, such as $eq
+   * @param {string} prop - name of property to calculate range for
+   * @val {object} val - value to use for range calculation.
+   * @returns {array} [start, end] index array positions 
+   */
+  Resultset.prototype.calculateRange = function (op, prop, val) {
+    var rcd = this.collection.data;
+    var index = this.collection.binaryIndices[prop].values;
     var min = 0;
     var max = index.length - 1;
     var mid = null;
@@ -290,8 +319,13 @@ var loki = (function () {
     }
   }
 
-  // Resultset.find() returns reference to 'this' Resultset, use data() to get rowdata
-  // firstOnly is optional parameter only used if this is not a chained operation. used by collection.findOne()
+  /**
+   * find() - Used for querying via a mongo-style query object.
+   *
+   * @param {object} query - A mongo-style query object used for filtering current results.
+   * @param {boolean} firstOnly - (Optional) Used by collection.findOne()
+   * @returns {Resultset} this resultset for further chain ops.
+   */
   Resultset.prototype.find = function (query, firstOnly) {
     // comparison operators
     function $eq(a, b) {
@@ -597,7 +631,12 @@ var loki = (function () {
   }
 
 
-  // Resultset.where() returns reference to 'this' Resultset, use data() to get rowdata
+  /**
+   * where() - Used for filtering via a javascript filter function.
+   *
+   * @param {function} fun - A javascript function used for filtering current results by.
+   * @returns {Resultset} this resultset for further chain ops.
+   */
   Resultset.prototype.where = function (fun) {
 
     var viewFunction,
@@ -659,7 +698,11 @@ var loki = (function () {
     }
   }
 
-  // Resultset.data() returns array or filtered documents 
+  /**
+   * data() - Terminates the chain and returns array of filtered documents
+   *
+   * @returns {array} Array of documents in the resultset
+   */
   Resultset.prototype.data = function () {
     var result = [];
 
@@ -686,8 +729,12 @@ var loki = (function () {
     return result;
   }
 
-  // Resultset.update() : used to run an update operation on all documents currently in the resultset.
-  // User supplied updateFunction(obj) will be executed for each document object.
+  /**
+   * update() - used to run an update operation on all documents currently in the resultset.
+   *    
+   * @param {function} updateFunction - User supplied updateFunction(obj) will be executed for each document object.
+   * @returns {Resultset} this resultset for further chain ops.
+   */
   Resultset.prototype.update = function (updateFunction) {
   
     if (typeof (updateFunction) !== "function") {
@@ -713,7 +760,11 @@ var loki = (function () {
     return this;
   }
   
-  // removes all document objects which are currently in resultset from collection (as well as resultset)
+  /**
+   * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
+   *
+   * @returns {Resultset} this (empty) resultset for further chain ops.
+   */
   Resultset.prototype.remove = function() {
   
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
@@ -733,18 +784,20 @@ var loki = (function () {
   }
   
   /**
+   * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.  
+   *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
+   *    whenever documents are add/updated/removed so it can remain up-to-date. (chainable)
+   *
+   *    Examples:
+   *    var mydv = mycollection.addDynamicView('test');  // default is non-persistent
+   *    mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
+   *    mydv.applyFind({ 'doors' : 4 });
+   *    var results = mydv.data();
+   *
    * @constructor
-   * DynamicView class is a versatile 'live' view class which is optionally persistent
-   *
-   * Collection.addDynamicView(name) instantiates this DynamicView object
-   *
-   * Examples:
-   *	var mydv = mycollection.addDynamicView('test');  // default is non-persistent
-   *	mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
-   *	mydv.applyFind({ 'doors' : 4 });
-   * 	var results = mydv.data();
-   *
-   * Chaining is supported on apply functions : applyWhere().applyFind().data() is valid
+   * @param {Collection} collection - A reference to the collection to work against
+   * @param {string} name - The name of this dynamic view
+   * @param {boolean} persistent - (Optional) If true, the results will be copied into an internal array for read efficiency or binding to.
    */
   function DynamicView(collection, name, persistent) {
     this.collection = collection;
@@ -772,6 +825,10 @@ var loki = (function () {
     // may add map and reduce phases later
   }
 
+  /**
+   * toJSON() - Override of toJSON to avoid circular references
+   *
+   */
   DynamicView.prototype.toJSON = function () {
     var copy = new DynamicView(this.collection, this.name, this.persistent);
 
@@ -790,6 +847,12 @@ var loki = (function () {
     return copy;
   }
 
+  /**
+   * applySort() - Used to apply a sort to the dynamic view
+   *
+   * @param {function} comparefun - a javascript compare function used for sorting
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.applySort = function (comparefun) {
     this.sortFunction = comparefun;
     this.sortColumn = null;
@@ -802,6 +865,13 @@ var loki = (function () {
     return this;
   }
 
+  /**
+   * applySimpleSort() - Used to specify a property used for view translation.
+   *
+   * @param {string} propname - Name of property by which to sort.
+   * @param {boolean} isdesc - (Optional) If true, the sort will be in descending order.
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
     if (typeof (isdesc) === 'undefined') isdesc = false;
 
@@ -816,14 +886,33 @@ var loki = (function () {
     return this;
   }
 
+  /**
+   * startTransaction() - marks the beginning of a transaction.
+   *
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.startTransaction = function () {
     this.cachedresultset = this.resultset.copy();
+    
+    return this;
   }
 
+  /**
+   * commit() - commits a transaction.
+   *
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.commit = function () {
     this.cachedresultset = null;
+    
+    return this;
   }
 
+  /**
+   * rollback() - rolls back a transaction.
+   *
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.rollback = function () {
     this.resultset = this.cachedresultset;
 
@@ -833,8 +922,16 @@ var loki = (function () {
       // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
       this.resultdata = this.resultset.data();
     }
+    
+    return this;
   }
 
+  /**
+   * applyFind() - Adds a mongo-style query option to the DynamicView filter pipeline
+   *
+   * @param {object} query - A mongo-style query object to apply to pipeline
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.applyFind = function (query) {
     this.filterPipeline.push({
       type: 'find',
@@ -855,6 +952,12 @@ var loki = (function () {
     return this;
   }
 
+  /**
+   * applyWhere() - Adds a javascript filter function to the DynamicView filter pipeline
+   *
+   * @param {function} fun - A javascript filter function to apply to pipeline
+   * @returns {DynamicView} this DynamicView object, for further chain ops.
+   */
   DynamicView.prototype.applyWhere = function (fun) {
     this.filterPipeline.push({
       type: 'where',
@@ -870,7 +973,11 @@ var loki = (function () {
     return this;
   }
 
-  // will either build a resultset array or (if persistent) return reference to persistent data array
+  /**
+   * data() - resolves and pending filtering and sorting, then returns document array as result.
+   *
+   * @returns {array} An array of documents representing the current DynamicView contents.
+   */
   DynamicView.prototype.data = function () {
     if (this.sortDirty) {
       if (this.sortFunction) {
@@ -899,7 +1006,12 @@ var loki = (function () {
     return this.resultdata;
   }
 
-  // internal function called on collection.insert() and collection.update()
+  /**
+   * evaluateDocument() - internal method for (re)evaluating document inclusion.
+   *    Called by : collection.insert() and collection.update().
+   *
+   * @param {int} objIndex - index of document to (re)run through filter pipeline.
+   */
   DynamicView.prototype.evaluateDocument = function (objIndex) {
     var ofr = this.resultset.filteredrows;
     var oldPos = ofr.indexOf(objIndex);
@@ -973,7 +1085,9 @@ var loki = (function () {
     }
   }
 
-  // internal function called on collection.delete()
+  /**
+   * removeDocument() - internal function called on collection.delete()
+   */
   DynamicView.prototype.removeDocument = function (objIndex) {
     var ofr = this.resultset.filteredrows;
     var oldPos = ofr.indexOf(objIndex);
@@ -1181,8 +1295,6 @@ var loki = (function () {
       }
     }
   };
-
-
 
   // load db from a file
   Loki.prototype.loadDatabase = function (callback) {
@@ -1491,18 +1603,20 @@ var loki = (function () {
       this.flagBinaryIndexesDirty();
     }
 
-    // if object you are adding already has id column, instead of assuming they are
-    // calling insert rather than update, lets assume they might be loading objects from
-    // another source which already have that common fieldname.  In this case we will rename
-    // the id property to originalId, and delete the old id so we add add ours.  If the
-    // user wants to work with the old column, they will need to use the originalId name
+    // if object you are adding already has id column it is either already in the collection
+    // or the object is carrying its own 'id' property.  If it also has a meta property,
+    // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
     if (typeof (obj.id) !== "undefined") {
-      obj.originalId = obj.id;
-      delete obj.id;
+      if (typeof(obj.meta) === "undefined") {
+        obj.originalId = obj.id;
+        delete obj.id;
+      }
+      else {
+        throw 'Document is already in collection, please use update()';
+      }
     }
     
     try {
-
       this.startTransaction();
       this.maxId++;
       var i;
@@ -1730,7 +1844,6 @@ var loki = (function () {
       }
     }, 0);
   };
-
 
   /**
    * Create view function - filter

@@ -1530,7 +1530,7 @@ var loki = (function () {
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
         d.objType = self.objType;
-        d.meta = {};
+        if (typeof d.meta === 'undefined') d.meta = {};
 
         self.add(d);
         self.emit('insert', d);
@@ -1547,7 +1547,7 @@ var loki = (function () {
         throw error;
       }
       doc.objType = this.objType;
-      doc.meta = {};
+      if (typeof doc.meta === 'undefined') doc.meta = {};
       this.add(doc);
       this.emit('insert', doc);
       return doc;
@@ -1590,7 +1590,15 @@ var loki = (function () {
     try {
       this.startTransaction();
       var i, arr = this.get(doc.id, true),
-        obj = arr[0],
+        obj,
+        position;
+        
+        if (!arr) {
+          throw new Error('Trying to update a document not in collection.');
+        }
+        
+        obj = arr[0];
+        
         // get current position in data array
         position = arr[1];
 
@@ -1611,6 +1619,7 @@ var loki = (function () {
       this.rollback();
       console.error(err.message);
       this.emit('error', err);
+      throw (err);  // re-throw error so user does not think it succeeded
     }
   };
 
@@ -1637,7 +1646,7 @@ var loki = (function () {
     // or the object is carrying its own 'id' property.  If it also has a meta property,
     // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
     if (typeof (obj.id) !== "undefined") {
-      if (typeof(obj.meta) === "undefined") {
+      if (typeof(obj.meta.version) === "undefined") {
         obj.originalId = obj.id;
         delete obj.id;
       }
@@ -1656,6 +1665,8 @@ var loki = (function () {
       }
 
       obj.id = this.maxId;
+      obj.meta.version = 0;
+      
       // add the object
       this.data.push(obj);
 

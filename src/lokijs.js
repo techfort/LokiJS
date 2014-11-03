@@ -841,6 +841,17 @@ var loki = (function () {
   }
 
   /**
+   * branchResultset() - Makes a copy of the internal resultset for branched queries.
+   *    Unlike this dynamic view, the branched resultset will not be 'live' updated, 
+   *    so your branched query should be immediately resolved and not held for future evaluation.
+   *
+   * @returns {Resultset} A copy of the internal resultset for branched queries.
+   */
+  DynamicView.prototype.branchResultset = function() {
+    return this.resultset.copy();
+  }
+   
+  /**
    * toJSON() - Override of toJSON to avoid circular references
    *
    */

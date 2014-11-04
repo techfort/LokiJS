@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "version": "0.1.32",
+  "version": "1.0.0",
   "description": "A document oriented javascript in-memory database",
   "homepage": "http://lokijs.org",
   "main": "src/lokijs.js",
@@ -24,12 +24,10 @@
     "in-memory"
   ],
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [
-    {
-      "name": "Dave",
-      "email": "admin@obeliskos.com"
-    }
-  ],
+  "contributors": [{
+    "name": "Dave",
+    "email": "admin@obeliskos.com"
+  }],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"

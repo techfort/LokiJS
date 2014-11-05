@@ -13,8 +13,6 @@ LokiJS is ideal for the following scenarios:
 
 LokiJS has limited supports for indexing, transactions, couchdb-style views.
 
-In a nodejs/node-webkit environment LokiJS also persists to disk whenever an insert, update or remove is performed.
-
 example usage [here](https://github.com/techfort/LokiJS/wiki)
 
 ## Current state

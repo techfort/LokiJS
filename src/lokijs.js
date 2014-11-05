@@ -24,6 +24,15 @@ var loki = (function () {
     return cloned;
   }
 
+  function localStorageAvailable()
+  {
+      try {
+          return ('localStorage' in window && window['localStorage'] !== null);
+      } catch (e) {
+          return false;
+      }
+  }
+
   function LokiEventEmitter() {}
 
   LokiEventEmitter.prototype.events = {};
@@ -1354,6 +1363,13 @@ var loki = (function () {
         self.loadJSON(data);
         cFun(data);
       });
+    } else if (this.ENV === 'BROWSER')
+    {
+        if (localStorageAvailable())
+        {
+            self.loadJSON(localStorage.getItem(this.filename));
+            cFun(data);
+        }
     }
   };
 
@@ -1378,6 +1394,12 @@ var loki = (function () {
           cFun();
         });
       });
+    } else if (this.ENV === 'BROWSER')
+    {
+        if (localStorageAvailable())
+        {
+            localStorage.setItem(self.filename, self.serialize());
+        }
     }
   };
   // alias

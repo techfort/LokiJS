@@ -293,7 +293,9 @@ var loki = (function () {
     var min = 0;
     var max = index.length - 1;
     var mid = null;
-
+    var lbound = 0;
+    var ubound = index.length - 1;
+    
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
@@ -301,8 +303,8 @@ var loki = (function () {
     // no results
     if (val < minVal || val > maxVal) return [0, -1];
 
-    // hone in on start and end positions of value
-    while (rcd[index[min]][prop] < rcd[index[max]][prop]) {
+    // hone in on start position of value
+    while (min < max) {
       mid = Math.floor((min + max) / 2);
 
       if (rcd[index[mid]][prop] < val) {
@@ -312,19 +314,52 @@ var loki = (function () {
       }
     }
 
+    lbound = min;
+    
+    min = 0;
+    max = index.length -1;
+    
+    // hone in on end position of value
+    while (min < max) {
+      mid = Math.floor((min + max) / 2);
+
+      if (val < rcd[index[mid]][prop]) {
+        max = mid;
+      } else {
+        min = mid + 1;
+      }
+    }
+    
+    ubound = max;
+    
+    var lval = rcd[index[lbound]][prop];
+    var uval = rcd[index[ubound]][prop];
+    
     switch (op) {
-    case '$eq':
-      return [min, max];
-    case '$gt':
-      return [max, rcd.length];
-    case '$gte':
-      return [max, rcd.length - 1]; // should be at least 1 or we would have exited at beginning
-    case '$lt':
-      return [0, min - 1]; // should be at least 1 or we would have exited at beginning
-    case '$lte':
-      return [0, min];
-    default:
-      return [0, rcd.length];
+      case '$eq':
+        if (lval !== val) return [0, -1];
+        if (uval !== val) ubound--;
+        
+        return [lbound, ubound];
+        
+      case '$gt':
+        if (uval <= val) return [0, -1];
+      
+        return [ubound, rcd.length - 1];
+        
+      case '$gte':
+        return [lbound, rcd.length - 1]; 
+        
+      case '$lt':
+        return [0, lbound - 1]; 
+        
+      case '$lte':
+        if (uval !== val) ubound--;
+        
+        return [0, ubound];
+        
+      default:
+        return [0, rcd.length - 1];
     }
   }
 
@@ -1426,13 +1461,13 @@ var loki = (function () {
 
     if (this.binaryIndices.hasOwnProperty(property) && !force) {
       if (!this.binaryIndices[property].dirty) return;
-    } else {
-      this.binaryIndices[property] = {
-        'name': property,
-        'dirty': true,
-        'values': []
-      };
-    }
+    } 
+    
+    this.binaryIndices[property] = {
+      'name': property,
+      'dirty': true,
+      'values': []
+    };
 
     var index, len = this.data.length,
       i = 0;

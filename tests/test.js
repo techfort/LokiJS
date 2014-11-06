@@ -127,6 +127,52 @@ function testCoreMethods() {
   suite.assertStrictEqual('delete test : delete', userCount1, users.data.length);
 }
 
+function testIndexes() {
+  var itc = db.addCollection("test");
+  itc.ensureBinaryIndex("testId");
+  
+  itc.insert({'testid':1});
+  itc.insert({'testid':2});
+  itc.insert({'testid':5});
+  itc.insert({'testid':5});
+  itc.insert({'testid':9});
+  itc.insert({'testid':11});
+  itc.insert({'testid':22});
+  itc.insert({'testid':22});
+
+  // lte
+  var results = itc.find({'testid': {'$lte': 1}});
+  suite.assertStrictEqual('$lte', results.length, 1);
+  
+  results = itc.find({'testid': {'$lte': 22}});
+  suite.assertStrictEqual('$lte', results.length, 8);
+  
+  // lt
+  results = itc.find({'testid': {'$lt': 1}});
+  suite.assertStrictEqual('$lt', results.length, 0);
+
+  results = itc.find({'testid': {'$lt': 22}});
+  suite.assertStrictEqual('$lt', results.length, 6);
+  
+  // eq
+  results = itc.find({'testid': {'$eq': 22}});
+  suite.assertStrictEqual('$eq', results.length, 2);
+  
+  // gt
+  results = itc.find({'testid': {'$gt': 22}});
+  suite.assertStrictEqual('$eq', results.length, 0);
+
+  results = itc.find({'testid': {'$gt': 5}});
+  suite.assertStrictEqual('$eq', results.length, 4);
+
+  // gte
+  results = itc.find({'testid': {'$gte': 5}});
+  suite.assertStrictEqual('$gte', results.length, 6);
+
+  results = itc.find({'testid': {'$gte': 10}});
+  suite.assertStrictEqual('$gte', results.length, 3);
+}
+
 function testResultset() {
   // Resultset find
   suite.assertStrictEqual('Resultset (chained) find'
@@ -247,6 +293,7 @@ function testDynamicView() {
 /* Main Test */
 populateTestData();
 testCoreMethods();
+testIndexes();
 testResultset();
 testDynamicView();
 

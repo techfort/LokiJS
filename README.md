@@ -11,7 +11,7 @@ LokiJS is ideal for the following scenarios:
 2. cross-platform mobile apps where you can leverage the power of javascript and avoid interacting with native databases
 3. data sets are not so large that it wouldn't be a problem loading the entire db from a server and synchronising at the end of the work session
 
-LokiJS has limited supports for indexing, transactions, couchdb-style views.
+LokiJS supports indexing and views and achieves high-performance through maintaining a binary-index for data.
 
 example usage [here](https://github.com/techfort/LokiJS/wiki)
 

@@ -127,9 +127,106 @@ function testCoreMethods() {
   suite.assertStrictEqual('delete test : delete', userCount1, users.data.length);
 }
 
+function testCalculateRange() {
+  var eic = db.addCollection("eic");
+  eic.ensureBinaryIndex("testid");
+  
+  eic.insert({'testid':1, 'testString': 'hhh', 'testFloat': 5.2});  //0
+  eic.insert({'testid':1, 'testString': 'aaa', 'testFloat': 6.2});  //1
+  eic.insert({'testid':5, 'testString': 'zzz', 'testFloat': 7.2});  //2
+  eic.insert({'testid':6, 'testString': 'ggg', 'testFloat': 1.2});  //3
+  eic.insert({'testid':9, 'testString': 'www', 'testFloat': 8.2});  //4
+  eic.insert({'testid':11, 'testString': 'yyy', 'testFloat': 4.2}); //5
+  eic.insert({'testid':22, 'testString': 'yyz', 'testFloat': 9.2}); //6
+  eic.insert({'testid':23, 'testString': 'm', 'testFloat': 2.2});   //7
+  
+  var rset = eic.chain();
+  rset.find({'testid': 1});  // force index to be built
+  
+  // ranges are order of sequence in index not data array positions
+  
+  var range = rset.calculateRange('$eq', 'testid', 22);
+  suite.assertEqual('calculateRange $eq', range, [6, 6]);
+  
+  range = rset.calculateRange('$eq', 'testid', 1);
+  suite.assertEqual('calculateRange $eq multiple', range, [0, 1]);
+  
+  range = rset.calculateRange('$eq', 'testid', 7);
+  suite.assertEqual('calculateRange $eq not found', range, [0, -1]);
+  
+  range = rset.calculateRange('$gte', 'testid', 23);
+  suite.assertEqual('calculateRange $gte', range, [7, 7]);
+  
+  // reference this new record for future evaluations
+  eic.insert({'testid':23, 'testString': 'bbb', 'testFloat': 1.9});
+  
+  range = rset.calculateRange('$gte', 'testid', 23);
+  suite.assertEqual('calculateRange $gte', range, [7, 8]);
+  
+  range = rset.calculateRange('$gte', 'testid', 24);
+  suite.assertEqual('calculateRange $gte out of range', range, [0, -1]);
+  
+  range = rset.calculateRange('$lte', 'testid', 5);
+  suite.assertEqual('calculateRange $lte', range, [0, 2]);
+  
+  range = rset.calculateRange('$lte', 'testid', 1);
+  suite.assertEqual('calculateRange $lte', range, [0, 1]);
+  
+  range = rset.calculateRange('$lte', 'testid', -1);
+  suite.assertEqual('calculateRange $lte out of range', range, [0, -1]);
+  
+  // add another index on string property
+  eic.ensureBinaryIndex('testString');
+  rset.find({'testString': 'asdf'});  // force index to be built
+  
+  range = rset.calculateRange('$lte', 'testString', 'ggg');
+  suite.assertEqual('calculateRange $lte string', range, [0, 2]);  // includes record added in middle
+  
+  range = rset.calculateRange('$gte', 'testString', 'm');
+  suite.assertEqual('calculateRange $gte string', range, [4, 8]); // offset by 1 because of record in middle
+  
+  // add some float range evaluations
+  eic.ensureBinaryIndex('testFloat');
+  rset.find({'testFloat': '1.1'});  // force index to be built
+  
+  range = rset.calculateRange('$lte', 'testFloat', 1.2);
+  suite.assertEqual('calculateRange $lte float', range, [0, 0]);  
+  
+  range = rset.calculateRange('$eq', 'testFloat', 1.111);
+  suite.assertEqual('calculateRange $eq not found', range, [0, -1]);  
+  
+  range = rset.calculateRange('$eq', 'testFloat', 8.2);
+  suite.assertEqual('calculateRange $eq found', range, [7, 7]);  // 8th pos
+  
+  range = rset.calculateRange('$gte', 'testFloat', 1.0);
+  suite.assertEqual('calculateRange $gt all', range, [0, 8]);  // 8th pos
+}
+
+function testIndexLifecycle() {
+  var ilc = db.addCollection('ilc');
+  
+  var hasIdx = ilc.binaryIndices.hasOwnProperty('testid');
+  suite.assertEqual('index lifecycle before', hasIdx, false);
+  
+  ilc.ensureBinaryIndex('testid');
+  hasIdx = ilc.binaryIndices.hasOwnProperty('testid');
+  suite.assertEqual('index lifecycle created', hasIdx, true);
+  suite.assertEqual('index lifecycle created', ilc.binaryIndices.testid.dirty, false);
+  suite.assertEqual('index lifecycle created', ilc.binaryIndices.testid.values, []);
+  
+  ilc.insert({'testid': 5});
+  suite.assertEqual('index lifecycle dirty', ilc.binaryIndices.testid.dirty, true);
+  ilc.insert({'testid': 8});
+  suite.assertEqual('index lifecycle still lazy', ilc.binaryIndices.testid.values, []);
+  suite.assertEqual('index lifecycle still dirty', ilc.binaryIndices.testid.dirty, true);
+
+  ilc.find({'testid': 8});  // should force index build
+  suite.assertEqual('index lifecycle built', ilc.binaryIndices.testid.dirty, false);
+  suite.assertEqual('index lifecycle still lazy', ilc.binaryIndices.testid.values.length, 2);
+}
+
 function testIndexes() {
-  var itc = db.addCollection("test");
-  itc.ensureBinaryIndex("testId");
+  var itc = db.addCollection('test', ['testid']);
   
   itc.insert({'testid':1});
   itc.insert({'testid':2});
@@ -142,35 +239,35 @@ function testIndexes() {
 
   // lte
   var results = itc.find({'testid': {'$lte': 1}});
-  suite.assertStrictEqual('$lte', results.length, 1);
+  suite.assertStrictEqual('find using index $lte', results.length, 1);
   
   results = itc.find({'testid': {'$lte': 22}});
-  suite.assertStrictEqual('$lte', results.length, 8);
+  suite.assertStrictEqual('find using index $lte', results.length, 8);
   
   // lt
   results = itc.find({'testid': {'$lt': 1}});
-  suite.assertStrictEqual('$lt', results.length, 0);
+  suite.assertStrictEqual('find using index $lt', results.length, 0);
 
   results = itc.find({'testid': {'$lt': 22}});
-  suite.assertStrictEqual('$lt', results.length, 6);
+  suite.assertStrictEqual('find using index $lt', results.length, 6);
   
   // eq
   results = itc.find({'testid': {'$eq': 22}});
-  suite.assertStrictEqual('$eq', results.length, 2);
+  suite.assertStrictEqual('find using index $eq', results.length, 2);
   
   // gt
   results = itc.find({'testid': {'$gt': 22}});
-  suite.assertStrictEqual('$eq', results.length, 0);
+  suite.assertStrictEqual('find using index $eq', results.length, 0);
 
   results = itc.find({'testid': {'$gt': 5}});
-  suite.assertStrictEqual('$eq', results.length, 4);
+  suite.assertStrictEqual('find using index $eq', results.length, 4);
 
   // gte
   results = itc.find({'testid': {'$gte': 5}});
-  suite.assertStrictEqual('$gte', results.length, 6);
+  suite.assertStrictEqual('find using index $gte', results.length, 6);
 
   results = itc.find({'testid': {'$gte': 10}});
-  suite.assertStrictEqual('$gte', results.length, 3);
+  suite.assertStrictEqual('find using index $gte', results.length, 3);
 }
 
 function testResultset() {
@@ -293,7 +390,9 @@ function testDynamicView() {
 /* Main Test */
 populateTestData();
 testCoreMethods();
+testCalculateRange();
 testIndexes();
+testIndexLifecycle();
 testResultset();
 testDynamicView();
 

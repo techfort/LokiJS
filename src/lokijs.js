@@ -299,9 +299,14 @@ var loki = (function () {
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
-    // if value falls outside of our range return [0, -1] to designate
-    // no results
-    if (val < minVal || val > maxVal) return [0, -1];
+    // if value falls outside of our range return [0, -1] to designate no results
+    switch (op) {
+      case '$eq': if (val < minVal || val > maxVal) return [0, -1]; break;
+      case '$gt': if (val >= maxVal) return [0, -1]; break;
+      case '$gte': if (val > maxVal) return [0, -1]; break;
+      case '$lt': if (val <= minVal) return [0, -1]; break;
+      case '$lte': if (val < minVal) return [0, -1]; break;
+    }
 
     // hone in on start position of value
     while (min < max) {
@@ -348,6 +353,8 @@ var loki = (function () {
         return [ubound, rcd.length - 1];
         
       case '$gte':
+        if (lval < val) return [0, -1];
+        
         return [lbound, rcd.length - 1]; 
         
       case '$lt':

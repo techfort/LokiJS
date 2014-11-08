@@ -24,13 +24,12 @@ var loki = (function () {
     return cloned;
   }
 
-  function localStorageAvailable()
-  {
-      try {
-          return ('localStorage' in window && window['localStorage'] !== null);
-      } catch (e) {
-          return false;
-      }
+  function localStorageAvailable() {
+    try {
+      return ('localStorage' in window && window['localStorage'] !== null);
+    } catch (e) {
+      return false;
+    }
   }
 
   function LokiEventEmitter() {}
@@ -209,7 +208,7 @@ var loki = (function () {
   /**
    * sort() - User supplied compare function is provided two documents to compare. (chainable)
    *    Example:
-   *    rslt.sort(function(obj1, obj2) { 
+   *    rslt.sort(function(obj1, obj2) {
    *      if (obj1.name === obj2.name) return 0;
    *      if (obj1.name > obj2.name) return 1;
    *      if (obj1.name < obj2.name) return -1;
@@ -285,7 +284,7 @@ var loki = (function () {
    * @param {string} op - operation, such as $eq
    * @param {string} prop - name of property to calculate range for
    * @param {object} val - value to use for range calculation.
-   * @returns {array} [start, end] index array positions 
+   * @returns {array} [start, end] index array positions
    */
   Resultset.prototype.calculateRange = function (op, prop, val) {
     var rcd = this.collection.data;
@@ -295,17 +294,27 @@ var loki = (function () {
     var mid = null;
     var lbound = 0;
     var ubound = index.length - 1;
-    
+
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
     // if value falls outside of our range return [0, -1] to designate no results
     switch (op) {
-      case '$eq': if (val < minVal || val > maxVal) return [0, -1]; break;
-      case '$gt': if (val >= maxVal) return [0, -1]; break;
-      case '$gte': if (val > maxVal) return [0, -1]; break;
-      case '$lt': if (val <= minVal) return [0, -1]; break;
-      case '$lte': if (val < minVal) return [0, -1]; break;
+    case '$eq':
+      if (val < minVal || val > maxVal) return [0, -1];
+      break;
+    case '$gt':
+      if (val >= maxVal) return [0, -1];
+      break;
+    case '$gte':
+      if (val > maxVal) return [0, -1];
+      break;
+    case '$lt':
+      if (val <= minVal) return [0, -1];
+      break;
+    case '$lte':
+      if (val < minVal) return [0, -1];
+      break;
     }
 
     // hone in on start position of value
@@ -320,10 +329,10 @@ var loki = (function () {
     }
 
     lbound = min;
-    
+
     min = 0;
-    max = index.length -1;
-    
+    max = index.length - 1;
+
     // hone in on end position of value
     while (min < max) {
       mid = Math.floor((min + max) / 2);
@@ -334,39 +343,39 @@ var loki = (function () {
         min = mid + 1;
       }
     }
-    
+
     ubound = max;
-    
+
     var lval = rcd[index[lbound]][prop];
     var uval = rcd[index[ubound]][prop];
-    
+
     switch (op) {
-      case '$eq':
-        if (lval !== val) return [0, -1];
-        if (uval !== val) ubound--;
-        
-        return [lbound, ubound];
-        
-      case '$gt':
-        if (uval <= val) return [0, -1];
-      
-        return [ubound, rcd.length - 1];
-        
-      case '$gte':
-        if (lval < val) return [0, -1];
-        
-        return [lbound, rcd.length - 1]; 
-        
-      case '$lt':
-        return [0, lbound - 1]; 
-        
-      case '$lte':
-        if (uval !== val) ubound--;
-        
-        return [0, ubound];
-        
-      default:
-        return [0, rcd.length - 1];
+    case '$eq':
+      if (lval !== val) return [0, -1];
+      if (uval !== val) ubound--;
+
+      return [lbound, ubound];
+
+    case '$gt':
+      if (uval <= val) return [0, -1];
+
+      return [ubound, rcd.length - 1];
+
+    case '$gte':
+      if (lval < val) return [0, -1];
+
+      return [lbound, rcd.length - 1];
+
+    case '$lt':
+      return [0, lbound - 1];
+
+    case '$lte':
+      if (uval !== val) ubound--;
+
+      return [0, ubound];
+
+    default:
+      return [0, rcd.length - 1];
     }
   }
 
@@ -470,14 +479,14 @@ var loki = (function () {
 
     // if user is deep querying the object such as find('name.first': 'odin')
     var usingDotNotation = false;
-    
+
     for (p in queryObject) {
       if (queryObject.hasOwnProperty(p)) {
         property = p;
         if (p.indexOf('.') != -1) {
           usingDotNotation = true;
         }
-       if (typeof queryObject[p] !== 'object') {
+        if (typeof queryObject[p] !== 'object') {
           operator = '$eq';
           value = queryObject[p];
         } else if (typeof queryObject[p] === 'object') {
@@ -546,15 +555,14 @@ var loki = (function () {
             while (i--) {
               root = t[i];
               paths = property.split('.');
-              paths.forEach(function(path) {
+              paths.forEach(function (path) {
                 root = root[path];
               });
               if (fun(root, value)) {
                 result.push(t[i]);
               }
             }
-          }
-          else {
+          } else {
             while (i--) {
               if (fun(t[i][property], value)) {
                 result.push(t[i]);
@@ -602,15 +610,14 @@ var loki = (function () {
             while (i--) {
               root = t[this.filteredrows[i]];
               paths = property.split('.');
-              paths.forEach(function(path) {
+              paths.forEach(function (path) {
                 root = root[path];
               });
               if (fun(root, value)) {
                 result.push(this.filteredrows[i]);
               }
             }
-          }
-          else {
+          } else {
             while (i--) {
               if (fun(t[this.filteredrows[i]][property], value)) {
                 result.push(this.filteredrows[i]);
@@ -638,22 +645,21 @@ var loki = (function () {
         if (!searchByIndex) {
           t = this.collection.data;
           i = t.length;
-          
+
           if (usingDotNotation) {
             var root, paths;
-            
+
             while (i--) {
               root = t[i];
               paths = property.split('.');
-              paths.forEach(function(path) {
+              paths.forEach(function (path) {
                 root = root[path];
               });
               if (fun(root, value)) {
                 result.push(i);
               }
             }
-          }
-          else {
+          } else {
             while (i--) {
               if (fun(t[i][property], value)) {
                 result.push(i);
@@ -782,16 +788,16 @@ var loki = (function () {
 
   /**
    * update() - used to run an update operation on all documents currently in the resultset.
-   *    
+   *
    * @param {function} updateFunction - User supplied updateFunction(obj) will be executed for each document object.
    * @returns {Resultset} this resultset for further chain ops.
    */
   Resultset.prototype.update = function (updateFunction) {
-  
+
     if (typeof (updateFunction) !== "function") {
       throw 'Argument is not a function';
     }
-  
+
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
@@ -799,41 +805,41 @@ var loki = (function () {
 
     var len = this.filteredrows.length,
       rcd = this.collection.data;
-    
-    for(var idx = 0; idx < len; idx++) {
+
+    for (var idx = 0; idx < len; idx++) {
       // pass in each document object currently in resultset to user supplied updateFunction
       updateFunction(rcd[this.filteredrows[idx]]);
-      
+
       // notify collection we have changed this object so it can update meta and allow DynamicViews to re-evaluate
       this.collection.update(rcd[this.filteredrows[idx]]);
     }
-    
+
     return this;
   }
-  
+
   /**
    * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
    *
    * @returns {Resultset} this (empty) resultset for further chain ops.
    */
-  Resultset.prototype.remove = function() {
-  
+  Resultset.prototype.remove = function () {
+
     // if this is chained resultset with no filters applied, we need to populate filteredrows first
     if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
       this.filteredrows = Object.keys(this.collection.data);
     }
 
     var len = this.filteredrows.length;
-    
+
     for (var idx = 0; idx < len; idx++) {
       this.collection.remove(this.filteredrows[idx]);
     }
-    
+
     this.filteredrows = [];
-    
+
     return this;
   }
-  
+
   /**
    * mapReduce() - data transformation via user supplied functions
    *
@@ -841,16 +847,16 @@ var loki = (function () {
    * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
    * @returns The output of your reduceFunction
    */
-  Resultset.prototype.mapReduce  = function (mapFunction, reduceFunction) {
+  Resultset.prototype.mapReduce = function (mapFunction, reduceFunction) {
     try {
       return reduceFunction(this.data().map(mapFunction));
     } catch (err) {
       throw err;
     }
   };
-  
+
   /**
-   * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.  
+   * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
    *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
    *    whenever documents are add/updated/removed so it can remain up-to-date. (chainable)
    *
@@ -893,15 +899,15 @@ var loki = (function () {
 
   /**
    * branchResultset() - Makes a copy of the internal resultset for branched queries.
-   *    Unlike this dynamic view, the branched resultset will not be 'live' updated, 
+   *    Unlike this dynamic view, the branched resultset will not be 'live' updated,
    *    so your branched query should be immediately resolved and not held for future evaluation.
    *
    * @returns {Resultset} A copy of the internal resultset for branched queries.
    */
-  DynamicView.prototype.branchResultset = function() {
+  DynamicView.prototype.branchResultset = function () {
     return this.resultset.copy();
   }
-   
+
   /**
    * toJSON() - Override of toJSON to avoid circular references
    *
@@ -970,7 +976,7 @@ var loki = (function () {
    */
   DynamicView.prototype.startTransaction = function () {
     this.cachedresultset = this.resultset.copy();
-    
+
     return this;
   }
 
@@ -981,7 +987,7 @@ var loki = (function () {
    */
   DynamicView.prototype.commit = function () {
     this.cachedresultset = null;
-    
+
     return this;
   }
 
@@ -999,7 +1005,7 @@ var loki = (function () {
       // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
       this.resultdata = this.resultset.data();
     }
-    
+
     return this;
   }
 
@@ -1194,14 +1200,14 @@ var loki = (function () {
    * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
    * @returns The output of your reduceFunction
    */
-  DynamicView.prototype.mapReduce  = function (mapFunction, reduceFunction) {
+  DynamicView.prototype.mapReduce = function (mapFunction, reduceFunction) {
     try {
       return reduceFunction(this.data().map(mapFunction));
     } catch (err) {
       throw err;
     }
   };
-  
+
 
   /**
    * @constructor
@@ -1334,7 +1340,7 @@ var loki = (function () {
   Loki.prototype.toJson = Loki.prototype.serialize;
 
   // load Json function - db is saved to disk as json
-  Loki.prototype.loadJSON = function (serializedDb) {
+  Loki.prototype.loadJSON = function (serializedDb, options) {
 
     var obj = JSON.parse(serializedDb),
       i = 0,
@@ -1354,9 +1360,18 @@ var loki = (function () {
       // load each element individually 
       clen = coll.data.length;
       j = 0;
-      for (j; j < clen; j++) {
-        copyColl.data[j] = coll.data[j];
+      if (options && options.hasOwnProperty(coll.name)) {
+        var obj = new(options[coll.name])();
+        obj.lokiLoad(coll.data[j]);
+        copyColl.data[j] = obj;
+
+      } else {
+        console.log('not using prototype');
+        for (j; j < clen; j++) {
+          copyColl.data[j] = coll.data[j];
+        }
       }
+
 
       copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
       copyColl.idIndex = coll.idIndex;
@@ -1389,7 +1404,7 @@ var loki = (function () {
   };
 
   // load db from a file
-  Loki.prototype.loadDatabase = function (callback) {
+  Loki.prototype.loadDatabase = function (callback, options) {
     var cFun = callback || function () {
         return;
       },
@@ -1402,16 +1417,14 @@ var loki = (function () {
         if (err) {
           throw err;
         }
-        self.loadJSON(data);
+        self.loadJSON(data, options || {});
         cFun(data);
       });
-    } else if (this.ENV === 'BROWSER')
-    {
-        if (localStorageAvailable())
-        {
-            self.loadJSON(localStorage.getItem(this.filename));
-            cFun(data);
-        }
+    } else if (this.ENV === 'BROWSER') {
+      if (localStorageAvailable()) {
+        self.loadJSON(localStorage.getItem(this.filename));
+        cFun(data);
+      }
     }
   };
 
@@ -1436,12 +1449,10 @@ var loki = (function () {
           cFun();
         });
       });
-    } else if (this.ENV === 'BROWSER')
-    {
-        if (localStorageAvailable())
-        {
-            localStorage.setItem(self.filename, self.serialize());
-        }
+    } else if (this.ENV === 'BROWSER') {
+      if (localStorageAvailable()) {
+        localStorage.setItem(self.filename, self.serialize());
+      }
     }
   };
   // alias
@@ -1468,8 +1479,8 @@ var loki = (function () {
 
     if (this.binaryIndices.hasOwnProperty(property) && !force) {
       if (!this.binaryIndices[property].dirty) return;
-    } 
-    
+    }
+
     this.binaryIndices[property] = {
       'name': property,
       'dirty': true,
@@ -1507,7 +1518,7 @@ var loki = (function () {
    */
   Collection.prototype.ensureAllBinaryIndexes = function (force) {
     var objKeys = Object.keys(this.binaryIndices);
-    
+
     var i = objKeys.length;
     while (i--) {
       this.ensureBinaryIndex(objKeys[i], force);
@@ -1516,7 +1527,7 @@ var loki = (function () {
 
   Collection.prototype.flagBinaryIndexesDirty = function () {
     var objKeys = Object.keys(this.binaryIndices);
-    
+
     var i = objKeys.length;
     while (i--) {
       this.binaryIndices[objKeys[i]].dirty = true;
@@ -1667,15 +1678,15 @@ var loki = (function () {
       var i, arr = this.get(doc.id, true),
         obj,
         position;
-        
-        if (!arr) {
-          throw new Error('Trying to update a document not in collection.');
-        }
-        
-        obj = arr[0];
-        
-        // get current position in data array
-        position = arr[1];
+
+      if (!arr) {
+        throw new Error('Trying to update a document not in collection.');
+      }
+
+      obj = arr[0];
+
+      // get current position in data array
+      position = arr[1];
 
       // operate the update
       this.data[position] = doc;
@@ -1694,7 +1705,7 @@ var loki = (function () {
       this.rollback();
       console.error(err.message);
       this.emit('error', err);
-      throw (err);  // re-throw error so user does not think it succeeded
+      throw (err); // re-throw error so user does not think it succeeded
     }
   };
 
@@ -1721,15 +1732,14 @@ var loki = (function () {
     // or the object is carrying its own 'id' property.  If it also has a meta property,
     // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
     if (typeof (obj.id) !== "undefined") {
-      if (typeof(obj.meta.version) === "undefined") {
+      if (typeof (obj.meta.version) === "undefined") {
         obj.originalId = obj.id;
         delete obj.id;
-      }
-      else {
+      } else {
         throw 'Document is already in collection, please use update()';
       }
     }
-    
+
     try {
       this.startTransaction();
       this.maxId++;
@@ -1741,7 +1751,7 @@ var loki = (function () {
 
       obj.id = this.maxId;
       obj.meta.version = 0;
-      
+
       // add the object
       this.data.push(obj);
 

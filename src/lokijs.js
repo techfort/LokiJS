@@ -1208,6 +1208,14 @@ var loki = (function () {
     }
   };
 
+  var Utils = {
+    copyProperties: function (src, dest) {
+      var prop;
+      for (prop in src) {
+        dest[prop] = src[prop];
+      }
+    }
+  };
 
   /**
    * @constructor
@@ -1361,10 +1369,15 @@ var loki = (function () {
       clen = coll.data.length;
       j = 0;
       if (options && options.hasOwnProperty(coll.name)) {
-        var obj = new(options[coll.name])();
-        obj.lokiLoad(coll.data[j]);
-        copyColl.data[j] = obj;
 
+        var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
+        console.log('Loader is ', loader);
+        for (j; j < clen; j++) {
+          var obj = new(options[coll.name]['proto'])();
+          loader(coll.data[j], obj);
+          copyColl.data[j] = obj;
+          console.log('Object loaded', obj);
+        }
       } else {
         console.log('not using prototype');
         for (j; j < clen; j++) {

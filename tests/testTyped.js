@@ -9,12 +9,6 @@ function User(n) {
 	this.log = function () {
 		console.log('Name: ' + this.name);
 	};
-	this.lokiLoad = function (obj) {
-		var prop, self = this;
-		for (prop in obj) {
-			self[prop] = obj[prop];
-		}
-	};
 }
 
 var json = {
@@ -66,8 +60,10 @@ var json = {
 };
 
 db.loadJSON(JSON.stringify(json), {
-	users: User
+	users: {
+		proto: User
+	}
 });
 
 users = db.getCollection('users');
-(users.get(1)).log();
+console.log(users.get(1) instanceof User);

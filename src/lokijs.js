@@ -19,17 +19,18 @@
     define([], factory);
   } else if (typeof exports === 'object') {
     // CommonJS
-    module.exports = factory(require('fs'));
+    module.exports = factory();
   } else {
     // Browser globals
     root.loki = factory();
   }
-}(this, function(fs) {
-
-  fs = fs || false;
+}(this, function() {
 
   return (function() {
+
     'use strict';
+
+    var fs = (typeof exports === 'object') ? require('fs') : false;
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',

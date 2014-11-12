@@ -9,3 +9,5 @@ gulp.task('build', function () {
 		.pipe(concat('lokijs.min.js'))
 		.pipe(gulp.dest('build/'));
 });
+
+gulp.task('default', ['build']);

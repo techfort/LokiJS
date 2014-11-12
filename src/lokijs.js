@@ -1429,7 +1429,10 @@
         });
       } else if (this.ENV === 'BROWSER') {
         if (localStorageAvailable()) {
-          self.loadJSON(localStorage.getItem(this.filename));
+          var data = localStorage.getItem(this.filename);
+          if(data) {
+            self.loadJSON(data);
+          }
           cFun(data);
         }
       }

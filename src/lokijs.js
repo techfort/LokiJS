@@ -205,6 +205,9 @@ var loki = (function () {
     return result;
   }
 
+  // add branch() as alias of copy()
+  Resultset.prototype.branch = Resultset.prototype.copy;
+  
   /**
    * sort() - User supplied compare function is provided two documents to compare. (chainable)
    *    Example:

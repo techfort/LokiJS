@@ -896,6 +896,62 @@ var loki = (function () {
 
     // may add map and reduce phases later
   }
+  
+  /**
+   * rematerialize() - intended for use immediately after deserialization (loading)
+   *    This will clear out and reapply filterPipeline ops, recreating the view.
+   *    Since where filters do not persist correctly, this method allows
+   *    restoring the view to state where user can re-apply those where filters.
+   *
+   * @param {Object} options - (Optional) allows specification of 'removeWhereFilters' option
+   * @returns {DynamicView} This dynamic view for further chained ops.
+   */
+  DynamicView.prototype.rematerialize = function(options) {
+    var fpl,
+      fpi,
+      idx;
+
+    options = options || { };
+    
+    this.resultdata = [];
+    this.resultsdirty = true;
+    this.resultset = new Resultset(this.collection);
+    
+    if (this.sortFunction || this.sortColumn) {
+      this.sortDirty = true;
+    }
+
+    if (options.hasOwnProperty('removeWhereFilters')) {
+      // for each view see if it had any where filters applied... since they don't
+      // serialize those functions lets remove those invalid filters
+      fpl = this.filterPipeline.length;
+      fpi = fpl;
+      while (fpi--) {
+        if (this.filterPipeline[fpi].type === 'where') {
+          if (fpi !== this.filterPipeline.length - 1) {
+            this.filterPipeline[fpi] = this.filterPipeline[this.filterPipeline.length - 1];
+          }
+          
+          this.filterPipeline.length--;
+        }
+      }
+    }
+    
+    // back up old filter pipeline, clear filter pipeline, and reapply pipeline ops
+    var ofp = this.filterPipeline;
+    this.filterPipeline = [];
+    
+    // now re-apply 'find' filterPipeline ops
+    fpl = ofp.length;
+    for (idx = 0; idx < fpl; idx++) {
+      this.applyFind(ofp[idx].val);
+    }
+    
+    // during creation of unit tests, i will remove this forced refresh and leave lazy
+    this.data();
+    
+    return this;
+  }
 
   /**
    * branchResultset() - Makes a copy of the internal resultset for branched queries.
@@ -916,8 +972,8 @@ var loki = (function () {
     var copy = new DynamicView(this.collection, this.name, this.persistent);
 
     copy.resultset = this.resultset;
-    copy.resultdata = this.resultdata;
-    copy.resultsdirty = this.resultsdirty;
+    copy.resultdata = [];  // let's not save data (copy) to minimize size
+    copy.resultsdirty = true;
     copy.filterPipeline = this.filterPipeline;
     copy.sortFunction = this.sortFunction;
     copy.sortColumn = this.sortColumn;
@@ -1412,6 +1468,8 @@ var loki = (function () {
         dv.resultset.filteredrows = colldv.resultset.filteredrows;
         dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
         dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
+
+        dv.rematerialize({ removeWhereFilters: true });
       }
     }
   };

@@ -134,11 +134,11 @@ var loki = (function () {
     this.filteredrows = [];
     this.filterInitialized = false;
 
-    // if user supplied initial queryObj or queryFunc, apply it 
+    // if user supplied initial queryObj or queryFunc, apply it
     if (typeof (queryObj) !== "undefined" && queryObj !== null) return this.find(queryObj, firstOnly);
     if (typeof (queryFunc) !== "undefined" && queryFunc !== null) return this.where(queryFunc);
 
-    // otherwise return unfiltered Resultset for future filtering 
+    // otherwise return unfiltered Resultset for future filtering
     return this;
   }
 
@@ -207,7 +207,7 @@ var loki = (function () {
 
   // add branch() as alias of copy()
   Resultset.prototype.branch = Resultset.prototype.copy;
-  
+
   /**
    * sort() - User supplied compare function is provided two documents to compare. (chainable)
    *    Example:
@@ -506,7 +506,7 @@ var loki = (function () {
       }
     }
 
-    // for regex ops, precompile 
+    // for regex ops, precompile
     if (operator === '$regex') value = RegExp(value);
 
     if (this.collection.data === null) {
@@ -535,7 +535,7 @@ var loki = (function () {
     //    - whether it is chained or not
     //    - whether the property being queried has an index defined
     //    - if chained, we handle first pass differently for initial filteredrows[] population
-    // 
+    //
     // For performance reasons, each case has its own if block to minimize in-loop calculations
 
     // If not a chained query, bypass filteredrows and work directly against data
@@ -890,7 +890,7 @@ var loki = (function () {
     // keep ordered filter pipeline
     this.filterPipeline = [];
 
-    // sorting member variables 
+    // sorting member variables
     // we only support one active search, applied using applySort() or applySimpleSort()
     this.sortFunction = null;
     this.sortColumn = null;
@@ -899,7 +899,7 @@ var loki = (function () {
 
     // may add map and reduce phases later
   }
-  
+
   /**
    * rematerialize() - intended for use immediately after deserialization (loading)
    *    This will clear out and reapply filterPipeline ops, recreating the view.
@@ -915,11 +915,11 @@ var loki = (function () {
       idx;
 
     options = options || { };
-    
+
     this.resultdata = [];
     this.resultsdirty = true;
     this.resultset = new Resultset(this.collection);
-    
+
     if (this.sortFunction || this.sortColumn) {
       this.sortDirty = true;
     }
@@ -934,25 +934,25 @@ var loki = (function () {
           if (fpi !== this.filterPipeline.length - 1) {
             this.filterPipeline[fpi] = this.filterPipeline[this.filterPipeline.length - 1];
           }
-          
+
           this.filterPipeline.length--;
         }
       }
     }
-    
+
     // back up old filter pipeline, clear filter pipeline, and reapply pipeline ops
     var ofp = this.filterPipeline;
     this.filterPipeline = [];
-    
+
     // now re-apply 'find' filterPipeline ops
     fpl = ofp.length;
     for (idx = 0; idx < fpl; idx++) {
       this.applyFind(ofp[idx].val);
     }
-    
+
     // during creation of unit tests, i will remove this forced refresh and leave lazy
     this.data();
-    
+
     return this;
   }
 
@@ -1281,7 +1281,7 @@ var loki = (function () {
    * Collection class that handles documents of same type
    */
   function Collection(name, indices, transactionOptions) {
-    // the name of the collection 
+    // the name of the collection
     this.name = name;
     // the data held by the collection
     this.data = [];
@@ -1304,7 +1304,7 @@ var loki = (function () {
 
     this.DynamicViews = [];
 
-    // events 
+    // events
     this.events = {
       'insert': [],
       'update': [],
@@ -1354,19 +1354,15 @@ var loki = (function () {
   };
 
   Loki.prototype.getCollection = function (collectionName) {
-    var found = false,
-      len = this.collections.length,
-      i;
+    var i,
+      len = this.collections.length;
 
     for (i = 0; i < len; i += 1) {
       if (this.collections[i].name === collectionName) {
-        found = true;
         return this.collections[i];
       }
     }
-    if (!found) {
-      throw 'No such collection';
-    }
+    throw 'No such collection';
   };
 
   Loki.prototype.listCollections = function () {
@@ -1384,15 +1380,17 @@ var loki = (function () {
     return colls;
   };
 
-  Loki.prototype.removeCollection = function (name) {
-    var i = 0,
+  Loki.prototype.removeCollection = function (collectionName) {
+    var i,
       len = this.collections.length;
-    for (i; i < len; i += 1) {
-      if (this.collections[i].name === name) {
+
+    for (i = 0; i < len; i += 1) {
+      if (this.collections[i].name === collectionName) {
         this.collections.splice(i, 1);
-        break;
+        return;
       }
     }
+    throw 'No such collection';
   };
 
   Loki.prototype.getName = function () {
@@ -1424,7 +1422,7 @@ var loki = (function () {
       coll = obj.collections[i];
       copyColl = this.addCollection(coll.name);
 
-      // load each element individually 
+      // load each element individually
       clen = coll.data.length;
       j = 0;
       if (options && options.hasOwnProperty(coll.name)) {
@@ -2033,7 +2031,7 @@ var loki = (function () {
     }
   };
 
-  // async executor. This is only to enable callbacks at the end of the execution. 
+  // async executor. This is only to enable callbacks at the end of the execution.
   Collection.prototype.async = function (fun, callback) {
     setTimeout(function () {
       if (typeof fun === 'function') {

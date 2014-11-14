@@ -1476,8 +1476,11 @@ var loki = (function () {
   };
 
   // load db from a file
-  Loki.prototype.loadDatabase = function (callback, options) {
-    var cFun = callback || function () {
+  Loki.prototype.loadDatabase = function (options, callback) {
+    var cFun = callback || function (err, data) {
+        if(err) {
+          throw err;
+        }
         return;
       },
       self = this;
@@ -1487,44 +1490,55 @@ var loki = (function () {
         encoding: 'utf8'
       }, function (err, data) {
         if (err) {
-          throw err;
+          return cFun(err, null);
         }
         self.loadJSON(data, options || {});
-        cFun(data);
+        cFun(null, data);
       });
     } else if (this.ENV === 'BROWSER') {
       if (localStorageAvailable()) {
         self.loadJSON(localStorage.getItem(this.filename));
-        cFun(data);
+        cFun(null, data);
+      } else {
+        cFun(new Error('localStorage is not available'));
       }
+    } else {
+      cFun(new Error('unknown environment'));
     }
   };
 
   // save file to disk as json
   Loki.prototype.saveToDisk = function (callback) {
-    var cFun = callback || function () {
+    var cFun = callback || function (err) {
+        if(err) {
+          throw err;
+        }
         return;
       },
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
       this.fs.exists(this.filename, function (exists) {
-
         if (exists) {
-          self.fs.unlink(self.filename);
+          self.fs.unlink(self.filename, function (err) {
+            if(err) {
+              return cFun(err);
+            }
+            self.fs.writeFile(self.filename, self.serialize(), cFun);
+          });
+        } else {
+          self.fs.writeFile(self.filename, self.serialize(), cFun);
         }
-
-        self.fs.writeFile(self.filename, self.serialize(), function (err) {
-          if (err) {
-            throw err;
-          }
-          cFun();
-        });
       });
     } else if (this.ENV === 'BROWSER') {
       if (localStorageAvailable()) {
         localStorage.setItem(self.filename, self.serialize());
+        cFun(null);
+      } else {
+        cFun(new Error('localStorage is not available'));
       }
+    } else {
+      cFun(new Error('unknown environment'));
     }
   };
   // alias

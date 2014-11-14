@@ -146,7 +146,7 @@ var loki = (function () {
     var copy = this.copy();
     copy.collection = null;
     return copy;
-  }
+  };
 
   /**
    * limit() - Allows you to limit the number of documents passed to next chain operation.
@@ -166,7 +166,7 @@ var loki = (function () {
     rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
 
     return rscopy;
-  }
+  };
 
   /**
    * offset() - Used for skipping 'pos' number of documents in the resultset.
@@ -185,7 +185,7 @@ var loki = (function () {
     rscopy.filteredrows = rscopy.filteredrows.splice(pos);
 
     return rscopy;
-  }
+  };
 
   /**
    * copy() - To support reuse of resultset in branched query situations.
@@ -199,7 +199,7 @@ var loki = (function () {
     result.filterInitialized = this.filterInitialized;
 
     return result;
-  }
+  };
 
   // add branch() as alias of copy()
   Resultset.prototype.branch = Resultset.prototype.copy;
@@ -235,7 +235,7 @@ var loki = (function () {
     this.filteredrows.sort(wrappedComparer);
 
     return this;
-  }
+  };
 
   /**
    * simplesort() - Simpler, loose evaluation for user to sort based on a property name. (chainable)
@@ -273,7 +273,7 @@ var loki = (function () {
     this.filteredrows.sort(wrappedComparer);
 
     return this;
-  }
+  };
 
   /**
    * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
@@ -376,7 +376,7 @@ var loki = (function () {
     default:
       return [0, rcd.length - 1];
     }
-  }
+  };
 
   /**
    * find() - Used for querying via a mongo-style query object.
@@ -684,7 +684,7 @@ var loki = (function () {
       }
 
     }
-  }
+  };
 
 
   /**
@@ -752,7 +752,7 @@ var loki = (function () {
     } catch (err) {
       throw err;
     }
-  }
+  };
 
   /**
    * data() - Terminates the chain and returns array of filtered documents
@@ -783,7 +783,7 @@ var loki = (function () {
     }
 
     return result;
-  }
+  };
 
   /**
    * update() - used to run an update operation on all documents currently in the resultset.
@@ -814,7 +814,7 @@ var loki = (function () {
     }
 
     return this;
-  }
+  };
 
   /**
    * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
@@ -837,7 +837,7 @@ var loki = (function () {
     this.filteredrows = [];
 
     return this;
-  }
+  };
 
   /**
    * mapReduce() - data transformation via user supplied functions
@@ -894,7 +894,7 @@ var loki = (function () {
     this.sortDirty = false;
 
     // may add map and reduce phases later
-  }
+  };
 
   /**
    * rematerialize() - intended for use immediately after deserialization (loading)
@@ -950,7 +950,7 @@ var loki = (function () {
     this.data();
 
     return this;
-  }
+  };
 
   /**
    * branchResultset() - Makes a copy of the internal resultset for branched queries.
@@ -961,7 +961,7 @@ var loki = (function () {
    */
   DynamicView.prototype.branchResultset = function () {
     return this.resultset.copy();
-  }
+  };
 
   /**
    * toJSON() - Override of toJSON to avoid circular references
@@ -983,7 +983,7 @@ var loki = (function () {
     copy.collection = null;
 
     return copy;
-  }
+  };
 
   /**
    * applySort() - Used to apply a sort to the dynamic view
@@ -1001,7 +1001,7 @@ var loki = (function () {
     this.sortDirty = false;
 
     return this;
-  }
+  };
 
   /**
    * applySimpleSort() - Used to specify a property used for view translation.
@@ -1022,7 +1022,7 @@ var loki = (function () {
     this.sortDirty = false;
 
     return this;
-  }
+  };
 
   /**
    * startTransaction() - marks the beginning of a transaction.
@@ -1033,7 +1033,7 @@ var loki = (function () {
     this.cachedresultset = this.resultset.copy();
 
     return this;
-  }
+  };
 
   /**
    * commit() - commits a transaction.
@@ -1044,7 +1044,7 @@ var loki = (function () {
     this.cachedresultset = null;
 
     return this;
-  }
+  };
 
   /**
    * rollback() - rolls back a transaction.
@@ -1062,7 +1062,7 @@ var loki = (function () {
     }
 
     return this;
-  }
+  };
 
   /**
    * applyFind() - Adds a mongo-style query option to the DynamicView filter pipeline
@@ -1088,7 +1088,7 @@ var loki = (function () {
     }
 
     return this;
-  }
+  };
 
   /**
    * applyWhere() - Adds a javascript filter function to the DynamicView filter pipeline
@@ -1109,7 +1109,7 @@ var loki = (function () {
     if (this.persistent) this.resultsdirty = true;
 
     return this;
-  }
+  };
 
   /**
    * data() - resolves and pending filtering and sorting, then returns document array as result.
@@ -1142,7 +1142,7 @@ var loki = (function () {
     }
 
     return this.resultdata;
-  }
+  };
 
   /**
    * evaluateDocument() - internal method for (re)evaluating document inclusion.
@@ -1221,7 +1221,7 @@ var loki = (function () {
 
       return;
     }
-  }
+  };
 
   /**
    * removeDocument() - internal function called on collection.delete()
@@ -1246,7 +1246,7 @@ var loki = (function () {
         this.resultdata.length = oldlen - 1;
       }
     }
-  }
+  };
 
   /**
    * mapReduce() - data transformation via user supplied functions
@@ -1614,7 +1614,7 @@ var loki = (function () {
     while (i--) {
       this.binaryIndices[objKeys[i]].dirty = true;
     }
-  }
+  };
 
   /**
    * Rebuild idIndex
@@ -1648,7 +1648,7 @@ var loki = (function () {
     this.DynamicViews.push(dv);
 
     return dv;
-  }
+  };
 
   Collection.prototype.removeDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1656,7 +1656,7 @@ var loki = (function () {
         this.DynamicViews.splice(idx, 1);
       }
     }
-  }
+  };
 
   Collection.prototype.getDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1664,7 +1664,7 @@ var loki = (function () {
         return this.DynamicViews[idx];
       }
     }
-  }
+  };
 
   /**
    * find and update: pass a filtering function to select elements to be updated
@@ -1720,7 +1720,6 @@ var loki = (function () {
       this.emit('insert', doc);
       return doc;
     }
-
   };
 
   Collection.prototype.clear = function () {
@@ -1945,7 +1944,6 @@ var loki = (function () {
       return this.data[min];
     }
     return null;
-
   };
 
   /**

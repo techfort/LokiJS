@@ -44,19 +44,15 @@ var loki = (function () {
     return event.push(listener) - 1;
   };
 
-  LokiEventEmitter.prototype.emit = function (eventName, arg) {
-    if (this.events[eventName]) {
-      var self = this;
-      setTimeout(function () {
-        self.events[eventName].forEach(function (listener) {
-          if (Array.isArray(arg)) {
-            listener.apply(null, arg);
-          } else {
-            listener.call(null, arg);
-          }
-        });
-      }, 1);
-      return;
+  LokiEventEmitter.prototype.emit = function (eventName) {
+    var args = Array.prototype.slice.call(arguments,0);
+    if (eventName && this.events[eventName]) {
+      args.splice(0, 1);
+      this.events[eventName].forEach(function (listener) {
+        setTimeout(function () {
+          listener.apply(null, args);
+        }, 1);
+      });
     } else {
       throw new Error('No event ' + eventName + ' defined');
     }

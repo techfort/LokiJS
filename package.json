@@ -8,7 +8,7 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/istanbul cover ./tests"
   },
   "repository": {
     "type": "git",
@@ -38,6 +38,7 @@
   "devDependencies": {
     "gulp-uglify": "^0.3.1",
     "gulp": "^3.8.6",
-    "gulp-concat": "^2.3.4"
+    "gulp-concat": "^2.3.4",
+    "istanbul": "^0.3.2"
   }
 }

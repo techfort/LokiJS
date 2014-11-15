@@ -35,9 +35,6 @@
     "gordian": "0.0.7"
   },
   "devDependencies": {
-    "gulp": "^3.8.6",
-    "gulp-concat": "^2.3.4",
-    "gulp-uglify": "^0.3.1",
     "istanbul": "^0.3.2",
     "mocha": "^2.0.1",
     "should": "^4.3.0",

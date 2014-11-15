@@ -893,9 +893,15 @@ var loki = (function () {
     this.sortColumnDesc = false;
     this.sortDirty = false;
 
-    // may add map and reduce phases later
+    // for now just have 1 event for when we finally rebuilt lazy view
+    // once we refactor transactions, i will tie in certain transactional events
+    this.events = {
+      'rebuild': []
+    };
   };
 
+  DynamicView.prototype = new LokiEventEmitter;
+  
   /**
    * rematerialize() - intended for use immediately after deserialization (loading)
    *    This will clear out and reapply filterPipeline ops, recreating the view.
@@ -1132,6 +1138,14 @@ var loki = (function () {
 
     // if nonpersistent return resultset data evaluation
     if (!this.persistent) {
+      // not sure if this emit will be useful, but if view is non-persistent 
+      // we will raise event only if resulset has yet to be initialized.
+      // user can intercept via dynView.on('rebuild, myCallback);
+      // emit is async wait 1 ms so our data() call should exec before event fired
+      if (!this.resultset.filterInitialized) {
+        this.emit('rebuild', this);
+      }
+      
       return this.resultset.data();
     }
 
@@ -1139,6 +1153,9 @@ var loki = (function () {
     if (this.resultsdirty) {
       this.resultdata = this.resultset.data();
       this.resultsdirty = false;
+    
+      // user can intercept via dynView.on('rebuild, myCallback);
+      this.emit('rebuild', this);
     }
 
     return this.resultdata;

@@ -293,7 +293,10 @@ var loki = (function () {
     var mid = null;
     var lbound = 0;
     var ubound = index.length - 1;
-
+    
+    // when no documents are in collection, return empty range condition
+    if (rcd.length == 0) return [0, -1];
+    
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
 
@@ -955,6 +958,9 @@ var loki = (function () {
     // during creation of unit tests, i will remove this forced refresh and leave lazy
     this.data();
 
+    // emit rebuild event in case user wants to be notified
+    this.emit('rebuild', this);
+
     return this;
   };
 
@@ -1065,6 +1071,8 @@ var loki = (function () {
       // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
       // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
       this.resultdata = this.resultset.data();
+      
+      this.emit('rebuild', this);
     }
 
     return this;
@@ -1140,7 +1148,7 @@ var loki = (function () {
     if (!this.persistent) {
       // not sure if this emit will be useful, but if view is non-persistent 
       // we will raise event only if resulset has yet to be initialized.
-      // user can intercept via dynView.on('rebuild, myCallback);
+      // user can intercept via dynView.on('rebuild', myCallback);
       // emit is async wait 1 ms so our data() call should exec before event fired
       if (!this.resultset.filterInitialized) {
         this.emit('rebuild', this);
@@ -1154,7 +1162,7 @@ var loki = (function () {
       this.resultdata = this.resultset.data();
       this.resultsdirty = false;
     
-      // user can intercept via dynView.on('rebuild, myCallback);
+      // user can intercept via dynView.on('rebuild', myCallback);
       this.emit('rebuild', this);
     }
 
@@ -1324,7 +1332,8 @@ var loki = (function () {
       'close': [],
       'flushbuffer': [],
       'error': [],
-      'delete': []
+      'delete': [],
+      'warning': []
     };
 
     // initialize the id index
@@ -1336,6 +1345,7 @@ var loki = (function () {
         this.ensureBinaryIndex(indices[idx]);
       };
     }
+    
     this.on('insert', function (obj) {
       //console.log('Passed to on-insert', obj);
       setTimeout(function () {
@@ -1346,12 +1356,20 @@ var loki = (function () {
 
       }, 1);
     });
+    
     this.on('update', function (obj) {
       setTimeout(function () {
         obj.meta.updated = (new Date()).getTime();
         obj.meta.revision += 1;
       }, 1);
     });
+    
+    this.on('warning', function (obj) {
+      setTimeout(function () {
+        console.warn(obj);
+      }, 1);
+    });
+    
   }
 
   Collection.prototype = new LokiEventEmitter;
@@ -1375,7 +1393,10 @@ var loki = (function () {
         return this.collections[i];
       }
     }
-    throw 'No such collection';
+
+    // no such collection
+    this.emit('warning', 'collection ' + name + ' not found');
+    return null;
   };
 
   Loki.prototype.listCollections = function () {

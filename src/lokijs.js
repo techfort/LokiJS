@@ -276,6 +276,77 @@ var loki = (function () {
   };
 
   /**
+   * compoundeval() - helper method for compoundsort(), performing individual object comparisons
+   *
+   * @param {array} properties - array of property names, in order, by which to evaluate sort order
+   * @param {object} obj1 - first object to compare
+   * @param {object} obj2 - second object to compare
+   * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
+   */
+  Resultset.prototype.compoundeval = function (properties, obj1, obj2) {
+    var propertyCount = properties.length;
+
+    if (propertyCount === 0) {
+      throw new Error("Invalid call to compoundeval, need at least one property");
+    }
+
+    // decode property, whether just a string property name or subarray [propname, isdesc]
+    var isdesc = false;
+    var firstProp = properties[0];
+    if (typeof (firstProp) !== 'string') {
+      if (Array.isArray (firstProp)) {
+        isdesc = firstProp[1];
+        firstProp = firstProp[0];
+      }
+    }
+
+    if (obj1[firstProp] === obj2[firstProp]) {
+      if (propertyCount === 1) {
+        return 0;
+      }
+      else {
+        return this.compoundeval(properties.slice(1), obj1, obj2, isdesc);
+      }
+    }
+
+    if (isdesc) {
+      return (obj1[firstProp] < obj2[firstProp]) ? 1 : -1;
+    } else {
+      return (obj1[firstProp] > obj2[firstProp]) ? 1 : -1;
+    }
+  };
+
+  /**
+   * compoundsort() - Allows sorting a resultset based on multiple columns.
+   *    Example : rs.compoundsort(['age', 'name']); to sort by age and then name (both ascending)
+   *    Example : rs.compoundsort(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
+   *
+   * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
+   * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+   */
+  Resultset.prototype.compoundsort = function (properties) {
+
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
+    var wrappedComparer =
+      (function (props, rslt) {
+        return function (a, b) {
+          var obj1 = rslt.collection.data[a];
+          var obj2 = rslt.collection.data[b];
+
+          return rslt.compoundeval(props, obj1, obj2);
+        }
+      })(properties, this);
+      
+    this.filteredrows.sort(wrappedComparer);
+
+    return this;
+  };
+
+  /**
    * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
    *    this is used for collection.find() and first find filter of resultset/dynview
    *    slightly different than get() binary search in that get() hones in on 1 value,

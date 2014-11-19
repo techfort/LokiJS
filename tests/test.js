@@ -129,7 +129,7 @@ function testCoreMethods() {
 
 function testCalculateRange() {
   var eic = db.addCollection("eic");
-  eic.ensureBinaryIndex("testid");
+  eic.ensureIndex("testid");
   
   eic.insert({'testid':1, 'testString': 'hhh', 'testFloat': 5.2});  //0
   eic.insert({'testid':1, 'testString': 'aaa', 'testFloat': 6.2});  //1
@@ -176,7 +176,7 @@ function testCalculateRange() {
   suite.assertEqual('calculateRange $lte out of range', range, [0, -1]);
   
   // add another index on string property
-  eic.ensureBinaryIndex('testString');
+  eic.ensureIndex('testString');
   rset.find({'testString': 'asdf'});  // force index to be built
   
   range = rset.calculateRange('$lte', 'testString', 'ggg');
@@ -186,7 +186,7 @@ function testCalculateRange() {
   suite.assertEqual('calculateRange $gte string', range, [4, 8]); // offset by 1 because of record in middle
   
   // add some float range evaluations
-  eic.ensureBinaryIndex('testFloat');
+  eic.ensureIndex('testFloat');
   rset.find({'testFloat': '1.1'});  // force index to be built
   
   range = rset.calculateRange('$lte', 'testFloat', 1.2);
@@ -208,7 +208,7 @@ function testIndexLifecycle() {
   var hasIdx = ilc.binaryIndices.hasOwnProperty('testid');
   suite.assertEqual('index lifecycle before', hasIdx, false);
   
-  ilc.ensureBinaryIndex('testid');
+  ilc.ensureIndex('testid');
   hasIdx = ilc.binaryIndices.hasOwnProperty('testid');
   suite.assertEqual('index lifecycle created', hasIdx, true);
   suite.assertEqual('index lifecycle created', ilc.binaryIndices.testid.dirty, false);

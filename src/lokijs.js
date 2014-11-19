@@ -627,8 +627,8 @@ var loki = (function () {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
-      // ensureBinaryIndex() will only rebuild if flagged as dirty since we are not passing force=true param
-      this.collection.ensureBinaryIndex(property);
+      // ensureIndex() will only rebuild if flagged as dirty since we are not passing force=true param
+      this.collection.ensureIndex(property);
 
       searchByIndex = true;
       index = this.collection.binaryIndices[property];
@@ -1464,7 +1464,7 @@ var loki = (function () {
     };
 
     // initialize the id index
-    this.ensureIndex();
+    this.ensureId();
     var indices;
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
     //if (typeof (indices) !== 'undefined') {
@@ -1479,7 +1479,7 @@ var loki = (function () {
     }
 
     for (var idx = 0; idx < indices.length; idx++) {
-      this.ensureBinaryIndex(indices[idx]);
+      this.ensureIndex(indices[idx]);
     };
 
     this.on('insert', function (obj) {
@@ -1631,7 +1631,7 @@ var loki = (function () {
         copyColl.binaryIndices = coll.binaryIndices;
       }
       copyColl.transactional = coll.transactional;
-      copyColl.ensureIndex();
+      copyColl.ensureId();
 
       // in case they are loading a database created before we added dynamic views, handle undefined
       if (typeof (coll.DynamicViews) === 'undefined') continue;
@@ -1739,7 +1739,7 @@ var loki = (function () {
   /**
    * Ensure binary index on a certain field
    */
-  Collection.prototype.ensureBinaryIndex = function (property, force) {
+  Collection.prototype.ensureIndex = function (property, force) {
     // optional parameter to force rebuild whether flagged as dirty or not
     if (typeof (force) === 'undefined') force = false;
 
@@ -1791,7 +1791,7 @@ var loki = (function () {
 
     var i = objKeys.length;
     while (i--) {
-      this.ensureBinaryIndex(objKeys[i], force);
+      this.ensureIndex(objKeys[i], force);
     }
   };
 
@@ -1807,7 +1807,7 @@ var loki = (function () {
   /**
    * Rebuild idIndex
    */
-  Collection.prototype.ensureIndex = function () {
+  Collection.prototype.ensureId = function () {
 
     var len = this.data.length,
       i = 0;
@@ -1821,9 +1821,9 @@ var loki = (function () {
   /**
    * Rebuild idIndex async with callback - useful for background syncing with a remote server
    */
-  Collection.prototype.ensureIndexAsync = function (callback) {
+  Collection.prototype.ensureIdAsync = function (callback) {
     this.async(function () {
-      this.ensureIndex();
+      this.ensureId();
     }, callback);
   };
 

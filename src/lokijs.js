@@ -1461,7 +1461,7 @@ var loki = (function () {
    * @returns {Collection} New collection which you can query or chain
    */
   Loki.prototype.anonym = function (docs, indexesArray) {
-    var collection = new Collection(name, indexesArray);
+    var collection = new Collection('anonym', indexesArray);
     collection.insert(docs);
     return collection;
   }

@@ -49,20 +49,18 @@ var loki = (function () {
   }
 
   LokiEventEmitter.prototype.emit = function (eventName) {
+
     var args = Array.prototype.slice.call(arguments, 0),
       self = this;
     if (eventName && this.events[eventName]) {
       args.splice(0, 1);
       this.events[eventName].forEach(function (listener) {
 
-
         if (self.asyncListeners) {
-          console.log('Applying listener async');
           setTimeout(function () {
             applyListener(listener, args);
           }, 1);
         } else {
-          console.log('Applying listener sync');
           applyListener(listener, args);
         }
 
@@ -1410,7 +1408,7 @@ var loki = (function () {
    * @param {array} array of property names to be indicized
    * @param {object} configuration object
    */
-  function Collection(name, indices, options) {
+  function Collection(name, options) {
     // the name of the collection 
 
     this.name = name;
@@ -1456,37 +1454,37 @@ var loki = (function () {
 
     // initialize the id index
     this.ensureIndex();
-
+    var indices;
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
     //if (typeof (indices) !== 'undefined') {
-    indices = indices || [];
-    
+    if (options) {
+      if (options.indices) {
+        indices = options.indices;
+      } else {
+        indices = [];
+      }
+    } else {
+      indices = [];
+    }
+
     for (var idx = 0; idx < indices.length; idx++) {
       this.ensureBinaryIndex(indices[idx]);
     };
+
     this.on('insert', function (obj) {
-      //console.log('Passed to on-insert', obj);
-      setTimeout(function () {
 
-        //console.log('On insert single object...');
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
-
-      }, 1);
+      obj.meta.created = (new Date()).getTime();
+      obj.meta.revision = 0;
     });
 
     this.on('update', function (obj) {
-      setTimeout(function () {
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
-      }, 1);
+
+      obj.meta.updated = (new Date()).getTime();
+      obj.meta.revision += 1;
+
     });
 
-    this.on('warning', function (obj) {
-      setTimeout(function () {
-        console.warn(obj);
-      }, 1);
-    });
+    this.on('warning', console.warn);
 
   }
 
@@ -1609,15 +1607,15 @@ var loki = (function () {
       if (options && options.hasOwnProperty(coll.name)) {
 
         var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
-        console.log('Loader is ', loader);
+
         for (j; j < clen; j++) {
           var obj = new(options[coll.name]['proto'])();
           loader(coll.data[j], obj);
           copyColl.data[j] = obj;
-          console.log('Object loaded', obj);
+
         }
       } else {
-        console.log('not using prototype');
+
         for (j; j < clen; j++) {
           copyColl.data[j] = coll.data[j];
         }

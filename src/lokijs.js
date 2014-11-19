@@ -44,19 +44,15 @@ var loki = (function () {
     return event.push(listener) - 1;
   };
 
-  LokiEventEmitter.prototype.emit = function (eventName, arg) {
-    if (this.events[eventName]) {
-      var self = this;
-      setTimeout(function () {
-        self.events[eventName].forEach(function (listener) {
-          if (Array.isArray(arg)) {
-            listener.apply(null, arg);
-          } else {
-            listener.call(null, arg);
-          }
-        });
-      }, 1);
-      return;
+  LokiEventEmitter.prototype.emit = function (eventName) {
+    var args = Array.prototype.slice.call(arguments, 0);
+    if (eventName && this.events[eventName]) {
+      args.splice(0, 1);
+      this.events[eventName].forEach(function (listener) {
+        setTimeout(function () {
+          listener.apply(null, args);
+        }, 1);
+      });
     } else {
       throw new Error('No event ' + eventName + ' defined');
     }
@@ -143,11 +139,11 @@ var loki = (function () {
     this.filteredrows = [];
     this.filterInitialized = false;
 
-    // if user supplied initial queryObj or queryFunc, apply it 
+    // if user supplied initial queryObj or queryFunc, apply it
     if (typeof (queryObj) !== "undefined" && queryObj !== null) return this.find(queryObj, firstOnly);
     if (typeof (queryFunc) !== "undefined" && queryFunc !== null) return this.where(queryFunc);
 
-    // otherwise return unfiltered Resultset for future filtering 
+    // otherwise return unfiltered Resultset for future filtering
     return this;
   }
 
@@ -159,7 +155,7 @@ var loki = (function () {
     var copy = this.copy();
     copy.collection = null;
     return copy;
-  }
+  };
 
   /**
    * limit() - Allows you to limit the number of documents passed to next chain operation.
@@ -179,7 +175,7 @@ var loki = (function () {
     rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
 
     return rscopy;
-  }
+  };
 
   /**
    * offset() - Used for skipping 'pos' number of documents in the resultset.
@@ -198,7 +194,7 @@ var loki = (function () {
     rscopy.filteredrows = rscopy.filteredrows.splice(pos);
 
     return rscopy;
-  }
+  };
 
   /**
    * copy() - To support reuse of resultset in branched query situations.
@@ -212,7 +208,7 @@ var loki = (function () {
     result.filterInitialized = this.filterInitialized;
 
     return result;
-  }
+  };
 
   // add branch() as alias of copy()
   Resultset.prototype.branch = Resultset.prototype.copy;
@@ -248,7 +244,7 @@ var loki = (function () {
     this.filteredrows.sort(wrappedComparer);
 
     return this;
-  }
+  };
 
   /**
    * simplesort() - Simpler, loose evaluation for user to sort based on a property name. (chainable)
@@ -286,7 +282,77 @@ var loki = (function () {
     this.filteredrows.sort(wrappedComparer);
 
     return this;
-  }
+  };
+
+  /**
+   * compoundeval() - helper method for compoundsort(), performing individual object comparisons
+   *
+   * @param {array} properties - array of property names, in order, by which to evaluate sort order
+   * @param {object} obj1 - first object to compare
+   * @param {object} obj2 - second object to compare
+   * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
+   */
+  Resultset.prototype.compoundeval = function (properties, obj1, obj2) {
+    var propertyCount = properties.length;
+
+    if (propertyCount === 0) {
+      throw new Error("Invalid call to compoundeval, need at least one property");
+    }
+
+    // decode property, whether just a string property name or subarray [propname, isdesc]
+    var isdesc = false;
+    var firstProp = properties[0];
+    if (typeof (firstProp) !== 'string') {
+      if (Array.isArray(firstProp)) {
+        isdesc = firstProp[1];
+        firstProp = firstProp[0];
+      }
+    }
+
+    if (obj1[firstProp] === obj2[firstProp]) {
+      if (propertyCount === 1) {
+        return 0;
+      } else {
+        return this.compoundeval(properties.slice(1), obj1, obj2, isdesc);
+      }
+    }
+
+    if (isdesc) {
+      return (obj1[firstProp] < obj2[firstProp]) ? 1 : -1;
+    } else {
+      return (obj1[firstProp] > obj2[firstProp]) ? 1 : -1;
+    }
+  };
+
+  /**
+   * compoundsort() - Allows sorting a resultset based on multiple columns.
+   *    Example : rs.compoundsort(['age', 'name']); to sort by age and then name (both ascending)
+   *    Example : rs.compoundsort(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
+   *
+   * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
+   * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+   */
+  Resultset.prototype.compoundsort = function (properties) {
+
+    // if this is chained resultset with no filters applied, just we need to populate filteredrows first
+    if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
+      this.filteredrows = Object.keys(this.collection.data);
+    }
+
+    var wrappedComparer =
+      (function (props, rslt) {
+        return function (a, b) {
+          var obj1 = rslt.collection.data[a];
+          var obj2 = rslt.collection.data[b];
+
+          return rslt.compoundeval(props, obj1, obj2);
+        }
+      })(properties, this);
+
+    this.filteredrows.sort(wrappedComparer);
+
+    return this;
+  };
 
   /**
    * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
@@ -306,6 +372,9 @@ var loki = (function () {
     var mid = null;
     var lbound = 0;
     var ubound = index.length - 1;
+
+    // when no documents are in collection, return empty range condition
+    if (rcd.length == 0) return [0, -1];
 
     var minVal = rcd[index[min]][prop];
     var maxVal = rcd[index[max]][prop];
@@ -389,7 +458,7 @@ var loki = (function () {
     default:
       return [0, rcd.length - 1];
     }
-  }
+  };
 
   /**
    * find() - Used for querying via a mongo-style query object.
@@ -429,6 +498,10 @@ var loki = (function () {
       return b.test(a);
     }
 
+    function $in(a, b) {
+      return b.indexOf(a) > -1;
+    }
+
     function $contains(a, b) {
       if (Array.isArray(a)) {
         return a.indexOf(b) !== -1;
@@ -458,6 +531,7 @@ var loki = (function () {
         '$lte': $lte,
         '$ne': $ne,
         '$regex': $regex,
+        '$in': $in,
         '$contains': $contains
       },
       searchByIndex = false,
@@ -515,7 +589,7 @@ var loki = (function () {
       }
     }
 
-    // for regex ops, precompile 
+    // for regex ops, precompile
     if (operator === '$regex') value = RegExp(value);
 
     if (this.collection.data === null) {
@@ -526,7 +600,7 @@ var loki = (function () {
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-      operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && this.collection.binaryIndices.hasOwnProperty(property)) {
+      operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -544,7 +618,7 @@ var loki = (function () {
     //    - whether it is chained or not
     //    - whether the property being queried has an index defined
     //    - if chained, we handle first pass differently for initial filteredrows[] population
-    // 
+    //
     // For performance reasons, each case has its own if block to minimize in-loop calculations
 
     // If not a chained query, bypass filteredrows and work directly against data
@@ -639,7 +713,7 @@ var loki = (function () {
         } else {
           // search by index
           t = index;
-          i = this.filteredrows.length; //t.length;
+          i = this.filteredrows.length;
           while (i--) {
             if (fun(t[this.filteredrows[i]], value)) {
               result.push(this.filteredrows[i]);
@@ -697,7 +771,7 @@ var loki = (function () {
       }
 
     }
-  }
+  };
 
 
   /**
@@ -765,7 +839,7 @@ var loki = (function () {
     } catch (err) {
       throw err;
     }
-  }
+  };
 
   /**
    * data() - Terminates the chain and returns array of filtered documents
@@ -796,7 +870,7 @@ var loki = (function () {
     }
 
     return result;
-  }
+  };
 
   /**
    * update() - used to run an update operation on all documents currently in the resultset.
@@ -827,7 +901,7 @@ var loki = (function () {
     }
 
     return this;
-  }
+  };
 
   /**
    * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
@@ -850,7 +924,7 @@ var loki = (function () {
     this.filteredrows = [];
 
     return this;
-  }
+  };
 
   /**
    * mapReduce() - data transformation via user supplied functions
@@ -899,7 +973,7 @@ var loki = (function () {
     // keep ordered filter pipeline
     this.filterPipeline = [];
 
-    // sorting member variables 
+    // sorting member variables
     // we only support one active search, applied using applySort() or applySimpleSort()
     this.sortFunction = null;
     this.sortColumn = null;
@@ -907,7 +981,17 @@ var loki = (function () {
     this.sortDirty = false;
 
     // may add map and reduce phases later
+
+    // for now just have 1 event for when we finally rebuilt lazy view
+    // once we refactor transactions, i will tie in certain transactional events
+
+    this.events = {
+      'rebuild': []
+    };
   }
+
+  DynamicView.prototype = new LokiEventEmitter;
+
 
   /**
    * rematerialize() - intended for use immediately after deserialization (loading)
@@ -922,6 +1006,8 @@ var loki = (function () {
     var fpl,
       fpi,
       idx;
+
+
 
     options = options || {};
 
@@ -962,8 +1048,13 @@ var loki = (function () {
     // during creation of unit tests, i will remove this forced refresh and leave lazy
     this.data();
 
+
+    // emit rebuild event in case user wants to be notified
+    this.emit('rebuild', this);
+
+
     return this;
-  }
+  };
 
   /**
    * branchResultset() - Makes a copy of the internal resultset for branched queries.
@@ -974,7 +1065,7 @@ var loki = (function () {
    */
   DynamicView.prototype.branchResultset = function () {
     return this.resultset.copy();
-  }
+  };
 
   /**
    * toJSON() - Override of toJSON to avoid circular references
@@ -996,7 +1087,7 @@ var loki = (function () {
     copy.collection = null;
 
     return copy;
-  }
+  };
 
   /**
    * applySort() - Used to apply a sort to the dynamic view
@@ -1014,7 +1105,7 @@ var loki = (function () {
     this.sortDirty = false;
 
     return this;
-  }
+  };
 
   /**
    * applySimpleSort() - Used to specify a property used for view translation.
@@ -1035,7 +1126,7 @@ var loki = (function () {
     this.sortDirty = false;
 
     return this;
-  }
+  };
 
   /**
    * startTransaction() - marks the beginning of a transaction.
@@ -1046,7 +1137,7 @@ var loki = (function () {
     this.cachedresultset = this.resultset.copy();
 
     return this;
-  }
+  };
 
   /**
    * commit() - commits a transaction.
@@ -1057,7 +1148,7 @@ var loki = (function () {
     this.cachedresultset = null;
 
     return this;
-  }
+  };
 
   /**
    * rollback() - rolls back a transaction.
@@ -1072,10 +1163,12 @@ var loki = (function () {
       // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
       // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
       this.resultdata = this.resultset.data();
+
+      this.emit('rebuild', this);
     }
 
     return this;
-  }
+  };
 
   /**
    * applyFind() - Adds a mongo-style query option to the DynamicView filter pipeline
@@ -1101,7 +1194,7 @@ var loki = (function () {
     }
 
     return this;
-  }
+  };
 
   /**
    * applyWhere() - Adds a javascript filter function to the DynamicView filter pipeline
@@ -1122,7 +1215,7 @@ var loki = (function () {
     if (this.persistent) this.resultsdirty = true;
 
     return this;
-  }
+  };
 
   /**
    * data() - resolves and pending filtering and sorting, then returns document array as result.
@@ -1145,6 +1238,14 @@ var loki = (function () {
 
     // if nonpersistent return resultset data evaluation
     if (!this.persistent) {
+      // not sure if this emit will be useful, but if view is non-persistent 
+      // we will raise event only if resulset has yet to be initialized.
+      // user can intercept via dynView.on('rebuild', myCallback);
+      // emit is async wait 1 ms so our data() call should exec before event fired
+      if (!this.resultset.filterInitialized) {
+        this.emit('rebuild', this);
+      }
+
       return this.resultset.data();
     }
 
@@ -1152,10 +1253,13 @@ var loki = (function () {
     if (this.resultsdirty) {
       this.resultdata = this.resultset.data();
       this.resultsdirty = false;
+
+      // user can intercept via dynView.on('rebuild', myCallback);
+      this.emit('rebuild', this);
     }
 
     return this.resultdata;
-  }
+  };
 
   /**
    * evaluateDocument() - internal method for (re)evaluating document inclusion.
@@ -1234,7 +1338,7 @@ var loki = (function () {
 
       return;
     }
-  }
+  };
 
   /**
    * removeDocument() - internal function called on collection.delete()
@@ -1259,7 +1363,7 @@ var loki = (function () {
         this.resultdata.length = oldlen - 1;
       }
     }
-  }
+  };
 
   /**
    * mapReduce() - data transformation via user supplied functions
@@ -1294,6 +1398,7 @@ var loki = (function () {
    */
   function Collection(name, indices, options) {
     // the name of the collection 
+
     this.name = name;
     // the data held by the collection
     this.data = [];
@@ -1307,26 +1412,27 @@ var loki = (function () {
 
     /** Transactions properties */
     // is collection transactional
-    this.transactional = options.transactional || false;
+    this.transactional = options ? options.transactional : false;
     // private holders for cached data
     this.cachedIndex = null;
     this.cachedBinaryIndex = null;
     this.cachedData = null;
-    this.cloneObjects = options.clone || false;
+    this.cloneObjects = options ? options.clone : false;
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
     // view container is an object because each views gets a name
 
     this.DynamicViews = [];
 
-    // events 
+    // events
     this.events = {
       'insert': [],
       'update': [],
       'close': [],
       'flushbuffer': [],
       'error': [],
-      'delete': []
+      'delete': [],
+      'warning': []
     };
 
     // initialize the id index
@@ -1338,6 +1444,7 @@ var loki = (function () {
         this.ensureBinaryIndex(indices[idx]);
       };
     }
+
     this.on('insert', function (obj) {
       //console.log('Passed to on-insert', obj);
       setTimeout(function () {
@@ -1348,15 +1455,24 @@ var loki = (function () {
 
       }, 1);
     });
+
     this.on('update', function (obj) {
       setTimeout(function () {
         obj.meta.updated = (new Date()).getTime();
         obj.meta.revision += 1;
       }, 1);
     });
+
+    this.on('warning', function (obj) {
+      setTimeout(function () {
+        console.warn(obj);
+      }, 1);
+    });
+
   }
 
   Collection.prototype = new LokiEventEmitter;
+
 
   Loki.prototype.generateChangesNotification = function () {
 
@@ -1369,8 +1485,24 @@ var loki = (function () {
     return changesArray;
   };
 
-  Loki.prototype.addCollection = function (name, indexesArray, transactional) {
-    var collection = new Collection(name, indexesArray, transactional);
+  /**
+   * anonym() - shorthand method for quickly creating and populating an anonymous collection.
+   *    This collection is not referenced internally so upon losing scope it will be garbage collected.
+   *
+   *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
+   *
+   * @param {Array} docs - document array to initialize the anonymous collection with
+   * @param {Array} indexesArray - (Optional) array of property names to index
+   * @returns {Collection} New collection which you can query or chain
+   */
+  Loki.prototype.anonym = function (docs, indexesArray) {
+    var collection = new Collection('anonym', indexesArray);
+    collection.insert(docs);
+    return collection;
+  }
+
+  Loki.prototype.addCollection = function (name, indexesArray, options) {
+    var collection = new Collection(name, indexesArray, options);
     this.collections.push(collection);
     collection.db = this;
     return collection;
@@ -1381,19 +1513,18 @@ var loki = (function () {
   };
 
   Loki.prototype.getCollection = function (collectionName) {
-    var found = false,
-      len = this.collections.length,
-      i;
+    var i,
+      len = this.collections.length;
 
     for (i = 0; i < len; i += 1) {
       if (this.collections[i].name === collectionName) {
-        found = true;
         return this.collections[i];
       }
     }
-    if (!found) {
-      throw 'No such collection';
-    }
+
+    // no such collection
+    this.emit('warning', 'collection ' + name + ' not found');
+    return null;
   };
 
   Loki.prototype.listCollections = function () {
@@ -1411,15 +1542,17 @@ var loki = (function () {
     return colls;
   };
 
-  Loki.prototype.removeCollection = function (name) {
-    var i = 0,
+  Loki.prototype.removeCollection = function (collectionName) {
+    var i,
       len = this.collections.length;
-    for (i; i < len; i += 1) {
-      if (this.collections[i].name === name) {
+
+    for (i = 0; i < len; i += 1) {
+      if (this.collections[i].name === collectionName) {
         this.collections.splice(i, 1);
-        break;
+        return;
       }
     }
+    throw 'No such collection';
   };
 
   Loki.prototype.getName = function () {
@@ -1451,7 +1584,7 @@ var loki = (function () {
       coll = obj.collections[i];
       copyColl = this.addCollection(coll.name);
 
-      // load each element individually 
+      // load each element individually
       clen = coll.data.length;
       j = 0;
       if (options && options.hasOwnProperty(coll.name)) {
@@ -1507,8 +1640,11 @@ var loki = (function () {
   };
 
   // load db from a file
-  Loki.prototype.loadDatabase = function (callback, options) {
-    var cFun = callback || function () {
+  Loki.prototype.loadDatabase = function (options, callback) {
+    var cFun = callback || function (err, data) {
+        if (err) {
+          throw err;
+        }
         return;
       },
       self = this;
@@ -1518,44 +1654,55 @@ var loki = (function () {
         encoding: 'utf8'
       }, function (err, data) {
         if (err) {
-          throw err;
+          return cFun(err, null);
         }
         self.loadJSON(data, options || {});
-        cFun(data);
+        cFun(null, data);
       });
     } else if (this.ENV === 'BROWSER') {
       if (localStorageAvailable()) {
         self.loadJSON(localStorage.getItem(this.filename));
-        cFun(data);
+        cFun(null, data);
+      } else {
+        cFun(new Error('localStorage is not available'));
       }
+    } else {
+      cFun(new Error('unknown environment'));
     }
   };
 
   // save file to disk as json
   Loki.prototype.saveToDisk = function (callback) {
-    var cFun = callback || function () {
+    var cFun = callback || function (err) {
+        if (err) {
+          throw err;
+        }
         return;
       },
       self = this;
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
       this.fs.exists(this.filename, function (exists) {
-
         if (exists) {
-          self.fs.unlink(self.filename);
+          self.fs.unlink(self.filename, function (err) {
+            if (err) {
+              return cFun(err);
+            }
+            self.fs.writeFile(self.filename, self.serialize(), cFun);
+          });
+        } else {
+          self.fs.writeFile(self.filename, self.serialize(), cFun);
         }
-
-        self.fs.writeFile(self.filename, self.serialize(), function (err) {
-          if (err) {
-            throw err;
-          }
-          cFun();
-        });
       });
     } else if (this.ENV === 'BROWSER') {
       if (localStorageAvailable()) {
         localStorage.setItem(self.filename, self.serialize());
+        cFun(null);
+      } else {
+        cFun(new Error('localStorage is not available'));
       }
+    } else {
+      cFun(new Error('unknown environment'));
     }
   };
   // alias
@@ -1635,7 +1782,7 @@ var loki = (function () {
     while (i--) {
       this.binaryIndices[objKeys[i]].dirty = true;
     }
-  }
+  };
 
   /**
    * Rebuild idIndex
@@ -1669,7 +1816,7 @@ var loki = (function () {
     this.DynamicViews.push(dv);
 
     return dv;
-  }
+  };
 
   Collection.prototype.removeDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1677,7 +1824,7 @@ var loki = (function () {
         this.DynamicViews.splice(idx, 1);
       }
     }
-  }
+  };
 
   Collection.prototype.getDynamicView = function (name) {
     for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -1685,7 +1832,7 @@ var loki = (function () {
         return this.DynamicViews[idx];
       }
     }
-  }
+  };
 
   /**
    * find and update: pass a filtering function to select elements to be updated
@@ -1766,7 +1913,6 @@ var loki = (function () {
       });
       return obj;
     }
-
   };
 
   Collection.prototype.clear = function () {
@@ -1991,7 +2137,6 @@ var loki = (function () {
       return this.data[min];
     }
     return null;
-
   };
 
   /**
@@ -2087,7 +2232,7 @@ var loki = (function () {
     }
   };
 
-  // async executor. This is only to enable callbacks at the end of the execution. 
+  // async executor. This is only to enable callbacks at the end of the execution.
   Collection.prototype.async = function (fun, callback) {
     setTimeout(function () {
       if (typeof fun === 'function') {

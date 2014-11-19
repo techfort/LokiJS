@@ -35,7 +35,7 @@ var loki = (function () {
   function LokiEventEmitter() {}
 
   LokiEventEmitter.prototype.events = {};
-
+  LokiEventEmitter.prototype.asyncListeners = false;
   LokiEventEmitter.prototype.on = function (eventName, listener) {
     var event = this.events[eventName];
     if (!event) {
@@ -44,14 +44,28 @@ var loki = (function () {
     return event.push(listener) - 1;
   };
 
+  function applyListener(listener, args) {
+    listener.apply(null, args);
+  }
+
   LokiEventEmitter.prototype.emit = function (eventName) {
-    var args = Array.prototype.slice.call(arguments, 0);
+    var args = Array.prototype.slice.call(arguments, 0),
+      self = this;
     if (eventName && this.events[eventName]) {
       args.splice(0, 1);
       this.events[eventName].forEach(function (listener) {
-        setTimeout(function () {
-          listener.apply(null, args);
-        }, 1);
+
+
+        if (self.asyncListeners) {
+          console.log('Applying listener async');
+          setTimeout(function () {
+            applyListener(listener, args);
+          }, 1);
+        } else {
+          console.log('Applying listener sync');
+          applyListener(listener, args);
+        }
+
       });
     } else {
       throw new Error('No event ' + eventName + ' defined');
@@ -1409,18 +1423,23 @@ var loki = (function () {
 
     // this enables changes  notifications
     this.db = null;
-
-    /** Transactions properties */
-    // is collection transactional
-    this.transactional = options ? options.transactional : false;
     // private holders for cached data
     this.cachedIndex = null;
     this.cachedBinaryIndex = null;
     this.cachedData = null;
+
+    /* OPTIONS */
+    // is collection transactional
+    this.transactional = options ? options.transactional : false;
+
+    // options to clone objects when inserting them
     this.cloneObjects = options ? options.clone : false;
+
+    // option to make event listeners async, default is sync
+    this.asyncListeners = options ? options.asyncListeners : false;
+
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
-    // view container is an object because each views gets a name
 
     this.DynamicViews = [];
 
@@ -1439,12 +1458,12 @@ var loki = (function () {
     this.ensureIndex();
 
     // initialize optional user-supplied indices array ['age', 'lname', 'zip']
-    if (typeof (indices) !== 'undefined') {
-      for (var idx = 0; idx < indices.length; idx++) {
-        this.ensureBinaryIndex(indices[idx]);
-      };
-    }
-
+    //if (typeof (indices) !== 'undefined') {
+    indices = indices || [];
+    
+    for (var idx = 0; idx < indices.length; idx++) {
+      this.ensureBinaryIndex(indices[idx]);
+    };
     this.on('insert', function (obj) {
       //console.log('Passed to on-insert', obj);
       setTimeout(function () {
@@ -1608,8 +1627,12 @@ var loki = (function () {
       copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
       copyColl.idIndex = coll.idIndex;
       // if saved in previous format recover id index out of it
-      if (typeof (coll.indices) !== 'undefined') copyColl.idIndex = coll.indices.id;
-      if (typeof (coll.binaryIndices) !== 'undefined') copyColl.binaryIndices = coll.binaryIndices;
+      if (typeof (coll.indices) !== 'undefined') {
+        copyColl.idIndex = coll.indices.id;
+      }
+      if (typeof (coll.binaryIndices) !== 'undefined') {
+        copyColl.binaryIndices = coll.binaryIndices;
+      }
       copyColl.transactional = coll.transactional;
       copyColl.ensureIndex();
 

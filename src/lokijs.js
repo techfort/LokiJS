@@ -1822,34 +1822,50 @@ var loki = (function () {
    * Come to think of it, really unfortunate name because of what document normally refers to in js.
    * that's why there's an alias below but until I have this implemented
    */
-  Collection.prototype.insert = function (doc) {
+  Collection.prototype.insert = function (doc, isClone) {
     var self = this;
-
-    if (Array.isArray(doc)) {
-      doc.forEach(function (d) {
-        d.objType = self.objType;
-        if (typeof d.meta === 'undefined') d.meta = {};
-
-        self.add(d);
-        self.emit('insert', d);
-      });
-      return doc;
-    } else {
-      if (typeof doc !== 'object') {
-        throw new TypeError('Document needs to be an object');
-        return;
-      }
-      if (!doc) {
-        var error = new Error('Object cannot be null');
-        this.emit('error', error);
-        throw error;
-      }
-      doc.objType = this.objType;
-      if (typeof doc.meta === 'undefined') doc.meta = {};
-      this.add(doc);
-      this.emit('insert', doc);
-      return doc;
+    if(isClone === undefined || isClone === null) {
+      isClone = true;
     }
+
+    if (typeof doc !== 'object') {
+      throw new TypeError('Document needs to be an object');
+    }
+    if (!doc) {
+      var error = new Error('Object cannot be null');
+      this.emit('error', error);
+      throw error;
+    }
+    doc = isClone ? clone(doc) : doc;
+    doc.objType = this.objType;
+    if (typeof doc.meta === 'undefined') doc.meta = {};
+    this.add(doc);
+    this.emit('insert', doc);
+    return doc;
+  };
+
+  /**
+   * pass an array to insert every item into database
+   */
+  Collection.prototype.bulkInsert = function (array, isClone) {
+    var self = this;
+    if(isClone === undefined || isClone === null) {
+      isClone = true;
+    }
+
+    if(!Array.isArray(array)) {
+      throw new TypeError('Document needs to be an array');
+    }
+
+    array.forEach(function (d) {
+      d = isClone ? clone(d) : d;
+      d.objType = self.objType;
+      if (typeof d.meta === 'undefined') d.meta = {};
+
+      self.add(d);
+      self.emit('insert', d);
+    });
+    return array;
   };
 
   Collection.prototype.clear = function () {

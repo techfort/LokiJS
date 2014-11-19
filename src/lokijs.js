@@ -1801,11 +1801,15 @@ var loki = (function () {
    * Come to think of it, really unfortunate name because of what document normally refers to in js.
    * that's why there's an alias below but until I have this implemented
    */
-  Collection.prototype.insert = function (doc) {
+  Collection.prototype.insert = function (doc, isClone) {
     var self = this;
+    if(isClone === undefined || isClone === null) {
+      isClone = true;
+    }
 
     if (Array.isArray(doc)) {
       doc.forEach(function (d) {
+        d = isClone ? clone(d) : d;
         d.objType = self.objType;
         if (typeof d.meta === 'undefined') d.meta = {};
 
@@ -1823,6 +1827,7 @@ var loki = (function () {
         this.emit('error', error);
         throw error;
       }
+      doc = isClone ? clone(doc) : doc;
       doc.objType = this.objType;
       if (typeof doc.meta === 'undefined') doc.meta = {};
       this.add(doc);

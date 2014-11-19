@@ -20,19 +20,22 @@
     "lokijs",
     "in-memory"
   ],
+  "scripts": {
+    "test": "make test && istanbul cover tests/"
+  },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [
-    {
-      "name": "Dave",
-      "email": "admin@obeliskos.com"
-    }
-  ],
+  "contributors": [{
+    "name": "Dave",
+    "email": "admin@obeliskos.com"
+  }],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
   "dependencies": {
-    "gordian": "0.0.7"
+    "gordian": "0.0.7",
+    "istanbul": "^0.3.2",
+    "mocha": "^2.0.1"
   },
   "devDependencies": {
     "gulp": "^3.8.10",

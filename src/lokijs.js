@@ -86,7 +86,8 @@ var loki = (function () {
     this.changes = [];
     this.events = {
       'close': [],
-      'changes': []
+      'changes': [],
+      'warning': []
     };
     var self = this;
 
@@ -111,12 +112,11 @@ var loki = (function () {
     }
 
     this.on('changes', function (change) {
-      setTimeout(function () {
-        self.changes.push(change);
-      }, 1);
+      self.changes.push(change);
     });
 
   }
+
 
   Loki.prototype = new LokiEventEmitter;
   Loki.prototype.close = function (callback) {
@@ -124,6 +124,17 @@ var loki = (function () {
       this.on('close', callback);
     }
     this.emit('close');
+  };
+
+  Loki.prototype.generateChangesNotification = function () {
+
+    var self = this,
+      changesArray = [];
+
+    self.changes.forEach(function (i) {
+      changesArray.push(i.obj);
+    });
+    return changesArray;
   };
 
   /**
@@ -1490,18 +1501,6 @@ var loki = (function () {
 
   Collection.prototype = new LokiEventEmitter;
 
-
-  Loki.prototype.generateChangesNotification = function () {
-
-    var self = this,
-      changesArray = [];
-
-    self.changes.forEach(function (i) {
-      changesArray.push(self.collections[i.collection].get(i.id));
-    });
-    return changesArray;
-  };
-
   /**
    * anonym() - shorthand method for quickly creating and populating an anonymous collection.
    *    This collection is not referenced internally so upon losing scope it will be garbage collected.
@@ -1540,7 +1539,7 @@ var loki = (function () {
     }
 
     // no such collection
-    this.emit('warning', 'collection ' + name + ' not found');
+    this.emit('warning', 'collection ' + collectionName + ' not found');
     return null;
   };
 
@@ -1902,7 +1901,7 @@ var loki = (function () {
         self.emit('insert', obj);
         self.db.emit('changes', {
           collection: self.name,
-          id: obj.id
+          obj: obj
         });
       });
       return obj;
@@ -1930,7 +1929,7 @@ var loki = (function () {
       self.emit('insert', obj);
       self.db.emit('changes', {
         collection: self.name,
-        id: obj.id
+        obj: obj
       });
       return obj;
     }

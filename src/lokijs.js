@@ -490,6 +490,10 @@ var loki = (function () {
       return b.test(a);
     }
 
+    function $in(a, b) {
+      return b.indexOf(a) > -1;
+    }
+    
     function $contains(a, b) {
       if (Array.isArray(a)) {
         return a.indexOf(b) !== -1;
@@ -519,6 +523,7 @@ var loki = (function () {
         '$lte': $lte,
         '$ne': $ne,
         '$regex': $regex,
+        '$in': $in,
         '$contains': $contains
       },
       searchByIndex = false,
@@ -587,7 +592,7 @@ var loki = (function () {
     // for now only enabling for non-chained query (who's set of docs matches index)
     // or chained queries where it is the first filter applied and prop is indexed
     if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-      operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && this.collection.binaryIndices.hasOwnProperty(property)) {
+      operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
       // this is where our lazy index rebuilding will take place
       // basically we will leave all indexes dirty until we need them
       // so here we will rebuild only the index tied to this property
@@ -700,7 +705,7 @@ var loki = (function () {
         } else {
           // search by index
           t = index;
-          i = this.filteredrows.length; //t.length;
+          i = this.filteredrows.length;
           while (i--) {
             if (fun(t[this.filteredrows[i]], value)) {
               result.push(this.filteredrows[i]);
@@ -1445,6 +1450,22 @@ var loki = (function () {
 
   Collection.prototype = new LokiEventEmitter;
 
+  /**
+   * anonym() - shorthand method for quickly creating and populating an anonymous collection.
+   *    This collection is not referenced internally so upon losing scope it will be garbage collected. 
+   *
+   *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
+   *
+   * @param {Array} docs - document array to initialize the anonymous collection with
+   * @param {Array} indexesArray - (Optional) array of property names to index
+   * @returns {Collection} New collection which you can query or chain
+   */
+  Loki.prototype.anonym = function (docs, indexesArray) {
+    var collection = new Collection(name, indexesArray);
+    collection.insert(docs);
+    return collection;
+  }
+  
   Loki.prototype.addCollection = function (name, indexesArray, transactional) {
     var collection = new Collection(name, indexesArray, transactional);
     this.collections.push(collection);

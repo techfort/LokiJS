@@ -85,6 +85,8 @@ var loki = (function () {
     this.collections = [];
     this.changes = [];
     this.events = {
+      'init': [],
+      'flushChanges': [],
       'close': [],
       'changes': [],
       'warning': []
@@ -114,7 +116,7 @@ var loki = (function () {
     this.on('changes', function (change) {
       self.changes.push(change);
     });
-
+    this.on('init', this.clearChanges);
   }
 
 
@@ -127,14 +129,11 @@ var loki = (function () {
   };
 
   Loki.prototype.generateChangesNotification = function () {
+    return JSON.stringify(this.changes);
+  };
 
-    var self = this,
-      changesArray = [];
-
-    self.changes.forEach(function (i) {
-      changesArray.push(i.obj);
-    });
-    return changesArray;
+  Loki.prototype.clearChanges = function () {
+    this.changes = [];
   };
 
   /**
@@ -1900,6 +1899,7 @@ var loki = (function () {
         self.add(obj);
         self.emit('insert', obj);
         self.db.emit('changes', {
+          operation: 'I',
           collection: self.name,
           obj: obj
         });
@@ -1928,6 +1928,7 @@ var loki = (function () {
       self.add(obj);
       self.emit('insert', obj);
       self.db.emit('changes', {
+        operation: 'I',
         collection: self.name,
         obj: obj
       });
@@ -1995,6 +1996,12 @@ var loki = (function () {
 
       this.commit();
       this.emit('update', doc);
+      var self = this;
+      this.db.emit('changes', {
+        operation: 'U',
+        obj: doc,
+        collection: self.name
+      });
     } catch (err) {
       this.rollback();
       console.error(err.message);
@@ -2070,6 +2077,7 @@ var loki = (function () {
    * delete wrapped
    */
   Collection.prototype.remove = function (doc) {
+    var self = this;
     if ('object' !== typeof doc) {
       throw 'Parameter is not an object';
     }
@@ -2110,6 +2118,11 @@ var loki = (function () {
 
       this.commit();
       this.emit('delete');
+      this.db.emit('changes', {
+        operation: 'R',
+        obj: doc,
+        collection: self.name
+      });
     } catch (err) {
       this.rollback();
       console.error(err.message);

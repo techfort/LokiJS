@@ -83,7 +83,7 @@ var loki = (function () {
   function Loki(filename) {
     this.filename = filename || 'loki.db';
     this.collections = [];
-    this.changes = [];
+
     this.events = {
       'init': [],
       'flushChanges': [],
@@ -117,6 +117,7 @@ var loki = (function () {
       self.changes.push(change);
     });
     this.on('init', this.clearChanges);
+    this.changes = [];
   }
 
 
@@ -162,8 +163,12 @@ var loki = (function () {
     this.filterInitialized = false;
 
     // if user supplied initial queryObj or queryFunc, apply it
-    if (typeof (queryObj) !== "undefined" && queryObj !== null) return this.find(queryObj, firstOnly);
-    if (typeof (queryFunc) !== "undefined" && queryFunc !== null) return this.where(queryFunc);
+    if (typeof (queryObj) !== "undefined" && queryObj !== null) {
+      return this.find(queryObj, firstOnly);
+    }
+    if (typeof (queryFunc) !== "undefined" && queryFunc !== null) {
+      return this.where(queryFunc);
+    }
 
     // otherwise return unfiltered Resultset for future filtering
     return this;

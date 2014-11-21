@@ -117,7 +117,7 @@ var loki = (function () {
       self.changes.push(change);
     });
     this.on('init', this.clearChanges);
-    this.changes = [];
+
   }
 
 
@@ -130,11 +130,19 @@ var loki = (function () {
   };
 
   Loki.prototype.generateChangesNotification = function () {
-    return JSON.stringify(this.changes);
+    var changes = [];
+    this.collections.forEach(function (coll) {
+      changes = changes.concat(coll.getChanges());
+    });
+    return JSON.stringify(changes);
   };
 
   Loki.prototype.clearChanges = function () {
-    this.changes = [];
+    this.collections.forEach(function (coll) {
+      if (coll.flushChanges) {
+        coll.flushChanges();
+      }
+    })
   };
 
   /**
@@ -1434,13 +1442,11 @@ var loki = (function () {
     // the object type of the collection
     this.objType = name;
 
-    // this enables changes  notifications
-    this.db = null;
     // private holders for cached data
     this.cachedIndex = null;
     this.cachedBinaryIndex = null;
     this.cachedData = null;
-
+    var self = this;
     /* OPTIONS */
     // is collection transactional
     this.transactional = options ? options.transactional : false;
@@ -1467,6 +1473,9 @@ var loki = (function () {
       'warning': []
     };
 
+    // changes are tracked by collection and aggregated by the db
+    var changes = [];
+
     // initialize the id index
     this.ensureId();
     var indices;
@@ -1486,21 +1495,42 @@ var loki = (function () {
       this.ensureIndex(indices[idx]);
     };
 
-    this.on('insert', function (obj) {
+    function createChange(name, op, obj) {
+      changes.push({
+        name: name,
+        operation: op,
+        obj: obj
+      });
+    }
 
+    function flushChanges() {
+      changes = [];
+    };
+
+    this.getChanges = function () {
+      return changes;
+    };
+
+    this.flushChanges = flushChanges;
+
+    this.on('insert', function (obj) {
       obj.meta.created = (new Date()).getTime();
       obj.meta.revision = 0;
+      createChange(self.name, 'I', obj);
     });
 
     this.on('update', function (obj) {
-
       obj.meta.updated = (new Date()).getTime();
       obj.meta.revision += 1;
-
+      createChange(self.name, 'U', obj);
+    });
+    this.on('delete', function (obj) {
+      createChange(self.name, 'R', obj);
     });
 
     this.on('warning', console.warn);
-
+    // for de-serialization purposes
+    flushChanges();
   }
 
   Collection.prototype = new LokiEventEmitter;
@@ -1524,7 +1554,7 @@ var loki = (function () {
   Loki.prototype.addCollection = function (name, indexesArray, options) {
     var collection = new Collection(name, indexesArray, options);
     this.collections.push(collection);
-    collection.db = this;
+
     return collection;
   };
 
@@ -1903,11 +1933,7 @@ var loki = (function () {
         }
         self.add(obj);
         self.emit('insert', obj);
-        self.db.emit('changes', {
-          operation: 'I',
-          collection: self.name,
-          obj: obj
-        });
+
       });
       return obj;
     } else {
@@ -1932,11 +1958,7 @@ var loki = (function () {
       }
       self.add(obj);
       self.emit('insert', obj);
-      self.db.emit('changes', {
-        operation: 'I',
-        collection: self.name,
-        obj: obj
-      });
+
       return obj;
     }
   };

@@ -1,6 +1,8 @@
 var loki = require('../src/lokijs.js'),
 	db,
-	users;
+	users,
+	gordian = require('gordian'),
+	suite = new gordian('testTyped');
 
 db = new loki('test.json');
 
@@ -23,7 +25,7 @@ var json = {
 				"created": 1415467401386,
 				"revision": 0
 			},
-			"id": 1
+			"$loki": 1
 		}, {
 			"name": "jack",
 			"objType": "users",
@@ -32,7 +34,7 @@ var json = {
 				"created": 1415467401388,
 				"revision": 0
 			},
-			"id": 2
+			"$loki": 2
 		}],
 		"idIndex": [1, 2],
 		"binaryIndices": {},
@@ -66,4 +68,5 @@ db.loadJSON(JSON.stringify(json), {
 });
 
 users = db.getCollection('users');
-console.log(users.get(1) instanceof User);
+suite.assertEqual('Inflated object prototype', users.get(1) instanceof User, true);
+suite.report();

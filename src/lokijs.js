@@ -1818,7 +1818,7 @@ var loki = (function () {
 
     this.idIndex = [];
     for (i; i < len; i += 1) {
-      this.idIndex.push(this.data[i].id);
+      this.idIndex.push(this.data[i].$loki);
     }
   };
 
@@ -1970,12 +1970,12 @@ var loki = (function () {
     }
 
     // verify object is a properly formed document
-    if (!doc.hasOwnProperty('id')) {
+    if (!doc.hasOwnProperty('$loki')) {
       throw 'Trying to update unsynced document. Please save the document first by using insert() or addMany()';
     }
     try {
       this.startTransaction();
-      var i, arr = this.get(doc.id, true),
+      var i, arr = this.get(doc.$loki, true),
         obj,
         position;
 
@@ -1997,7 +1997,7 @@ var loki = (function () {
         this.DynamicViews[idx].evaluateDocument(position);
       }
 
-      this.idIndex[position] = obj.id;
+      this.idIndex[position] = obj.$loki;
 
       this.commit();
       this.emit('update', doc);
@@ -2037,13 +2037,8 @@ var loki = (function () {
     // if object you are adding already has id column it is either already in the collection
     // or the object is carrying its own 'id' property.  If it also has a meta property,
     // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
-    if (typeof (obj.id) !== "undefined") {
-      if (typeof (obj.meta.version) === "undefined") {
-        obj.originalId = obj.id;
-        delete obj.id;
-      } else {
-        throw 'Document is already in collection, please use update()';
-      }
+    if (typeof (obj.$loki) !== "undefined") {
+      throw 'Document is already in collection, please use update()';
     }
 
     try {
@@ -2052,10 +2047,10 @@ var loki = (function () {
       var i;
 
       if (isNaN(this.maxId)) {
-        this.maxId = (this.data[this.data.length - 1].id + 1);
+        this.maxId = (this.data[this.data.length - 1].$loki + 1);
       }
 
-      obj.id = this.maxId;
+      obj.$loki = this.maxId;
       obj.meta.version = 0;
 
       // add the object
@@ -2068,7 +2063,7 @@ var loki = (function () {
       }
 
       // add new obj id to idIndex
-      this.idIndex.push(obj.id);
+      this.idIndex.push(obj.$loki);
 
       this.commit();
       return obj;
@@ -2095,7 +2090,7 @@ var loki = (function () {
       return;
     }
 
-    if (!doc.hasOwnProperty('id')) {
+    if (!doc.hasOwnProperty('$loki')) {
       throw 'Object is not a document stored in the collection';
     }
 
@@ -2105,7 +2100,7 @@ var loki = (function () {
 
     try {
       this.startTransaction();
-      var arr = this.get(doc.id, true),
+      var arr = this.get(doc.$loki, true),
         // obj = arr[0],
         position = arr[1],
         i;

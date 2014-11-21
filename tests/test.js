@@ -6,8 +6,8 @@ var gordian = require('gordian'),
   users;
 
 function docCompare(a, b) {
-  if (a.id < b.id) return -1;
-  if (a.id > b.id) return 1;
+  if (a.$loki < b.$loki) return -1;
+  if (a.$loki > b.$loki) return 1;
 
   return 0;
 }
@@ -74,7 +74,6 @@ function testCoreMethods() {
   suite.assertStrictEqual('insert existing document caught', wasAdded, false);
 
   // our collections are not strongly typed so lets invent some object that has its 'own' id column
-  // and make sure it renames that old id column to 'originalId'
   var legacyObject = {
     id: 999,
     first: 'aaa',
@@ -95,8 +94,6 @@ function testCoreMethods() {
 
   // remove object so later queries access valid properties on all objects
   if (wasAdded) {
-    var hasOID = (typeof (legacyObject.originalId) !== 'undefined');
-    suite.assertStrictEqual('insert legacy document has originalId property', hasOID, true);
     users.remove(legacyObject); // the object itself should have been modified
   }
 
@@ -422,7 +419,12 @@ function stepEvaluateDocument() {
   suite.assertStrictEqual("evalDoc4", view.data().length, users.data.length);
 
   // assert set equality of docArrays irrelevant of sort/sequence
-  suite.assertEqual('Result data Equality', users.find(query).sort(docCompare), view.data().sort(docCompare));
+  var result1 = users.find(query).sort(docCompare);
+  var result2 = view.data().sort(docCompare);
+  result1.forEach(function(obj) { delete obj.meta } );
+  result2.forEach(function(obj) { delete obj.meta } );
+  
+  suite.assertEqual('Result data Equality', result1, result2);
 
   suite.assertNotStrictEqual('Strict Equality', users.find(query), view.data());
   suite.assertEqual('View data equality', view.resultset, view.resultset.copy());

@@ -1,4 +1,5 @@
 # LokiJS
+![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=v1.1-experimental)
 
 ## Overview
 

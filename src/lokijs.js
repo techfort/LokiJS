@@ -2023,12 +2023,7 @@ var loki = (function () {
 
       this.commit();
       this.emit('update', doc);
-      var self = this;
-      this.db.emit('changes', {
-        operation: 'U',
-        obj: doc,
-        collection: self.name
-      });
+
     } catch (err) {
       this.rollback();
       console.error(err.message);
@@ -2140,11 +2135,7 @@ var loki = (function () {
 
       this.commit();
       this.emit('delete');
-      this.db.emit('changes', {
-        operation: 'R',
-        obj: doc,
-        collection: self.name
-      });
+
     } catch (err) {
       this.rollback();
       console.error(err.message);

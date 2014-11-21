@@ -9,7 +9,6 @@ var loki = require('../src/lokijs.js'),
 users.insert({
 	name: 'joe'
 });
-console.log(db.generateChangesNotification());
 
 function testAsync() {
 	suite.assertEqual('DB events async', db.asyncListeners, false);

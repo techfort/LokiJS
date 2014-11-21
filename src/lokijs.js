@@ -129,12 +129,23 @@ var loki = (function () {
     this.emit('close');
   };
 
-  Loki.prototype.generateChangesNotification = function () {
-    var changes = [];
+  Loki.prototype.generateChangesNotification = function (arrayOfCollectionNames) {
+    function getCollName(coll) {
+      return coll.name;
+    }
+    var changes = [],
+      selectedCollections = arrayOfCollectionNames || this.collections.map(getCollName);
+    console.log(selectedCollections.join(', '));
     this.collections.forEach(function (coll) {
-      changes = changes.concat(coll.getChanges());
+      if (selectedCollections.indexOf(getCollName(coll)) !== -1) {
+        changes = changes.concat(coll.getChanges());
+      }
     });
-    return JSON.stringify(changes);
+    return changes;
+  };
+
+  Loki.prototype.serializeChanges = function (collectionNamesArray) {
+    return JSON.stringify(this.generateChangesNotification(collectionNamesArray));
   };
 
   Loki.prototype.clearChanges = function () {

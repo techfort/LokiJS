@@ -29,7 +29,16 @@ function initializeDB() {
 	var totalTimes = [];
 	var totalMS = 0.0;
 
-	samplecoll = db.addCollection('samplecoll');
+	samplecoll = db.addCollection('samplecoll');  
+  /*
+    {
+      asyncListeners: true,
+      disableChangesApi: true,
+      transactional: false,
+      clone: false 
+    }
+  ); 
+  */
     
 	for (var idx=0; idx < arraySize; idx++) {
    	var v1 = genRandomVal();
@@ -70,7 +79,16 @@ function initializeWithEval() {
 	var totalTimes = [];
 	var totalMS = 0.0;
 
-	var coll = dbTest.addCollection('samplecoll', ['customId']);
+	var coll = dbTest.addCollection('samplecoll', 
+    {
+      indices: ['customId'],
+      asyncListeners: false,
+      disableChangesApi: true,
+      transactional: false,
+      clone: false
+    }
+  );
+  
   var dv = coll.addDynamicView('test');
   dv.applyFind({'customId': {'$lt': arraySize/4 }});
     
@@ -230,7 +248,7 @@ function testperfDV(multiplier) {
 }
 
 initializeDB();
-initializeWithEval();
+//initializeWithEval();
 
 testperfGet();	// get bechmark on id field
 

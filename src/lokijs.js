@@ -1519,17 +1519,19 @@ var loki = (function () {
     this.cachedData = null;
     var self = this;
     /* OPTIONS */
+    options = options || {};
+    
     // is collection transactional
-    this.transactional = options ? options.transactional : false;
+    this.transactional = options.transactional || false;
 
     // options to clone objects when inserting them
-    this.cloneObjects = options ? options.clone : false;
+    this.cloneObjects = options.clone || false;
 
     // option to make event listeners async, default is sync
-    this.asyncListeners = options ? options.asyncListeners : false;
+    this.asyncListeners = options.asyncListeners || true;
 
     // disable track changes
-    this.disableChangesApi = options ? options.disableChangesApi : false;
+    this.disableChangesApi = options.disableChangesApi || false;
 
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
@@ -1633,8 +1635,8 @@ var loki = (function () {
     return collection;
   }
 
-  Loki.prototype.addCollection = function (name, indexesArray, options) {
-    var collection = new Collection(name, indexesArray, options);
+  Loki.prototype.addCollection = function (name, options) {
+    var collection = new Collection(name, options);
     this.collections.push(collection);
 
     return collection;

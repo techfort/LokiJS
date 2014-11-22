@@ -32,10 +32,32 @@ var loki = (function () {
     }
   }
 
+
+  /**
+   * LokiEventEmitter is a minimalist version of EventEmitter. It enables any
+   * constructor that inherits EventEmitter to emit events and trigger
+   * listeners that have been added to the event through the on(event, callback) method
+   *
+   * @constructor
+   */
   function LokiEventEmitter() {}
 
+  /**
+   * events - Events property is a hashmap, with each property being an array of callbacks
+   */
   LokiEventEmitter.prototype.events = {};
+
+  /**
+   * asyncListeners - boolean determines whether or not the callbacks associated with each event
+   * should happen in an async fashion or not
+   * Default is false, which means events are synchronous
+   */
   LokiEventEmitter.prototype.asyncListeners = false;
+
+  /**
+   * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+   * @returns {int} the index of the callback in the array of listeners for a particular event
+   */
   LokiEventEmitter.prototype.on = function (eventName, listener) {
     var event = this.events[eventName];
     if (!event) {
@@ -48,6 +70,11 @@ var loki = (function () {
     listener.apply(null, args);
   }
 
+  /**
+   * emit(eventName, varargs) - emits a particular event
+   * with the option of passing optional parameters which are going to be processed by the callback
+   * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
+   */
   LokiEventEmitter.prototype.emit = function (eventName) {
 
     var args = Array.prototype.slice.call(arguments, 0),
@@ -70,6 +97,9 @@ var loki = (function () {
     }
   };
 
+  /**
+   * remove() - removes the listener at position 'index' from the event 'eventName'
+   */
   LokiEventEmitter.prototype.remove = function (eventName, index) {
     if (this.events[eventName]) {
       this.events[eventName].splice(index, 1);
@@ -120,8 +150,13 @@ var loki = (function () {
 
   }
 
-
+  // db class is an EventEmitter
   Loki.prototype = new LokiEventEmitter;
+
+  /**
+   * close(callback) - emits the close event with an optional callback. Does not actually destroy the db
+   * but useful from an API perspective
+   */
   Loki.prototype.close = function (callback) {
     if (callback) {
       this.on('close', callback);
@@ -129,6 +164,24 @@ var loki = (function () {
     this.emit('close');
   };
 
+  /**-------------------------+
+  | Changes API               |
+  +--------------------------*/
+
+  /**
+   * The Changes API enables the tracking the changes occurred in the collections since the beginning of the session,
+   * so it's possible to create a differential dataset for synchronization purposes (possibly to a remote db)
+   */
+
+  /**
+   * generateChangesNotification() - takes all the changes stored in each
+   * collection and creates a single array for the entire database. If an array of names
+   * of collections is passed then only the included collections will be tracked.
+   *
+   * @param {array} optional array of collection names. No arg means all collections are processed.
+   * @returns {array} array of changes
+   * @see private method createChange() in Collection
+   */
   Loki.prototype.generateChangesNotification = function (arrayOfCollectionNames) {
     function getCollName(coll) {
       return coll.name;
@@ -144,10 +197,17 @@ var loki = (function () {
     return changes;
   };
 
+  /**
+   * serializeChanges() - stringify changes for network transmission
+   * @returns {string} string representation of the changes
+   */
   Loki.prototype.serializeChanges = function (collectionNamesArray) {
     return JSON.stringify(this.generateChangesNotification(collectionNamesArray));
   };
 
+  /**
+   * clearChanges() - clears all the changes in all collections.
+   */
   Loki.prototype.clearChanges = function () {
     this.collections.forEach(function (coll) {
       if (coll.flushChanges) {
@@ -1468,6 +1528,9 @@ var loki = (function () {
     // option to make event listeners async, default is sync
     this.asyncListeners = options ? options.asyncListeners : false;
 
+    // disable track changes
+    this.disableChangesApi = options ? options.disableChangesApi : false;
+
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
 
@@ -1510,7 +1573,7 @@ var loki = (function () {
       changes.push({
         name: name,
         operation: op,
-        obj: obj
+        obj: JSON.parse(JSON.stringify(obj))
       });
     }
 
@@ -1527,16 +1590,24 @@ var loki = (function () {
     this.on('insert', function (obj) {
       obj.meta.created = (new Date()).getTime();
       obj.meta.revision = 0;
-      createChange(self.name, 'I', obj);
+      if (!self.disableChangesApi) {
+        createChange(self.name, 'I', obj);
+      }
+
     });
 
     this.on('update', function (obj) {
       obj.meta.updated = (new Date()).getTime();
       obj.meta.revision += 1;
-      createChange(self.name, 'U', obj);
+      if (!self.disableChangesApi) {
+        createChange(self.name, 'U', obj);
+      }
     });
+
     this.on('delete', function (obj) {
-      createChange(self.name, 'R', obj);
+      if (!self.disableChangesApi) {
+        createChange(self.name, 'R', obj);
+      }
     });
 
     this.on('warning', console.warn);

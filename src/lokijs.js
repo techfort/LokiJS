@@ -1520,7 +1520,7 @@ var loki = (function () {
     var self = this;
     /* OPTIONS */
     options = options || {};
-    
+
     // is collection transactional
     this.transactional = options.transactional || false;
 
@@ -1571,6 +1571,10 @@ var loki = (function () {
       this.ensureIndex(indices[idx]);
     };
 
+    /**
+     * This method creates a clone of the current status of an object and associates operation and collection name,
+     * so the parent db can aggregate and generate a changes object for the entire db
+     */
     function createChange(name, op, obj) {
       changes.push({
         name: name,
@@ -1579,6 +1583,7 @@ var loki = (function () {
       });
     }
 
+    // clear all the changes
     function flushChanges() {
       changes = [];
     };
@@ -1589,23 +1594,39 @@ var loki = (function () {
 
     this.flushChanges = flushChanges;
 
-    this.on('insert', function (obj) {
-      obj.meta.created = (new Date()).getTime();
-      obj.meta.revision = 0;
-      if (!self.disableChangesApi) {
+    /**
+     * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
+     */
+
+    if (self.disableChangesApi) {
+      function insertMeta(obj) {
+        obj.meta.created = (new Date()).getTime();
+        obj.meta.revision = 0;
+      }
+
+      function updateMeta(obj) {
+        obj.meta.updated = (new Date()).getTime();
+        obj.meta.revision += 1;
+      }
+    } else {
+      function insertMeta(obj) {
+        obj.meta.created = (new Date()).getTime();
+        obj.meta.revision = 0;
         createChange(self.name, 'I', obj);
       }
 
-    });
-
-    this.on('update', function (obj) {
-      obj.meta.updated = (new Date()).getTime();
-      obj.meta.revision += 1;
-      if (!self.disableChangesApi) {
+      function updateMeta(obj) {
+        obj.meta.updated = (new Date()).getTime();
+        obj.meta.revision += 1;
         createChange(self.name, 'U', obj);
       }
-    });
+    }
 
+    /**
+     * built-in events
+     */
+    this.on('insert', insertMeta);
+    this.on('update', updateMeta);
     this.on('delete', function (obj) {
       if (!self.disableChangesApi) {
         createChange(self.name, 'R', obj);
@@ -1749,6 +1770,9 @@ var loki = (function () {
         copyColl.binaryIndices = coll.binaryIndices;
       }
       copyColl.transactional = coll.transactional;
+      copyColl.asyncListeners = coll.asyncListeners;
+      copyColl.disableChangesApi = coll.disableChangesApi;
+      copyColl.cloneObjects = coll.cloneObjects;
       copyColl.ensureId();
 
       // in case they are loading a database created before we added dynamic views, handle undefined

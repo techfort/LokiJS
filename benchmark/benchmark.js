@@ -242,7 +242,7 @@ testperfDV();	// dataview find benchmarks on unindexed customid field
 
 console.log("");
 console.log("-- ADDING BINARY INDEX to query column and repeating benchmarks --");
-samplecoll.ensureBinaryIndex("customId");
+samplecoll.ensureIndex("customId");
 testperfFind(20);
 testperfRS(15);
 testperfDV(15);

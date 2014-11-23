@@ -85,6 +85,7 @@ var loki = (function () {
 
         if (self.asyncListeners) {
           setTimeout(function () {
+
             applyListener(listener, args);
           }, 1);
         } else {
@@ -188,7 +189,7 @@ var loki = (function () {
     }
     var changes = [],
       selectedCollections = arrayOfCollectionNames || this.collections.map(getCollName);
-    console.log(selectedCollections.join(', '));
+
     this.collections.forEach(function (coll) {
       if (selectedCollections.indexOf(getCollName(coll)) !== -1) {
         changes = changes.concat(coll.getChanges());
@@ -582,7 +583,7 @@ var loki = (function () {
       }
       return [];
     }
-    
+
     // comparison operators
     function $eq(a, b) {
       return a === b;
@@ -1527,20 +1528,21 @@ var loki = (function () {
     this.cachedBinaryIndex = null;
     this.cachedData = null;
     var self = this;
+
     /* OPTIONS */
     options = options || {};
 
     // is collection transactional
-    this.transactional = options.transactional || false;
+    this.transactional = options.hasOwnProperty('transactional') ? options.transactional : false;
 
     // options to clone objects when inserting them
-    this.cloneObjects = options.clone || false;
+    this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
     // option to make event listeners async, default is sync
-    this.asyncListeners = options.asyncListeners || true;
+    this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : true;
 
     // disable track changes
-    this.disableChangesApi = options.disableChangesApi || false;
+    this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
 
     // currentMaxId - change manually at your own peril!
     this.maxId = 0;
@@ -1559,7 +1561,7 @@ var loki = (function () {
     };
 
     // changes are tracked by collection and aggregated by the db
-    var changes = [];
+    this.changes = [];
 
     // initialize the id index
     this.ensureId();
@@ -1585,7 +1587,7 @@ var loki = (function () {
      * so the parent db can aggregate and generate a changes object for the entire db
      */
     function createChange(name, op, obj) {
-      changes.push({
+      self.changes.push({
         name: name,
         operation: op,
         obj: JSON.parse(JSON.stringify(obj))
@@ -1594,11 +1596,11 @@ var loki = (function () {
 
     // clear all the changes
     function flushChanges() {
-      changes = [];
+      self.changes = [];
     };
 
     this.getChanges = function () {
-      return changes;
+      return self.changes;
     };
 
     this.flushChanges = flushChanges;
@@ -1606,36 +1608,42 @@ var loki = (function () {
     /**
      * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
      */
+    function insertMeta(obj) {
+      if (!obj) {
+        return;
+      }
+      if (!obj.meta) {
+        obj.meta = {};
+      }
+      obj.meta.created = (new Date()).getTime();
+      obj.meta.revision = 0;
+    }
 
-    if (self.disableChangesApi) {
-      function insertMeta(obj) {
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
+    function updateMeta(obj) {
+      if (!obj) {
+        return;
       }
-
-      function updateMeta(obj) {
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
-      }
-    } else {
-      function insertMeta(obj) {
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
-        createChange(self.name, 'I', obj);
-      }
-
-      function updateMeta(obj) {
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
-        createChange(self.name, 'U', obj);
-      }
+      obj.meta.updated = (new Date()).getTime();
+      obj.meta.revision += 1;
     }
 
     /**
      * built-in events
      */
-    this.on('insert', insertMeta);
-    this.on('update', updateMeta);
+    this.on('insert', function (obj) {
+      insertMeta(obj);
+      if (!self.disableChangesApi) {
+        createChange(self.name, 'I', obj);
+      }
+    });
+
+    this.on('update', function (obj) {
+      updateMeta(obj);
+      if (!self.disableChangesApi) {
+        createChange(self.name, 'U', obj);
+      }
+    });
+
     this.on('delete', function (obj) {
       if (!self.disableChangesApi) {
         createChange(self.name, 'R', obj);
@@ -2046,7 +2054,10 @@ var loki = (function () {
         }
         //d.objType = self.objType;
         if (typeof obj.meta === 'undefined') {
-          obj.meta = {};
+          obj.meta = {
+            revision: 0,
+            created: 0
+          };
         }
         self.add(obj);
         self.emit('insert', obj);
@@ -2071,7 +2082,10 @@ var loki = (function () {
       //doc.objType = self.objType;
 
       if (typeof doc.meta === 'undefined') {
-        obj.meta = {};
+        obj.meta = {
+          revision: 0,
+          created: 0
+        };
       }
       self.add(obj);
       self.emit('insert', obj);

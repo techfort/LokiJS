@@ -312,6 +312,9 @@
       var lbound = 0;
       var ubound = index.length - 1;
 
+      // when no documents are in collection, return empty range condition
+      if (rcd.length == 0) return [0, -1];
+
       var minVal = rcd[index[min]][prop];
       var maxVal = rcd[index[max]][prop];
 
@@ -405,8 +408,14 @@
      */
     Resultset.prototype.find = function(query, firstOnly) {
       if (this.collection.data.length === 0) {
-        return []
+        if (this.searchIsChained) {
+          this.filteredrows = [];
+          this.filterInitialized = true;
+          return this;
+        }
+        return [];
       }
+    
 
       // comparison operators
       function $eq(a, b) {

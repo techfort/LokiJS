@@ -574,6 +574,15 @@ var loki = (function () {
    * @returns {Resultset} this resultset for further chain ops.
    */
   Resultset.prototype.find = function (query, firstOnly) {
+    if (this.collection.data.length === 0) {
+      if (this.searchIsChained) {
+        this.filteredrows = [];
+        this.filterInitialized = true;
+        return this;
+      }
+      return [];
+    }
+    
     // comparison operators
     function $eq(a, b) {
       return a === b;

@@ -278,7 +278,7 @@ function testIndexLifecycle() {
 }
 
 function testIndexes() {
-  var itc = db.addCollection('test', ['testid']);
+  var itc = db.addCollection('test', { indices: ['testid']});
 
   itc.insert({
     'testid': 1

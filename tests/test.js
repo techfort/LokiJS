@@ -397,6 +397,23 @@ function testEmptyTableWithIndex() {
   suite.assertStrictEqual('no results found', resultsWithIndex.length, 0);
 }
 
+function duplicateItemFoundOnIndex() {
+  var test = db.addCollection('nodupes', ['index']);
+
+  var item = test.insert({ index: 'key', a: 1 });
+
+  var results = test.find({ index: 'key' });
+  suite.assertStrictEqual('one result exists', results.length, 1);
+  suite.assertStrictEqual('the correct result is returned', results[0].a, 1);
+
+  item.a = 2;
+  test.update(item);
+
+  results = test.find({ index: 'key' });
+  suite.assertStrictEqual('one result exists', results.length, 1);
+  suite.assertStrictEqual('the correct result is returned', results[0].a, 2);
+}
+
 /* Main Test */
 populateTestData();
 testCoreMethods();
@@ -406,5 +423,6 @@ testIndexLifecycle();
 testResultset();
 testDynamicView();
 testEmptyTableWithIndex();
+duplicateItemFoundOnIndex();
 
 suite.report();

@@ -203,7 +203,7 @@
 
       var rscopy = this.copy();
 
-      rscopy.filteredrows = rscopy.filteredrows.splice(pos);
+      rscopy.filteredrows = rscopy.filteredrows.splice(pos, rscopy.filteredrows.length);
 
       return rscopy;
     }
@@ -415,7 +415,7 @@
         }
         return [];
       }
-    
+
 
       // comparison operators
       function $eq(a, b) {

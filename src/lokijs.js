@@ -97,7 +97,7 @@
       };
 
       var getENV = function() {
-        if (fs) {
+        if (typeof process !== 'undefined' && process.argv && process.argv[0] === 'node') {
           return 'NODEJS';
         }
 

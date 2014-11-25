@@ -584,54 +584,6 @@ var loki = (function () {
       return [];
     }
 
-    // comparison operators
-    function $eq(a, b) {
-      return a === b;
-    }
-
-    function $gt(a, b) {
-      return a > b;
-    }
-
-    function $gte(a, b) {
-      return a >= b;
-    }
-
-    function $lt(a, b) {
-      return a < b;
-    }
-
-    function $lte(a, b) {
-      return a <= b;
-    }
-
-    function $ne(a, b) {
-      return a !== b;
-    }
-
-    // regexp needs value to be real regular expression such as /abc/ not '/abc/'
-    function $regex(a, b) {
-      return b.test(a);
-    }
-
-    function $in(a, b) {
-      return b.indexOf(a) > -1;
-    }
-
-    function $contains(a, b) {
-      if (Array.isArray(a)) {
-        return a.indexOf(b) !== -1;
-      }
-
-      if (typeof a === 'string') {
-        return a.indexOf(b) !== -1;
-      }
-
-      if (a && typeof a === 'object') {
-        return a.hasOwnProperty(b);
-      }
-
-    }
 
     var queryObject = query || 'getAll',
       property,
@@ -640,15 +592,15 @@ var loki = (function () {
       p,
       key,
       operators = {
-        '$eq': $eq,
-        '$gt': $gt,
-        '$gte': $gte,
-        '$lt': $lt,
-        '$lte': $lte,
-        '$ne': $ne,
-        '$regex': $regex,
-        '$in': $in,
-        '$contains': $contains
+        '$eq': LokiOps.$eq,
+        '$gt': LokiOps.$gt,
+        '$gte': LokiOps.$gte,
+        '$lt': LokiOps.$lt,
+        '$lte': LokiOps.$lte,
+        '$ne': LokiOps.$ne,
+        '$regex': LokiOps.$regex,
+        '$in': LokiOps.$in,
+        '$contains': LokiOps.$contains
       },
       searchByIndex = false,
       result = [],
@@ -1504,6 +1456,56 @@ var loki = (function () {
       }
     }
   };
+  
+  var LokiOps = {
+    // comparison operators
+    $eq : function (a, b) {
+      return a === b;
+    },
+
+    $gt : function (a, b) {
+      return a > b;
+    },
+
+    $gte : function (a, b) {
+      return a >= b;
+    },
+
+    $lt : function (a, b) {
+      return a < b;
+    },
+
+    $lte : function (a, b) {
+      return a <= b;
+    },
+
+    $ne : function (a, b) {
+      return a !== b;
+    },
+
+    $regex : function (a, b) {
+      return b.test(a);
+    },
+
+    $in : function (a, b) {
+      return b.indexOf(a) > -1;
+    },
+
+    $contains : function (a, b) {
+      if (Array.isArray(a)) {
+        return a.indexOf(b) !== -1;
+      }
+
+      if (typeof a === 'string') {
+        return a.indexOf(b) !== -1;
+      }
+
+      if (a && typeof a === 'object') {
+        return a.hasOwnProperty(b);
+      }
+
+    }
+  }
 
   /**
    * @constructor

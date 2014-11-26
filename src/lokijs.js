@@ -1044,11 +1044,8 @@ var loki = (function () {
     // sorting member variables
     // we only support one active search, applied using applySort() or applySimpleSort()
     this.sortFunction = null;
-    this.sortColumn = null;
-    this.sortColumnDesc = false;
+    this.sortCriteria = null;
     this.sortDirty = false;
-
-    // may add map and reduce phases later
 
     // for now just have 1 event for when we finally rebuilt lazy view
     // once we refactor transactions, i will tie in certain transactional events
@@ -1075,15 +1072,13 @@ var loki = (function () {
       fpi,
       idx;
 
-
-
     options = options || {};
 
     this.resultdata = [];
     this.resultsdirty = true;
     this.resultset = new Resultset(this.collection);
 
-    if (this.sortFunction || this.sortColumn) {
+    if (this.sortFunction || this.sortCriteria) {
       this.sortDirty = true;
     }
 
@@ -1116,10 +1111,8 @@ var loki = (function () {
     // during creation of unit tests, i will remove this forced refresh and leave lazy
     this.data();
 
-
     // emit rebuild event in case user wants to be notified
     this.emit('rebuild', this);
-
 
     return this;
   };
@@ -1147,8 +1140,7 @@ var loki = (function () {
     copy.resultsdirty = true;
     copy.filterPipeline = this.filterPipeline;
     copy.sortFunction = this.sortFunction;
-    copy.sortColumn = this.sortColumn;
-    copy.sortColumnDesc = this.sortColumnDesc;
+    copy.sortCriteria = this.sortCriteria;
     copy.sortDirty = this.sortDirty;
 
     // avoid circular reference, reapply in db.loadJSON()
@@ -1165,8 +1157,7 @@ var loki = (function () {
    */
   DynamicView.prototype.applySort = function (comparefun) {
     this.sortFunction = comparefun;
-    this.sortColumn = null;
-    this.sortColumnDesc = false;
+    this.sortCriteria = null;
 
     this.resultset.sort(comparefun);
 
@@ -1185,8 +1176,7 @@ var loki = (function () {
   DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
     if (typeof (isdesc) === 'undefined') isdesc = false;
 
-    this.sortColumn = propname;
-    this.sortColumnDesc = isdesc;
+    this.sortCriteria = [[propname, isdesc]];
     this.sortFunction = null;
 
     this.resultset.simplesort(propname, isdesc);
@@ -1195,6 +1185,26 @@ var loki = (function () {
 
     return this;
   };
+  
+  /**
+   * applySortCriteria() - Allows sorting a resultset based on multiple columns.
+   *    Example : dv.applySortCriteria(['age', 'name']); to sort by age and then name (both ascending)
+   *    Example : dv.applySortCriteria(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
+   *    Example : dv.applySortCriteria(['age', true], ['name', true]); to sort by age (descending) and then by name (descending)
+   *
+   * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
+   * @returns {DynamicView} Reference to this DynamicView, sorted, for future chain operations.
+   */
+  DynamicView.prototype.applySortCriteria = function (criteria) {
+    this.sortCriterial = criteria;
+    this.sortFunction = null;
+    
+    this.resultset.compoundsort(criteria);
+    
+    this.sortDirty = false;
+    
+    return this;
+  }
 
   /**
    * startTransaction() - marks the beginning of a transaction.
@@ -1253,7 +1263,7 @@ var loki = (function () {
     // Apply immediately to Resultset; if persistent we will wait until later to build internal data
     this.resultset.find(query);
 
-    if (this.sortFunction || this.sortColumn) {
+    if (this.sortFunction || this.sortCriteria) {
       this.sortDirty = true;
     }
 
@@ -1279,7 +1289,7 @@ var loki = (function () {
     // Apply immediately to Resultset; if persistent we will wait until later to build internal data
     this.resultset.where(fun);
 
-    if (this.sortFunction || this.sortColumn) this.sortDirty = true;
+    if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
     if (this.persistent) this.resultsdirty = true;
 
     return this;
@@ -1295,8 +1305,8 @@ var loki = (function () {
       if (this.sortFunction) {
         this.resultset.sort(this.sortFunction);
       }
-      if (this.sortColumn) {
-        this.resultset.simplesort(this.sortColumn, this.sortColumnDesc);
+      if (this.sortCriteria) {
+        this.resultset.compoundsort(this.sortCriteria);
       }
       this.sortDirty = false;
       if (this.persistent) {
@@ -1369,7 +1379,7 @@ var loki = (function () {
       if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
 
       // need to re-sort to sort new document
-      if (this.sortFunction || this.sortColumn) this.sortDirty = true;
+      if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
 
       return;
     }
@@ -1402,7 +1412,7 @@ var loki = (function () {
       }
 
       // in case changes to data altered a sort column
-      if (this.sortFunction || this.sortColumn) this.sortDirty = true;
+      if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
 
       return;
     }
@@ -1805,8 +1815,8 @@ var loki = (function () {
         dv.resultdata = colldv.resultdata;
         dv.resultsdirty = colldv.resultsdirty;
         dv.filterPipeline = colldv.filterPipeline;
-        dv.sortColumn = colldv.sortColumn;
-        dv.sortColumnDesc = colldv.sortColumnDesc;
+        dv.sortCriteria = colldv.sortCriteria;
+        //dv.sortColumnDesc = colldv.sortColumnDesc;
         dv.sortFunction = colldv.sortFunction;
         dv.sortDirty = colldv.sortDirty;
         dv.resultset.filteredrows = colldv.resultset.filteredrows;

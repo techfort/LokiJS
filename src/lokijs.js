@@ -111,10 +111,38 @@ var loki = (function () {
    * @constructor
    * The main database class
    */
-  function Loki(filename) {
+  function Loki(filename, options) {
     this.filename = filename || 'loki.db';
     this.collections = [];
+    
+    // persist version of code which created the database to the database.
+    // could use for upgrade scenarios
+    this.databaseVersion = 1.1;
+    this.engineVersion = 1.1;
+    
+    this.options = {};
+    
+    if (typeof (options) !== 'undefined') {
+      this.options = options;
+    }
+    
+    // currently appContext is only used as configuration for indexed db adapter
+    this.appContext = 'loki';
+    
+    if (this.options.hasOwnProperty('appContext')) {
+      this.appContext = options.appContext;
+    }
 
+    // persistenceMethod could be 'fs', 'localStorage', or 'indexedDb'
+    // this could eventually be enhanced to support amd plugin system, for now browser can just include
+    this.persistenceMethod = null;
+    
+    if (this.options.hasOwnProperty('persistenceMethod')) {
+      this.persistenceMethod = options.persistenceMethod;
+    }
+    
+    this.persistenceAdapter = null;
+    
     this.events = {
       'init': [],
       'flushChanges': [],
@@ -1840,6 +1868,57 @@ var loki = (function () {
       },
       self = this;
 
+    // If user has specified a persistenceMethod, use it
+    if (this.persistenceMethod != null) {
+      if (this.persistenceMethod === 'fs') {
+        this.fs.readFile(this.filename, {
+          encoding: 'utf8'
+        }, function (err, data) {
+          if (err) {
+            return cFun(err, null);
+          }
+          self.loadJSON(data, options || {});
+          cFun(null, data);
+        });
+      }
+      
+      if (this.persistenceMethod === 'localStorage') {
+        if (localStorageAvailable()) {
+          self.loadJSON(localStorage.getItem(this.filename));
+          cFun(null, data);
+        } else {
+          cFun(new Error('localStorage is not available'));
+        }
+      }
+      
+      if (this.persistenceMethod === 'indexedDb') {
+        // test if indexeddb exists
+        if (window && window.indexedDB) {
+          // test if loki IndexedAdapter has been included
+          if (typeof(IndexedAdapter) === 'function') {
+            // create adapter if not already created
+            if (this.persisistenceAdapter === null) {
+              this.persistenceAdapter = new IndexAdapter(this.appContext);
+            }
+            
+            this.persistenceAdapter.loadDatabase(this.filename, function(dbString) {
+              self.loadJSON(dbString);
+              cFun(null);
+            });
+          }
+          else {
+            cFun(new Error('indexedAdapter not included'));
+          }
+        }
+        else {
+          cFun(new Error('indexedDB is not available'));
+        }
+      }
+      
+      return;
+    }
+
+    // user did not provide persistenceMethod, default to environment detection
     if (this.ENV === 'NODEJS') {
       this.fs.readFile(this.filename, {
         encoding: 'utf8'
@@ -1862,8 +1941,8 @@ var loki = (function () {
     }
   };
 
-  // save file to disk as json
-  Loki.prototype.saveToDisk = function (callback) {
+  // save, using either explicit persistenceMethod or fallback to environment detection
+  Loki.prototype.saveDatabase = function (callback) {
     var cFun = callback || function (err) {
         if (err) {
           throw err;
@@ -1871,6 +1950,59 @@ var loki = (function () {
         return;
       },
       self = this;
+      
+    // If user has specified a persistenceMethod, use it
+    if (this.persistenceMethod != null) {
+      if (this.persistenceMethod === 'fs') {
+        this.fs.exists(this.filename, function (exists) {
+          if (exists) {
+            self.fs.unlink(self.filename, function (err) {
+              if (err) {
+                return cFun(err);
+              }
+              self.fs.writeFile(self.filename, self.serialize(), cFun);
+            });
+          } else {
+            self.fs.writeFile(self.filename, self.serialize(), cFun);
+          }
+        });
+      }
+      
+      if (this.persistenceMethod === 'localStorage') {
+        if (localStorageAvailable()) {
+          localStorage.setItem(self.filename, self.serialize());
+          cFun(null);
+        } else {
+          cFun(new Error('localStorage is not available'));
+        }
+      }
+      
+      if (this.persistenceMethod === 'indexedDb') {
+        // test if indexeddb exists
+        if (window && window.indexedDB) {
+          // test if loki IndexedAdapter has been included
+          if (typeof(IndexedAdapter) === 'function') {
+            // create adapter if not already created
+            if (this.persisistenceAdapter === null) {
+              this.persistenceAdapter = new IndexAdapter(this.appContext);
+            }
+            
+            this.persistenceAdapter.saveDatabase(this.filename, self.serialize, function() {
+              cFun(null);
+            });
+          }
+          else {
+            cFun(new Error('indexedAdapter not included'));
+          }
+        }
+        else {
+          cFun(new Error('indexedDB is not available'));
+        }
+      }
+      
+      return;
+    }
+    
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
       this.fs.exists(this.filename, function (exists) {

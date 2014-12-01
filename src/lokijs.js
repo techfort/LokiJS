@@ -1787,9 +1787,21 @@ var loki = (function () {
       coll,
       copyColl,
       clen,
-      j;
+      j,
+      upgradeNeeded = false;
 
     this.name = obj.name;
+    
+    // restore database version
+    this.databaseVersion = 1.0;
+    if (obj.hasOwnProperty('databaseVersion')) {
+      this.databaseVersion = obj.databaseVersion;
+    }
+
+    if (this.databaseVersion !== this.engineVersion) {
+      upgradeNeeded = true;
+    }
+    
     this.collections = [];
 
     for (i; i < len; i += 1) {
@@ -1816,6 +1828,28 @@ var loki = (function () {
         }
       }
 
+      // rough object upgrade, once file format stabilizes we will probably remove this
+      if (upgradeNeeded && copyColl.data.length > 0) {
+      
+        // for current collection, if there is at least one document see if its missing $loki key
+        if (!copyColl.data[0].hasOwnProperty('$loki')) {
+          var dlen = copyColl.data.length;
+          var currDoc = null;
+          
+          // for each document, set $loki to old 'id' column
+          // if it has 'originalId' column, move to 'id'
+          for (var idx = 0; idx < dlen; idx++) {
+            currDoc = copyColl.data[idx];
+            
+            currDoc['$loki'] = currDoc['id'];
+            delete currDoc.id;
+            
+            if (currDoc.hasOwnProperty['originalId']) {
+              currDoc['id'] = currDoc['originalId'];
+            }
+          }
+        }
+      }
 
       copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
       copyColl.idIndex = coll.idIndex;
@@ -1830,6 +1864,8 @@ var loki = (function () {
       copyColl.asyncListeners = coll.asyncListeners;
       copyColl.disableChangesApi = coll.disableChangesApi;
       copyColl.cloneObjects = coll.cloneObjects;
+      
+      
       copyColl.ensureId();
 
       // in case they are loading a database created before we added dynamic views, handle undefined

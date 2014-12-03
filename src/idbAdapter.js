@@ -1,14 +1,36 @@
 /*
-  Loki IndexedDb Adapter
+  Loki IndexedDb Adapter (need to include this script to use it)
   
   Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
   Anywhere a callback is omitted, it should return results (if applicable) to console.
 
   IndexedDb storage is provided per-domain, so we implement app/key/value database to allow separate contexts
   for separate apps within a domain.
+*/
+
+/*
+  Examples :
+
+  // SAVE
+  var db = new loki('test', { persistenceMethod: 'indexedDb' });
+  var coll = db.addCollection('testColl');
+  coll.insert({test: 'val'});
+  db.saveDatabase();
+
+  That will save in default appContext 'loki', a database named 'test' with a value of serialized db.
+
+  // LOAD
+  var db = new loki('test', { persistenceMethod: 'indexedDb' });
+  db.loadDatabase();
+
+  // USING CUSTOM appContext
+  var db = new loki('test', { appContext: 'finance', persistenceMethod: 'indexedDb' });
+
+*/  
   
-  Supports async, but if using from console for management/diagnostic, here are a few examples :
-    var adapter = new IndexedAdapter('loki');
+/*  
+  Console Usage : if using from console for management/diagnostic, here are a few examples :
+    var adapter = new IndexedAdapter('loki');  // or whatever appContext you want to use
 
     // async does not return value but will log results
     adapter.getDatabaseList();
@@ -65,6 +87,13 @@ IndexedAdapter.prototype.loadDatabase = function(dbname, callback)
     
       // now that catalog has been initialized, look up db in AKV db
       cat.getAppKey(appName, dbname, function(result) {
+        // our storage layer returns result with id of 0 if not found
+        if (result.id === 0) {
+          console.error("IndexedAdapter.loadDatabase() : database not found by that key");
+          callback(null);
+          return;
+        }
+        
         if (typeof (callback) === 'function') {
           callback(result.val);
         }

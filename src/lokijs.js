@@ -1829,26 +1829,40 @@ var loki = (function () {
       }
 
       // rough object upgrade, once file format stabilizes we will probably remove this
-      if (upgradeNeeded && copyColl.data.length > 0) {
-      
+      if (upgradeNeeded && this.engineVersion == 1.1) {
+        // we are upgrading a 1.0 database to 1.1, so initialize new properties
+        copyColl.transactional = false;
+        copyColl.cloneObjects = false;
+        copyColl.asyncListeners = true;
+        copyColl.disableChangesApi = true;
+        
         // for current collection, if there is at least one document see if its missing $loki key
-        if (!copyColl.data[0].hasOwnProperty('$loki')) {
-          var dlen = copyColl.data.length;
-          var currDoc = null;
-          
-          // for each document, set $loki to old 'id' column
-          // if it has 'originalId' column, move to 'id'
-          for (var idx = 0; idx < dlen; idx++) {
-            currDoc = copyColl.data[idx];
+        if (copyColl.data.length > 0) {
+          if (!copyColl.data[0].hasOwnProperty('$loki')) {
+            var dlen = copyColl.data.length;
+            var currDoc = null;
             
-            currDoc['$loki'] = currDoc['id'];
-            delete currDoc.id;
-            
-            if (currDoc.hasOwnProperty['originalId']) {
-              currDoc['id'] = currDoc['originalId'];
+            // for each document, set $loki to old 'id' column
+            // if it has 'originalId' column, move to 'id'
+            for (var idx = 0; idx < dlen; idx++) {
+              currDoc = copyColl.data[idx];
+              
+              currDoc['$loki'] = currDoc['id'];
+              delete currDoc.id;
+              
+              if (currDoc.hasOwnProperty['originalId']) {
+                currDoc['id'] = currDoc['originalId'];
+              }
             }
           }
         }
+      }
+      else {
+        // not an upgrade or upgrade after 1.1, so copy new collection level options
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
       }
 
       copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
@@ -1860,10 +1874,6 @@ var loki = (function () {
       if (typeof (coll.binaryIndices) !== 'undefined') {
         copyColl.binaryIndices = coll.binaryIndices;
       }
-      copyColl.transactional = coll.transactional;
-      copyColl.asyncListeners = coll.asyncListeners;
-      copyColl.disableChangesApi = coll.disableChangesApi;
-      copyColl.cloneObjects = coll.cloneObjects;
       
       
       copyColl.ensureId();
@@ -1933,13 +1943,18 @@ var loki = (function () {
           // test if loki IndexedAdapter has been included
           if (typeof(IndexedAdapter) === 'function') {
             // create adapter if not already created
-            if (this.persisistenceAdapter === null) {
-              this.persistenceAdapter = new IndexAdapter(this.appContext);
+            if (typeof(IndexedAdapter) === 'function') {
+              this.persistenceAdapter = new IndexedAdapter(this.appContext);
             }
             
             this.persistenceAdapter.loadDatabase(this.filename, function(dbString) {
-              self.loadJSON(dbString);
-              cFun(null);
+              if (dbString === null) {
+                cFun('Database not found');
+              }
+              else {
+                self.loadJSON(dbString);
+                cFun(null);
+              }
             });
           }
           else {
@@ -2019,11 +2034,11 @@ var loki = (function () {
           // test if loki IndexedAdapter has been included
           if (typeof(IndexedAdapter) === 'function') {
             // create adapter if not already created
-            if (this.persisistenceAdapter === null) {
-              this.persistenceAdapter = new IndexAdapter(this.appContext);
+            if (typeof(this.persistenceAdapter) !== 'function') {
+              this.persistenceAdapter = new IndexedAdapter(this.appContext);
             }
             
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize, function() {
+            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function() {
               cFun(null);
             });
           }

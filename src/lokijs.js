@@ -729,6 +729,8 @@ var loki = (function () {
               return (t[i]);
             }
           }
+          
+          return [];
         } else {
           // if using dot notation then treat property as keypath such as 'name.first'.
           // currently supporting dot notation for non-indexed conditions only
@@ -765,6 +767,8 @@ var loki = (function () {
           if (seg[1] !== -1) {
             return this.data[seg[0]];
           }
+          
+          return [];
         }
 
         for (i = seg[0]; i <= seg[1]; i++) {
@@ -2516,7 +2520,13 @@ var loki = (function () {
    */
   Collection.prototype.findOne = function (query) {
     // Instantiate Resultset and exec find op passing firstOnly = true param
-    return new Resultset(this, query, null, true);
+    var result = new Resultset(this, query, null, true);
+    if (Array.isArray(result) && result.length === 0) {
+      return null;
+    }
+    else {
+      return result;
+    }
   };
 
   /**

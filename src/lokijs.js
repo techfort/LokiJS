@@ -133,15 +133,23 @@ var loki = (function () {
       this.appContext = options.appContext;
     }
 
-    // persistenceMethod could be 'fs', 'localStorage', or 'indexedDb'
-    // this could eventually be enhanced to support amd plugin system, for now browser can just include
+    // persistenceMethod could be 'fs', 'localStorage', or 'adapter'
+    // this is optional option param, otherwise environment detection will be used
+    // if user passes their own adapter we will force this method to 'adapter' later, so no need to pass method option.
     this.persistenceMethod = null;
     
     if (this.options.hasOwnProperty('persistenceMethod')) {
       this.persistenceMethod = options.persistenceMethod;
     }
     
+    // retain reference to optional persistence adapter 'instance'
     this.persistenceAdapter = null;
+    
+    // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+    if (this.options.hasOwnProperty('adapter')) {
+      this.persistenceMethod = 'adapter';
+      this.persistenceAdapter = options.adapter;
+    }
     
     this.events = {
       'init': [],
@@ -1782,7 +1790,12 @@ var loki = (function () {
   // alias of serialize
   Loki.prototype.toJson = Loki.prototype.serialize;
 
-  // load Json function - db is saved to disk as json
+  /**
+   * loadJSON - inflates a loki database from a serialized JSON string
+   *
+   * @param {string} serializedDb - a serialized loki database string
+   * @param {object} options - apply or override collection level settings
+   */
   Loki.prototype.loadJSON = function (serializedDb, options) {
 
     var obj = JSON.parse(serializedDb),
@@ -1908,7 +1921,14 @@ var loki = (function () {
     }
   };
 
-  // load db from a file
+  /**
+   * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
+   *    This method utilizes loki configuration options (if provided) to determine which
+   *    persistence method to use, or environment detection (if configuration was not provided).
+   *
+   * @param {object} options - not currently used (remove or allow overrides?)
+   * @param {function} callback - (Optional) user supplied async callback / error handler
+   */
   Loki.prototype.loadDatabase = function (options, callback) {
     var cFun = callback || function (err, data) {
         if (err) {
@@ -1941,32 +1961,21 @@ var loki = (function () {
         }
       }
       
-      if (this.persistenceMethod === 'indexedDb') {
-        // test if indexeddb exists
-        if (window && window.indexedDB) {
-          // test if loki IndexedAdapter has been included
-          if (typeof(IndexedAdapter) === 'function') {
-            // create adapter if not already created
-            if (typeof(IndexedAdapter) === 'function') {
-              this.persistenceAdapter = new IndexedAdapter(this.appContext);
+      if (this.persistenceMethod === 'adapter') {
+        // test if user has given us an adapter reference (in loki constructor options)
+        if (this.persistenceAdapter !== null) {
+          this.persistenceAdapter.loadDatabase(this.filename, function(dbString) {
+            if (dbString === null) {
+              cFun('Database not found');
             }
-            
-            this.persistenceAdapter.loadDatabase(this.filename, function(dbString) {
-              if (dbString === null) {
-                cFun('Database not found');
-              }
-              else {
-                self.loadJSON(dbString);
-                cFun(null);
-              }
-            });
-          }
-          else {
-            cFun(new Error('indexedAdapter not included'));
-          }
+            else {
+              self.loadJSON(dbString);
+              cFun(null);
+            }
+          });
         }
         else {
-          cFun(new Error('indexedDB is not available'));
+          cFun(new Error('persistence adapter not provided'));
         }
       }
       
@@ -1996,7 +2005,14 @@ var loki = (function () {
     }
   };
 
-  // save, using either explicit persistenceMethod or fallback to environment detection
+  /**
+   * saveDatabase - Handles saving to file system, local storage, or adapter (indexeddb)
+   *    This method utilizes loki configuration options (if provided) to determine which
+   *    persistence method to use, or environment detection (if configuration was not provided).
+   *
+   * @param {object} options - not currently used (remove or allow overrides?)
+   * @param {function} callback - (Optional) user supplied async callback / error handler
+   */
   Loki.prototype.saveDatabase = function (callback) {
     var cFun = callback || function (err) {
         if (err) {
@@ -2032,16 +2048,9 @@ var loki = (function () {
         }
       }
       
-      if (this.persistenceMethod === 'indexedDb') {
-        // test if indexeddb exists
-        if (window && window.indexedDB) {
-          // test if loki IndexedAdapter has been included
-          if (typeof(IndexedAdapter) === 'function') {
-            // create adapter if not already created
-            if (typeof(this.persistenceAdapter) !== 'function') {
-              this.persistenceAdapter = new IndexedAdapter(this.appContext);
-            }
-            
+      if (this.persistenceMethod === 'adapter') {
+          // test if loki persistence adapter instance was provided in loki constructor options
+          if (this.persistenceAdapter !== null) {
             this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function() {
               cFun(null);
             });
@@ -2049,10 +2058,6 @@ var loki = (function () {
           else {
             cFun(new Error('indexedAdapter not included'));
           }
-        }
-        else {
-          cFun(new Error('indexedDB is not available'));
-        }
       }
       
       return;

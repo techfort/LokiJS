@@ -6,14 +6,23 @@
 (function () {
 
 	// template to be bound
-	function insertAt(element, index) {
-		this.splice(index, 0, element);
-	}
 
 
-	function binarySearch(item, fun) {
+
+	// Base Array
+	function BaseArray() {}
+
+	BaseArray.prototype = {
+		array: []
+	};
+
+	BaseArray.prototype.insertAt = function insertAt(element, index) {
+		this.array.splice(index, 0, element);
+	};
+
+	BaseArray.prototype.binarySearch = function binarySearch(item, fun) {
 		var lo = 0,
-			hi = this.length,
+			hi = this.array.length,
 			compared,
 			mid;
 		if (!fun) {
@@ -23,7 +32,7 @@
 		}
 		while (lo < hi) {
 			mid = ((lo + hi) / 2) | 0;
-			compared = fun(item, this[mid]);
+			compared = fun(item, this.array[mid]);
 			if (compared == 0) {
 				return {
 					found: true,
@@ -39,14 +48,6 @@
 			found: false,
 			index: hi
 		};
-	}
-
-	// Base Array
-	function BaseArray() {}
-	BaseArray.prototype = new Array;
-
-	BaseArray.prototype.insertAt = function () {
-		insertAt.apply(this, Array.prototype.slice.call(arguments));
 	};
 
 	/**

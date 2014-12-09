@@ -3,6 +3,7 @@ var loki = require('../src/lokijs.js'),
 	gordian = require('gordian'),
 	suite = new gordian('testEvents'),
 	options = {
+		asyncListeners: false,
 		disableChangesApi: false
 	},
 	users = db.addCollection('users', options),
@@ -22,7 +23,6 @@ test2.insert({
 });
 
 var userChanges = db.generateChangesNotification(['users']);
-
 suite.assertEqual('Single collection changes', 2, userChanges.length);
 var someChanges = db.generateChangesNotification(['users', 'test2']);
 suite.assertEqual('Changes number for selected collections', 3, someChanges.length);

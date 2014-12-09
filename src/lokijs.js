@@ -114,21 +114,21 @@ var loki = (function () {
   function Loki(filename, options) {
     this.filename = filename || 'loki.db';
     this.collections = [];
-    
+
     // persist version of code which created the database to the database.
     // could use for upgrade scenarios
     this.databaseVersion = 1.1;
     this.engineVersion = 1.1;
-    
+
     this.options = {};
-    
+
     if (typeof (options) !== 'undefined') {
       this.options = options;
     }
-    
+
     // currently appContext is only used as configuration for indexed db adapter
     this.appContext = 'loki';
-    
+
     if (this.options.hasOwnProperty('appContext')) {
       this.appContext = options.appContext;
     }
@@ -137,20 +137,20 @@ var loki = (function () {
     // this is optional option param, otherwise environment detection will be used
     // if user passes their own adapter we will force this method to 'adapter' later, so no need to pass method option.
     this.persistenceMethod = null;
-    
+
     if (this.options.hasOwnProperty('persistenceMethod')) {
       this.persistenceMethod = options.persistenceMethod;
     }
-    
+
     // retain reference to optional persistence adapter 'instance'
     this.persistenceAdapter = null;
-    
+
     // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
     if (this.options.hasOwnProperty('adapter')) {
       this.persistenceMethod = 'adapter';
       this.persistenceAdapter = options.adapter;
     }
-    
+
     this.events = {
       'init': [],
       'flushChanges': [],
@@ -737,7 +737,7 @@ var loki = (function () {
               return (t[i]);
             }
           }
-          
+
           return [];
         } else {
           // if using dot notation then treat property as keypath such as 'name.first'.
@@ -775,7 +775,7 @@ var loki = (function () {
           if (seg[1] !== -1) {
             return this.data[seg[0]];
           }
-          
+
           return [];
         }
 
@@ -1216,7 +1216,9 @@ var loki = (function () {
   DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
     if (typeof (isdesc) === 'undefined') isdesc = false;
 
-    this.sortCriteria = [[propname, isdesc]];
+    this.sortCriteria = [
+      [propname, isdesc]
+    ];
     this.sortFunction = null;
 
     this.resultset.simplesort(propname, isdesc);
@@ -1225,7 +1227,7 @@ var loki = (function () {
 
     return this;
   };
-  
+
   /**
    * applySortCriteria() - Allows sorting a resultset based on multiple columns.
    *    Example : dv.applySortCriteria(['age', 'name']); to sort by age and then name (both ascending)
@@ -1238,11 +1240,11 @@ var loki = (function () {
   DynamicView.prototype.applySortCriteria = function (criteria) {
     this.sortCriterial = criteria;
     this.sortFunction = null;
-    
+
     this.resultset.compoundsort(criteria);
-    
+
     this.sortDirty = false;
-    
+
     return this;
   }
 
@@ -1506,42 +1508,42 @@ var loki = (function () {
       }
     }
   };
-  
+
   var LokiOps = {
     // comparison operators
-    $eq : function (a, b) {
+    $eq: function (a, b) {
       return a === b;
     },
 
-    $gt : function (a, b) {
+    $gt: function (a, b) {
       return a > b;
     },
 
-    $gte : function (a, b) {
+    $gte: function (a, b) {
       return a >= b;
     },
 
-    $lt : function (a, b) {
+    $lt: function (a, b) {
       return a < b;
     },
 
-    $lte : function (a, b) {
+    $lte: function (a, b) {
       return a <= b;
     },
 
-    $ne : function (a, b) {
+    $ne: function (a, b) {
       return a !== b;
     },
 
-    $regex : function (a, b) {
+    $regex: function (a, b) {
       return b.test(a);
     },
 
-    $in : function (a, b) {
+    $in: function (a, b) {
       return b.indexOf(a) > -1;
     },
 
-    $contains : function (a, b) {
+    $contains: function (a, b) {
       if (Array.isArray(a)) {
         return a.indexOf(b) !== -1;
       }
@@ -1679,21 +1681,38 @@ var loki = (function () {
       obj.meta.revision += 1;
     }
 
+    function createInsertChange(obj) {
+      createChange(self.name, 'I', obj);
+    }
+
+    function createUpdateChange(obj) {
+      createChange(self.name, 'U', obj);
+    }
+
+    function insertMetaWithChange(obj) {
+      insertMeta(obj);
+      createInsertChange(obj);
+    }
+
+    function updateMetaWithChange(obj) {
+      updateMeta(obj);
+      createUpdateChange(obj);
+    }
+
+
+    /* assign correct handler based on ChangesAPI flag */
+    var insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange,
+      updateHandler = self.disableChangesApi ? updateMeta : updateMetaWithChange;
+
     /**
      * built-in events
      */
     this.on('insert', function (obj) {
-      insertMeta(obj);
-      if (!self.disableChangesApi) {
-        createChange(self.name, 'I', obj);
-      }
+      insertHandler(obj);
     });
 
     this.on('update', function (obj) {
-      updateMeta(obj);
-      if (!self.disableChangesApi) {
-        createChange(self.name, 'U', obj);
-      }
+      updateHandler(obj);
     });
 
     this.on('delete', function (obj) {
@@ -1808,7 +1827,7 @@ var loki = (function () {
       upgradeNeeded = false;
 
     this.name = obj.name;
-    
+
     // restore database version
     this.databaseVersion = 1.0;
     if (obj.hasOwnProperty('databaseVersion')) {
@@ -1818,7 +1837,7 @@ var loki = (function () {
     if (this.databaseVersion !== this.engineVersion) {
       upgradeNeeded = true;
     }
-    
+
     this.collections = [];
 
     for (i; i < len; i += 1) {
@@ -1860,23 +1879,22 @@ var loki = (function () {
           if (!copyColl.data[0].hasOwnProperty('$loki')) {
             var dlen = copyColl.data.length;
             var currDoc = null;
-            
+
             // for each document, set $loki to old 'id' column
             // if it has 'originalId' column, move to 'id'
             for (var idx = 0; idx < dlen; idx++) {
               currDoc = copyColl.data[idx];
-              
+
               currDoc['$loki'] = currDoc['id'];
               delete currDoc.id;
-              
+
               if (currDoc.hasOwnProperty['originalId']) {
                 currDoc['id'] = currDoc['originalId'];
               }
             }
           }
         }
-      }
-      else {
+      } else {
         // not an upgrade or upgrade after 1.1, so copy new collection level options
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
@@ -1893,8 +1911,8 @@ var loki = (function () {
       if (typeof (coll.binaryIndices) !== 'undefined') {
         copyColl.binaryIndices = coll.binaryIndices;
       }
-      
-      
+
+
       copyColl.ensureId();
 
       // in case they are loading a database created before we added dynamic views, handle undefined
@@ -1953,7 +1971,7 @@ var loki = (function () {
           cFun(null, data);
         });
       }
-      
+
       if (this.persistenceMethod === 'localStorage') {
         if (localStorageAvailable()) {
           self.loadJSON(localStorage.getItem(this.filename));
@@ -1962,25 +1980,23 @@ var loki = (function () {
           cFun(new Error('localStorage is not available'));
         }
       }
-      
+
       if (this.persistenceMethod === 'adapter') {
         // test if user has given us an adapter reference (in loki constructor options)
         if (this.persistenceAdapter !== null) {
-          this.persistenceAdapter.loadDatabase(this.filename, function(dbString) {
+          this.persistenceAdapter.loadDatabase(this.filename, function (dbString) {
             if (dbString === null) {
               cFun('Database not found');
-            }
-            else {
+            } else {
               self.loadJSON(dbString);
               cFun(null);
             }
           });
-        }
-        else {
+        } else {
           cFun(new Error('persistence adapter not provided'));
         }
       }
-      
+
       return;
     }
 
@@ -2023,7 +2039,7 @@ var loki = (function () {
         return;
       },
       self = this;
-      
+
     // If user has specified a persistenceMethod, use it
     if (this.persistenceMethod != null) {
       if (this.persistenceMethod === 'fs') {
@@ -2040,7 +2056,7 @@ var loki = (function () {
           }
         });
       }
-      
+
       if (this.persistenceMethod === 'localStorage') {
         if (localStorageAvailable()) {
           localStorage.setItem(self.filename, self.serialize());
@@ -2049,22 +2065,21 @@ var loki = (function () {
           cFun(new Error('localStorage is not available'));
         }
       }
-      
+
       if (this.persistenceMethod === 'adapter') {
-          // test if loki persistence adapter instance was provided in loki constructor options
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function() {
-              cFun(null);
-            });
-          }
-          else {
-            cFun(new Error('indexedAdapter not included'));
-          }
+        // test if loki persistence adapter instance was provided in loki constructor options
+        if (this.persistenceAdapter !== null) {
+          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function () {
+            cFun(null);
+          });
+        } else {
+          cFun(new Error('indexedAdapter not included'));
+        }
       }
-      
+
       return;
     }
-    
+
     // persist in nodejs
     if (this.ENV === 'NODEJS') {
       this.fs.exists(this.filename, function (exists) {
@@ -2530,8 +2545,7 @@ var loki = (function () {
     var result = new Resultset(this, query, null, true);
     if (Array.isArray(result) && result.length === 0) {
       return null;
-    }
-    else {
+    } else {
       return result;
     }
   };

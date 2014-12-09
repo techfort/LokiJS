@@ -1852,7 +1852,9 @@ var loki = (function () {
         copyColl.cloneObjects = false;
         copyColl.asyncListeners = true;
         copyColl.disableChangesApi = true;
-        
+
+        console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
+
         // for current collection, if there is at least one document see if its missing $loki key
         if (copyColl.data.length > 0) {
           if (!copyColl.data[0].hasOwnProperty('$loki')) {

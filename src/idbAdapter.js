@@ -86,23 +86,7 @@ var lokiIndexedAdapter = (function() {
       this.catalog = new LokiCatalog(function(cat) {
         adapter.catalog = cat;
       
-        // now that catalog has been initialized, look up db in AKV db
-        cat.getAppKey(appName, dbname, function(result) {
-          // our storage layer returns result with id of 0 if not found
-          if (result.id === 0) {
-            console.error("IndexedAdapter.loadDatabase() : database not found by that key");
-            callback(null);
-            return;
-          }
-          
-          if (typeof (callback) === 'function') {
-            callback(result.val);
-          }
-          else {
-            // support console use of api
-            console.log(result.val);
-          }
-        });
+        adapter.loadDatabase(dbname, callback);
       });
       
       return;
@@ -163,15 +147,7 @@ var lokiIndexedAdapter = (function() {
       this.catalog = new LokiCatalog(function(cat) {
         adapter.catalog = cat;
         
-        // need to look up the object first to get the id, so we can delete
-        cat.getAppKey(appName, dbname, function(result) {
-          var id = result.id;
-
-          // now that we know id, delete from AKV db
-          if (id !== 0) {
-            cat.deleteAppKey(id);
-          }
-        });
+        adapter.deleteDatabase(dbname);
       });
       
       return;
@@ -202,25 +178,7 @@ var lokiIndexedAdapter = (function() {
       this.catalog = new LokiCatalog(function(cat) {
         adapter.catalog = cat;
         
-        // get all keys for current appName, and transpose results so just string array
-        cat.getAppKeys(appName, function(results) {
-          var names = [];
-          
-          for(var idx = 0; idx < results.length; idx++) {
-            names.push(results[idx].key);
-          }
-          
-          // callback if supplied
-          if (typeof (callback) === 'function') {
-            callback(names);
-          }
-          else {
-            // log to console if no callback supplied
-            names.forEach(function(obj) {
-              console.log(obj);
-            });
-          }
-        });
+        adapter.getDatabaseList(callback);
       });
       
       return;
@@ -246,6 +204,60 @@ var lokiIndexedAdapter = (function() {
     });
   }
 
+  /**
+   * getCatalogSummary - allows retrieval of list of all keys in catalog along with size
+   *
+   * @param {function} callback - (Optional) callback to accept result array.
+   */
+  IndexedAdapter.prototype.getCatalogSummary = function(callback)
+  {
+    var appName = this.app;
+    var adapter = this;
+    
+    // lazy open/create db reference
+    if (this.catalog === null) {
+      this.catalog = new LokiCatalog(function(cat) {
+        adapter.catalog = cat;
+        
+        adapter.getCatalogSummary(callback);
+      });
+      
+      return;
+    }
+    
+    // catalog already initialized
+    // get all keys for current appName, and transpose results so just string array
+    this.catalog.getAllKeys(function(results) {
+      var entries = [];
+      var obj,
+        size,
+        oapp,
+        okey,
+        oval;
+      
+      for(var idx = 0; idx < results.length; idx++) {
+        obj = results[idx];
+        oapp = obj.app || '';
+        okey = obj.key || '';
+        oval = obj.val || '';
+        
+        // app and key are composited into an appkey column so we will mult by 2
+        size = oapp.length * 2 + okey.length * 2 + oval.length + 1;
+        
+        entries.push({ "app": obj.app, "key": obj.key, "size": size });
+      }
+      
+      if (typeof (callback) === 'function') {
+        callback(entries);
+      }
+      else {
+        entries.forEach(function(obj) {
+          console.log(obj);
+        });
+      }
+    });
+  }
+  
   /**
    * LokiCatalog - underlying App/Key/Value catalog persistence
    *    This non-interface class implements the actual persistence.

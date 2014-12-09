@@ -1882,7 +1882,7 @@ var loki = (function () {
         copyColl.cloneObjects = coll.cloneObjects;
       }
 
-      copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
+      copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
       copyColl.idIndex = coll.idIndex;
       // if saved in previous format recover id index out of it
       if (typeof (coll.indices) !== 'undefined') {

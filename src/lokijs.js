@@ -122,33 +122,20 @@ var loki = (function () {
 
     this.options = {};
 
-    if (typeof (options) !== 'undefined') {
-      this.options = options;
-    }
-
-    // currently appContext is only used as configuration for indexed db adapter
-    this.appContext = 'loki';
-
-    if (this.options.hasOwnProperty('appContext')) {
-      this.appContext = options.appContext;
-    }
-
+    // currently keeping persistenceMethod and persistenceAdapter as loki level properties that
+    // will not or cannot be deserialized.  You are required to configure persistence every time
+    // you instantiate a loki object (or use default environment detection) in order to load the database anyways.
+    
     // persistenceMethod could be 'fs', 'localStorage', or 'adapter'
     // this is optional option param, otherwise environment detection will be used
     // if user passes their own adapter we will force this method to 'adapter' later, so no need to pass method option.
     this.persistenceMethod = null;
 
-    if (this.options.hasOwnProperty('persistenceMethod')) {
-      this.persistenceMethod = options.persistenceMethod;
-    }
-
-    // retain reference to optional persistence adapter 'instance'
+    // retain reference to optional (non-serializable) persistenceAdapter 'instance'
     this.persistenceAdapter = null;
 
-    // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
-    if (this.options.hasOwnProperty('adapter')) {
-      this.persistenceMethod = 'adapter';
-      this.persistenceAdapter = options.adapter;
+    if (typeof (options) !== 'undefined') {
+      this.configureOptions(options);
     }
 
     this.events = {
@@ -189,6 +176,35 @@ var loki = (function () {
 
   // db class is an EventEmitter
   Loki.prototype = new LokiEventEmitter;
+
+  /**
+   * configureOptions - allows reconfiguring database options
+   *
+   * @param {object} options - configuration options to apply to loki db object
+   */
+  Loki.prototype.configureOptions = function(options) {
+    this.options = {};
+
+    if (typeof (options) !== 'undefined') {
+      this.options = options;
+    }
+
+    this.persistenceMethod = null;
+
+    if (this.options.hasOwnProperty('persistenceMethod')) {
+      this.persistenceMethod = options.persistenceMethod;
+    }
+
+    // retain reference to optional persistence adapter 'instance'
+    // currently keeping outside options because it can't be serialized
+    this.persistenceAdapter = null;
+
+    // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+    if (this.options.hasOwnProperty('adapter')) {
+      this.persistenceMethod = 'adapter';
+      this.persistenceAdapter = options.adapter;
+    }
+  }
 
   /**
    * close(callback) - emits the close event with an optional callback. Does not actually destroy the db
@@ -1949,7 +1965,7 @@ var loki = (function () {
    * @param {object} options - not currently used (remove or allow overrides?)
    * @param {function} callback - (Optional) user supplied async callback / error handler
    */
-  Loki.prototype.loadDatabase = function (options, callback) {
+  Loki.prototype.loadDatabase = function (callback) {
     var cFun = callback || function (err, data) {
         if (err) {
           throw err;
@@ -1993,7 +2009,7 @@ var loki = (function () {
             }
           });
         } else {
-          cFun(new Error('persistence adapter not provided'));
+          cFun(new Error('persistenceAdapter not configured'));
         }
       }
 
@@ -2073,7 +2089,7 @@ var loki = (function () {
             cFun(null);
           });
         } else {
-          cFun(new Error('indexedAdapter not included'));
+          cFun(new Error('persistenceAdapter not configured'));
         }
       }
 

@@ -68,6 +68,20 @@ var lokiIndexedAdapter = (function() {
 
     // keep reference to catalog class for base AKV operations
     this.catalog = null;
+    
+    if (!this.checkAvailability()) {
+      console.error('indexedDB does not seem to be supported for your environment');
+    }
+  }
+
+  /**
+   * checkAvailability - used to check if adapter is available
+   *
+   * @returns {boolean} true if indexeddb is available, false if not.
+   */
+  IndexedAdapter.prototype.checkAvailability = function()
+  {
+    return window.indexedDB;
   }
 
   /**

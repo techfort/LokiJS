@@ -278,7 +278,9 @@ function testIndexLifecycle() {
 }
 
 function testIndexes() {
-  var itc = db.addCollection('test', { indices: ['testid']});
+  var itc = db.addCollection('test', {
+    indices: ['testid']
+  });
 
   itc.insert({
     'testid': 1
@@ -421,9 +423,13 @@ function stepEvaluateDocument() {
   // assert set equality of docArrays irrelevant of sort/sequence
   var result1 = users.find(query).sort(docCompare);
   var result2 = view.data().sort(docCompare);
-  result1.forEach(function(obj) { delete obj.meta } );
-  result2.forEach(function(obj) { delete obj.meta } );
-  
+  result1.forEach(function (obj) {
+    delete obj.meta
+  });
+  result2.forEach(function (obj) {
+    delete obj.meta
+  });
+
   suite.assertEqual('Result data Equality', result1, result2);
 
   suite.assertNotStrictEqual('Strict Equality', users.find(query), view.data());
@@ -494,6 +500,44 @@ function testDynamicView() {
   stepDynamicViewPersistence();
 }
 
+function duplicateItemFoundOnIndex() {
+  var test = db.addCollection('nodupes', ['index']);
+
+  var item = test.insert({
+    index: 'key',
+    a: 1
+  });
+
+  var results = test.find({
+    index: 'key'
+  });
+  suite.assertStrictEqual('one result exists', results.length, 1);
+  suite.assertStrictEqual('the correct result is returned', results[0].a, 1);
+
+  item.a = 2;
+  test.update(item);
+
+  results = test.find({
+    index: 'key'
+  });
+  suite.assertStrictEqual('one result exists', results.length, 1);
+  suite.assertStrictEqual('the correct result is returned', results[0].a, 2);
+}
+
+function testEmptyTableWithIndex() {
+  var itc = db.addCollection('test', ['testindex']);
+
+  var resultsNoIndex = itc.find({
+    'testid': 2
+  });
+  suite.assertStrictEqual('no results found', resultsNoIndex.length, 0);
+
+  var resultsWithIndex = itc.find({
+    'testindex': 4
+  });
+  suite.assertStrictEqual('no results found', resultsWithIndex.length, 0);
+}
+
 /* Main Test */
 populateTestData();
 testCoreMethods();
@@ -502,5 +546,6 @@ testIndexes();
 testIndexLifecycle();
 testResultset();
 testDynamicView();
-
+duplicateItemFoundOnIndex();
+testEmptyTableWithIndex();
 suite.report();

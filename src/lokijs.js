@@ -2137,7 +2137,7 @@
       }
     };
     // alias
-    Loki.prototype.save = Loki.prototype.saveToDisk;
+    Loki.prototype.save = Loki.prototype.saveDatabase;
 
     // future use for saving collections to remote db
     // Loki.prototype.saveRemote = Loki.prototype.no_op;

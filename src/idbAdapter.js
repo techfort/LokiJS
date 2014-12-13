@@ -81,7 +81,9 @@ var lokiIndexedAdapter = (function() {
    */
   IndexedAdapter.prototype.checkAvailability = function()
   {
-    return window.indexedDB;
+    if (window && window.indexedDB) return true;
+    
+    return false;
   }
 
   /**

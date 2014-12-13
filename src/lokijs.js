@@ -1732,9 +1732,18 @@
 
 
       /* assign correct handler based on ChangesAPI flag */
-      var insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange,
+      var insertHandler, updateHandler;
+      function setHandlers() {
+        insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange;
         updateHandler = self.disableChangesApi ? updateMeta : updateMetaWithChange;
+      }
+      
+      setHandlers();
 
+      this.setChangesApi = function (enabled) {
+        self.disableChangesApi = !enabled;
+        setHandlers();
+      };
       /**
        * built-in events
        */

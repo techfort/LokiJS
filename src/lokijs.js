@@ -1603,7 +1603,7 @@
       this.name = name;
       // the data held by the collection
       this.data = [];
-      this.idIndex = {}; // index of id
+      this.idIndex = []; // index of id
       this.binaryIndices = {}; // user defined indexes
       // the object type of the collection
       this.objType = name;
@@ -2348,7 +2348,7 @@
 
     Collection.prototype.clear = function () {
       this.data = [];
-      this.idIndex = {};
+      this.idIndex = [];
       this.binaryIndices = {};
       this.cachedIndex = null;
       this.cachedData = null;

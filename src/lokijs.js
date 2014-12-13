@@ -1394,7 +1394,7 @@
           copyColl.data[j] = coll.data[j];
         }
 
-        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.data.maxId;
+        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
         // if saved in previous format recover id index out of it
         if (typeof(coll.indices) !== 'undefined') copyColl.idIndex = coll.indices.id;

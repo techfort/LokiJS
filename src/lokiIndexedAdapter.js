@@ -111,6 +111,11 @@ var lokiIndexedAdapter = (function() {
     // lookup up db string in AKV db
     this.catalog.getAppKey(appName, dbname, function(result) {
       if (typeof (callback) === 'function') {
+        if (result.id === 0) {
+          console.warn("loki indexeddb adapter could not find database");
+          callback(null);
+          return;
+        }
         callback(result.val);
       }
       else {
@@ -119,6 +124,9 @@ var lokiIndexedAdapter = (function() {
       }
     });
   }
+
+  // alias
+  IndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
 
   /**
    * saveDatabase() - Saves a serialized db to the catalog.
@@ -147,6 +155,9 @@ var lokiIndexedAdapter = (function() {
     // set (add/update) entry to AKV database
     this.catalog.setAppKey(appName, dbname, dbstring, callback);
   }
+
+  // alias
+  IndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
 
   /**
    * deleteDatabase() - Deletes a serialized db from the catalog.

@@ -229,7 +229,7 @@
 
       // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
       if (options.hasOwnProperty('autoload') && typeof(initialConfig) !== 'undefined' && initialConfig) {
-        this.loadDatabase();
+        this.loadDatabase(options.autoloadCallback);
       }
 
       if (this.options.hasOwnProperty('autosaveInterval')) {
@@ -250,6 +250,15 @@
      * but useful from an API perspective
      */
     Loki.prototype.close = function (callback) {
+      // for autosave scenarios, we will let close perform final save (if dirty)
+      // For web use, you might call from window.onbeforeunload to shutdown database, saving pending changes
+      if (this.autosave) {
+        this.autosaveDisable();
+        if (this.autosaveDirty()) {
+          this.saveDatabase();
+        }
+      }
+      
       if (callback) {
         this.on('close', callback);
       }
@@ -1631,6 +1640,10 @@
       this.binaryIndices = {}; // user defined indexes
       // the object type of the collection
       this.objType = name;
+      
+      // in autosave scenarios we will use collection level dirty flags to determine whether save is needed.
+      // currently, if any collection is dirty we will autosave the whole database if autosave is configured.
+      this.dirty = false;
 
       // private holders for cached data
       this.cachedIndex = null;
@@ -2049,7 +2062,8 @@
           // test if user has given us an adapter reference (in loki constructor options)
           if (this.persistenceAdapter !== null) {
             this.persistenceAdapter.loadDatabase(this.filename, function (dbString) {
-              if (dbString === null) {
+              if (typeof(dbString) === 'undefined' || dbString === null) {
+                console.warn('lokijs loadDatabase : Database not found');
                 cFun('Database not found');
               } else {
                 self.loadJSON(dbString);
@@ -2103,6 +2117,10 @@
           return;
         },
         self = this;
+
+      // for now assume whichever method below succeeds and reset dirty flags
+      // in future we may move this into each if block if no exceptions occur.
+      this.autosaveClearFlags();
 
       // If user has specified a persistenceMethod, use it
       if (this.persistenceMethod != null) {
@@ -2173,6 +2191,30 @@
     Loki.prototype.save = Loki.prototype.saveDatabase;
 
     /**
+     * autosaveDirty - check whether any collections are 'dirty' meaning we need to save (entire) database
+     *
+     * @returns {boolean} - true if database has changed since last autosave, false if not.
+     */
+    Loki.prototype.autosaveDirty = function() {
+      for (var idx = 0; idx < this.collections.length; idx++) {
+        if (this.collections[idx].dirty) return true;
+      }
+
+      return false;
+    }
+
+    /**
+     * autosaveClearFlags - resets dirty flags on all collections. 
+     *    Called from saveDatabase() after db is saved.
+     *
+     */
+    Loki.prototype.autosaveClearFlags = function() {
+      for (var idx = 0; idx < this.collections.length; idx++) {
+        this.collections[idx].dirty = false;
+      }
+    }
+
+    /**
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
      */
@@ -2191,9 +2233,9 @@
         // so next step will be to implement collection level dirty flags set on insert/update/remove
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
 
-        //if (self.autosaveDirty()) {
+        if (self.autosaveDirty()) {
           self.saveDatabase();
-        //}
+        }
       }, delay);
     }
 
@@ -2261,12 +2303,14 @@
 
       index.values.sort(wrappedComparer);
       index.dirty = false;
+
+      this.dirty = true; // for autosave scenarios
     };
 
     /**
      * Ensure all binary indices
      */
-    Collection.prototype.ensureAllBinaryIndexes = function (force) {
+    Collection.prototype.ensureAllIndexes = function (force) {
       var objKeys = Object.keys(this.binaryIndices);
 
       var i = objKeys.length;
@@ -2423,6 +2467,7 @@
       this.cachedData = null;
       this.maxId = 0;
       this.DynamicViews = [];
+      this.dirty = true;
     };
 
     /**
@@ -2474,6 +2519,7 @@
         this.idIndex[position] = obj.$loki;
 
         this.commit();
+        this.dirty = true;  // for autosave scenarios
         this.emit('update', doc);
 
       } catch (err) {
@@ -2535,6 +2581,7 @@
         this.idIndex.push(obj.$loki);
 
         this.commit();
+        this.dirty = true;  // for autosave scenarios
         return obj;
       } catch (err) {
         this.rollback();
@@ -2586,6 +2633,7 @@
         this.idIndex.splice(position, 1);
 
         this.commit();
+        this.dirty = true;  // for autosave scenarios
         this.emit('delete');
 
       } catch (err) {

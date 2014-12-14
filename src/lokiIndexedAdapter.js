@@ -190,6 +190,9 @@ var lokiIndexedAdapter = (function() {
     });
   }
 
+  // alias
+  IndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
+
   /**
    * getDatabaseList() - Retrieves object array of catalog entries for current app.
    *
@@ -230,6 +233,9 @@ var lokiIndexedAdapter = (function() {
       }
     });
   }
+
+  // alias
+  IndexedAdapter.prototype.getKeyList = IndexedAdapter.prototype.getDatabaseList;
 
   /**
    * getCatalogSummary - allows retrieval of list of all keys in catalog along with size

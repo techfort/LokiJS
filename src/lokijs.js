@@ -2005,8 +2005,13 @@
           dv.filterPipeline = colldv.filterPipeline;
           
           // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
-          if (upgradeNeeded && typeof (colldv.sortCriteria) !== 'undefined' && colldv.sortCriteria != null) {
-            dv.sortCriteria = [ colldv.sortCriteria ];
+          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
+            var isdesc = false;
+            if (typeof(colldv.sortColumnDesc) !== 'undefined') {
+              isdesc = colldv.sortColumnDesc;
+            }
+            
+            dv.sortCriteria = [ colldv.sortColumn, isdesc ];
           }
           else {
             dv.sortCriteria = colldv.sortCriteria;

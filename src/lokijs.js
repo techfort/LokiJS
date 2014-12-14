@@ -135,6 +135,12 @@
       this.databaseVersion = 1.1;
       this.engineVersion = 1.1;
 
+      // autosave support (disabled by default)
+      // pass autosave: true, autosaveInterval: 6000 in options to set 6 second autosave
+      this.autosave = false;
+      this.autosaveInterval = 5000;
+      this.autosaveHandle = null;
+
       this.options = {};
 
       // currently keeping persistenceMethod and persistenceAdapter as loki level properties that
@@ -150,7 +156,7 @@
       this.persistenceAdapter = null;
 
       if (typeof (options) !== 'undefined') {
-        this.configureOptions(options);
+        this.configureOptions(options, true);
       }
 
       this.events = {
@@ -196,8 +202,9 @@
      * configureOptions - allows reconfiguring database options
      *
      * @param {object} options - configuration options to apply to loki db object
+     * @param {boolean} initialConfig - (optional) if this is a reconfig, don't pass this
      */
-    Loki.prototype.configureOptions = function (options) {
+    Loki.prototype.configureOptions = function (options, initialConfig) {
       this.options = {};
 
       if (typeof (options) !== 'undefined') {
@@ -219,6 +226,23 @@
         this.persistenceMethod = 'adapter';
         this.persistenceAdapter = options.adapter;
       }
+
+      // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
+      if (options.hasOwnProperty('autoload') && typeof(initialConfig) !== 'undefined' && initialConfig) {
+        this.loadDatabase();
+      }
+
+      if (this.options.hasOwnProperty('autosaveInterval')) {
+        this.autosaveDisable();
+        this.autosaveInterval = parseInt(this.options.autosaveInterval);
+      }
+
+      if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
+        this.autosaveDisable();
+        this.autosave = true;
+        this.autosaveEnable();
+      }
+
     }
 
     /**
@@ -2147,6 +2171,42 @@
     };
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
+
+    /**
+     * autosaveEnable - begin a javascript interval to periodically save the database.
+     *
+     */
+    Loki.prototype.autosaveEnable = function() {
+      this.autosave = true;
+
+      var delay = 5000,
+        self = this;
+
+      if (typeof(this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
+        delay = this.autosaveInterval;
+      }
+
+      this.autosaveHandle = setInterval(function() {
+        // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
+        // so next step will be to implement collection level dirty flags set on insert/update/remove
+        // along with loki level isdirty() function which iterates all collections to see if any are dirty
+
+        //if (self.autosaveDirty()) {
+          self.saveDatabase();
+        //}
+      }, delay);
+    }
+
+    /**
+     * autosaveDisable - stop the autosave interval timer.
+     *
+     */
+    Loki.prototype.autosaveDisable = function() {
+      if (typeof(this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
+        clearInterval(this.autosaveHandle);
+        this.autosaveHandle = null;
+      }
+    }
 
     // future use for saving collections to remote db
     // Loki.prototype.saveRemote = Loki.prototype.no_op;

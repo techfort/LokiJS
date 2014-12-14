@@ -2017,8 +2017,7 @@
             dv.sortCriteria = colldv.sortCriteria;
           }
           
-          //dv.sortColumnDesc = colldv.sortColumnDesc;
-          dv.sortFunction = colldv.sortFunction;
+          dv.sortFunction = null;
           dv.sortDirty = colldv.sortDirty;
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
           dv.resultset.searchIsChained = colldv.resultset.searchIsChained;

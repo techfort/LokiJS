@@ -228,7 +228,7 @@
       }
 
       // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-      if (options.hasOwnProperty('autoload') && typeof(initialConfig) !== 'undefined' && initialConfig) {
+      if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
         this.loadDatabase(options.autoloadCallback);
       }
 
@@ -258,7 +258,7 @@
           this.saveDatabase();
         }
       }
-      
+
       if (callback) {
         this.on('close', callback);
       }
@@ -1640,7 +1640,7 @@
       this.binaryIndices = {}; // user defined indexes
       // the object type of the collection
       this.objType = name;
-      
+
       // in autosave scenarios we will use collection level dirty flags to determine whether save is needed.
       // currently, if any collection is dirty we will autosave the whole database if autosave is configured.
       this.dirty = false;
@@ -1691,11 +1691,7 @@
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
       //if (typeof (indices) !== 'undefined') {
       if (options) {
-        if (options.indices) {
-          indices = options.indices;
-        } else {
-          indices = [];
-        }
+        indices = options.indices || [];
       } else {
         indices = [];
       }
@@ -1770,11 +1766,12 @@
 
       /* assign correct handler based on ChangesAPI flag */
       var insertHandler, updateHandler;
+
       function setHandlers() {
         insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange;
         updateHandler = self.disableChangesApi ? updateMeta : updateMetaWithChange;
       }
-      
+
       setHandlers();
 
       this.setChangesApi = function (enabled) {
@@ -2003,20 +2000,19 @@
           dv.resultdata = colldv.resultdata;
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
-          
+
           // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
           if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
             var isdesc = false;
-            if (typeof(colldv.sortColumnDesc) !== 'undefined') {
+            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
               isdesc = colldv.sortColumnDesc;
             }
-            
-            dv.sortCriteria = [ colldv.sortColumn, isdesc ];
-          }
-          else {
+
+            dv.sortCriteria = [colldv.sortColumn, isdesc];
+          } else {
             dv.sortCriteria = colldv.sortCriteria;
           }
-          
+
           dv.sortFunction = null;
           dv.sortDirty = colldv.sortDirty;
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
@@ -2074,7 +2070,7 @@
           // test if user has given us an adapter reference (in loki constructor options)
           if (this.persistenceAdapter !== null) {
             this.persistenceAdapter.loadDatabase(this.filename, function (dbString) {
-              if (typeof(dbString) === 'undefined' || dbString === null) {
+              if (typeof (dbString) === 'undefined' || dbString === null) {
                 console.warn('lokijs loadDatabase : Database not found');
                 cFun('Database not found');
               } else {
@@ -2137,6 +2133,7 @@
       // If user has specified a persistenceMethod, use it
       if (this.persistenceMethod != null) {
         if (this.persistenceMethod === 'fs') {
+          /*
           this.fs.exists(this.filename, function (exists) {
             if (exists) {
               self.fs.unlink(self.filename, function (err) {
@@ -2146,9 +2143,11 @@
                 self.fs.writeFile(self.filename, self.serialize(), cFun);
               });
             } else {
-              self.fs.writeFile(self.filename, self.serialize(), cFun);
+              self.fs.writeFile(self.filename, self.serialize(), cFun);    
             }
           });
+          */
+          self.fs.writeFile(self.filename, self.serialize(), cFun);
         }
 
         if (this.persistenceMethod === 'localStorage') {
@@ -2176,6 +2175,7 @@
 
       // persist in nodejs
       if (this.ENV === 'NODEJS') {
+        /*
         this.fs.exists(this.filename, function (exists) {
           if (exists) {
             self.fs.unlink(self.filename, function (err) {
@@ -2188,6 +2188,8 @@
             self.fs.writeFile(self.filename, self.serialize(), cFun);
           }
         });
+        */
+        self.fs.writeFile(self.filename, self.serialize(), cFun);
       } else if (this.ENV === 'BROWSER') {
         if (localStorageAvailable()) {
           localStorage.setItem(self.filename, self.serialize());
@@ -2207,7 +2209,7 @@
      *
      * @returns {boolean} - true if database has changed since last autosave, false if not.
      */
-    Loki.prototype.autosaveDirty = function() {
+    Loki.prototype.autosaveDirty = function () {
       for (var idx = 0; idx < this.collections.length; idx++) {
         if (this.collections[idx].dirty) return true;
       }
@@ -2216,11 +2218,11 @@
     }
 
     /**
-     * autosaveClearFlags - resets dirty flags on all collections. 
+     * autosaveClearFlags - resets dirty flags on all collections.
      *    Called from saveDatabase() after db is saved.
      *
      */
-    Loki.prototype.autosaveClearFlags = function() {
+    Loki.prototype.autosaveClearFlags = function () {
       for (var idx = 0; idx < this.collections.length; idx++) {
         this.collections[idx].dirty = false;
       }
@@ -2230,17 +2232,17 @@
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
      */
-    Loki.prototype.autosaveEnable = function() {
+    Loki.prototype.autosaveEnable = function () {
       this.autosave = true;
 
       var delay = 5000,
         self = this;
 
-      if (typeof(this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
+      if (typeof (this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
         delay = this.autosaveInterval;
       }
 
-      this.autosaveHandle = setInterval(function() {
+      this.autosaveHandle = setInterval(function () {
         // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
         // so next step will be to implement collection level dirty flags set on insert/update/remove
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
@@ -2255,8 +2257,8 @@
      * autosaveDisable - stop the autosave interval timer.
      *
      */
-    Loki.prototype.autosaveDisable = function() {
-      if (typeof(this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
+    Loki.prototype.autosaveDisable = function () {
+      if (typeof (this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
         clearInterval(this.autosaveHandle);
         this.autosaveHandle = null;
       }
@@ -2531,7 +2533,7 @@
         this.idIndex[position] = obj.$loki;
 
         this.commit();
-        this.dirty = true;  // for autosave scenarios
+        this.dirty = true; // for autosave scenarios
         this.emit('update', doc);
 
       } catch (err) {
@@ -2593,7 +2595,7 @@
         this.idIndex.push(obj.$loki);
 
         this.commit();
-        this.dirty = true;  // for autosave scenarios
+        this.dirty = true; // for autosave scenarios
         return obj;
       } catch (err) {
         this.rollback();
@@ -2645,7 +2647,7 @@
         this.idIndex.splice(position, 1);
 
         this.commit();
-        this.dirty = true;  // for autosave scenarios
+        this.dirty = true; // for autosave scenarios
         this.emit('delete');
 
       } catch (err) {

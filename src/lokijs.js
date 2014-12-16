@@ -2211,7 +2211,9 @@
      */
     Loki.prototype.autosaveDirty = function () {
       for (var idx = 0; idx < this.collections.length; idx++) {
-        if (this.collections[idx].dirty) return true;
+        if (this.collections[idx].dirty) {
+          return true;
+        }
       }
 
       return false;
@@ -2832,6 +2834,7 @@
       return;
     };
 
+    Loki.prototype.Collection = Collection;
     return Loki;
   }());
 

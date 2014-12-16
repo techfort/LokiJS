@@ -2806,7 +2806,7 @@
       return;
     };
 
-    Loki.prototype.Collection = Collection;
+    Loki.Collection = Collection;
     return Loki;
   }());
 

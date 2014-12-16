@@ -1,12 +1,11 @@
-var loki = require('../src/lokijs.js'),
-  db = new loki(),
+var Loki = require('../src/lokijs.js'),
   gordian = require('gordian'),
   suite = new gordian('testCollection');
 
 function SubclassedCollection() {
-  (new loki()).Collection.apply(this, Array.prototype.slice.call(arguments));
+  Loki.Collection.apply(this, Array.prototype.slice.call(arguments));
 }
-SubclassedCollection.prototype = new db.Collection;
+SubclassedCollection.prototype = new Loki.Collection;
 SubclassedCollection.prototype.extendedMethod = function () {
   return this.name.toUpperCase();
 }

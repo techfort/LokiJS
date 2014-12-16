@@ -1,6 +1,6 @@
 /**
  * LokiJS
- * @author Joe Minichino <joe@dsforge.net>
+ * @author Joe Minichino <joe.minichino@gmail.com>
  *
  * A lightweight document oriented javascript database
  */
@@ -2133,20 +2133,6 @@
       // If user has specified a persistenceMethod, use it
       if (this.persistenceMethod != null) {
         if (this.persistenceMethod === 'fs') {
-          /*
-          this.fs.exists(this.filename, function (exists) {
-            if (exists) {
-              self.fs.unlink(self.filename, function (err) {
-                if (err) {
-                  return cFun(err);
-                }
-                self.fs.writeFile(self.filename, self.serialize(), cFun);
-              });
-            } else {
-              self.fs.writeFile(self.filename, self.serialize(), cFun);    
-            }
-          });
-          */
           self.fs.writeFile(self.filename, self.serialize(), cFun);
         }
 
@@ -2175,20 +2161,6 @@
 
       // persist in nodejs
       if (this.ENV === 'NODEJS') {
-        /*
-        this.fs.exists(this.filename, function (exists) {
-          if (exists) {
-            self.fs.unlink(self.filename, function (err) {
-              if (err) {
-                return cFun(err);
-              }
-              self.fs.writeFile(self.filename, self.serialize(), cFun);
-            });
-          } else {
-            self.fs.writeFile(self.filename, self.serialize(), cFun);
-          }
-        });
-        */
         self.fs.writeFile(self.filename, self.serialize(), cFun);
       } else if (this.ENV === 'BROWSER') {
         if (localStorageAvailable()) {

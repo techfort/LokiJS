@@ -2034,7 +2034,7 @@
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function} callback - (Optional) user supplied async callback / error handler
      */
-    Loki.prototype.loadDatabase = function (callback) {
+    Loki.prototype.loadDatabase = function (options, callback) {
       var cFun = callback || function (err, data) {
           if (err) {
             throw err;

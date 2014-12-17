@@ -19,7 +19,7 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 
 ## Current state
 
-LokiJS is at version 1.1 [Wintar]
+LokiJS is at version 1.1 [Wintar]. While the roadmap is exciting, LokiJS is at the moment stable.
 As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
 
 ### Main Features

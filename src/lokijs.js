@@ -2162,7 +2162,7 @@
       // persist in nodejs
       if (this.ENV === 'NODEJS') {
         self.fs.writeFile(self.filename, self.serialize(), cFun);
-      } else if (this.ENV === 'BROWSER') {
+      } else if (this.ENV === 'BROWSER' || this.ENV === 'CORDOVA') {
         if (localStorageAvailable()) {
           localStorage.setItem(self.filename, self.serialize());
           cFun(null);

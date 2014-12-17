@@ -1,5 +1,5 @@
 # LokiJS
-![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=vmaster)
+![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
 
 ## Overview
 

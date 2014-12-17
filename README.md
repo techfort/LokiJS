@@ -44,6 +44,7 @@ For node environments you can install through `npm install lokijs`.
 * MRU cache
 * MongoDB API compatibility
 * server standalone (tcp and http servers and clients)
+* replication and horizontal scaling
 
 ## Contact
 

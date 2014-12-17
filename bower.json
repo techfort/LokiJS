@@ -1,7 +1,7 @@
 {
   "name": "lokijs",
-  "version": "0.0.1",
-  "main": "[\"src/LokiJS.js\"]",
+  "version": "1.1.0",
+  "main": "[\"src/lokijs.js\"]",
   "ignore": [
     "**/.*",
     "node_modules",

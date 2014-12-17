@@ -3,14 +3,15 @@
 
 ## Overview
 
-LokiJS is a document oriented client side database written in javascript.
+LokiJS is a document oriented database written in javascript.
 Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.
-Runs in node and the browser.
+Runs in node (including cordova/phonegap and node-webkit) and the browser.
 LokiJS is ideal for the following scenarios: 
 
-1. where a lightweight in-memory db is ideal
-2. cross-platform mobile apps where you can leverage the power of javascript and avoid interacting with native databases
-3. data sets are not so large that it wouldn't be a problem loading the entire db from a server and synchronising at the end of the work session
+1. where a lightweight in-memory db is ideal (e.g., a session store)
+2. cordova/phonegap mobile apps where you can leverage the power of javascript and avoid interacting with native databases
+3. data sets loaded into a browser page and synchronised at the end of the work session
+4. node-webkit desktop apps
 
 LokiJS supports indexing and views and achieves high-performance through maintaining a binary-index for data.
 
@@ -18,8 +19,16 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 
 ## Current state
 
-LokiJS is currently at an alpha stage, it is stable but not 100% feature complete.
+LokiJS is at version 1.1 [Wintar]
 As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
+
+### Main Features
+
+1. Fast performance NoSQL in-memory database, collections with binary-index
+2. Runs in multiple environments (browser, node)
+3. Dynamic Views for fast access of data subsets
+4. Built-in persistence adapters, and the ability to support user-defined ones
+5. Changes API
 
 ## Installation
 
@@ -31,8 +40,10 @@ For node environments you can install through `npm install lokijs`.
 
 ## Roadmap
 
-* Wider and more specific support for indexes such as unique, compound.
-* Replication across nodes.
+* key-value datastore
+* MRU cache
+* MongoDB API compatibility
+* server standalone (tcp and http servers and clients)
 
 ## Contact
 
@@ -40,7 +51,7 @@ For help / enquiries contact joe.minichino@gmail.com
 
 ## License
 
-Copyright (c) 2013, Joe Minichino <joe.minichino@gmail.com>
+Copyright (c) 2015, Joe Minichino <joe.minichino@gmail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

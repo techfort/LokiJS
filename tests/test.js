@@ -545,6 +545,33 @@ function testAnonym() {
     name: 'jack'
   }], ['name']);
   suite.assertEqual('Anonym collection', coll.data.length, 2);
+  suite.assertEqual('Collection not found', db.getCollection('anonym'), null);
+  coll.name = 'anonym';
+  db.loadCollection(coll);
+  suite.assertEqual('Anonym collection loaded', !!db.getCollection('anonym'), true);
+}
+
+function testCollections() {
+  var db = new loki('testCollections');
+  suite.assertEqual('DB name', db.getName(), 'testCollections');
+  suite.assertThrows('Remove collection error', function () {
+    db.removeCollection('test4');
+  }, Error);
+  db.addCollection('test1');
+  db.addCollection('test2');
+  suite.assertEqual('List collections', db.listCollections().length, 2);
+
+  function TestError() {}
+  TestError.prototype = new Error;
+  db.autosaveEnable();
+  db.on('close', function () {
+    throw new TestError;
+  });
+  suite.assertThrows('Throw error on purpose on close', function () {
+    db.close(function () {
+      return;
+    });
+  }, TestError);
 }
 
 /* Main Test */
@@ -558,4 +585,5 @@ testDynamicView();
 duplicateItemFoundOnIndex();
 testEmptyTableWithIndex();
 testAnonym();
+testCollections();
 suite.report();

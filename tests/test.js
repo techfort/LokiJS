@@ -561,7 +561,9 @@ function testCollections() {
     transactional: true
   });
   db.addCollection('test2');
-
+  suite.assertThrows('Throw error on wrong remove', function () {
+    t.remove('foo');
+  }, Error);
   suite.assertEqual('List collections', db.listCollections().length, 2);
 
   function TestError() {}

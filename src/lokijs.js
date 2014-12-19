@@ -2609,7 +2609,7 @@
     Collection.prototype.remove = function (doc) {
       var self = this;
       if ('object' !== typeof doc) {
-        throw 'Parameter is not an object';
+        throw new Error('Parameter is not an object');
       }
       if (Array.isArray(doc)) {
         var k = 0,
@@ -2621,7 +2621,7 @@
       }
 
       if (!doc.hasOwnProperty('$loki')) {
-        throw 'Object is not a document stored in the collection';
+        throw new Error('Object is not a document stored in the collection');
       }
 
       if (Object.keys(this.binaryIndices).length > 0) {

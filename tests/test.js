@@ -564,6 +564,11 @@ function testCollections() {
   suite.assertThrows('Throw error on wrong remove', function () {
     t.remove('foo');
   }, Error);
+  suite.assertThrows('Throw error on non-synced doc', function () {
+    t.remove({
+      name: 'joe'
+    });
+  }, Error);
   suite.assertEqual('List collections', db.listCollections().length, 2);
 
   function TestError() {}

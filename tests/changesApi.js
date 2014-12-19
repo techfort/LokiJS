@@ -24,6 +24,7 @@ test2.insert({
 
 var userChanges = db.generateChangesNotification(['users']);
 suite.assertEqual('Single collection changes', 2, userChanges.length);
+suite.assertEqual('Check serialized changes', db.serializeChanges(['users']), JSON.stringify(userChanges));
 var someChanges = db.generateChangesNotification(['users', 'test2']);
 suite.assertEqual('Changes number for selected collections', 3, someChanges.length);
 var allChanges = db.generateChangesNotification();
@@ -34,4 +35,12 @@ u.name = 'john';
 users.update(u);
 var newChanges = db.generateChangesNotification(['users']);
 suite.assertEqual('Change should not register after Api disabled', 2, newChanges.length);
+db.clearChanges();
+suite.assertEqual('clearChanges should wipe changes', 0, users.getChanges().length);
+
+u.name = 'jim';
+users.update(u);
+users.flushChanges();
+suite.assertEqual('Collection level changes flush', 0, users.getChanges().length);
+
 suite.report();

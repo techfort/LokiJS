@@ -242,9 +242,7 @@
         this.fs = fs;
       }
 
-      this.on('changes', function changesCallback(change) {
-        self.changes.push(change);
-      });
+
       this.on('init', this.clearChanges);
 
     }
@@ -595,6 +593,9 @@
       })
     };
 
+    /*------------------+
+    | PERSISTENCE       |
+    -------------------*/
 
     /**
      * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)

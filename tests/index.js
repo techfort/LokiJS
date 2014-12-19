@@ -4,4 +4,3 @@ require('./eventEmitter');
 require('./changesApi');
 require('./testCollection');
 require('./nodePersistence');
-require('./testInjection');

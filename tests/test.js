@@ -538,6 +538,15 @@ function testEmptyTableWithIndex() {
   suite.assertStrictEqual('no results found', resultsWithIndex.length, 0);
 }
 
+function testAnonym() {
+  var coll = db.anonym([{
+    name: 'joe'
+  }, {
+    name: 'jack'
+  }], ['name']);
+  suite.assertEqual('Anonym collection', coll.data.length, 2);
+}
+
 /* Main Test */
 populateTestData();
 testCoreMethods();
@@ -548,4 +557,5 @@ testResultset();
 testDynamicView();
 duplicateItemFoundOnIndex();
 testEmptyTableWithIndex();
+testAnonym();
 suite.report();

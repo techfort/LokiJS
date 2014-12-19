@@ -20,6 +20,64 @@
   return (function () {
     'use strict';
 
+    var Utils = {
+      copyProperties: function (src, dest) {
+        var prop;
+        for (prop in src) {
+          dest[prop] = src[prop];
+        }
+      }
+    };
+
+    var LokiOps = {
+      // comparison operators
+      $eq: function (a, b) {
+        return a === b;
+      },
+
+      $gt: function (a, b) {
+        return a > b;
+      },
+
+      $gte: function (a, b) {
+        return a >= b;
+      },
+
+      $lt: function (a, b) {
+        return a < b;
+      },
+
+      $lte: function (a, b) {
+        return a <= b;
+      },
+
+      $ne: function (a, b) {
+        return a !== b;
+      },
+
+      $regex: function (a, b) {
+        return b.test(a);
+      },
+
+      $in: function (a, b) {
+        return b.indexOf(a) > -1;
+      },
+
+      $contains: function (a, b) {
+        if (Array.isArray(a)) {
+          return a.indexOf(b) !== -1;
+        }
+
+        if (typeof a === 'string') {
+          return a.indexOf(b) !== -1;
+        }
+
+        if (a && typeof a === 'object') {
+          return a.hasOwnProperty(b);
+        }
+
+      }
+    };
     var fs = (typeof exports === 'object') ? require('fs') : false;
 
     function clone(data, method) {
@@ -239,7 +297,231 @@
         this.autosaveEnable();
       }
 
+    };
+
+    /**
+     * anonym() - shorthand method for quickly creating and populating an anonymous collection.
+     *    This collection is not referenced internally so upon losing scope it will be garbage collected.
+     *
+     *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
+     *
+     * @param {Array} docs - document array to initialize the anonymous collection with
+     * @param {Array} indexesArray - (Optional) array of property names to index
+     * @returns {Collection} New collection which you can query or chain
+     */
+    Loki.prototype.anonym = function (docs, indexesArray) {
+      var collection = new Collection('anonym', indexesArray);
+      collection.insert(docs);
+      return collection;
     }
+
+    Loki.prototype.addCollection = function (name, options) {
+      var collection = new Collection(name, options);
+      this.collections.push(collection);
+
+      return collection;
+    };
+
+    Loki.prototype.loadCollection = function (collection) {
+      this.collections.push(collection);
+    };
+
+    Loki.prototype.getCollection = function (collectionName) {
+      var i,
+        len = this.collections.length;
+
+      for (i = 0; i < len; i += 1) {
+        if (this.collections[i].name === collectionName) {
+          return this.collections[i];
+        }
+      }
+
+      // no such collection
+      this.emit('warning', 'collection ' + collectionName + ' not found');
+      return null;
+    };
+
+    Loki.prototype.listCollections = function () {
+
+      var i = this.collections.length,
+        colls = [];
+
+      while (i--) {
+        colls.push({
+          name: this.collections[i].name,
+          type: this.collections[i].objType,
+          count: this.collections[i].data.length
+        });
+      }
+      return colls;
+    };
+
+    Loki.prototype.removeCollection = function (collectionName) {
+      var i,
+        len = this.collections.length;
+
+      for (i = 0; i < len; i += 1) {
+        if (this.collections[i].name === collectionName) {
+          this.collections.splice(i, 1);
+          return;
+        }
+      }
+      throw 'No such collection';
+    };
+
+    Loki.prototype.getName = function () {
+      return this.name;
+    };
+
+    // toJson
+    Loki.prototype.serialize = function () {
+      return JSON.stringify(this);
+    };
+    // alias of serialize
+    Loki.prototype.toJson = Loki.prototype.serialize;
+
+    /**
+     * loadJSON - inflates a loki database from a serialized JSON string
+     *
+     * @param {string} serializedDb - a serialized loki database string
+     * @param {object} options - apply or override collection level settings
+     */
+    Loki.prototype.loadJSON = function (serializedDb, options) {
+
+      var obj = JSON.parse(serializedDb),
+        i = 0,
+        len = obj.collections.length,
+        coll,
+        copyColl,
+        clen,
+        j,
+        upgradeNeeded = false;
+
+      this.name = obj.name;
+
+      // restore database version
+      this.databaseVersion = 1.0;
+      if (obj.hasOwnProperty('databaseVersion')) {
+        this.databaseVersion = obj.databaseVersion;
+      }
+
+      if (this.databaseVersion !== this.engineVersion) {
+        upgradeNeeded = true;
+      }
+
+      this.collections = [];
+
+      for (i; i < len; i += 1) {
+        coll = obj.collections[i];
+        copyColl = this.addCollection(coll.name);
+
+        // load each element individually
+        clen = coll.data.length;
+        j = 0;
+        if (options && options.hasOwnProperty(coll.name)) {
+
+          var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
+
+          for (j; j < clen; j++) {
+            var obj = new(options[coll.name]['proto'])();
+            loader(coll.data[j], obj);
+            copyColl.data[j] = obj;
+
+          }
+        } else {
+
+          for (j; j < clen; j++) {
+            copyColl.data[j] = coll.data[j];
+          }
+        }
+
+        // rough object upgrade, once file format stabilizes we will probably remove this
+        if (upgradeNeeded && this.engineVersion == 1.1) {
+          // we are upgrading a 1.0 database to 1.1, so initialize new properties
+          copyColl.transactional = false;
+          copyColl.cloneObjects = false;
+          copyColl.asyncListeners = true;
+          copyColl.disableChangesApi = true;
+
+          console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
+
+          // for current collection, if there is at least one document see if its missing $loki key
+          if (copyColl.data.length > 0) {
+            if (!copyColl.data[0].hasOwnProperty('$loki')) {
+              var dlen = copyColl.data.length;
+              var currDoc = null;
+
+              // for each document, set $loki to old 'id' column
+              // if it has 'originalId' column, move to 'id'
+              for (var idx = 0; idx < dlen; idx++) {
+                currDoc = copyColl.data[idx];
+
+                currDoc['$loki'] = currDoc['id'];
+                delete currDoc.id;
+
+                if (currDoc.hasOwnProperty['originalId']) {
+                  currDoc['id'] = currDoc['originalId'];
+                }
+              }
+            }
+          }
+        } else {
+          // not an upgrade or upgrade after 1.1, so copy new collection level options
+          copyColl.transactional = coll.transactional;
+          copyColl.asyncListeners = coll.asyncListeners;
+          copyColl.disableChangesApi = coll.disableChangesApi;
+          copyColl.cloneObjects = coll.cloneObjects;
+        }
+
+        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
+        copyColl.idIndex = coll.idIndex;
+        // if saved in previous format recover id index out of it
+        if (typeof (coll.indices) !== 'undefined') {
+          copyColl.idIndex = coll.indices.id;
+        }
+        if (typeof (coll.binaryIndices) !== 'undefined') {
+          copyColl.binaryIndices = coll.binaryIndices;
+        }
+
+
+        copyColl.ensureId();
+
+        // in case they are loading a database created before we added dynamic views, handle undefined
+        if (typeof (coll.DynamicViews) === 'undefined') continue;
+
+        // reinflate DynamicViews and attached Resultsets
+        for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
+          var colldv = coll.DynamicViews[idx];
+
+          var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
+          dv.resultdata = colldv.resultdata;
+          dv.resultsdirty = colldv.resultsdirty;
+          dv.filterPipeline = colldv.filterPipeline;
+
+          // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
+          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
+            var isdesc = false;
+            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
+              isdesc = colldv.sortColumnDesc;
+            }
+
+            dv.sortCriteria = [colldv.sortColumn, isdesc];
+          } else {
+            dv.sortCriteria = colldv.sortCriteria;
+          }
+
+          dv.sortFunction = null;
+          dv.sortDirty = colldv.sortDirty;
+          dv.resultset.filteredrows = colldv.resultset.filteredrows;
+          dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
+          dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
+
+          dv.rematerialize({
+            removeWhereFilters: true
+          });
+        }
+      }
+    };
 
     /**
      * close(callback) - emits the close event with an optional callback. Does not actually destroy the db
@@ -312,6 +594,220 @@
         }
       })
     };
+
+
+    /**
+     * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {object} options - not currently used (remove or allow overrides?)
+     * @param {function} callback - (Optional) user supplied async callback / error handler
+     */
+    Loki.prototype.loadDatabase = function (options, callback) {
+      var cFun = callback || function (err, data) {
+          if (err) {
+            throw err;
+          }
+          return;
+        },
+        self = this;
+
+      // If user has specified a persistenceMethod, use it
+      if (this.persistenceMethod != null) {
+        if (this.persistenceMethod === 'fs') {
+          this.fs.readFile(this.filename, {
+            encoding: 'utf8'
+          }, function readFileCallback(err, data) {
+            if (err) {
+              return cFun(err, null);
+            }
+            self.loadJSON(data, options || {});
+            cFun(null, data);
+          });
+        }
+
+        if (this.persistenceMethod === 'localStorage') {
+          if (localStorageAvailable()) {
+            self.loadJSON(localStorage.getItem(this.filename));
+            cFun(null, data);
+          } else {
+            cFun(new Error('localStorage is not available'));
+          }
+        }
+
+        if (this.persistenceMethod === 'adapter') {
+          // test if user has given us an adapter reference (in loki constructor options)
+          if (this.persistenceAdapter !== null) {
+            this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
+              if (typeof (dbString) === 'undefined' || dbString === null) {
+                console.warn('lokijs loadDatabase : Database not found');
+                cFun('Database not found');
+              } else {
+                self.loadJSON(dbString);
+                cFun(null);
+              }
+            });
+          } else {
+            cFun(new Error('persistenceAdapter not configured'));
+          }
+        }
+
+        return;
+      };
+
+      // user did not provide persistenceMethod, default to environment detection
+      if (this.ENV === 'NODEJS') {
+        this.fs.readFile(this.filename, {
+          encoding: 'utf8'
+        }, function readFileCallback(err, data) {
+          if (err) {
+            return cFun(err, null);
+          }
+          self.loadJSON(data, options || {});
+          cFun(null, data);
+        });
+      } else if (this.ENV === 'BROWSER') {
+        if (localStorageAvailable()) {
+          self.loadJSON(localStorage.getItem(this.filename));
+          cFun(null, data);
+        } else {
+          cFun(new Error('localStorage is not available'));
+        }
+      } else {
+        cFun(new Error('unknown environment'));
+      }
+    };
+
+    /**
+     * saveDatabase - Handles saving to file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {object} options - not currently used (remove or allow overrides?)
+     * @param {function} callback - (Optional) user supplied async callback / error handler
+     */
+    Loki.prototype.saveDatabase = function (callback) {
+      var cFun = callback || function (err) {
+          if (err) {
+            throw err;
+          }
+          return;
+        },
+        self = this;
+
+      // for now assume whichever method below succeeds and reset dirty flags
+      // in future we may move this into each if block if no exceptions occur.
+      this.autosaveClearFlags();
+
+      // If user has specified a persistenceMethod, use it
+      if (this.persistenceMethod != null) {
+        if (this.persistenceMethod === 'fs') {
+          self.fs.writeFile(self.filename, self.serialize(), cFun);
+        }
+
+        if (this.persistenceMethod === 'localStorage') {
+          if (localStorageAvailable()) {
+            localStorage.setItem(self.filename, self.serialize());
+            cFun(null);
+          } else {
+            cFun(new Error('localStorage is not available'));
+          }
+        }
+
+        if (this.persistenceMethod === 'adapter') {
+          // test if loki persistence adapter instance was provided in loki constructor options
+          if (this.persistenceAdapter !== null) {
+            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
+              cFun(null);
+            });
+          } else {
+            cFun(new Error('persistenceAdapter not configured'));
+          }
+        }
+
+        return;
+      };
+
+      // persist in nodejs
+      if (this.ENV === 'NODEJS') {
+        self.fs.writeFile(self.filename, self.serialize(), cFun);
+      } else if (this.ENV === 'BROWSER' || this.ENV === 'CORDOVA') {
+        if (localStorageAvailable()) {
+          localStorage.setItem(self.filename, self.serialize());
+          cFun(null);
+        } else {
+          cFun(new Error('localStorage is not available'));
+        }
+      } else {
+        cFun(new Error('unknown environment'));
+      }
+    };
+    // alias
+    Loki.prototype.save = Loki.prototype.saveDatabase;
+
+    /**
+     * autosaveDirty - check whether any collections are 'dirty' meaning we need to save (entire) database
+     *
+     * @returns {boolean} - true if database has changed since last autosave, false if not.
+     */
+    Loki.prototype.autosaveDirty = function () {
+      for (var idx = 0; idx < this.collections.length; idx++) {
+        if (this.collections[idx].dirty) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    /**
+     * autosaveClearFlags - resets dirty flags on all collections.
+     *    Called from saveDatabase() after db is saved.
+     *
+     */
+    Loki.prototype.autosaveClearFlags = function () {
+      for (var idx = 0; idx < this.collections.length; idx++) {
+        this.collections[idx].dirty = false;
+      }
+    };
+
+    /**
+     * autosaveEnable - begin a javascript interval to periodically save the database.
+     *
+     */
+    Loki.prototype.autosaveEnable = function () {
+      this.autosave = true;
+
+      var delay = 5000,
+        self = this;
+
+      if (typeof (this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
+        delay = this.autosaveInterval;
+      }
+
+      this.autosaveHandle = setInterval(function autosaveHandleInterval() {
+        // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
+        // so next step will be to implement collection level dirty flags set on insert/update/remove
+        // along with loki level isdirty() function which iterates all collections to see if any are dirty
+
+        if (self.autosaveDirty()) {
+          self.saveDatabase();
+        }
+      }, delay);
+    };
+
+    /**
+     * autosaveDisable - stop the autosave interval timer.
+     *
+     */
+    Loki.prototype.autosaveDisable = function () {
+      if (typeof (this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
+        clearInterval(this.autosaveHandle);
+        this.autosaveHandle = null;
+      }
+    };
+
 
     /**
      * Resultset class allowing chainable queries.  Intended to be instanced internally.
@@ -1306,7 +1802,7 @@
       this.sortDirty = false;
 
       return this;
-    }
+    };
 
     /**
      * startTransaction() - marks the beginning of a transaction.
@@ -1560,64 +2056,6 @@
       }
     };
 
-    var Utils = {
-      copyProperties: function (src, dest) {
-        var prop;
-        for (prop in src) {
-          dest[prop] = src[prop];
-        }
-      }
-    };
-
-    var LokiOps = {
-      // comparison operators
-      $eq: function (a, b) {
-        return a === b;
-      },
-
-      $gt: function (a, b) {
-        return a > b;
-      },
-
-      $gte: function (a, b) {
-        return a >= b;
-      },
-
-      $lt: function (a, b) {
-        return a < b;
-      },
-
-      $lte: function (a, b) {
-        return a <= b;
-      },
-
-      $ne: function (a, b) {
-        return a !== b;
-      },
-
-      $regex: function (a, b) {
-        return b.test(a);
-      },
-
-      $in: function (a, b) {
-        return b.indexOf(a) > -1;
-      },
-
-      $contains: function (a, b) {
-        if (Array.isArray(a)) {
-          return a.indexOf(b) !== -1;
-        }
-
-        if (typeof a === 'string') {
-          return a.indexOf(b) !== -1;
-        }
-
-        if (a && typeof a === 'object') {
-          return a.hasOwnProperty(b);
-        }
-
-      }
-    }
 
     /**
      * @constructor
@@ -1797,446 +2235,6 @@
     }
 
     Collection.prototype = new LokiEventEmitter;
-
-    /**
-     * anonym() - shorthand method for quickly creating and populating an anonymous collection.
-     *    This collection is not referenced internally so upon losing scope it will be garbage collected.
-     *
-     *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
-     *
-     * @param {Array} docs - document array to initialize the anonymous collection with
-     * @param {Array} indexesArray - (Optional) array of property names to index
-     * @returns {Collection} New collection which you can query or chain
-     */
-    Loki.prototype.anonym = function (docs, indexesArray) {
-      var collection = new Collection('anonym', indexesArray);
-      collection.insert(docs);
-      return collection;
-    }
-
-    Loki.prototype.addCollection = function (name, options) {
-      var collection = new Collection(name, options);
-      this.collections.push(collection);
-
-      return collection;
-    };
-
-    Loki.prototype.loadCollection = function (collection) {
-      this.collections.push(collection);
-    };
-
-    Loki.prototype.getCollection = function (collectionName) {
-      var i,
-        len = this.collections.length;
-
-      for (i = 0; i < len; i += 1) {
-        if (this.collections[i].name === collectionName) {
-          return this.collections[i];
-        }
-      }
-
-      // no such collection
-      this.emit('warning', 'collection ' + collectionName + ' not found');
-      return null;
-    };
-
-    Loki.prototype.listCollections = function () {
-
-      var i = this.collections.length,
-        colls = [];
-
-      while (i--) {
-        colls.push({
-          name: this.collections[i].name,
-          type: this.collections[i].objType,
-          count: this.collections[i].data.length
-        });
-      }
-      return colls;
-    };
-
-    Loki.prototype.removeCollection = function (collectionName) {
-      var i,
-        len = this.collections.length;
-
-      for (i = 0; i < len; i += 1) {
-        if (this.collections[i].name === collectionName) {
-          this.collections.splice(i, 1);
-          return;
-        }
-      }
-      throw 'No such collection';
-    };
-
-    Loki.prototype.getName = function () {
-      return this.name;
-    };
-
-    // toJson
-    Loki.prototype.serialize = function () {
-      return JSON.stringify(this);
-    };
-    // alias of serialize
-    Loki.prototype.toJson = Loki.prototype.serialize;
-
-    /**
-     * loadJSON - inflates a loki database from a serialized JSON string
-     *
-     * @param {string} serializedDb - a serialized loki database string
-     * @param {object} options - apply or override collection level settings
-     */
-    Loki.prototype.loadJSON = function (serializedDb, options) {
-
-      var obj = JSON.parse(serializedDb),
-        i = 0,
-        len = obj.collections.length,
-        coll,
-        copyColl,
-        clen,
-        j,
-        upgradeNeeded = false;
-
-      this.name = obj.name;
-
-      // restore database version
-      this.databaseVersion = 1.0;
-      if (obj.hasOwnProperty('databaseVersion')) {
-        this.databaseVersion = obj.databaseVersion;
-      }
-
-      if (this.databaseVersion !== this.engineVersion) {
-        upgradeNeeded = true;
-      }
-
-      this.collections = [];
-
-      for (i; i < len; i += 1) {
-        coll = obj.collections[i];
-        copyColl = this.addCollection(coll.name);
-
-        // load each element individually
-        clen = coll.data.length;
-        j = 0;
-        if (options && options.hasOwnProperty(coll.name)) {
-
-          var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
-
-          for (j; j < clen; j++) {
-            var obj = new(options[coll.name]['proto'])();
-            loader(coll.data[j], obj);
-            copyColl.data[j] = obj;
-
-          }
-        } else {
-
-          for (j; j < clen; j++) {
-            copyColl.data[j] = coll.data[j];
-          }
-        }
-
-        // rough object upgrade, once file format stabilizes we will probably remove this
-        if (upgradeNeeded && this.engineVersion == 1.1) {
-          // we are upgrading a 1.0 database to 1.1, so initialize new properties
-          copyColl.transactional = false;
-          copyColl.cloneObjects = false;
-          copyColl.asyncListeners = true;
-          copyColl.disableChangesApi = true;
-
-          console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
-
-          // for current collection, if there is at least one document see if its missing $loki key
-          if (copyColl.data.length > 0) {
-            if (!copyColl.data[0].hasOwnProperty('$loki')) {
-              var dlen = copyColl.data.length;
-              var currDoc = null;
-
-              // for each document, set $loki to old 'id' column
-              // if it has 'originalId' column, move to 'id'
-              for (var idx = 0; idx < dlen; idx++) {
-                currDoc = copyColl.data[idx];
-
-                currDoc['$loki'] = currDoc['id'];
-                delete currDoc.id;
-
-                if (currDoc.hasOwnProperty['originalId']) {
-                  currDoc['id'] = currDoc['originalId'];
-                }
-              }
-            }
-          }
-        } else {
-          // not an upgrade or upgrade after 1.1, so copy new collection level options
-          copyColl.transactional = coll.transactional;
-          copyColl.asyncListeners = coll.asyncListeners;
-          copyColl.disableChangesApi = coll.disableChangesApi;
-          copyColl.cloneObjects = coll.cloneObjects;
-        }
-
-        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
-        copyColl.idIndex = coll.idIndex;
-        // if saved in previous format recover id index out of it
-        if (typeof (coll.indices) !== 'undefined') {
-          copyColl.idIndex = coll.indices.id;
-        }
-        if (typeof (coll.binaryIndices) !== 'undefined') {
-          copyColl.binaryIndices = coll.binaryIndices;
-        }
-
-
-        copyColl.ensureId();
-
-        // in case they are loading a database created before we added dynamic views, handle undefined
-        if (typeof (coll.DynamicViews) === 'undefined') continue;
-
-        // reinflate DynamicViews and attached Resultsets
-        for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
-          var colldv = coll.DynamicViews[idx];
-
-          var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
-          dv.resultdata = colldv.resultdata;
-          dv.resultsdirty = colldv.resultsdirty;
-          dv.filterPipeline = colldv.filterPipeline;
-
-          // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
-          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
-            var isdesc = false;
-            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
-              isdesc = colldv.sortColumnDesc;
-            }
-
-            dv.sortCriteria = [colldv.sortColumn, isdesc];
-          } else {
-            dv.sortCriteria = colldv.sortCriteria;
-          }
-
-          dv.sortFunction = null;
-          dv.sortDirty = colldv.sortDirty;
-          dv.resultset.filteredrows = colldv.resultset.filteredrows;
-          dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
-          dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
-
-          dv.rematerialize({
-            removeWhereFilters: true
-          });
-        }
-      }
-    };
-
-    /**
-     * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
-     *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function} callback - (Optional) user supplied async callback / error handler
-     */
-    Loki.prototype.loadDatabase = function (options, callback) {
-      var cFun = callback || function (err, data) {
-          if (err) {
-            throw err;
-          }
-          return;
-        },
-        self = this;
-
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          this.fs.readFile(this.filename, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              return cFun(err, null);
-            }
-            self.loadJSON(data, options || {});
-            cFun(null, data);
-          });
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            self.loadJSON(localStorage.getItem(this.filename));
-            cFun(null, data);
-          } else {
-            cFun(new Error('localStorage is not available'));
-          }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if user has given us an adapter reference (in loki constructor options)
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-              if (typeof (dbString) === 'undefined' || dbString === null) {
-                console.warn('lokijs loadDatabase : Database not found');
-                cFun('Database not found');
-              } else {
-                self.loadJSON(dbString);
-                cFun(null);
-              }
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      }
-
-      // user did not provide persistenceMethod, default to environment detection
-      if (this.ENV === 'NODEJS') {
-        this.fs.readFile(this.filename, {
-          encoding: 'utf8'
-        }, function readFileCallback(err, data) {
-          if (err) {
-            return cFun(err, null);
-          }
-          self.loadJSON(data, options || {});
-          cFun(null, data);
-        });
-      } else if (this.ENV === 'BROWSER') {
-        if (localStorageAvailable()) {
-          self.loadJSON(localStorage.getItem(this.filename));
-          cFun(null, data);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
-      } else {
-        cFun(new Error('unknown environment'));
-      }
-    };
-
-    /**
-     * saveDatabase - Handles saving to file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
-     *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function} callback - (Optional) user supplied async callback / error handler
-     */
-    Loki.prototype.saveDatabase = function (callback) {
-      var cFun = callback || function (err) {
-          if (err) {
-            throw err;
-          }
-          return;
-        },
-        self = this;
-
-      // for now assume whichever method below succeeds and reset dirty flags
-      // in future we may move this into each if block if no exceptions occur.
-      this.autosaveClearFlags();
-
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          self.fs.writeFile(self.filename, self.serialize(), cFun);
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            localStorage.setItem(self.filename, self.serialize());
-            cFun(null);
-          } else {
-            cFun(new Error('localStorage is not available'));
-          }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if loki persistence adapter instance was provided in loki constructor options
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
-              cFun(null);
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      }
-
-      // persist in nodejs
-      if (this.ENV === 'NODEJS') {
-        self.fs.writeFile(self.filename, self.serialize(), cFun);
-      } else if (this.ENV === 'BROWSER' || this.ENV === 'CORDOVA') {
-        if (localStorageAvailable()) {
-          localStorage.setItem(self.filename, self.serialize());
-          cFun(null);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
-      } else {
-        cFun(new Error('unknown environment'));
-      }
-    };
-    // alias
-    Loki.prototype.save = Loki.prototype.saveDatabase;
-
-    /**
-     * autosaveDirty - check whether any collections are 'dirty' meaning we need to save (entire) database
-     *
-     * @returns {boolean} - true if database has changed since last autosave, false if not.
-     */
-    Loki.prototype.autosaveDirty = function () {
-      for (var idx = 0; idx < this.collections.length; idx++) {
-        if (this.collections[idx].dirty) {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    /**
-     * autosaveClearFlags - resets dirty flags on all collections.
-     *    Called from saveDatabase() after db is saved.
-     *
-     */
-    Loki.prototype.autosaveClearFlags = function () {
-      for (var idx = 0; idx < this.collections.length; idx++) {
-        this.collections[idx].dirty = false;
-      }
-    };
-
-    /**
-     * autosaveEnable - begin a javascript interval to periodically save the database.
-     *
-     */
-    Loki.prototype.autosaveEnable = function () {
-      this.autosave = true;
-
-      var delay = 5000,
-        self = this;
-
-      if (typeof (this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
-        delay = this.autosaveInterval;
-      }
-
-      this.autosaveHandle = setInterval(function autosaveHandleInterval() {
-        // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
-        // so next step will be to implement collection level dirty flags set on insert/update/remove
-        // along with loki level isdirty() function which iterates all collections to see if any are dirty
-
-        if (self.autosaveDirty()) {
-          self.saveDatabase();
-        }
-      }, delay);
-    };
-
-    /**
-     * autosaveDisable - stop the autosave interval timer.
-     *
-     */
-    Loki.prototype.autosaveDisable = function () {
-      if (typeof (this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
-        clearInterval(this.autosaveHandle);
-        this.autosaveHandle = null;
-      }
-    };
-
-    // future use for saving collections to remote db
-    // Loki.prototype.saveRemote = Loki.prototype.no_op;
-
 
     /*----------------------------+
     | INDEXING                    |

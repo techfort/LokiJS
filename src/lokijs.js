@@ -4,14 +4,6 @@
  *
  * A lightweight document oriented javascript database
  */
-
-
-/**
- * Define library loki
- */
-
-/*jslint browser: true, node: true, plusplus: true, indent: 2 */
-
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD
@@ -58,19 +50,19 @@
     function LokiEventEmitter() {}
 
     /**
-     * events - Events property is a hashmap, with each property being an array of callbacks
+     * @prop Events property is a hashmap, with each property being an array of callbacks
      */
     LokiEventEmitter.prototype.events = {};
 
     /**
-     * asyncListeners - boolean determines whether or not the callbacks associated with each event
+     * @prop asyncListeners - boolean determines whether or not the callbacks associated with each event
      * should happen in an async fashion or not
      * Default is false, which means events are synchronous
      */
     LokiEventEmitter.prototype.asyncListeners = false;
 
     /**
-     * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+     * @prop on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
      * @returns {int} the index of the callback in the array of listeners for a particular event
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
@@ -86,9 +78,11 @@
     }
 
     /**
-     * emit(eventName, varargs) - emits a particular event
+     * @propt emit(eventName, varargs) - emits a particular event
      * with the option of passing optional parameters which are going to be processed by the callback
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
+     * @param {string} eventName - the name of the event
+     * @param {object} varargs - optional objects passed with the event
      */
     LokiEventEmitter.prototype.emit = function (eventName) {
 
@@ -114,7 +108,7 @@
     };
 
     /**
-     * remove() - removes the listener at position 'index' from the event 'eventName'
+     * @prop remove() - removes the listener at position 'index' from the event 'eventName'
      */
     LokiEventEmitter.prototype.remove = function (eventName, index) {
       if (this.events[eventName]) {
@@ -123,8 +117,10 @@
     };
 
     /**
+     * Loki: The main database class
      * @constructor
-     * The main database class
+     * @param {string} filename - name of the file to be saved to
+     * @param {object} options - config object
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -188,7 +184,7 @@
         this.fs = fs;
       }
 
-      this.on('changes', function (change) {
+      this.on('changes', function changesCallback(change) {
         self.changes.push(change);
       });
       this.on('init', this.clearChanges);
@@ -1781,15 +1777,15 @@
       /**
        * built-in events
        */
-      this.on('insert', function (obj) {
+      this.on('insert', function insertCallback(obj) {
         insertHandler(obj);
       });
 
-      this.on('update', function (obj) {
+      this.on('update', function updateCallback(obj) {
         updateHandler(obj);
       });
 
-      this.on('delete', function (obj) {
+      this.on('delete', function deleteCallback(obj) {
         if (!self.disableChangesApi) {
           createChange(self.name, 'R', obj);
         }
@@ -2048,7 +2044,7 @@
         if (this.persistenceMethod === 'fs') {
           this.fs.readFile(this.filename, {
             encoding: 'utf8'
-          }, function (err, data) {
+          }, function readFileCallback(err, data) {
             if (err) {
               return cFun(err, null);
             }
@@ -2069,7 +2065,7 @@
         if (this.persistenceMethod === 'adapter') {
           // test if user has given us an adapter reference (in loki constructor options)
           if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.loadDatabase(this.filename, function (dbString) {
+            this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
               if (typeof (dbString) === 'undefined' || dbString === null) {
                 console.warn('lokijs loadDatabase : Database not found');
                 cFun('Database not found');
@@ -2090,7 +2086,7 @@
       if (this.ENV === 'NODEJS') {
         this.fs.readFile(this.filename, {
           encoding: 'utf8'
-        }, function (err, data) {
+        }, function readFileCallback(err, data) {
           if (err) {
             return cFun(err, null);
           }
@@ -2148,7 +2144,7 @@
         if (this.persistenceMethod === 'adapter') {
           // test if loki persistence adapter instance was provided in loki constructor options
           if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function () {
+            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
               cFun(null);
             });
           } else {
@@ -2200,7 +2196,7 @@
       for (var idx = 0; idx < this.collections.length; idx++) {
         this.collections[idx].dirty = false;
       }
-    }
+    };
 
     /**
      * autosaveEnable - begin a javascript interval to periodically save the database.
@@ -2216,7 +2212,7 @@
         delay = this.autosaveInterval;
       }
 
-      this.autosaveHandle = setInterval(function () {
+      this.autosaveHandle = setInterval(function autosaveHandleInterval() {
         // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
         // so next step will be to implement collection level dirty flags set on insert/update/remove
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
@@ -2225,7 +2221,7 @@
           self.saveDatabase();
         }
       }, delay);
-    }
+    };
 
     /**
      * autosaveDisable - stop the autosave interval timer.
@@ -2236,7 +2232,7 @@
         clearInterval(this.autosaveHandle);
         this.autosaveHandle = null;
       }
-    }
+    };
 
     // future use for saving collections to remote db
     // Loki.prototype.saveRemote = Loki.prototype.no_op;

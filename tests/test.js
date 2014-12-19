@@ -570,6 +570,17 @@ function testCollections() {
     });
   }, Error);
   suite.assertEqual('List collections', db.listCollections().length, 2);
+  t.clear();
+  var users = [{
+    name: 'joe'
+  }, {
+    name: 'dave'
+  }];
+  t.insert(users);
+
+  suite.assertEqual('2 docs after array insert', 2, t.data.length);
+  t.remove(users);
+  suite.assertEqual('0 docs after array remove', 0, t.data.length);
 
   function TestError() {}
   TestError.prototype = new Error;

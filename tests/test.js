@@ -549,16 +549,19 @@ function testAnonym() {
   coll.name = 'anonym';
   db.loadCollection(coll);
   suite.assertEqual('Anonym collection loaded', !!db.getCollection('anonym'), true);
+  coll.clear();
+  suite.assertEqual('No data after coll.clear()', 0, coll.data.length);
 }
 
 function testCollections() {
   var db = new loki('testCollections');
+  db.name = 'testCollections';
   suite.assertEqual('DB name', db.getName(), 'testCollections');
-  suite.assertThrows('Remove collection error', function () {
-    db.removeCollection('test4');
-  }, Error);
-  db.addCollection('test1');
+  var t = db.addCollection('test1', {
+    transactional: true
+  });
   db.addCollection('test2');
+
   suite.assertEqual('List collections', db.listCollections().length, 2);
 
   function TestError() {}

@@ -967,14 +967,23 @@
             var obj1 = rslt.collection.data[a];
             var obj2 = rslt.collection.data[b];
 
-            if (obj1[prop] === obj2[prop]) return 0;
-
+            if (obj1[prop] === obj2[prop]) {
+              return 0;
+            }
             if (desc) {
-              if (obj1[prop] < obj2[prop]) return 1;
-              if (obj1[prop] > obj2[prop]) return -1;
+              if (obj1[prop] < obj2[prop]) {
+                return 1;
+              }
+              if (obj1[prop] > obj2[prop]) {
+                return -1;
+              }
             } else {
-              if (obj1[prop] > obj2[prop]) return 1;
-              if (obj1[prop] < obj2[prop]) return -1;
+              if (obj1[prop] > obj2[prop]) {
+                return 1;
+              }
+              if (obj1[prop] < obj2[prop]) {
+                return -1;
+              }
             }
           }
         })(propname, isdesc, this);
@@ -1074,7 +1083,9 @@
       var ubound = index.length - 1;
 
       // when no documents are in collection, return empty range condition
-      if (rcd.length == 0) return [0, -1];
+      if (rcd.length == 0) {
+        return [0, -1];
+      }
 
       var minVal = rcd[index[min]][prop];
       var maxVal = rcd[index[max]][prop];
@@ -1082,19 +1093,29 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
-        if (val < minVal || val > maxVal) return [0, -1];
+        if (val < minVal || val > maxVal) {
+          return [0, -1];
+        }
         break;
       case '$gt':
-        if (val >= maxVal) return [0, -1];
+        if (val >= maxVal) {
+          return [0, -1];
+        }
         break;
       case '$gte':
-        if (val > maxVal) return [0, -1];
+        if (val > maxVal) {
+          return [0, -1];
+        }
         break;
       case '$lt':
-        if (val <= minVal) return [0, -1];
+        if (val <= minVal) {
+          return [0, -1];
+        }
         break;
       case '$lte':
-        if (val < minVal) return [0, -1];
+        if (val < minVal) {
+          return [0, -1];
+        }
         break;
       }
 
@@ -1132,18 +1153,26 @@
 
       switch (op) {
       case '$eq':
-        if (lval !== val) return [0, -1];
-        if (uval !== val) ubound--;
+        if (lval !== val) {
+          return [0, -1];
+        }
+        if (uval !== val) {
+          ubound--;
+        }
 
         return [lbound, ubound];
 
       case '$gt':
-        if (uval <= val) return [0, -1];
+        if (uval <= val) {
+          return [0, -1];
+        }
 
         return [ubound, rcd.length - 1];
 
       case '$gte':
-        if (lval < val) return [0, -1];
+        if (lval < val) {
+          return [0, -1];
+        }
 
         return [lbound, rcd.length - 1];
 
@@ -1151,7 +1180,9 @@
         return [0, lbound - 1];
 
       case '$lte':
-        if (uval !== val) ubound--;
+        if (uval !== val) {
+          ubound--;
+        }
 
         return [0, ubound];
 

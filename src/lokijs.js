@@ -1925,9 +1925,12 @@
       // Apply immediately to Resultset; if persistent we will wait until later to build internal data
       this.resultset.where(fun);
 
-      if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
-      if (this.persistent) this.resultsdirty = true;
-
+      if (this.sortFunction || this.sortCriteria) {
+        this.sortDirty = true;
+      }
+      if (this.persistent) {
+        this.resultsdirty = true;
+      }
       return this;
     };
 

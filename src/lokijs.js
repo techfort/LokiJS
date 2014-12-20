@@ -962,7 +962,9 @@
         this.filteredrows = Object.keys(this.collection.data);
       }
 
-      if (typeof (isdesc) === 'undefined') isdesc = false;
+      if (typeof (isdesc) === 'undefined') {
+        isdesc = false;
+      }
 
       var wrappedComparer =
         (function (prop, desc, rslt) {

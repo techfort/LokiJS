@@ -1,4 +1,4 @@
-TESTS =  $(shell ls -S `find test -type f -name "*.test.js" -print`)
+TESTS =  $(shell ls -S `find tests -type f -name "*.js" -print`)
 REPORTER = spec
 TIMEOUT = 3000
 MOCHA_OPTS =

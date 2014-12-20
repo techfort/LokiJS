@@ -21,7 +21,7 @@
     "in-memory"
   ],
   "scripts": {
-    "test": "make test && istanbul cover tests/"
+    "test": "istanbul cover tests/"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
   "contributors": [{

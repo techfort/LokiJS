@@ -2015,10 +2015,14 @@
       if (oldPos === -1 && newPos !== -1) {
         ofr.push(objIndex);
 
-        if (this.persistent) this.resultdata.push(this.collection.data[objIndex]);
+        if (this.persistent) {
+          this.resultdata.push(this.collection.data[objIndex]);
+        }
 
         // need to re-sort to sort new document
-        if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
+        if (this.sortFunction || this.sortCriteria) {
+          this.sortDirty = true;
+        }
 
         return;
       }
@@ -2037,7 +2041,9 @@
         } else {
           ofr.length = oldlen - 1;
 
-          if (this.persistent) this.resultdata.length = oldlen - 1;
+          if (this.persistent) {
+            this.resultdata.length = oldlen - 1;
+          }
         }
 
         return;
@@ -2051,7 +2057,9 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) this.sortDirty = true;
+        if (this.sortFunction || this.sortCriteria) {
+          this.sortDirty = true;
+        }
 
         return;
       }
@@ -2286,7 +2294,9 @@
      */
     Collection.prototype.ensureIndex = function (property, force) {
       // optional parameter to force rebuild whether flagged as dirty or not
-      if (typeof (force) === 'undefined') force = false;
+      if (typeof (force) === 'undefined') {
+        force = false;
+      }
 
       if (property === null || property === undefined) {
         throw 'Attempting to set index without an associated property';

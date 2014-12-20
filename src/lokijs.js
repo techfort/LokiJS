@@ -281,7 +281,7 @@
 
       // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
       if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
-        this.loadDatabase(null, options.autoloadCallback);
+        this.loadDatabase({}, options.autoloadCallback);
       }
 
       if (this.options.hasOwnProperty('autosaveInterval')) {
@@ -321,6 +321,9 @@
     };
 
     Loki.prototype.loadCollection = function (collection) {
+      if (!collection.name) {
+        throw new Error('Collection must be have a name property to be loaded');
+      }
       this.collections.push(collection);
     };
 

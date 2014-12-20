@@ -1805,7 +1805,10 @@
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      */
     DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
-      if (typeof (isdesc) === 'undefined') isdesc = false;
+
+      if (typeof (isdesc) === 'undefined') {
+        isdesc = false;
+      }
 
       this.sortCriteria = [
         [propname, isdesc]

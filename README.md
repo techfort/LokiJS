@@ -1,5 +1,6 @@
 # LokiJS
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
+[![npm version](https://badge.fury.io/js/lokijs.svg)](http://badge.fury.io/js/lokijs)
 
 ## Overview
 

@@ -168,7 +168,7 @@
     /**
      * @prop remove() - removes the listener at position 'index' from the event 'eventName'
      */
-    LokiEventEmitter.prototype.remove = function (eventName, index) {
+    LokiEventEmitter.prototype.removeListener = function (eventName, index) {
       if (this.events[eventName]) {
         this.events[eventName].splice(index, 1);
       }

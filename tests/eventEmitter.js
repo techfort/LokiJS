@@ -22,7 +22,7 @@ function testEmit() {
   });
 
   db.emit('test', 42);
-  db.remove('test', index);
+  db.removeListener('test', index);
 
   suite.assertEqual('Event has no listeners attached', db.events['test'].length, 0);
 

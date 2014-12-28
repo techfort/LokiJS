@@ -32,12 +32,9 @@
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
-  "dependencies": {
-    "gordian": "0.0.7",
-    "istanbul": "^0.3.2",
-    "mocha": "^2.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "gordian": "0.0.7",
     "gulp": "^3.8.10",
     "gulp-concat": "^2.4.1",
     "gulp-uglify": "^1.0.1",

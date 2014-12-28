@@ -223,7 +223,7 @@
       var self = this;
 
       var getENV = function () {
-        if (fs) {
+        if (typeof window === 'undefined')  {
           return 'NODEJS';
         }
 

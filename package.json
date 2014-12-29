@@ -33,7 +33,7 @@
     "url": "https://github.com/techfort/LokiJS/issues"
   },
   "dependencies": {
-    "gordian": "0.0.7",
+    "gordian": "0.0.999999999",
     "istanbul": "^0.3.2",
     "mocha": "^2.0.1"
   },

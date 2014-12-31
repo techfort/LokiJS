@@ -685,10 +685,7 @@
           cFun(new Error('localStorage is not available'));
         }
       } else {
-        //self.emit('warning', 'unknown environment');
-        self.ENV = 'NODEJS';
-        self.fs = require('fs');
-        self.loadDatabase(options, callback);
+        cFun(new Error('unknown environment'));
       }
     };
 

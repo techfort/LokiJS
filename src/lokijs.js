@@ -223,8 +223,14 @@
       var self = this;
 
       var getENV = function () {
-        if (typeof window === 'undefined')  {
+        if (typeof window === 'undefined') {
           return 'NODEJS';
+        }
+
+        if (module) {
+          if (typeof module !== 'undefined' && module.exports) {
+            return 'NODEJS';
+          }
         }
 
         if (!(document === undefined)) {

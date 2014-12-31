@@ -687,6 +687,7 @@
       } else {
         //self.emit('warning', 'unknown environment');
         self.ENV = 'NODEJS';
+        self.fs = require('fs');
         self.loadDatabase(options, callback);
       }
     };

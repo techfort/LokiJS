@@ -209,9 +209,7 @@
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
 
-      if (typeof (options) !== 'undefined') {
-        this.configureOptions(options, true);
-      }
+
 
       this.events = {
         'init': [],
@@ -247,7 +245,9 @@
       if (this.ENV === 'NODEJS') {
         this.fs = fs;
       }
-
+      if (typeof (options) !== 'undefined') {
+        this.configureOptions(options, true);
+      }
 
       this.on('init', this.clearChanges);
 

@@ -225,12 +225,6 @@
           return 'NODEJS';
         }
 
-        if (module) {
-          if (typeof module !== 'undefined' && module.exports) {
-            return 'NODEJS';
-          }
-        }
-
         if (!(document === undefined)) {
           if (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1) {
             return 'CORDOVA';

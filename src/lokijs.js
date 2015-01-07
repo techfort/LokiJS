@@ -225,7 +225,15 @@
           return 'NODEJS';
         }
 
-        if (!(document === undefined)) {
+        if (typeof require !== 'undefined') {
+          try {
+            if (typeof require('nw.gui') !== 'undefined') {
+              return 'NODEJS'; //node-webkit
+            }
+          } catch(e) {}
+        }
+
+        if (typeof document !== 'undefined') {
           if (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1) {
             return 'CORDOVA';
           }
@@ -234,7 +242,7 @@
         return 'CORDOVA';
       };
 
-      this.ENV = getENV();
+      this.ENV = options ? (options.env || 'NODEJS') : getENV();
 
       if (this.ENV === 'NODEJS') {
         this.fs = fs;
@@ -1957,7 +1965,7 @@
 
       // if nonpersistent return resultset data evaluation
       if (!this.persistent) {
-        // not sure if this emit will be useful, but if view is non-persistent 
+        // not sure if this emit will be useful, but if view is non-persistent
         // we will raise event only if resulset has yet to be initialized.
         // user can intercept via dynView.on('rebuild', myCallback);
         // emit is async wait 1 ms so our data() call should exec before event fired
@@ -2116,7 +2124,7 @@
      * @param {object} configuration object
      */
     function Collection(name, options) {
-      // the name of the collection 
+      // the name of the collection
 
       this.name = name;
       // the data held by the collection

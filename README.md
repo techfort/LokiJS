@@ -41,6 +41,10 @@ You can use bower to install lokijs with `bower install lokijs`
 
 For node environments you can install through `npm install lokijs`.
 
+## Demo
+
+There's a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/'
+
 ## Roadmap
 
 * key-value datastore

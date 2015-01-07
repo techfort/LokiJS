@@ -1,7 +1,7 @@
 <html>
   <head>
   <link href="main.css" rel="stylesheet" />
-  <script src="bower_components/angular/angular.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
   </head>
   <body ng-app="lokidemo">
   <div class="container" ng-controller="DemoController">
@@ -34,10 +34,10 @@
   </div>
   <script>
     
-    var lokijs = require('lokijs'),
+    var loki = require('../../src/lokijs.js', { env: 'NODEJS'}),
       fs = require('fs'),
       app = angular.module('lokidemo', []);
-    app.controller('DemoController', function ($scope) {
+    app.controller('DemoController', ['$scope', function ($scope) {
       
       var DB_FILE = 'demo.json';
 
@@ -52,27 +52,31 @@
       $scope.insert = function () {
         $scope.contacts.insert($scope.newContact);
         $scope.newContact = {};
-        $scope.db.saveToDisk();
+        $scope.db.saveDatabase();
       };
 
       $scope.delete = function (i) {
         $scope.contacts.remove(i);
-        $scope.db.saveToDisk();
+        $scope.db.saveDatabase();
       };
 
-      $scope.db = new lokijs(DB_FILE);
+      $scope.db = new loki(DB_FILE, { env: 'NODEJS', autoload: true });
 
+      $scope.contacts;
 
       fs.exists(DB_FILE, function (exists) {
           if (exists) {
-            $scope.db.loadDatabase(function (data) {
+            console.log('File exists..');
+            
+            $scope.db.loadDatabase({}, function (data) {
               console.log(data);
               $scope.contacts = $scope.db.getCollection('contacts');              
               $scope.$apply();
             });
             
+            console.log('Contacts', $scope.contacts);
           } else {
-            $scope.contacts = $scope.db.addCollection('contacts', 'Contact');
+            $scope.contacts = $scope.db.addCollection('contacts');
             $scope.contacts.insert({name: 'joe', age: 39, firstLanguage: 'italian'});
             $scope.contacts.insert({name: 'dave', age: 30, firstLanguage: 'english'});
             $scope.contacts.insert({name: 'tim', age: 30, firstLanguage: 'english'});
@@ -82,7 +86,7 @@
           }
 
       });
-    });
+    }]);
     
   </script>
   </body>

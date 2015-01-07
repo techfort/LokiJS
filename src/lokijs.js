@@ -225,12 +225,8 @@
           return 'NODEJS';
         }
 
-        if (typeof require !== 'undefined') {
-          try {
-            if (typeof require('nw.gui') !== 'undefined') {
-              return 'NODEJS'; //node-webkit
-            }
-          } catch(e) {}
+        if (typeof global !== 'undefined' && global.window) {
+          return 'NODEJS'; //node-webkit
         }
 
         if (typeof document !== 'undefined') {

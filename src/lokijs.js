@@ -637,8 +637,10 @@
 
         if (this.persistenceMethod === 'localStorage') {
           if (localStorageAvailable()) {
-            self.loadJSON(localStorage.getItem(this.filename));
-            cFun(null, data);
+            var data = localStorage.getItem(this.filename);
+
+            self.loadJSON(data, options || {});
+            cFun.call(null, data);
           } else {
             cFun(new Error('localStorage is not available'));
           }
@@ -677,8 +679,10 @@
         });
       } else if (this.ENV === 'BROWSER') {
         if (localStorageAvailable()) {
-          self.loadJSON(localStorage.getItem(this.filename));
-          cFun(null, data);
+          var data = localStorage.getItem(this.filename);
+
+          self.loadJSON(data, options || {});
+          cFun.call(null, data);
         } else {
           cFun(new Error('localStorage is not available'));
         }

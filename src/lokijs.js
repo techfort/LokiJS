@@ -640,7 +640,7 @@
             var data = localStorage.getItem(this.filename);
 
             self.loadJSON(data, options || {});
-            cFun.call(null, data);
+            cFun(null, data);
           } else {
             cFun(new Error('localStorage is not available'));
           }
@@ -682,7 +682,7 @@
           var data = localStorage.getItem(this.filename);
 
           self.loadJSON(data, options || {});
-          cFun.call(null, data);
+          cFun(null, data);
         } else {
           cFun(new Error('localStorage is not available'));
         }

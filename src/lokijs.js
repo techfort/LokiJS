@@ -674,6 +674,9 @@
           if (err) {
             return cFun(err, null);
           }
+          if (!data.length) {
+            data = self.serialize();
+          }
           self.loadJSON(data, options || {});
           cFun(null, data);
         });

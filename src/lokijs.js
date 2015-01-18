@@ -238,7 +238,21 @@
         return 'CORDOVA';
       };
 
-      this.ENV = options ? (options.env || 'NODEJS') : getENV();
+      // refactored environment detection due to invalid detection for browser environments.
+      // if they do not specify an options.env we want to detect env rather than default to nodejs.
+      // currently keeping two properties for similar thing (options.env and options.persistenceMethod)
+      //   might want to review whether we can consolidate.
+      if (options && options.hasOwnProperty('env')) {
+        this.ENV = options.env;
+      }
+      else {
+        this.ENV = getENV();
+      }
+      
+      // not sure if this is necessary now that i have refactored the line above
+      if (this.ENV === 'undefined') {
+        this.ENV = 'NODEJS';
+      }
 
       if (this.ENV === 'NODEJS') {
         this.fs = fs;
@@ -378,9 +392,21 @@
       return this.name;
     };
 
+    /**
+     * serializeReplacer - used to prevent certain properties from being serialized
+     *
+     */
+    Loki.prototype.serializeReplacer = function(key, value)
+    {
+      switch(key) {
+        case 'autosaveHandle' : return null;
+        default : return value;
+      }
+    };
+
     // toJson
     Loki.prototype.serialize = function () {
-      return JSON.stringify(this);
+      return JSON.stringify(this, this.serializeReplacer);
     };
     // alias of serialize
     Loki.prototype.toJson = Loki.prototype.serialize;

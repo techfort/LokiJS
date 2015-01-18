@@ -2165,7 +2165,8 @@
 
       // in autosave scenarios we will use collection level dirty flags to determine whether save is needed.
       // currently, if any collection is dirty we will autosave the whole database if autosave is configured.
-      this.dirty = false;
+      // defaulting to true since this is called from addCollection and adding a collection should trigger save
+      this.dirty = true;
 
       // private holders for cached data
       this.cachedIndex = null;

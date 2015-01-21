@@ -64,18 +64,37 @@
       },
 
       $contains: function (a, b) {
+        var checkFn = function() { return true; };
+        
+        if(!Array.isArray(b)) {
+          b = [ b ];
+        }
+        
         if (Array.isArray(a)) {
-          return a.indexOf(b) !== -1;
+          checkFn = function(curr) {
+            return a.indexOf(curr) !== -1;
+          };
         }
-
+        
         if (typeof a === 'string') {
-          return a.indexOf(b) !== -1;
+          checkFn = function(curr) {
+            return a.indexOf(curr) !== -1;
+          };
         }
-
+    
         if (a && typeof a === 'object') {
-          return a.hasOwnProperty(b);
+          checkFn = function(curr) {
+            return a.hasOwnProperty(curr);
+          };
         }
-
+        
+        return b.reduce(function(prev, curr) {
+          if(!prev) {
+            return prev;
+          }
+          
+          return checkFn(curr);
+        }, true);
       }
     };
     var fs = (typeof exports === 'object') ? require('fs') : false;

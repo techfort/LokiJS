@@ -64,35 +64,37 @@
       },
 
       $contains: function (a, b) {
-        var checkFn = function() { return true; };
-        
-        if(!Array.isArray(b)) {
-          b = [ b ];
+        var checkFn = function () {
+          return true;
+        };
+
+        if (!Array.isArray(b)) {
+          b = [b];
         }
-        
+
         if (Array.isArray(a)) {
-          checkFn = function(curr) {
+          checkFn = function (curr) {
             return a.indexOf(curr) !== -1;
           };
         }
-        
+
         if (typeof a === 'string') {
-          checkFn = function(curr) {
+          checkFn = function (curr) {
             return a.indexOf(curr) !== -1;
           };
         }
-    
+
         if (a && typeof a === 'object') {
-          checkFn = function(curr) {
+          checkFn = function (curr) {
             return a.hasOwnProperty(curr);
           };
         }
-        
-        return b.reduce(function(prev, curr) {
-          if(!prev) {
+
+        return b.reduce(function (prev, curr) {
+          if (!prev) {
             return prev;
           }
-          
+
           return checkFn(curr);
         }, true);
       }
@@ -263,11 +265,10 @@
       //   might want to review whether we can consolidate.
       if (options && options.hasOwnProperty('env')) {
         this.ENV = options.env;
-      }
-      else {
+      } else {
         this.ENV = getENV();
       }
-      
+
       // not sure if this is necessary now that i have refactored the line above
       if (this.ENV === 'undefined') {
         this.ENV = 'NODEJS';
@@ -415,11 +416,12 @@
      * serializeReplacer - used to prevent certain properties from being serialized
      *
      */
-    Loki.prototype.serializeReplacer = function(key, value)
-    {
-      switch(key) {
-        case 'autosaveHandle' : return null;
-        default : return value;
+    Loki.prototype.serializeReplacer = function (key, value) {
+      switch (key) {
+      case 'autosaveHandle':
+        return null;
+      default:
+        return value;
       }
     };
 
@@ -1261,8 +1263,7 @@
      * @param {array} expressionArray - array of expressions
      * @returns {Resultset} this resultset for further chain ops.
      */
-    Resultset.prototype.findOr = function (expressionArray)
-    {
+    Resultset.prototype.findOr = function (expressionArray) {
       var fri = 0;
       var fr = null;
 
@@ -1273,7 +1274,7 @@
         throw "OR op on already initialized resultset is not yet implemented, coming imminently";
       }
 
-      for(var i=0; i < expressionArray.length; i++) {
+      for (var i = 0; i < expressionArray.length; i++) {
         // we will let each filter run independently against full collection and mashup document hits later
         var expResultset = this.collection.chain();
         expResultset.find(expressionArray[i]);
@@ -1281,7 +1282,7 @@
 
         // add any document 'hits'
         fr = expResultset.filteredrows;
-        for(fri=0; fri < fr.length; fri++) {
+        for (fri = 0; fri < fr.length; fri++) {
           if (this.filteredrows.indexOf(fr[fri]) === -1) {
             this.filteredrows.push(fr[fri]);
           }
@@ -1303,11 +1304,10 @@
      * @param {array} expressionArray - array of expressions
      * @returns {Resultset} this resultset for further chain ops.
      */
-    Resultset.prototype.findAnd = function (expressionArray)
-    {
+    Resultset.prototype.findAnd = function (expressionArray) {
       // we have already implementing method chaining in this (our Resultset class)
       // so lets just progressively apply user supplied and filters
-      for(var i=0; i < expressionArray.length; i++) {
+      for (var i = 0; i < expressionArray.length; i++) {
         this.find(expressionArray[i]);
       }
 
@@ -1391,8 +1391,7 @@
               this.findAnd(queryObject[p]);
 
               return this;
-            }
-            else {
+            } else {
               // our and operation internally chains filters
               return this.collection.chain().findAnd(queryObject[p]).data();
             }
@@ -1403,8 +1402,7 @@
               this.findOr(queryObject[p]);
 
               return this;
-            }
-            else {
+            } else {
               return this.collection.chain().findOr(queryObject[p]).data();
             }
           }
@@ -2770,11 +2768,30 @@
       }
     };
 
+
+    Collection.prototype.removeWhere = function (query) {
+      var list;
+      if (typeof query === 'function') {
+        list = this.data.filter(query);
+      } else {
+        list = new Resultset(this, query);
+      }
+      var len = list.length;
+      while (len--) {
+        this.remove(list[len]);
+      }
+
+    };
+
     /**
      * delete wrapped
      */
     Collection.prototype.remove = function (doc) {
       var self = this;
+      if (typeof doc === 'number') {
+        doc = this.get(doc);
+      }
+
       if ('object' !== typeof doc) {
         throw new Error('Parameter is not an object');
       }

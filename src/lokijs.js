@@ -1253,6 +1253,68 @@
     };
 
     /**
+     * findOr() - oversee the operation of OR'ed query expressions.
+     *    OR'ed expression evaluation runs each expression individually against the full collection,
+     *    and finally does a set OR on each expression's results.
+     *    Each evaluation can utilize a binary index to prevent multiple linear array scans.
+     *
+     * @param {array} expressionArray - array of expressions
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.findOr = function (expressionArray)
+    {
+      var fri = 0;
+      var fr = null;
+
+      // if filter is already initialized we need to query against only those items already in filter.
+      // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
+      if (this.filterInitialized) {
+        // this should only affect user initiated chained queries where an or operation is not the first filter
+        throw "OR op on already initialized resultset is not yet implemented, coming imminently";
+      }
+
+      for(var i=0; i < expressionArray.length; i++) {
+        // we will let each filter run independently against full collection and mashup document hits later
+        var expResultset = this.collection.chain();
+        expResultset.find(expressionArray[i]);
+        expResultset.data();
+
+        // add any document 'hits'
+        fr = expResultset.filteredrows;
+        for(fri=0; fri < fr.length; fri++) {
+          if (this.filteredrows.indexOf(fr[fri]) === -1) {
+            this.filteredrows.push(fr[fri]);
+          }
+        }
+      }
+
+      this.filterInitialized = true;
+
+      // possibly sort indexes
+      return this;
+    };
+
+    /**
+     * findAnd() - oversee the operation of AND'ed query expressions.
+     *    AND'ed expression evaluation runs each expression progressively against the full collection,
+     *    internally utilizing existing chained resultset functionality.
+     *    Only the first filter can utilize a binary index.
+     *
+     * @param {array} expressionArray - array of expressions
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.findAnd = function (expressionArray)
+    {
+      // we have already implementing method chaining in this (our Resultset class)
+      // so lets just progressively apply user supplied and filters
+      for(var i=0; i < expressionArray.length; i++) {
+        this.find(expressionArray[i]);
+      }
+
+      return this;
+    };
+
+    /**
      * find() - Used for querying via a mongo-style query object.
      *
      * @param {object} query - A mongo-style query object used for filtering current results.
@@ -1322,6 +1384,31 @@
       for (p in queryObject) {
         if (queryObject.hasOwnProperty(p)) {
           property = p;
+
+          // injecting $and and $or expression tree evaluation here.
+          if (p === '$and') {
+            if (this.searchIsChained) {
+              this.findAnd(queryObject[p]);
+
+              return this;
+            }
+            else {
+              // our and operation internally chains filters
+              return this.collection.chain().findAnd(queryObject[p]).data();
+            }
+          }
+
+          if (p === '$or') {
+            if (this.searchIsChained) {
+              this.findOr(queryObject[p]);
+
+              return this;
+            }
+            else {
+              return this.collection.chain().findOr(queryObject[p]).data();
+            }
+          }
+
           if (p.indexOf('.') != -1) {
             usingDotNotation = true;
           }

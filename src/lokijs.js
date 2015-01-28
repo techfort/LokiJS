@@ -1264,27 +1264,47 @@
      * @returns {Resultset} this resultset for further chain ops.
      */
     Resultset.prototype.findOr = function (expressionArray) {
-      var fri = 0;
-      var fr = null;
+      var fri = 0,
+        ei=0,
+        fr = null,
+        docset = [],
+        expResultset = null;
 
       // if filter is already initialized we need to query against only those items already in filter.
       // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
       if (this.filterInitialized) {
-        // this should only affect user initiated chained queries where an or operation is not the first filter
-        throw "OR op on already initialized resultset is not yet implemented, coming imminently";
+        docset = [];
+
+        for (ei=0; ei < expressionArray.length; ei++) {
+          // we need to branch existing query to run each filter separately and combine results
+          expResultset = this.branch();
+          expResultset.find(expressionArray[ei]);
+          expResultset.data();
+
+          // add any document 'hits'
+          fr = expResultset.filteredrows;
+          for (fri = 0; fri < fr.length; fri++) {
+            if (docset.indexOf(fr[fri]) === -1) {
+              docset.push(fr[fri]);
+            }
+          }
+        }
+
+        this.filteredrows = docset;
       }
+      else {
+        for (ei = 0; ei < expressionArray.length; ei++) {
+          // we will let each filter run independently against full collection and mashup document hits later
+          expResultset = this.collection.chain();
+          expResultset.find(expressionArray[ei]);
+          expResultset.data();
 
-      for (var i = 0; i < expressionArray.length; i++) {
-        // we will let each filter run independently against full collection and mashup document hits later
-        var expResultset = this.collection.chain();
-        expResultset.find(expressionArray[i]);
-        expResultset.data();
-
-        // add any document 'hits'
-        fr = expResultset.filteredrows;
-        for (fri = 0; fri < fr.length; fri++) {
-          if (this.filteredrows.indexOf(fr[fri]) === -1) {
-            this.filteredrows.push(fr[fri]);
+          // add any document 'hits'
+          fr = expResultset.filteredrows;
+          for (fri = 0; fri < fr.length; fri++) {
+            if (this.filteredrows.indexOf(fr[fri]) === -1) {
+              this.filteredrows.push(fr[fri]);
+            }
           }
         }
       }

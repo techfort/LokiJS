@@ -118,6 +118,74 @@
       }
     }
 
+    // Sort helper that support null and undefined
+    function ltHelper (prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return true;
+      }
+      if (prop2 === undefined) {
+        return false;
+      }
+      if (prop1 === null) {
+        return true;
+      }
+      if (prop2 === null) {
+        return false;
+      }
+      return prop1 < prop2;
+    }
+
+    function gtHelper (prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return false;
+      }
+      if (prop2 === undefined) {
+        return true;
+      }
+      if (prop1 === null) {
+        return false;
+      }
+      if (prop2 === null) {
+        return true;
+      }
+      return prop1 > prop2;
+    }
+
+    function sortHelper (prop1, prop2, desc) {
+      if (prop1 === prop2) {
+        return 0;
+      }
+      if (desc) {
+        if (ltHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      } else {
+        if (gtHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      }
+    }
+
 
     /**
      * LokiEventEmitter is a minimalist version of EventEmitter. It enables any
@@ -1030,24 +1098,8 @@
             var obj1 = rslt.collection.data[a];
             var obj2 = rslt.collection.data[b];
 
-            if (obj1[prop] === obj2[prop]) {
-              return 0;
-            }
-            if (desc) {
-              if (obj1[prop] < obj2[prop]) {
-                return 1;
-              }
-              if (obj1[prop] > obj2[prop]) {
-                return -1;
-              }
-            } else {
-              if (obj1[prop] > obj2[prop]) {
-                return 1;
-              }
-              if (obj1[prop] < obj2[prop]) {
-                return -1;
-              }
-            }
+            return sortHelper(obj1[prop], obj2[prop], desc);
+
           }
         })(propname, isdesc, this);
 
@@ -1089,11 +1141,7 @@
         }
       }
 
-      if (isdesc) {
-        return (obj1[firstProp] < obj2[firstProp]) ? 1 : -1;
-      } else {
-        return (obj1[firstProp] > obj2[firstProp]) ? 1 : -1;
-      }
+      return sortHelper(obj1[firstProp], obj2[firstProp], isdesc);
     };
 
     /**
@@ -1156,27 +1204,27 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
-        if (val < minVal || val > maxVal) {
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
           return [0, -1];
         }
         break;
       case '$gt':
-        if (val >= maxVal) {
+        if (gtHelper(val, maxVal, true)) {
           return [0, -1];
         }
         break;
       case '$gte':
-        if (val > maxVal) {
+        if (gtHelper(val, maxVal)) {
           return [0, -1];
         }
         break;
       case '$lt':
-        if (val <= minVal) {
+        if (ltHelper(val, minVal, true)) {
           return [0, -1];
         }
         break;
       case '$lte':
-        if (val < minVal) {
+        if (ltHelper(val, minVal)) {
           return [0, -1];
         }
         break;
@@ -1186,7 +1234,7 @@
       while (min < max) {
         mid = Math.floor((min + max) / 2);
 
-        if (rcd[index[mid]][prop] < val) {
+        if (ltHelper(rcd[index[mid]][prop], val)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -1202,7 +1250,7 @@
       while (min < max) {
         mid = Math.floor((min + max) / 2);
 
-        if (val < rcd[index[mid]][prop]) {
+        if (ltHelper(val, rcd[index[mid]][prop])) {
           max = mid;
         } else {
           min = mid + 1;
@@ -1226,14 +1274,14 @@
         return [lbound, ubound];
 
       case '$gt':
-        if (uval <= val) {
+        if (ltHelper(uval, val, true)) {
           return [0, -1];
         }
 
         return [ubound, rcd.length - 1];
 
       case '$gte':
-        if (lval < val) {
+        if (ltHelper(lval, val)) {
           return [0, -1];
         }
 
@@ -2473,8 +2521,8 @@
             var obj2 = coll.data[b];
 
             if (obj1[prop] === obj2[prop]) return 0;
-            if (obj1[prop] > obj2[prop]) return 1;
-            if (obj1[prop] < obj2[prop]) return -1;
+            if (gtHelper(obj1[prop], obj2[prop])) return 1;
+            if (ltHelper(obj1[prop], obj2[prop])) return -1;
           }
         })(property, this);
 

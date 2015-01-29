@@ -29,6 +29,74 @@
       }
     };
 
+    // Sort helper that support null and undefined
+    function ltHelper (prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return true;
+      }
+      if (prop2 === undefined) {
+        return false;
+      }
+      if (prop1 === null) {
+        return true;
+      }
+      if (prop2 === null) {
+        return false;
+      }
+      return prop1 < prop2;
+    }
+
+    function gtHelper (prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return false;
+      }
+      if (prop2 === undefined) {
+        return true;
+      }
+      if (prop1 === null) {
+        return false;
+      }
+      if (prop2 === null) {
+        return true;
+      }
+      return prop1 > prop2;
+    }
+
+    function sortHelper (prop1, prop2, desc) {
+      if (prop1 === prop2) {
+        return 0;
+      }
+      if (desc) {
+        if (ltHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      } else {
+        if (gtHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      }
+    }
+
     var LokiOps = {
       // comparison operators
       $eq: function (a, b) {
@@ -36,19 +104,19 @@
       },
 
       $gt: function (a, b) {
-        return a > b;
+        return gtHelper(a, b);
       },
 
       $gte: function (a, b) {
-        return a >= b;
+        return gtHelper(a, b, true);
       },
 
       $lt: function (a, b) {
-        return a < b;
+        return ltHelper(a, b);
       },
 
       $lte: function (a, b) {
-        return a <= b;
+        return ltHelper(a, b, true);
       },
 
       $ne: function (a, b) {
@@ -115,74 +183,6 @@
         return ('localStorage' in window && window['localStorage'] !== null);
       } catch (e) {
         return false;
-      }
-    }
-
-    // Sort helper that support null and undefined
-    function ltHelper (prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      if (prop1 === undefined) {
-        return true;
-      }
-      if (prop2 === undefined) {
-        return false;
-      }
-      if (prop1 === null) {
-        return true;
-      }
-      if (prop2 === null) {
-        return false;
-      }
-      return prop1 < prop2;
-    }
-
-    function gtHelper (prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      if (prop1 === undefined) {
-        return false;
-      }
-      if (prop2 === undefined) {
-        return true;
-      }
-      if (prop1 === null) {
-        return false;
-      }
-      if (prop2 === null) {
-        return true;
-      }
-      return prop1 > prop2;
-    }
-
-    function sortHelper (prop1, prop2, desc) {
-      if (prop1 === prop2) {
-        return 0;
-      }
-      if (desc) {
-        if (ltHelper(prop1, prop2)) {
-          return 1;
-        } else {
-          return -1;
-        }
-      } else {
-        if (gtHelper(prop1, prop2)) {
-          return 1;
-        } else {
-          return -1;
-        }
       }
     }
 

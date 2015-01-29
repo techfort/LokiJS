@@ -1288,6 +1288,9 @@
         return [lbound, rcd.length - 1];
 
       case '$lt':
+        if (lbound === 0 && ltHelper(lval, val)) {
+          return [0, 0];
+        }
         return [0, lbound - 1];
 
       case '$lte':
@@ -1295,6 +1298,9 @@
           ubound--;
         }
 
+        if (ubound === 0 && ltHelper(uval, val)) {
+          return [0, 0];
+        }
         return [0, ubound];
 
       default:

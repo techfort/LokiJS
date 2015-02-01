@@ -30,7 +30,7 @@
     };
 
     // Sort helper that support null and undefined
-    function ltHelper (prop1, prop2, equal) {
+    function ltHelper(prop1, prop2, equal) {
       if (prop1 === prop2) {
         if (equal) {
           return true;
@@ -54,7 +54,7 @@
       return prop1 < prop2;
     }
 
-    function gtHelper (prop1, prop2, equal) {
+    function gtHelper(prop1, prop2, equal) {
       if (prop1 === prop2) {
         if (equal) {
           return true;
@@ -78,7 +78,7 @@
       return prop1 > prop2;
     }
 
-    function sortHelper (prop1, prop2, desc) {
+    function sortHelper(prop1, prop2, desc) {
       if (prop1 === prop2) {
         return 0;
       }
@@ -1319,7 +1319,7 @@
      */
     Resultset.prototype.findOr = function (expressionArray) {
       var fri = 0,
-        ei=0,
+        ei = 0,
         fr = null,
         docset = [],
         expResultset = null;
@@ -1329,7 +1329,7 @@
       if (this.filterInitialized) {
         docset = [];
 
-        for (ei=0; ei < expressionArray.length; ei++) {
+        for (ei = 0; ei < expressionArray.length; ei++) {
           // we need to branch existing query to run each filter separately and combine results
           expResultset = this.branch();
           expResultset.find(expressionArray[ei]);
@@ -1345,8 +1345,7 @@
         }
 
         this.filteredrows = docset;
-      }
-      else {
+      } else {
         for (ei = 0; ei < expressionArray.length; ei++) {
           // we will let each filter run independently against full collection and mashup document hits later
           expResultset = this.collection.chain();
@@ -2923,17 +2922,17 @@
      * Get by Id - faster than other methods because of the searching algorithm
      */
     Collection.prototype.get = function (id, returnPosition) {
+
       var retpos = returnPosition || false,
         data = this.idIndex,
         max = data.length - 1,
         min = 0,
         mid = Math.floor(min + (max - min) / 2);
 
+      id = typeof id === 'number' ? id : parseInt(id, 10);
+
       if (isNaN(id)) {
-        id = parseInt(id);
-        if (isNaN(id)) {
-          throw 'Passed id is not an integer';
-        }
+        throw 'Passed id is not an integer';
       }
 
       while (data[min] < data[max]) {

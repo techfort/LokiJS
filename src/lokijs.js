@@ -543,9 +543,9 @@
           var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
 
           for (j; j < clen; j++) {
-            var obj = new(options[coll.name]['proto'])();
-            loader(coll.data[j], obj);
-            copyColl.data[j] = obj;
+            var collObj = new(options[coll.name]['proto'])();
+            loader(coll.data[j], collObj);
+            copyColl.data[j] = collObj;
 
           }
         } else {

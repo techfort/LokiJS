@@ -2361,7 +2361,7 @@
       this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
       // option to make event listeners async, default is sync
-      this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : true;
+      this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;
 
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
@@ -2653,10 +2653,8 @@
 
     /**
      * generate document method - ensure objects have id and objType properties
-     * Come to think of it, really unfortunate name because of what document normally refers to in js.
-     * that's why there's an alias below but until I have this implemented
      * @param {object} the document to be inserted (or an array of objects)
-     * @returns document or documents (if array)
+     * @returns document or documents (if passed an array of objects)
      */
     Collection.prototype.insert = function (doc) {
       var self = this;

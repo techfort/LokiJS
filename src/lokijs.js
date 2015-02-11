@@ -2387,13 +2387,17 @@
 
       // initialize the id index
       this.ensureId();
-      var indices;
+      var indices = [];
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
       //if (typeof (indices) !== 'undefined') {
-      if (options) {
-        indices = options.indices || [];
-      } else {
-        indices = [];
+      if (options && options.indices) {
+          if (Object.prototype.toString.call(options.indices) === '[object Array]') {
+              indices = options.indices;
+          } else if (typeof options.indices === 'string') {
+              indices = [options.indices];
+          } else {
+              throw new TypeError('Indices needs to be a string or an array of strings');
+          }
       }
 
       for (var idx = 0; idx < indices.length; idx++) {

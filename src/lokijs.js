@@ -2854,6 +2854,12 @@
 
     };
 
+    Collection.prototype.removeDataOnly = function () {
+      this.removeWhere(function (obj) {
+        return true;
+      });
+    };
+
     /**
      * delete wrapped
      */

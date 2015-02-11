@@ -29,6 +29,11 @@ users.insert({
   age: 21
 });
 
+var dv = users.addDynamicView('testview');
+dv.applyWhere(function (obj) {
+  return obj.name.length > 3;
+});
+
 users.removeWhere(function (obj) {
   return obj.age > 35;
 });
@@ -41,4 +46,7 @@ users.removeWhere({
 suite.assertEqual('Users length after removeWhere()', users.data.length, 2);
 users.remove(6);
 suite.assertEqual('Users length after remove(int)', users.data.length, 1);
+users.removeDataOnly();
+suite.assertEqual('No users left after removeDataOnly()', users.data.length, 0);
+suite.assertEqual('DynamicView still in existence after removing data', !!users.getDynamicView('testview'), true);
 suite.report();

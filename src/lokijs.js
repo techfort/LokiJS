@@ -2288,6 +2288,7 @@
       var ofr = this.resultset.filteredrows;
       var oldPos = ofr.indexOf(objIndex);
       var oldlen = ofr.length;
+      var idx;
 
       if (oldPos !== -1) {
         // if not last row in resultdata, swap last to hole and truncate last row
@@ -2295,13 +2296,28 @@
           ofr[oldPos] = ofr[oldlen - 1];
           ofr.length = oldlen - 1;
 
-          this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-          this.resultdata.length = oldlen - 1;
+          if (this.persistent) {
+            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+            this.resultdata.length = oldlen - 1;
+          }
         }
         // last row, so just truncate last row
         else {
           ofr.length = oldlen - 1;
-          this.resultdata.length = oldlen - 1;
+
+          if (this.persistent) {
+            this.resultdata.length = oldlen - 1;
+          }
+        }
+      }
+
+      // since we are using filteredrows to store data array positions
+      // if they remove a document (whether in our view or not), 
+      // we need to adjust array positions -1 for all document array references after that position
+      oldlen = ofr.length;
+      for(idx=0; idx < oldlen; idx++) {
+        if (ofr[idx] > objIndex) {
+          ofr[idx]--;
         }
       }
     };

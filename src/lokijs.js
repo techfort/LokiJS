@@ -1580,7 +1580,7 @@
           // so return object itself
           if (firstOnly) {
             if (seg[1] !== -1) {
-              return this.data[seg[0]];
+              return t[seg[0]];
             }
 
             return [];

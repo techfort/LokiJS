@@ -3120,14 +3120,9 @@
         hi = array.length,
         compared,
         mid;
-      if (!fun) {
-        fun = function (a, b) {
-          return (a < b) ? -1 : ((a > b) ? 1 : 0);
-        }
-      }
       while (lo < hi) {
         mid = ((lo + hi) / 2) | 0;
-        compared = fun(item, array[mid]);
+        compared = fun.apply(null, [item, array[mid]]);
         if (compared == 0) {
           return {
             found: true,
@@ -3145,6 +3140,12 @@
       };
     };
 
+    function BSonSort(fun) {
+      return function (array, item) {
+        return binarySearch(array, item, fun);
+      };
+    }
+
     function KeyValueStore() {}
 
     KeyValueStore.prototype = {
@@ -3154,10 +3155,13 @@
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
       },
       setSort: function (fun) {
-        this.sort = fun;
+        this.bs = BSonSort(fun);
+      },
+      bs: function () {
+        return BSonSort(this.sort);
       },
       set: function (key, value) {
-        var pos = binarySearch(this.keys, key, this.sort);
+        var pos = this.bs(this.keys, key); //binarySearch(this.keys, key, this.sort);
         if (pos.found) {
           this.values[pos.index] = value;
         } else {

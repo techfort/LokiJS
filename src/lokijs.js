@@ -2315,9 +2315,9 @@
       // if they remove a document (whether in our view or not), 
       // we need to adjust array positions -1 for all document array references after that position
       oldlen = ofr.length;
-      for(idx=0; idx < oldlen; idx++) {
+      for (idx = 0; idx < oldlen; idx++) {
         if (ofr[idx] > objIndex) {
-          ofr[idx]--;
+          ofr[idx] --;
         }
       }
     };
@@ -2407,13 +2407,13 @@
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
       //if (typeof (indices) !== 'undefined') {
       if (options && options.indices) {
-          if (Object.prototype.toString.call(options.indices) === '[object Array]') {
-              indices = options.indices;
-          } else if (typeof options.indices === 'string') {
-              indices = [options.indices];
-          } else {
-              throw new TypeError('Indices needs to be a string or an array of strings');
-          }
+        if (Object.prototype.toString.call(options.indices) === '[object Array]') {
+          indices = options.indices;
+        } else if (typeof options.indices === 'string') {
+          indices = [options.indices];
+        } else {
+          throw new TypeError('Indices needs to be a string or an array of strings');
+        }
       }
 
       for (var idx = 0; idx < indices.length; idx++) {
@@ -3113,7 +3113,119 @@
       return;
     };
 
+    // Base Array
+    function BaseArray() {}
+
+    BaseArray.prototype = {
+      array: []
+    };
+
+    BaseArray.prototype.insertAt = function insertAt(element, index) {
+      this.array.splice(index, 0, element);
+    };
+
+
+
+    function binarySearch(ctx, item) {
+      var lo = 0,
+        hi = ctx.array.length,
+        compared,
+        mid,
+        fun;
+      if (!ctx.sorter) {
+        fun = function (a, b) {
+          return (a < b) ? -1 : ((a > b) ? 1 : 0);
+        }
+      } else {
+        fun = ctx.sorter;
+      }
+      while (lo < hi) {
+        mid = ((lo + hi) / 2) | 0;
+        compared = fun(item, ctx.array[mid]);
+        if (compared == 0) {
+          return {
+            found: true,
+            index: mid
+          };
+        } else if (compared < 0) {
+          hi = mid;
+        } else {
+          lo = mid + 1;
+        }
+      }
+      return {
+        found: false,
+        index: hi
+      };
+    };
+
+    /**
+     * Keys Array
+     *
+     */
+    function Keys() {}
+
+    /**
+     * inherits BaseArray
+     */
+    Keys.prototype = new BaseArray;
+
+    /**
+     * binarySearch on Keys
+     
+    Keys.prototype.binarySearch = function (searchElement, fun) {
+      return this.binarySearch(searchElement, fun || false);
+    };
+    */
+    Keys.prototype.get = function (key, fun) {
+      return binarySearch(this, key, fun || undefined);
+    };
+
+    /**
+     * Values: Values is an array with a method insertAt which enables insertion of new elements at their correct position
+     * @constructor
+     */
+    function Values() {}
+    Values.prototype = new BaseArray;
+
+    /**
+     * Loki Key Value Store: a key value store that utilizes binary search instead of a plain js object utilized as a hashmap
+     * @constructor
+     */
+    function LokiKVStore(options) {
+      this.sorter = options ? (options.sorter || undefined) : undefined;
+      this.keys = new Keys();
+      this.values = new Values();
+    }
+
+    LokiKVStore.prototype.sortingFunction = function (func) {
+      this.sorter = func.bind(this);
+    };
+
+    LokiKVStore.prototype.get = function (searchElement) {
+      var res = this.keys.get(searchElement, this.sorter);
+      console.log('Res: ', res);
+      if (res.found) {
+        return this.values[res.index];
+      } else {
+        return null;
+      }
+    };
+
+    LokiKVStore.prototype.set = function (key, value) {
+      var pos = this.keys.get(key, this.sorter);
+      if (pos.found === false) {
+        console.log('Not Found!')
+        this.keys.insertAt(key, pos.index);
+        this.values.insertAt(value, pos.index);
+      } else {
+        console.log('Found!')
+        this.values[pos.index] = value;
+      }
+    };
+
     Loki.Collection = Collection;
+    Loki.KeyValueStore = LokiKVStore;
     return Loki;
   }());
 

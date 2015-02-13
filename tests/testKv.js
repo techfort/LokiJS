@@ -11,8 +11,11 @@ var key = {
 	};
 
 store.set('foo', 'bar');
+store.set('bar', 'baz');
+store.set('baz', 'quux');
+store.set(key, value);
 //store.set(key, value);
-console.log(store.keys.array, store.values.array)
+console.log(store.keys, store.values)
 suite.assertEqual('Finding key and value', 'bar', store.get('foo'));
-//suite.assertEqual('Finding key by object', value, store.get(key));
+suite.assertEqual('Finding key by object', value, store.get(key));
 suite.report();

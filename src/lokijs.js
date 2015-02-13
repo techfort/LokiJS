@@ -3113,35 +3113,21 @@
       return;
     };
 
-    // Base Array
-    function BaseArray() {}
-
-    BaseArray.prototype = {
-      array: []
-    };
-
-    BaseArray.prototype.insertAt = function insertAt(element, index) {
-      this.array.splice(index, 0, element);
-    };
 
 
-
-    function binarySearch(ctx, item) {
+    function binarySearch(array, item, fun) {
       var lo = 0,
-        hi = ctx.array.length,
+        hi = array.length,
         compared,
-        mid,
-        fun;
-      if (!ctx.sorter) {
+        mid;
+      if (!fun) {
         fun = function (a, b) {
           return (a < b) ? -1 : ((a > b) ? 1 : 0);
         }
-      } else {
-        fun = ctx.sorter;
       }
       while (lo < hi) {
         mid = ((lo + hi) / 2) | 0;
-        compared = fun(item, ctx.array[mid]);
+        compared = fun(item, array[mid]);
         if (compared == 0) {
           return {
             found: true,
@@ -3159,73 +3145,34 @@
       };
     };
 
-    /**
-     * Keys Array
-     *
-     */
-    function Keys() {}
+    function KeyValueStore() {}
 
-    /**
-     * inherits BaseArray
-     */
-    Keys.prototype = new BaseArray;
-
-    /**
-     * binarySearch on Keys
-     
-    Keys.prototype.binarySearch = function (searchElement, fun) {
-      return this.binarySearch(searchElement, fun || false);
-    };
-    */
-    Keys.prototype.get = function (key, fun) {
-      return binarySearch(this, key, fun || undefined);
-    };
-
-    /**
-     * Values: Values is an array with a method insertAt which enables insertion of new elements at their correct position
-     * @constructor
-     */
-    function Values() {}
-    Values.prototype = new BaseArray;
-
-    /**
-     * Loki Key Value Store: a key value store that utilizes binary search instead of a plain js object utilized as a hashmap
-     * @constructor
-     */
-    function LokiKVStore(options) {
-      this.sorter = options ? (options.sorter || undefined) : undefined;
-      this.keys = new Keys();
-      this.values = new Values();
-    }
-
-    LokiKVStore.prototype.sortingFunction = function (func) {
-      this.sorter = func.bind(this);
-    };
-
-    LokiKVStore.prototype.get = function (searchElement) {
-      var res = this.keys.get(searchElement, this.sorter);
-      console.log('Res: ', res);
-      if (res.found) {
-        return this.values[res.index];
-      } else {
-        return null;
+    KeyValueStore.prototype = {
+      keys: [],
+      values: [],
+      sort: function (a, b) {
+        return (a < b) ? -1 : ((a > b) ? 1 : 0);
+      },
+      setSort: function (fun) {
+        this.sort = fun;
+      },
+      set: function (key, value) {
+        var pos = binarySearch(this.keys, key, this.sort);
+        if (pos.found) {
+          this.values[pos.index] = value;
+        } else {
+          this.keys.splice(pos.index, 0, key);
+          this.values.splice(pos.index, 0, value);
+        }
+      },
+      get: function (key) {
+        return this.values[binarySearch(this.keys, key, this.sort).index];
       }
     };
 
-    LokiKVStore.prototype.set = function (key, value) {
-      var pos = this.keys.get(key, this.sorter);
-      if (pos.found === false) {
-        console.log('Not Found!')
-        this.keys.insertAt(key, pos.index);
-        this.values.insertAt(value, pos.index);
-      } else {
-        console.log('Found!')
-        this.values[pos.index] = value;
-      }
-    };
 
     Loki.Collection = Collection;
-    Loki.KeyValueStore = LokiKVStore;
+    Loki.KeyValueStore = KeyValueStore;
     return Loki;
   }());
 

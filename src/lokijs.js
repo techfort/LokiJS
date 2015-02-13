@@ -3161,7 +3161,7 @@
         return BSonSort(this.sort);
       },
       set: function (key, value) {
-        var pos = this.bs(this.keys, key); //binarySearch(this.keys, key, this.sort);
+        var pos = this.bs(this.keys, key);
         if (pos.found) {
           this.values[pos.index] = value;
         } else {

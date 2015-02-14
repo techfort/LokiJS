@@ -343,7 +343,7 @@
       }
 
       if (this.ENV === 'NODEJS') {
-        this.fs = fs;
+        this.fs = require("fs");
       }
       if (typeof (options) !== 'undefined') {
         this.configureOptions(options, true);

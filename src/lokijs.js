@@ -3174,6 +3174,12 @@
       }
     };
 
+    if (angular) {
+      angular.module('lokijs', [])
+        .factory('$loki', function $loki() {
+          return loki;
+        });
+    }
 
     Loki.Collection = Collection;
     Loki.KeyValueStore = KeyValueStore;

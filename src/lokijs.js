@@ -1583,7 +1583,7 @@
               return t[index.values[seg[0]]];
             }
 
-            return null;
+            return [];
           }
 
           for (i = seg[0]; i <= seg[1]; i++) {

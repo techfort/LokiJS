@@ -1580,10 +1580,10 @@
           // so return object itself
           if (firstOnly) {
             if (seg[1] !== -1) {
-              return t[seg[0]];
+              return t[index.values[seg[0]]];
             }
 
-            return [];
+            return null;
           }
 
           for (i = seg[0]; i <= seg[1]; i++) {

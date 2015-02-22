@@ -2677,46 +2677,30 @@
      * @returns document or documents (if passed an array of objects)
      */
     Collection.prototype.insert = function (doc) {
+      
+      if (!doc) {
+        var error = new Error('Object cannot be null');
+        this.emit('error', error);
+        throw error;
+      }
+
       var self = this;
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
-      if (Array.isArray(doc)) {
-        doc.forEach(function (d) {
-          if (self.clone) {
-            obj = JSON.parse(JSON.stringify(d));
-          } else {
-            obj = d;
-          }
-          //d.objType = self.objType;
-          if (typeof obj.meta === 'undefined') {
-            obj.meta = {
-              revision: 0,
-              created: 0
-            };
-          }
-          self.add(obj);
-          self.emit('insert', obj);
+      var docs = Array.isArray(doc) ? doc : [doc];
 
-        });
-        return obj;
-      } else {
-        if (typeof doc !== 'object') {
+      docs.forEach(function (d) {
+        if (typeof d !== 'object') {
           throw new TypeError('Document needs to be an object');
           return;
-        }
-        if (!doc) {
-          var error = new Error('Object cannot be null');
-          this.emit('error', error);
-          throw error;
-        }
+        }    
         if (self.clone) {
-          obj = JSON.parse(JSON.stringify(doc));
+          obj = JSON.parse(JSON.stringify(d));
         } else {
-          obj = doc;
+          obj = d;
         }
-        //doc.objType = self.objType;
-
-        if (typeof doc.meta === 'undefined') {
+        
+        if (typeof obj.meta === 'undefined') {
           obj.meta = {
             revision: 0,
             created: 0
@@ -2725,8 +2709,8 @@
         self.add(obj);
         self.emit('insert', obj);
 
-        return obj;
-      }
+      });
+      return obj;
     };
 
     Collection.prototype.clear = function () {

@@ -146,13 +146,13 @@
           };
         }
 
-        if (typeof a === 'string') {
+        else if (typeof a === 'string') {
           checkFn = function (curr) {
             return a.indexOf(curr) !== -1;
           };
         }
 
-        if (a && typeof a === 'object') {
+        else if (a && typeof a === 'object') {
           checkFn = function (curr) {
             return a.hasOwnProperty(curr);
           };

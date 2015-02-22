@@ -217,7 +217,8 @@
       if (!event) {
         event = this.events[eventName] = [];
       }
-      return event.push(listener) - 1;
+      event.push(listener);
+      return listener;
     };
 
     function applyListener(listener, args) {
@@ -257,9 +258,10 @@
     /**
      * @prop remove() - removes the listener at position 'index' from the event 'eventName'
      */
-    LokiEventEmitter.prototype.removeListener = function (eventName, index) {
+    LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       if (this.events[eventName]) {
-        this.events[eventName].splice(index, 1);
+        var listeners = this.events[eventName];
+        listeners.splice(listeners.indexOf(listener), 1);
       }
     };
 

@@ -15,7 +15,6 @@
 					var loki = $window.thirdParty.loki;
 					return loki;
 				});
-
 		}
 	}
 })(window)

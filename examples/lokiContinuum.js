@@ -105,15 +105,10 @@ function Projector(universeName, dbOptions) {
 
 Projector.prototype.initializeDatabase = function()
 {
-  console.log("chk1");
   this.db.removeCollection('actors');
-  console.log("chk2");
   this.db.removeCollection('funds');
-  console.log("chk3");
   this.db.removeCollection('settings');
-  console.log("chk4");
   this.db.addCollection('actors');
-  console.log("chk5");
   this.db.addCollection('funds');
   var pm = this.db.addCollection('settings');
     

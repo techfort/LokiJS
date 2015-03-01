@@ -475,7 +475,8 @@
           return;
         }
       }
-      throw 'No such collection';
+
+      console.log('No such collection');
     };
 
     Loki.prototype.getName = function () {

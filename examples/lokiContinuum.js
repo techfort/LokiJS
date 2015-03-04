@@ -75,10 +75,9 @@ function AddDate(unixDate, offset, offsetType) {
  */
 
 function Projector(universeName, dbOptions) {
-  // in the absence of establishing references in funds and actors
-  // to get back up to the db level (and providing a custom inflater)
-  // i will just force singleton pattern for now
-  
+  // in the absence of establishing db references in funds and actors,
+  // nulling that out in toJSON override and providing a custom 
+  // inflater to lokijs, i will just force singleton pattern for now
   singletonContinuum = this;
 
 	this.universeName = universeName;
@@ -174,6 +173,7 @@ Projector.prototype.renderUniverse = function(start, end) {
   
   this.activities.clear();
   
+  // For each actor, project its activities for time window
   for(idx=0; idx<actors.length; idx++) {
     if (!actors.isDisabled) {
   		aa = actors[idx].projectActivities(start, end);
@@ -189,7 +189,6 @@ Projector.prototype.renderUniverse = function(start, end) {
 
   // Volatile Actors were used for forcing 0 amount transactions
   // on first day, today, and last day to force plot points for those days
-  
   //foreach (Actor actor in VolatileActors)
   //{
   //  Activities.AddRange(actor.ProjectActivities(StartDate, EndDate));
@@ -211,11 +210,10 @@ Projector.prototype.renderUniverse = function(start, end) {
 // consolidating Balance and Tranction classes
 // transactions inherited balance and added 'affectingActor' reference
 function Balance(amount, balanceDate, description, affectingActor) {
-	this.amount = amount;
-    this.balanceDate = balanceDate;
-    this.description = description;
-    //this.type = null;  // BalanceTypeEnum : wasnt using?
-    this.affectingActor = affectingActor;
+  this.amount = amount;
+  this.balanceDate = balanceDate;
+  this.description = description;
+  this.affectingActor = affectingActor;
 }
 
 Balance.prototype.toString = function() {
@@ -449,7 +447,11 @@ Actor.prototype.executeActivity = function(activity)
 
   if (fpr.fundClass == FundClassEnum.Debt || fpr.FundClass == FundClassEnum.DebtEquity) 
   {
-    if (fpr.interimBalance.amount <= 0.0) return;
+    if (fpr.interimBalance.amount <= 0.0) {
+      activity.renderedBalancePrimary = fpr.interimBalance;
+      activity.renderedBalanceSecondary = fsr.interimBalance;
+      return;
+    }
   }
 
   // handle loan payment
@@ -563,70 +565,92 @@ Activity.prototype.doesAffectFund = function(fundId)
 return Projector;
 }());
 
+// misc helper routines
 function addTestData() {
-  var fund1 = continuum.addFund({
-    name: "savings1", 
+  // set up funds
+  var fundSavings = continuum.addFund({
     inceptionBalance: 1000, 
     inceptionDate: (new Date()).getTime(), 
-    fundClass: continuum.enums.FundClass.Savings, 
-    isBenchmark : false
+    name: "savings", 
+    fundClass: continuum.enums.FundClass.Savings
   });
 
-  var fund2 = continuum.addFund({
-    name: "checking", 
+  var fundChecking = continuum.addFund({
     inceptionBalance: 500, 
     inceptionDate: (new Date()).getTime(), 
-    fundClass: continuum.enums.FundClass.Spending, 
-    isBenchmark: false
+    name: "checking", 
+    fundClass: continuum.enums.FundClass.Spending,
+    isHidden: false
   });
 
-  var fund3 = continuum.addFund({
-    name: "mortgage", 
+  var fundMortgage = continuum.addFund({
     inceptionBalance: 100000, 
     inceptionDate: (new Date()).getTime(), 
-    fundClass: continuum.enums.FundClass.DebtEquity, 
-    isBenchmark: false
+    name: "mortgage", 
+    fundClass: continuum.enums.FundClass.DebtEquity
   });
 
-  var actor1 = continuum.addActor({
-    name: 'savingPlan1', 
-    fundPrimary: fund1.$loki, 
+  var fundAutoLoan = continuum.addFund({
+    inceptionBalance: 20000, 
+    inceptionDate: (new Date()).getTime(), 
+    name: "auto loan", 
+    fundClass: continuum.enums.FundClass.Debt
+  });
+
+  // set up actors
+  var actorSavingsPlan = continuum.addActor({
+    name: 'saving plan', 
+    fundPrimary: fundSavings.$loki, 
     periodicity: continuum.enums.ActorPeriodicity.Monthly, 
     periodicityUnits: 1, 
     triggerDateInitial: (new Date()).getTime(), 
     triggerAmount: 250
   });
 
-  var actor2 = continuum.addActor({
+  var actorSavingsAccrual = continuum.addActor({
+    name: 'savings accrue',
+    fundPrimary: fundSavings.$loki,
+    periodicity: continuum.enums.ActorPeriodicity.Monthly,
+    periodicityUnits: 1,
+    triggerDateInitial: (new Date()).getTime(),
+    compoundInterestRate: 3,
+    isCompoundInterestAccrual : true
+  });
+
+  var actorPaycheck = continuum.addActor({
     name: 'paycheck', 
-    fundPrimary: fund2.$loki, 
+    fundPrimary: fundChecking.$loki, 
     periodicity: continuum.enums.ActorPeriodicity.Weekly, 
     periodicityUnits: 1, 
     triggerDateInitial: (new Date()).getTime(), 
     triggerAmount: 1000
   });
 
-  var actor3 = continuum.addActor({
+  var actorMortgagePayment = continuum.addActor({
     name: 'mortgage payment', 
-    fundPrimary: fund3.$loki, 
-    fundSecondary: fund2.$loki, 
+    fundPrimary: fundMortgage.$loki, 	// apply payment to
+    fundSecondary: fundChecking.$loki, // feeder fund
     periodicity: continuum.enums.ActorPeriodicity.Monthly, 
     periodicityUnits: 1, 
     triggerDateInitial: (new Date()).getTime(), 
     triggerAmount: 800,
     isLoanPayment: true,
     loanDurationYears: 30,
-    interestRate: 4.0
+    interestRate: 3.0
   });
-    
-  var actor4 = continuum.addActor({
-    name: 'savings accrue',
-    fundPrimary: fund1.$loki,
-    periodicity: continuum.enums.ActorPeriodicity.Monthly,
-    periodicityUnits: 1,
+
+  var actorCarPayment = continuum.addActor({
+    name: 'auto loan', 
+    fundPrimary: fundAutoLoan.$loki, 
+    fundSecondary: fundChecking.$loki, // feeder fund is checking
+    periodicity: continuum.enums.ActorPeriodicity.Monthly, 
+    periodicityUnits: 1, 
     triggerDateInitial: (new Date()).getTime(),
-    compoundInterestRate: 3,
-    isCompoundInterestAccrual : true
+    triggerDateEnd: continuum.AddDate((new Date()).getTime(), 5, "years"),
+    triggerAmount: 300,
+    isLoanPayment: true,
+    loanDurationYears: 5,
+    interestRate: 4.0
   });
 }
 

@@ -1434,6 +1434,11 @@
         i,
         len;
 
+      // if passed in empty object {}, interpret as 'getAll'
+      if (typeof(queryObject) == 'object' && Object.keys(queryObject).length == 0) {
+        queryObject = 'getAll';
+      }
+      
       if (typeof (firstOnly) === 'undefined') {
         firstOnly = false;
       }

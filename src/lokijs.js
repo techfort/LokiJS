@@ -1432,17 +1432,23 @@
         t,
         // collection data length
         i,
-        len;
+        len,
+        emptyQO = true;
+      
+      // if this was note invoked via findOne()
+      firstOnly = firstOnly || false;
 
       // if passed in empty object {}, interpret as 'getAll'
-      if (typeof(queryObject) == 'object' && Object.keys(queryObject).length == 0) {
+      // more performant than object.keys
+      for (p in queryObject) 
+      {
+        emptyQO = false;
+        break;
+      }
+      if (emptyQO) {
         queryObject = 'getAll';
       }
       
-      if (typeof (firstOnly) === 'undefined') {
-        firstOnly = false;
-      }
-
       // apply no filters if they want all
       if (queryObject === 'getAll') {
         // chained queries can just do coll.chain().data() but let's

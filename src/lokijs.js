@@ -144,15 +144,11 @@
           checkFn = function (curr) {
             return a.indexOf(curr) !== -1;
           };
-        }
-
-        else if (typeof a === 'string') {
+        } else if (typeof a === 'string') {
           checkFn = function (curr) {
             return a.indexOf(curr) !== -1;
           };
-        }
-
-        else if (a && typeof a === 'object') {
+        } else if (a && typeof a === 'object') {
           checkFn = function (curr) {
             return a.hasOwnProperty(curr);
           };
@@ -1434,21 +1430,20 @@
         i,
         len,
         emptyQO = true;
-      
+
       // if this was note invoked via findOne()
       firstOnly = firstOnly || false;
 
       // if passed in empty object {}, interpret as 'getAll'
       // more performant than object.keys
-      for (p in queryObject) 
-      {
+      for (p in queryObject) {
         emptyQO = false;
         break;
       }
       if (emptyQO) {
         queryObject = 'getAll';
       }
-      
+
       // apply no filters if they want all
       if (queryObject === 'getAll') {
         // chained queries can just do coll.chain().data() but let's
@@ -2176,8 +2171,7 @@
     /**
      *
      */
-    DynamicView.prototype.queueSortPhase = function()
-    {
+    DynamicView.prototype.queueSortPhase = function () {
       var self = this;
 
       // already queued? exit without queuing again
@@ -2186,7 +2180,7 @@
       this.sortDirty = true;
 
       // queue async call to performSortPhase()
-      setTimeout(function() {
+      setTimeout(function () {
         self.performSortPhase();
       }, 1)
     }
@@ -2195,8 +2189,7 @@
      * performSortPhase() - invoked synchronously or asynchronously to perform final sort phase (if needed)
      *
      */
-    DynamicView.prototype.performSortPhase = function() 
-    {
+    DynamicView.prototype.performSortPhase = function () {
       // async call to this may have been pre-empted by synchronous call to data before async could fire
       if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) return;
 
@@ -2415,6 +2408,8 @@
       this.events = {
         'insert': [],
         'update': [],
+        'pre-insert': [],
+        'pre-update': [],
         'close': [],
         'flushbuffer': [],
         'error': [],
@@ -2701,7 +2696,7 @@
      * @returns document or documents (if passed an array of objects)
      */
     Collection.prototype.insert = function (doc) {
-      
+
       if (!doc) {
         var error = new Error('Object cannot be null');
         this.emit('error', error);
@@ -2717,19 +2712,20 @@
         if (typeof d !== 'object') {
           throw new TypeError('Document needs to be an object');
           return;
-        }    
+        }
         if (self.clone) {
           obj = JSON.parse(JSON.stringify(d));
         } else {
           obj = d;
         }
-        
+
         if (typeof obj.meta === 'undefined') {
           obj.meta = {
             revision: 0,
             created: 0
           };
         }
+        self.emit('pre-insert', obj);
         self.add(obj);
         self.emit('insert', obj);
 
@@ -2779,7 +2775,7 @@
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
-
+        this.emit('pre-update', doc);
         obj = arr[0];
 
         // get current position in data array

@@ -2018,9 +2018,7 @@
       this.sortFunction = comparefun;
       this.sortCriteria = null;
 
-      this.resultset.sort(comparefun);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -2043,9 +2041,7 @@
       ];
       this.sortFunction = null;
 
-      this.resultset.simplesort(propname, isdesc);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -2063,9 +2059,7 @@
       this.sortCriterial = criteria;
       this.sortFunction = null;
 
-      this.resultset.compoundsort(criteria);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -2101,8 +2095,7 @@
       this.resultset = this.cachedresultset;
 
       if (this.persistent) {
-        // i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
-        // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
+        // for now just rebuild the persistent dynamic view data in this worst case scenario
         // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
         this.resultdata = this.resultset.data();
 
@@ -2168,43 +2161,62 @@
      * @returns {array} An array of documents representing the current DynamicView contents.
      */
     DynamicView.prototype.data = function () {
-      if (this.sortDirty) {
-        if (this.sortFunction) {
-          this.resultset.sort(this.sortFunction);
-        }
-        if (this.sortCriteria) {
-          this.resultset.compoundsort(this.sortCriteria);
-        }
-        this.sortDirty = false;
-        if (this.persistent) {
-          this.resultsdirty = true; // newly sorted, if persistent we need to rebuild resultdata
-        }
+      // using final sort phase as 'catch all' for a few use cases which require full rebuild
+      if (this.sortDirty || this.resultsdirty || !this.resultset.filterInitialized) {
+        this.performSortPhase();
       }
 
-      // if nonpersistent return resultset data evaluation
       if (!this.persistent) {
-        // not sure if this emit will be useful, but if view is non-persistent
-        // we will raise event only if resulset has yet to be initialized.
-        // user can intercept via dynView.on('rebuild', myCallback);
-        // emit is async wait 1 ms so our data() call should exec before event fired
-        if (!this.resultset.filterInitialized) {
-          this.emit('rebuild', this);
-        }
-
         return this.resultset.data();
-      }
-
-      // Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
-      if (this.resultsdirty) {
-        this.resultdata = this.resultset.data();
-        this.resultsdirty = false;
-
-        // user can intercept via dynView.on('rebuild', myCallback);
-        this.emit('rebuild', this);
       }
 
       return this.resultdata;
     };
+
+    /**
+     *
+     */
+    DynamicView.prototype.queueSortPhase = function()
+    {
+      var self = this;
+
+      // already queued? exit without queuing again
+      if (this.sortDirty) return;
+
+      this.sortDirty = true;
+
+      // queue async call to performSortPhase()
+      setTimeout(function() {
+        self.performSortPhase();
+      }, 1)
+    }
+
+    /**
+     * performSortPhase() - invoked synchronously or asynchronously to perform final sort phase (if needed)
+     *
+     */
+    DynamicView.prototype.performSortPhase = function() 
+    {
+      // async call to this may have been pre-empted by synchronous call to data before async could fire
+      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) return;
+
+      if (this.sortFunction) {
+        this.resultset.sort(this.sortFunction);
+      }
+
+      if (this.sortCriteria) {
+        this.resultset.compoundsort(this.sortCriteria);
+      }
+
+      if (!this.persistent) return;
+
+      // persistent view, rebuild local resultdata array
+      this.resultdata = this.resultset.data();
+      this.resultsdirty = false;
+      this.sortDirty = false;
+
+      this.emit('rebuild', this);
+    }
 
     /**
      * evaluateDocument() - internal method for (re)evaluating document inclusion.

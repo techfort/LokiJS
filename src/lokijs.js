@@ -163,6 +163,19 @@
         }, true);
       }
     };
+
+    var operators = {
+      '$eq': LokiOps.$eq,
+      '$gt': LokiOps.$gt,
+      '$gte': LokiOps.$gte,
+      '$lt': LokiOps.$lt,
+      '$lte': LokiOps.$lte,
+      '$ne': LokiOps.$ne,
+      '$regex': LokiOps.$regex,
+      '$in': LokiOps.$in,
+      '$contains': LokiOps.$contains
+    };
+
     var fs = (typeof exports === 'object') ? require('fs') : false;
 
     function clone(data, method) {
@@ -1408,17 +1421,6 @@
         operator,
         p,
         key,
-        operators = {
-          '$eq': LokiOps.$eq,
-          '$gt': LokiOps.$gt,
-          '$gte': LokiOps.$gte,
-          '$lt': LokiOps.$lt,
-          '$lte': LokiOps.$lte,
-          '$ne': LokiOps.$ne,
-          '$regex': LokiOps.$regex,
-          '$in': LokiOps.$in,
-          '$contains': LokiOps.$contains
-        },
         searchByIndex = false,
         result = [],
         index = null,

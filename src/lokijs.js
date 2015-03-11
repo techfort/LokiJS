@@ -1398,6 +1398,42 @@
     };
 
     /**
+     * dotSubScan - helper function used for dot notation queries.
+     */
+    Resultset.prototype.dotSubScan = function(root, property, fun, value)
+    {
+      var arrayRef = null;
+      var pathIndex, subIndex;
+      var paths = property.split('.');
+      var path;
+      
+      for(pathIndex=0; pathIndex < paths.length; pathIndex++) {
+        path = paths[pathIndex];
+
+        // foreach already detected parent was array so this must be where we iterate
+        if (arrayRef) {
+          // iterate all sub-array items to see if any yield hits
+          for(subIndex=0; subIndex < arrayRef.length; subIndex++) {
+            if (fun(arrayRef[subIndex][path], value)) 
+            {
+              return true;
+            }
+          }
+        }
+        // else not yet determined if subarray scan is involved
+        else {
+          root = root[path];
+          if (Array.isArray(root)) {
+            arrayRef = root;
+          }
+        }
+      };
+      
+      // made it this far so must be dot notation on non-array property
+      return fun(root, value);
+    }
+    
+    /**
      * find() - Used for querying via a mongo-style query object.
      *
      * @param {object} query - A mongo-style query object used for filtering current results.
@@ -1559,14 +1595,8 @@
             // if using dot notation then treat property as keypath such as 'name.first'.
             // currently supporting dot notation for non-indexed conditions only
             if (usingDotNotation) {
-              var root, paths;
               while (i--) {
-                root = t[i];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[i], property, fun, value)) {
                   result.push(t[i]);
                 }
               }
@@ -1616,14 +1646,8 @@
 
             // currently supporting dot notation for non-indexed conditions only
             if (usingDotNotation) {
-              var root, paths;
               while (i--) {
-                root = t[this.filteredrows[i]];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
                   result.push(this.filteredrows[i]);
                 }
               }
@@ -1657,15 +1681,8 @@
             i = t.length;
 
             if (usingDotNotation) {
-              var root, paths;
-
               while (i--) {
-                root = t[i];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[i], property, fun, value)) {
                   result.push(i);
                 }
               }

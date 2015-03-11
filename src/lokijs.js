@@ -1508,20 +1508,55 @@
             if (this.searchIsChained) {
               this.findAnd(queryObject[p]);
 
+              // for chained find with firstonly, 
+              if (firstOnly && this.filteredrows.length > 1)
+              {
+                this.filteredrows = this.filteredrows.slice(0, 1);
+              }
+
               return this;
             } else {
-              // our and operation internally chains filters
-              return this.collection.chain().findAnd(queryObject[p]).data();
+              // our $and operation internally chains filters
+              result = this.collection.chain().findAnd(queryObject[p]).data();
+
+              // if this was coll.findOne() return first object or empty array if null
+              // since this is invoked from a constructor we can't return null, so we will
+              // make null in coll.findOne();
+              if (firstOnly)
+              {
+                if (result.length == 0) return [];
+
+                return result[0];
+              }
+              
+              // not first only return all results
+              return result;
             }
           }
 
           if (p === '$or') {
             if (this.searchIsChained) {
               this.findOr(queryObject[p]);
+              
+              if (firstOnly && this.filteredrows.length > 1)
+              {
+                this.filteredrows = this.filteredrows.slice(0, 1);
+              }
 
               return this;
             } else {
-              return this.collection.chain().findOr(queryObject[p]).data();
+              // call out to helper function to determine $or results
+              result = this.collection.chain().findOr(queryObject[p]).data();
+              
+              if (firstOnly)
+              {
+                if (result.length == 0) return [];
+                
+                return result[0];
+              }
+              
+              // not first only return all results
+              return result;
             }
           }
 

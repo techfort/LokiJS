@@ -1400,22 +1400,20 @@
     /**
      * dotSubScan - helper function used for dot notation queries.
      */
-    Resultset.prototype.dotSubScan = function(root, property, fun, value)
-    {
+    Resultset.prototype.dotSubScan = function (root, property, fun, value) {
       var arrayRef = null;
       var pathIndex, subIndex;
       var paths = property.split('.');
       var path;
-      
-      for(pathIndex=0; pathIndex < paths.length; pathIndex++) {
+
+      for (pathIndex = 0; pathIndex < paths.length; pathIndex++) {
         path = paths[pathIndex];
 
         // foreach already detected parent was array so this must be where we iterate
         if (arrayRef) {
           // iterate all sub-array items to see if any yield hits
-          for(subIndex=0; subIndex < arrayRef.length; subIndex++) {
-            if (fun(arrayRef[subIndex][path], value)) 
-            {
+          for (subIndex = 0; subIndex < arrayRef.length; subIndex++) {
+            if (fun(arrayRef[subIndex][path], value)) {
               return true;
             }
           }
@@ -1428,11 +1426,11 @@
           }
         }
       };
-      
+
       // made it this far so must be dot notation on non-array property
       return fun(root, value);
     }
-    
+
     /**
      * find() - Used for querying via a mongo-style query object.
      *
@@ -1509,8 +1507,7 @@
               this.findAnd(queryObject[p]);
 
               // for chained find with firstonly, 
-              if (firstOnly && this.filteredrows.length > 1)
-              {
+              if (firstOnly && this.filteredrows.length > 1) {
                 this.filteredrows = this.filteredrows.slice(0, 1);
               }
 
@@ -1522,13 +1519,12 @@
               // if this was coll.findOne() return first object or empty array if null
               // since this is invoked from a constructor we can't return null, so we will
               // make null in coll.findOne();
-              if (firstOnly)
-              {
+              if (firstOnly) {
                 if (result.length == 0) return [];
 
                 return result[0];
               }
-              
+
               // not first only return all results
               return result;
             }
@@ -1537,9 +1533,8 @@
           if (p === '$or') {
             if (this.searchIsChained) {
               this.findOr(queryObject[p]);
-              
-              if (firstOnly && this.filteredrows.length > 1)
-              {
+
+              if (firstOnly && this.filteredrows.length > 1) {
                 this.filteredrows = this.filteredrows.slice(0, 1);
               }
 
@@ -1547,14 +1542,13 @@
             } else {
               // call out to helper function to determine $or results
               result = this.collection.chain().findOr(queryObject[p]).data();
-              
-              if (firstOnly)
-              {
+
+              if (firstOnly) {
                 if (result.length == 0) return [];
-                
+
                 return result[0];
               }
-              
+
               // not first only return all results
               return result;
             }
@@ -3171,6 +3165,43 @@
       return;
     };
 
+    Collection.prototype.max = function (field) {
+      var i = 0,
+        len = this.data.length,
+        isDotNotation = field.indexOf('.') === -1,
+        ref,
+        result = {
+          index: 0,
+          value: undefined
+        },
+        max = undefined;
+
+      for (i; i < len; i += 1) {
+        if (max !== undefined) {
+          console.log('Current: ' + this.data[i][field] + ', currentmax: ' + max);
+          if (max < this.data[i][field]) {
+            max = this.data[i][field];
+            result.index = this.data[i].$loki;
+          }
+        } else {
+          max = this.data[i][field];
+          result.index = this.data[i].$loki;
+        }
+      }
+      result.value = max;
+      return result;
+    };
+
+    Collection.prototype.avg = function (field) {
+      var i = 0,
+        len = this.data.length,
+        isDotNotation = field.indexOf('.') === -1,
+        sum = 0;
+      for (i; i < len; i += 1) {
+        sum += this.data[i][field];
+      }
+      return sum / this.data.length;
+    };
 
 
     function binarySearch(array, item, fun) {

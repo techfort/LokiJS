@@ -3172,10 +3172,17 @@
     };
 
     Collection.prototype.max = function (field) {
+      return Math.max.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.min = function (field) {
+      return Math.min.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.maxRecord = function (field) {
       var i = 0,
         len = this.data.length,
-        isDotNotation = field.indexOf('.') === -1,
-        ref,
+        deep = isDeepProperty(field),
         result = {
           index: 0,
           value: undefined
@@ -3184,13 +3191,12 @@
 
       for (i; i < len; i += 1) {
         if (max !== undefined) {
-          console.log('Current: ' + this.data[i][field] + ', currentmax: ' + max);
-          if (max < this.data[i][field]) {
-            max = this.data[i][field];
+          if (max < deepProperty(this.data[i], field, deep)) {
+            max = deepProperty(this.data[i], field, deep);
             result.index = this.data[i].$loki;
           }
         } else {
-          max = this.data[i][field];
+          max = deepProperty(this.data[i], field, deep);
           result.index = this.data[i].$loki;
         }
       }
@@ -3198,23 +3204,95 @@
       return result;
     };
 
-    Collection.prototype.avg = function (field) {
+    Collection.prototype.minRecord = function (field) {
       var i = 0,
         len = this.data.length,
-        isDotNotation = field.indexOf('.') === -1,
-        sum = 0;
+        deep = isDeepProperty(field),
+        result = {
+          index: 0,
+          value: undefined
+        },
+        min = undefined;
+
       for (i; i < len; i += 1) {
-        sum += this.data[i][field];
+        if (min !== undefined) {
+          if (min > deepProperty(this.data[i], field, deep)) {
+            min = deepProperty(this.data[i], field, deep);
+            result.index = this.data[i].$loki;
+          }
+        } else {
+          min = deepProperty(this.data[i], field, deep);
+          result.index = this.data[i].$loki;
+        }
       }
-      return sum / this.data.length;
+      result.value = min;
+      return result;
     };
 
+    Collection.prototype.avg = function (field) {
+      return average(this.extract(field));
+    };
 
     Collection.prototype.extract = function (field) {
-
+      var i = 0,
+        len = this.data.length,
+        isDotNotation = isDeepProperty(field),
+        sum = 0,
+        result = [];
+      for (i; i < len; i += 1) {
+        result.push(deepProperty(this.data[i], field, isDotNotation));
+      }
+      return result;
     };
 
-    function deepProperty(obj, property) {
+    Collection.prototype.stdDev = function (field) {
+      return standardDeviation(this.extract(field));
+    };
+
+    /**
+     * General utils, including statistical functions
+     */
+    function isDeepProperty(field) {
+      return field.indexOf('.') !== -1;
+    }
+
+    function add(a, b) {
+      return a + b;
+    }
+
+    function sub(a, b) {
+      return a - b;
+    }
+
+    function median(values) {
+      values.sort(sub);
+      var half = Math.floor(values.length / 2);
+      return (values.length % 2) ? values[half] : ((values[half - 1] + values[half]) / 2.0);
+    }
+
+    function average(array) {
+      return (array.reduce(add, 0)) / array.length;
+    }
+
+    function standardDeviation(values) {
+      var avg = average(values);
+      var squareDiffs = values.map(function (value) {
+        var diff = value - avg;
+        var sqrDiff = diff * diff;
+        return sqrDiff;
+      });
+
+      var avgSquareDiff = average(squareDiffs);
+
+      var stdDev = Math.sqrt(avgSquareDiff);
+      return stdDev;
+    }
+
+    function deepProperty(obj, property, isDeep) {
+      if (isDeep === false) {
+        // pass without processing
+        return obj[property];
+      }
       var pieces = property.split('.'),
         root = obj;
       while (pieces.length > 0) {

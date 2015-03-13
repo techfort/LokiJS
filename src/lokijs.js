@@ -3249,6 +3249,31 @@
       return standardDeviation(this.extract(field));
     };
 
+    Collection.prototype.mode = function (field) {
+      var dict = {},
+        data = this.extract(field);
+      data.forEach(function (obj) {
+        if (dict[obj]) {
+          dict[obj] += 1;
+        } else {
+          dict[obj] = 1;
+        }
+      });
+      var max = undefined,
+        prop, mode;
+      for (prop in dict) {
+        if (max) {
+          if (max < dict[prop]) {
+            mode = prop;
+          }
+        } else {
+          mode = prop;
+          max = dict[prop];
+        }
+      }
+      return mode;
+    }
+
     /**
      * General utils, including statistical functions
      */

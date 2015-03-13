@@ -36,7 +36,7 @@ users.insert({
   name: 'jim',
   age: 28,
   relatives: {
-    firstgrade: 11
+    firstgrade: 12
   }
 });
 users.insert({
@@ -54,3 +54,4 @@ console.log(users.minRecord('age'));
 console.log(users.avg('relatives.firstgrade'));
 console.log(users.extract('relatives.firstgrade'));
 console.log(users.stdDev('relatives.firstgrade'));
+console.log(users.mode('relatives.firstgrade'));

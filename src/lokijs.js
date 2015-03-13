@@ -2223,7 +2223,9 @@
       var self = this;
 
       // already queued? exit without queuing again
-      if (this.sortDirty) return;
+      if (this.sortDirty) {
+        return;
+      }
 
       this.sortDirty = true;
 
@@ -2239,7 +2241,9 @@
      */
     DynamicView.prototype.performSortPhase = function () {
       // async call to this may have been pre-empted by synchronous call to data before async could fire
-      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) return;
+      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) {
+        return;
+      }
 
       if (this.sortFunction) {
         this.resultset.sort(this.sortFunction);
@@ -2249,7 +2253,9 @@
         this.resultset.compoundsort(this.sortCriteria);
       }
 
-      if (!this.persistent) return;
+      if (!this.persistent) {
+        return;
+      }
 
       // persistent view, rebuild local resultdata array
       this.resultdata = this.resultset.data();
@@ -3203,6 +3209,19 @@
       return sum / this.data.length;
     };
 
+
+    Collection.prototype.extract = function (field) {
+
+    };
+
+    function deepProperty(obj, property) {
+      var pieces = property.split('.'),
+        root = obj;
+      while (pieces.length > 0) {
+        root = root[pieces.shift()];
+      }
+      return root;
+    }
 
     function binarySearch(array, item, fun) {
       var lo = 0,

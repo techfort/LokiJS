@@ -3171,6 +3171,18 @@
       return;
     };
 
+    Collection.prototype.extract = function (field) {
+      var i = 0,
+        len = this.data.length,
+        isDotNotation = isDeepProperty(field),
+        sum = 0,
+        result = [];
+      for (i; i < len; i += 1) {
+        result.push(deepProperty(this.data[i], field, isDotNotation));
+      }
+      return result;
+    };
+
     Collection.prototype.max = function (field) {
       return Math.max.apply(null, this.extract(field));
     };
@@ -3233,17 +3245,7 @@
       return average(this.extract(field));
     };
 
-    Collection.prototype.extract = function (field) {
-      var i = 0,
-        len = this.data.length,
-        isDotNotation = isDeepProperty(field),
-        sum = 0,
-        result = [];
-      for (i; i < len; i += 1) {
-        result.push(deepProperty(this.data[i], field, isDotNotation));
-      }
-      return result;
-    };
+
 
     Collection.prototype.stdDev = function (field) {
       return standardDeviation(this.extract(field));
@@ -3272,7 +3274,20 @@
         }
       }
       return mode;
-    }
+    };
+
+    Collection.prototype.median = function (field) {
+      var values = this.extract(field);
+      values.sort(sub);
+
+      var half = Math.floor(values.length / 2);
+
+      if (values.length % 2) {
+        return values[half];
+      } else {
+        return (values[half - 1] + values[half]) / 2.0;
+      }
+    };
 
     /**
      * General utils, including statistical functions

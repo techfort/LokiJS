@@ -353,12 +353,9 @@
         this.ENV = 'NODEJS';
       }
 
-      if (this.ENV === 'NODEJS') {
-        this.fs = require("fs");
-      }
-      if (typeof (options) !== 'undefined') {
+      //if (typeof (options) !== 'undefined') {
         this.configureOptions(options, true);
-      }
+      //}
 
       this.on('init', this.clearChanges);
 
@@ -374,42 +371,60 @@
      * @param {boolean} initialConfig - (optional) if this is a reconfig, don't pass this
      */
     Loki.prototype.configureOptions = function (options, initialConfig) {
+       var defaultPersistence = { 'NODEJS': 'fs', 'BROWSER': 'localStorage', 'CORDOVA': null },
+          persistenceMethods = { 'fs': LokiFsAdapter, 'localStorage': LokiLocalStorageAdapter };
+          
       this.options = {};
 
-      if (typeof (options) !== 'undefined') {
-        this.options = options;
-      }
-
       this.persistenceMethod = null;
-
-      if (this.options.hasOwnProperty('persistenceMethod')) {
-        this.persistenceMethod = options.persistenceMethod;
-      }
-
       // retain reference to optional persistence adapter 'instance'
       // currently keeping outside options because it can't be serialized
       this.persistenceAdapter = null;
+      
+      // process the options
+      if (typeof (options) !== 'undefined') {
+        this.options = options;
+      
 
-      // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
-      if (this.options.hasOwnProperty('adapter')) {
-        this.persistenceMethod = 'adapter';
-        this.persistenceAdapter = options.adapter;
-      }
-
-      // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-      if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
-        this.loadDatabase(options, options.autoloadCallback);
-      }
-
-      if (this.options.hasOwnProperty('autosaveInterval')) {
-        this.autosaveDisable();
-        this.autosaveInterval = parseInt(this.options.autosaveInterval);
-      }
-
-      if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
-        this.autosaveDisable();
-        this.autosave = true;
-        this.autosaveEnable();
+        if (this.options.hasOwnProperty('persistenceMethod')) {
+          // check if the specified persistence method is known
+          if ( persistenceMethods[options.persistenceMethod] == 'function'){
+            this.persistenceMethod = options.persistenceMethod;
+            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod];
+          }
+          // should be throw an error here, or just fall back to defaults ??
+        }
+        
+        // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+        if (this.options.hasOwnProperty('adapter')) {
+          this.persistenceMethod = 'adapter';
+          this.persistenceAdapter = options.adapter;
+        }
+      
+     
+        // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
+        if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
+          this.loadDatabase(options, options.autoloadCallback);
+        }
+  
+        if (this.options.hasOwnProperty('autosaveInterval')) {
+          this.autosaveDisable();
+          this.autosaveInterval = parseInt(this.options.autosaveInterval);
+        }
+  
+        if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
+          this.autosaveDisable();
+          this.autosave = true;
+          this.autosaveEnable();
+        }
+      }  // end of options processing
+     
+      // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
+      if (this.persistenceAdapter == null){
+        this.persistenceMethod = defaultPersistence[this.ENV];
+        if (this.persistenceMethod){
+          this.persistenceAdapter = new persistenceMethods[this.persistenceMethod];
+        }
       }
 
     };
@@ -728,6 +743,83 @@
     /*------------------+
     | PERSISTENCE       |
     -------------------*/
+    
+    
+    /** there are two build in persistence adapters for internal use
+     * fs             for use in Nodejs type environments
+     * localStorage   for use in browser environment
+     * defined as helper classes here so its easy and clean to use
+     */
+     
+    /** 
+     * constructor for fs
+     */
+    function LokiFsAdapter(){
+      this.fs = require('fs');
+    }
+    
+    /** 
+     * loadDatabase() - Load data from file, will throw an error if the file does not exist
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiFsAdapter.prototype.loadDatabase = function loadDatabase (dbname, callback){
+      console.log('FS loading',dbname, __dirname) //####
+      this.fs.readFile(dbname, { encoding: 'utf8' }, function readFileCallback(err, data) {
+            if (err) {
+               throw err;
+            }
+            else {
+              callback(data);
+            }
+        });
+    };
+    
+     /** 
+     * saveDatabase() - save data to file, will throw an error if the file can't be saved
+     * might want to expand this to avoid dataloss on partial save
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiFsAdapter.prototype.saveDatabase = function saveDatabase (dbname, dbstring, callback){
+      console.log('FS saving',dbname); //####
+      this.fs.writeFile(dbname, dbstring, callback);
+    };
+    
+    
+     /** 
+     * constructor for local storage
+     */
+    function LokiLocalStorageAdapter(){};
+    
+    /** 
+     * loadDatabase() - Load data from localstorage
+     * @param {string} dbname - the name of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase (dbname, callback){
+      if (localStorageAvailable()) {
+        callback(localStorage.getItem(dbname));
+      }
+      else {
+        callback(new Error('localStorage is not available'));
+      }
+    };
+    
+     /** 
+     * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
+     * might want to expand this to avoid dataloss on partial save
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase (dbname, dbstring, callback){
+      if (localStorageAvailable()) {
+        localStorage.setItem(dbname, dbstring);
+        callback(null);
+      } else {
+        callback(new Error('localStorage is not available'));
+      }
+    };
 
     /**
      * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
@@ -746,76 +838,23 @@
         },
         self = this;
 
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          this.fs.readFile(this.filename, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              return cFun(err, null);
+      // the persistenceAdapter should be present if all is ok, but check to be sure. 
+      if (this.persistenceAdapter !== null) {
+          this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
+            // pass any errors up
+            if (dbString.instanceof === 'Error'){
+              cFun(dbString);
+            } 
+            else if (typeof (dbString) === 'undefined' || dbString === null) {
+              console.warn('lokijs loadDatabase : Database not found');
+              cFun('Database not found');
+            } else {
+              self.loadJSON(dbString, options || {});
+              cFun(null);
             }
-            self.loadJSON(data, options || {});
-            cFun(null, data);
           });
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            var data = localStorage.getItem(this.filename);
-
-            self.loadJSON(data, options || {});
-            cFun(null, data);
-          } else {
-            cFun(new Error('localStorage is not available'));
-          }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if user has given us an adapter reference (in loki constructor options)
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-              if (typeof (dbString) === 'undefined' || dbString === null) {
-                console.warn('lokijs loadDatabase : Database not found');
-                cFun('Database not found');
-              } else {
-                self.loadJSON(dbString, options || {});
-                cFun(null);
-              }
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      };
-
-      // user did not provide persistenceMethod, default to environment detection
-      if (this.ENV === 'NODEJS') {
-        this.fs.readFile(this.filename, {
-          encoding: 'utf8'
-        }, function readFileCallback(err, data) {
-          if (err) {
-            return cFun(err, null);
-          }
-          if (!data.length) {
-            data = self.serialize();
-          }
-          self.loadJSON(data, options || {});
-          cFun(null, data);
-        });
-      } else if (this.ENV === 'BROWSER') {
-        if (localStorageAvailable()) {
-          var data = localStorage.getItem(this.filename);
-
-          self.loadJSON(data, options || {});
-          cFun(null, data);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
       } else {
-        cFun(new Error('unknown environment'));
+        cFun(new Error('persistenceAdapter not configured'));
       }
     };
 
@@ -835,54 +874,21 @@
           return;
         },
         self = this;
-
-      // for now assume whichever method below succeeds and reset dirty flags
-      // in future we may move this into each if block if no exceptions occur.
-      this.autosaveClearFlags();
-
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          self.fs.writeFile(self.filename, self.serialize(), cFun);
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            localStorage.setItem(self.filename, self.serialize());
-            cFun(null);
-          } else {
-            cFun(new Error('localStorage is not available'));
-          }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if loki persistence adapter instance was provided in loki constructor options
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
-              cFun(null);
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      };
-
-      // persist in nodejs
-      if (this.ENV === 'NODEJS') {
-        self.fs.writeFile(self.filename, self.serialize(), cFun);
-      } else if (this.ENV === 'BROWSER' || this.ENV === 'CORDOVA') {
-        if (localStorageAvailable()) {
-          localStorage.setItem(self.filename, self.serialize());
+        
+      // the persistenceAdapter should be present if all is ok, but check to be sure. 
+      if (this.persistenceAdapter !== null) {
+        this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
+          // for now assume that save went ok and reset dirty flags
+          // in future we may move this into each if block if no exceptions occur.
+          self.autosaveClearFlags();
           cFun(null);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
+        });
       } else {
-        cFun(new Error('unknown environment'));
+        cFun(new Error('persistenceAdapter not configured'));
       }
+      
     };
+    
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
 

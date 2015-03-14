@@ -10,13 +10,13 @@ users.insert([{
 	name: 'jack'
 }]);
 
-db.saveDatabase();
+db.saveDatabase( function reload(){
 
 var reloaded = new loki('./loki.json');
-reloaded.loadDatabase({}, function () {
-	var users2 = reloaded.getCollection('users');
-	suite.assertEqual('There are 2 objects in the reloaded db', 2, users2.data.length);
-	suite.report();
+	reloaded.loadDatabase({}, function () {
+		var users2 = reloaded.getCollection('users');
+		suite.assertEqual('There are 2 objects in the reloaded db', 2, users2.data.length);
+		suite.report();
+		require('fs').unlink('./loki.json');
+	});
 });
-
-require('fs').unlink('./loki.json');

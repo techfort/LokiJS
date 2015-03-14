@@ -539,8 +539,7 @@
         coll,
         copyColl,
         clen,
-        j,
-        upgradeNeeded = false;
+        j;
 
       this.name = obj.name;
 
@@ -548,10 +547,6 @@
       this.databaseVersion = 1.0;
       if (obj.hasOwnProperty('databaseVersion')) {
         this.databaseVersion = obj.databaseVersion;
-      }
-
-      if (this.databaseVersion !== this.engineVersion) {
-        upgradeNeeded = true;
       }
 
       this.collections = [];
@@ -580,43 +575,10 @@
           }
         }
 
-        // rough object upgrade, once file format stabilizes we will probably remove this
-        if (upgradeNeeded && this.engineVersion == 1.1) {
-          // we are upgrading a 1.0 database to 1.1, so initialize new properties
-          copyColl.transactional = false;
-          copyColl.cloneObjects = false;
-          copyColl.asyncListeners = true;
-          copyColl.disableChangesApi = true;
-
-          console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
-
-          // for current collection, if there is at least one document see if its missing $loki key
-          if (copyColl.data.length > 0) {
-            if (!copyColl.data[0].hasOwnProperty('$loki')) {
-              var dlen = copyColl.data.length;
-              var currDoc = null;
-
-              // for each document, set $loki to old 'id' column
-              // if it has 'originalId' column, move to 'id'
-              for (var idx = 0; idx < dlen; idx++) {
-                currDoc = copyColl.data[idx];
-
-                currDoc['$loki'] = currDoc['id'];
-                delete currDoc.id;
-
-                if (currDoc.hasOwnProperty['originalId']) {
-                  currDoc['id'] = currDoc['originalId'];
-                }
-              }
-            }
-          }
-        } else {
-          // not an upgrade or upgrade after 1.1, so copy new collection level options
-          copyColl.transactional = coll.transactional;
-          copyColl.asyncListeners = coll.asyncListeners;
-          copyColl.disableChangesApi = coll.disableChangesApi;
-          copyColl.cloneObjects = coll.cloneObjects;
-        }
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
@@ -643,19 +605,9 @@
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
 
-          // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
-          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
-            var isdesc = false;
-            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
-              isdesc = colldv.sortColumnDesc;
-            }
-
-            dv.sortCriteria = [colldv.sortColumn, isdesc];
-          } else {
-            dv.sortCriteria = colldv.sortCriteria;
-          }
-
+          dv.sortCriteria = colldv.sortCriteria;
           dv.sortFunction = null;
+
           dv.sortDirty = colldv.sortDirty;
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
           dv.resultset.searchIsChained = colldv.resultset.searchIsChained;

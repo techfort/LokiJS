@@ -764,7 +764,6 @@
      * @param {function} callback - the callback to handle the result
      */
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase (dbname, callback){
-      console.log('FS loading',dbname, __dirname) //####
       this.fs.readFile(dbname, { encoding: 'utf8' }, function readFileCallback(err, data) {
             if (err) {
                throw err;
@@ -782,7 +781,6 @@
      * @param {function} callback - the callback to handle the result
      */
     LokiFsAdapter.prototype.saveDatabase = function saveDatabase (dbname, dbstring, callback){
-      console.log('FS saving',dbname); //####
       this.fs.writeFile(dbname, dbstring, callback);
     };
     

@@ -5,3 +5,4 @@ require('./changesApi');
 require('./testCollection');
 require('./nodePersistence');
 require('./testRemove');
+require('./testCryptedFileAdapter');

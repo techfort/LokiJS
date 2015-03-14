@@ -121,8 +121,8 @@ function decrypt(input, secret) {
 
   var salt = new Buffer(input.salt, 'base64'),
     iv = new Buffer(input.iv, 'base64'),
-    keyLength = input.keyLength;
-  iterations = input.iterations;
+    keyLength = input.keyLength,
+   iterations = input.iterations;
 
   try {
 
@@ -137,7 +137,7 @@ function decrypt(input, secret) {
   } catch (err) {
     throw new Error('Unable to decrypt value due to: ' + err);
   }
-};
+}
 
 /**
  * constructor
@@ -145,6 +145,11 @@ function decrypt(input, secret) {
  */
 function lokiCryptedFileAdapter() {};
 
+/**
+ * setSecret() - set the secret to be used during encryption and decryption
+ *
+ * @param {string} secret - the secret to be used
+ */
 lokiCryptedFileAdapter.prototype.setSecret = function setSecret(secret) {
   this.secret = secret;
 };
@@ -169,7 +174,7 @@ lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, ca
       console.log(decrypted);
     }
   });
-}
+};
 
 /**
  * saveDatabase() - Saves a serialized db to the catalog.
@@ -186,7 +191,7 @@ lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, db
   if (typeof (callback) === 'function') {
     callback();
   }
-}
+};
 
 module.exports = new lokiCryptedFileAdapter;
 exports.lokiCryptedFileAdapter = lokiCryptedFileAdapter;

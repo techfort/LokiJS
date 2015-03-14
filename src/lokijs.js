@@ -404,7 +404,11 @@
      
         // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
         if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
-          this.loadDatabase(options, options.autoloadCallback);
+          // for autoload, let the constructor complete before firing callback
+          var self = this;
+          setTimeout(function() {
+            self.loadDatabase(options, options.autoloadCallback);
+          }, 1);
         }
   
         if (this.options.hasOwnProperty('autosaveInterval')) {
@@ -512,6 +516,8 @@
     Loki.prototype.serializeReplacer = function (key, value) {
       switch (key) {
       case 'autosaveHandle':
+        return null;
+      case 'persistenceAdapter':
         return null;
       default:
         return value;
@@ -718,7 +724,7 @@
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase (dbname, callback){
       this.fs.readFile(dbname, { encoding: 'utf8' }, function readFileCallback(err, data) {
             if (err) {
-               throw err;
+               callback(new Error(err));
             }
             else {
               callback(data);
@@ -792,7 +798,7 @@
       if (this.persistenceAdapter !== null) {
           this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
             // pass any errors up
-            if (dbString.instanceof === 'Error'){
+            if (dbString instanceof Error){
               cFun(dbString);
             } 
             else if (typeof (dbString) === 'undefined' || dbString === null) {

@@ -41,6 +41,7 @@
 
 var fs = require('fs');
 var cryptoLib = require('crypto');
+var isError = require('util').isError;
 
 /**
  * sensible defaults
@@ -58,7 +59,7 @@ var CIPHER = 'aes-256-cbc',
  */
 function encrypt(input, secret) {
   if (!secret) {
-    throw new Error('A \'secret\' is required to encrypt');
+    return new Error('A \'secret\' is required to encrypt');
   }
 
 
@@ -85,7 +86,7 @@ function encrypt(input, secret) {
     return result;
 
   } catch (err) {
-    throw new Error('Unable to encrypt value due to: ' + err);
+    return new Error('Unable to encrypt value due to: ' + err);
   }
 }
 
@@ -98,25 +99,23 @@ function encrypt(input, secret) {
 function decrypt(input, secret) {
   // Ensure we have something to decrypt
   if (!input) {
-    throw new Error('You must provide a value to decrypt');
+    return new Error('You must provide a value to decrypt');
   }
   // Ensure we have the secret used to encrypt this value
   if (!secret) {
-    throw new Error('A \'secret\' is required to decrypt');
+    return new Error('A \'secret\' is required to decrypt');
   }
 
-  // If we get a string as input, turn it into an object
-  if (typeof input !== 'object') {
-    try {
+  // turn string into an object
+  try {
       input = JSON.parse(input);
-    } catch (err) {
-      throw new Error('Unable to parse string input as JSON');
-    }
+  } catch (err) {
+      return new Error('Unable to parse string input as JSON');
   }
 
   // Ensure our input is a valid object with 'iv', 'salt', and 'value'
   if (!input.iv || !input.salt || !input.value) {
-    throw new Error('Input must be a valid object with \'iv\', \'salt\', and \'value\' properties');
+    return new Error('Input must be a valid object with \'iv\', \'salt\', and \'value\' properties');
   }
 
   var salt = new Buffer(input.salt, 'base64'),
@@ -135,7 +134,7 @@ function decrypt(input, secret) {
     return decryptedValue;
 
   } catch (err) {
-    throw new Error('Unable to decrypt value due to: ' + err);
+    return new Error('Unable to decrypt value due to: ' + err);
   }
 }
 
@@ -161,18 +160,12 @@ lokiCryptedFileAdapter.prototype.setSecret = function setSecret(secret) {
  * @param {function} callback - callback should accept string param containing serialized db string.
  */
 lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
-  var decrypted;
   var secret = this.secret;
-  fs.exists(dbname, function (exists) {
-    if (exists) {
-      var decryptInput = fs.readFileSync(dbname, 'utf8');
-      decrypted = decrypt(decryptInput, secret);
-    }
-    if (typeof (callback) === 'function') {
-      callback(decrypted);
-    } else {
-      console.log(decrypted);
-    }
+  var cFun = callback || console.log;
+  
+  fs.readFile(dbname,'utf8',function(err,data){
+    var decrypted = err || decrypt(data, secret);
+    cFun(decrypted);
   });
 };
 
@@ -184,12 +177,15 @@ lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, ca
  * @param {function} callback - (Optional) callback passed obj.success with true or false
  */
 lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+  var cFun = callback || function (){};
   var encrypted = encrypt(dbstring, this.secret);
-  fs.writeFileSync(dbname,
-    JSON.stringify(encrypted, null, '  '),
-    'utf8');
-  if (typeof (callback) === 'function') {
-    callback();
+  if (! isError(encrypted)){
+    fs.writeFile(dbname,
+      JSON.stringify(encrypted, null, '  '),
+      'utf8',cFun);
+  }
+  else { // Error !
+    cFun(encrypted);
   }
 };
 

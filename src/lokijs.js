@@ -803,34 +803,21 @@
 
       // the persistenceAdapter should be present if all is ok, but check to be sure. 
       if (this.persistenceAdapter !== null) {
-<<<<<<< HEAD
+
         this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-          // pass any errors up
-          if (dbString instanceof Error) {
-            cFun(dbString);
-          } else if (typeof (dbString) === 'undefined' || dbString === null) {
-            console.warn('lokijs loadDatabase : Database not found');
-            cFun('Database not found');
-          } else {
+          if (typeof (dbString) === 'string') {
             self.loadJSON(dbString, options || {});
             cFun(null);
+          } else {
+            console.warn('lokijs loadDatabase : Database not found');
+            if (typeof (dbString) === "object") {
+              cFun(dbString);
+            } else {
+              cFun('Database not found');
+            }
           }
         });
-=======
-          this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-           if (typeof (dbString) === 'string') {
-              self.loadJSON(dbString, options || {});
-              cFun(null);
-            } else {
-              console.warn('lokijs loadDatabase : Database not found');
-              if (typeof(dbString) === "object" ){
-                cFun(dbString);
-              } else {
-                cFun('Database not found');
-              }
-            }
-          });
->>>>>>> 5f1ec85de763f89334fef1130ed386b0c47e7324
+
       } else {
         cFun(new Error('persistenceAdapter not configured'));
       }

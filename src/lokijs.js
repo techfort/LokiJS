@@ -18,7 +18,7 @@
 
     if (root.loki) {
       root.thirdParty = root.thirdParty || {};
-      root.thirdParty.loki = root.loki;
+      root.thirdParty.loki = loki;
       try {
         delete root.loki;
       } catch (err) {

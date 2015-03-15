@@ -12,8 +12,19 @@
     // CommonJS
     module.exports = factory();
   } else {
+
     // Browser globals
-    root.loki = factory();
+    var loki = factory();
+
+    if (root.loki) {
+      root.thirdParty = root.thirdParty || {};
+      root.thirdParty.loki = root.loki;
+      try {
+        delete root.loki;
+      } catch (err) {
+        root.loki = undefined;
+      }
+    }
   }
 }(this, function () {
 
@@ -716,14 +727,14 @@
      * defined as helper classes here so its easy and clean to use
      */
 
-    /** 
+    /**
      * constructor for fs
      */
     function LokiFsAdapter() {
       this.fs = require('fs');
     }
 
-    /** 
+    /**
      * loadDatabase() - Load data from file, will throw an error if the file does not exist
      * @param {string} dbname - the filename of the database to load
      * @param {function} callback - the callback to handle the result
@@ -740,7 +751,7 @@
       });
     };
 
-    /** 
+    /**
      * saveDatabase() - save data to file, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
@@ -751,12 +762,12 @@
     };
 
 
-    /** 
+    /**
      * constructor for local storage
      */
     function LokiLocalStorageAdapter() {};
 
-    /** 
+    /**
      * loadDatabase() - Load data from localstorage
      * @param {string} dbname - the name of the database to load
      * @param {function} callback - the callback to handle the result
@@ -769,7 +780,7 @@
       }
     };
 
-    /** 
+    /**
      * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
@@ -801,7 +812,7 @@
         },
         self = this;
 
-      // the persistenceAdapter should be present if all is ok, but check to be sure. 
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
 
         this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
@@ -840,7 +851,7 @@
         },
         self = this;
 
-      // the persistenceAdapter should be present if all is ok, but check to be sure. 
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
         this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
           // for now assume that save went ok and reset dirty flags
@@ -1477,7 +1488,7 @@
             if (this.searchIsChained) {
               this.findAnd(queryObject[p]);
 
-              // for chained find with firstonly, 
+              // for chained find with firstonly,
               if (firstOnly && this.filteredrows.length > 1) {
                 this.filteredrows = this.filteredrows.slice(0, 1);
               }
@@ -2354,7 +2365,7 @@
       }
 
       // since we are using filteredrows to store data array positions
-      // if they remove a document (whether in our view or not), 
+      // if they remove a document (whether in our view or not),
       // we need to adjust array positions -1 for all document array references after that position
       oldlen = ofr.length;
       for (idx = 0; idx < oldlen; idx++) {

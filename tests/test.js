@@ -394,6 +394,162 @@ function testResultset() {
 
 }
 
+function testAndOrOps() {
+  var eic = db.addCollection("eic");
+
+  eic.insert({
+    'testid': 1,
+    'testString': 'hhh',
+    'testFloat': 5.2
+  }); //0
+  eic.insert({
+    'testid': 1,
+    'testString': 'bbb',
+    'testFloat': 6.2
+  }); //1
+  eic.insert({
+    'testid': 5,
+    'testString': 'zzz',
+    'testFloat': 7.2
+  }); //2
+  eic.insert({
+    'testid': 6,
+    'testString': 'ggg',
+    'testFloat': 1.2
+  }); //3
+  eic.insert({
+    'testid': 9,
+    'testString': 'www',
+    'testFloat': 8.2
+  }); //4
+  eic.insert({
+    'testid': 11,
+    'testString': 'yyy',
+    'testFloat': 4.2
+  }); //5
+  eic.insert({
+    'testid': 22,
+    'testString': 'bbb',
+    'testFloat': 9.2
+  }); //6
+  eic.insert({
+    'testid': 23,
+    'testString': 'm',
+    'testFloat': 2.2
+  }); //7
+
+  // coll.find $and
+  suite.assertStrictEqual('$and op test1', eic.find({
+    '$and': [
+      {'testid': 1},
+      {'testString': 'bbb'}
+    ]
+  }).length, 1);
+
+  // resultset.find $and
+  suite.assertStrictEqual('$and op test2', eic.chain().find({
+    '$and': [
+      {'testid': 1},
+      {'testString': 'bbb'}
+    ]
+  }).data().length, 1);
+
+  // resultset.find explicit operators
+  suite.assertStrictEqual('$and op test3', eic.chain().find({
+    '$and': [
+      {'testid': {'$eq': 1}},
+      {'testFloat': {'$gt': 6.0}}
+    ]
+  }).data().length, 1);
+
+  // coll.find $or
+  suite.assertStrictEqual('$or op test1', eic.find({
+    '$or': [
+      {'testid': 1},
+      {'testString': 'bbb'}
+    ]
+  }).length, 3);
+
+  // resultset.find $or
+  suite.assertStrictEqual('$or op test2', eic.chain().find({
+    '$or': [
+      {'testid': 1},
+      {'testString': 'bbb'}
+    ]
+  }).data().length, 3);
+
+  // resultset.find explicit operators
+  suite.assertStrictEqual('$or op test3', eic.chain().find({
+    '$or': [
+      {'testid': 1},
+      {'testFloat': {'$gt': 7.0}}
+    ]
+  }).data().length, 5);
+
+  // add index and repeat final test
+  eic.ensureIndex("testid");
+
+  suite.assertStrictEqual('$and op test4', eic.chain().find({
+    '$and': [
+      {'testid': {'$eq': 1}},
+      {'testFloat': {'$gt': 6.0}}
+    ]
+  }).data().length, 1);
+
+  suite.assertStrictEqual('$or op test4', eic.chain().find({
+    '$or': [
+      {'testid': 1},
+      {'testFloat': {'$gt': 7.0}}
+    ]
+  }).data().length, 5);
+
+  db.removeCollection("eic");
+}
+
+function testFindOne() {
+  var eic = db.addCollection("eic");
+
+  eic.insert({
+    'testid': 1,
+    'testString': 'hhh',
+    'testFloat': 5.2
+  }); //0
+  eic.insert({
+    'testid': 1,
+    'testString': 'bbb',
+    'testFloat': 6.2
+  }); //1
+  eic.insert({
+    'testid': 5,
+    'testString': 'zzz',
+    'testFloat': 7.2
+  }); //2
+
+  // coll.findOne return type
+  suite.assertStrictEqual('findOne return type', typeof eic.findOne({'testid': 1}), 'object');
+
+  // coll.findOne return match
+  suite.assertStrictEqual('findOne return match', eic.findOne({'testid': 5}).testFloat, 7.2);
+
+  // findOne with $and op
+  suite.assertStrictEqual('findOne with $and op', eic.findOne({
+    '$and': [
+      {'testid': 1},
+      {'testString': 'bbb'}
+    ]
+  }).testFloat, 6.2);
+
+  // findOne with $and op
+  suite.assertStrictEqual('findOne with $or op', eic.findOne({
+    '$or': [
+      {'testid': 2},
+      {'testString': 'zzz'}
+    ]
+  }).testFloat, 7.2);
+
+  db.removeCollection("eic");
+}
+
 /* Dynamic View Tests */
 function stepEvaluateDocument() {
   var view = users.addDynamicView('test');
@@ -598,6 +754,8 @@ function testCollections() {
 /* Main Test */
 populateTestData();
 testCoreMethods();
+testAndOrOps();
+testFindOne();
 testCalculateRange();
 testIndexes();
 testIndexLifecycle();

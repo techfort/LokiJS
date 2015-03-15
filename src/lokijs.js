@@ -404,7 +404,11 @@
      
         // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
         if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
-          this.loadDatabase(options, options.autoloadCallback);
+          // for autoload, let the constructor complete before firing callback
+          var self = this;
+          setTimeout(function() {
+            self.loadDatabase(options, options.autoloadCallback);
+          }, 1);
         }
   
         if (this.options.hasOwnProperty('autosaveInterval')) {
@@ -513,6 +517,8 @@
       switch (key) {
       case 'autosaveHandle':
         return null;
+      case 'persistenceAdapter':
+        return null;
       default:
         return value;
       }
@@ -539,8 +545,7 @@
         coll,
         copyColl,
         clen,
-        j,
-        upgradeNeeded = false;
+        j;
 
       this.name = obj.name;
 
@@ -548,10 +553,6 @@
       this.databaseVersion = 1.0;
       if (obj.hasOwnProperty('databaseVersion')) {
         this.databaseVersion = obj.databaseVersion;
-      }
-
-      if (this.databaseVersion !== this.engineVersion) {
-        upgradeNeeded = true;
       }
 
       this.collections = [];
@@ -580,43 +581,10 @@
           }
         }
 
-        // rough object upgrade, once file format stabilizes we will probably remove this
-        if (upgradeNeeded && this.engineVersion == 1.1) {
-          // we are upgrading a 1.0 database to 1.1, so initialize new properties
-          copyColl.transactional = false;
-          copyColl.cloneObjects = false;
-          copyColl.asyncListeners = true;
-          copyColl.disableChangesApi = true;
-
-          console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
-
-          // for current collection, if there is at least one document see if its missing $loki key
-          if (copyColl.data.length > 0) {
-            if (!copyColl.data[0].hasOwnProperty('$loki')) {
-              var dlen = copyColl.data.length;
-              var currDoc = null;
-
-              // for each document, set $loki to old 'id' column
-              // if it has 'originalId' column, move to 'id'
-              for (var idx = 0; idx < dlen; idx++) {
-                currDoc = copyColl.data[idx];
-
-                currDoc['$loki'] = currDoc['id'];
-                delete currDoc.id;
-
-                if (currDoc.hasOwnProperty['originalId']) {
-                  currDoc['id'] = currDoc['originalId'];
-                }
-              }
-            }
-          }
-        } else {
-          // not an upgrade or upgrade after 1.1, so copy new collection level options
-          copyColl.transactional = coll.transactional;
-          copyColl.asyncListeners = coll.asyncListeners;
-          copyColl.disableChangesApi = coll.disableChangesApi;
-          copyColl.cloneObjects = coll.cloneObjects;
-        }
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
@@ -643,19 +611,9 @@
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
 
-          // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
-          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
-            var isdesc = false;
-            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
-              isdesc = colldv.sortColumnDesc;
-            }
-
-            dv.sortCriteria = [colldv.sortColumn, isdesc];
-          } else {
-            dv.sortCriteria = colldv.sortCriteria;
-          }
-
+          dv.sortCriteria = colldv.sortCriteria;
           dv.sortFunction = null;
+
           dv.sortDirty = colldv.sortDirty;
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
           dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
@@ -766,7 +724,7 @@
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase (dbname, callback){
       this.fs.readFile(dbname, { encoding: 'utf8' }, function readFileCallback(err, data) {
             if (err) {
-               throw err;
+               callback(new Error(err));
             }
             else {
               callback(data);
@@ -840,7 +798,7 @@
       if (this.persistenceAdapter !== null) {
           this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
            if (typeof (dbString) === 'string') {
-             self.loadJSON(dbString, options || {});
+              self.loadJSON(dbString, options || {});
               cFun(null);
             } else {
               console.warn('lokijs loadDatabase : Database not found');
@@ -3175,11 +3133,30 @@
       return;
     };
 
-    Collection.prototype.max = function (field) {
+    Collection.prototype.extract = function (field) {
       var i = 0,
         len = this.data.length,
-        isDotNotation = field.indexOf('.') === -1,
-        ref,
+        isDotNotation = isDeepProperty(field),
+        sum = 0,
+        result = [];
+      for (i; i < len; i += 1) {
+        result.push(deepProperty(this.data[i], field, isDotNotation));
+      }
+      return result;
+    };
+
+    Collection.prototype.max = function (field) {
+      return Math.max.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.min = function (field) {
+      return Math.min.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.maxRecord = function (field) {
+      var i = 0,
+        len = this.data.length,
+        deep = isDeepProperty(field),
         result = {
           index: 0,
           value: undefined
@@ -3188,13 +3165,12 @@
 
       for (i; i < len; i += 1) {
         if (max !== undefined) {
-          console.log('Current: ' + this.data[i][field] + ', currentmax: ' + max);
-          if (max < this.data[i][field]) {
-            max = this.data[i][field];
+          if (max < deepProperty(this.data[i], field, deep)) {
+            max = deepProperty(this.data[i], field, deep);
             result.index = this.data[i].$loki;
           }
         } else {
-          max = this.data[i][field];
+          max = deepProperty(this.data[i], field, deep);
           result.index = this.data[i].$loki;
         }
       }
@@ -3202,23 +3178,123 @@
       return result;
     };
 
-    Collection.prototype.avg = function (field) {
+    Collection.prototype.minRecord = function (field) {
       var i = 0,
         len = this.data.length,
-        isDotNotation = field.indexOf('.') === -1,
-        sum = 0;
+        deep = isDeepProperty(field),
+        result = {
+          index: 0,
+          value: undefined
+        },
+        min = undefined;
+
       for (i; i < len; i += 1) {
-        sum += this.data[i][field];
+        if (min !== undefined) {
+          if (min > deepProperty(this.data[i], field, deep)) {
+            min = deepProperty(this.data[i], field, deep);
+            result.index = this.data[i].$loki;
+          }
+        } else {
+          min = deepProperty(this.data[i], field, deep);
+          result.index = this.data[i].$loki;
+        }
       }
-      return sum / this.data.length;
+      result.value = min;
+      return result;
+    };
+
+    Collection.prototype.avg = function (field) {
+      return average(this.extract(field));
     };
 
 
-    Collection.prototype.extract = function (field) {
 
+    Collection.prototype.stdDev = function (field) {
+      return standardDeviation(this.extract(field));
     };
 
-    function deepProperty(obj, property) {
+    Collection.prototype.mode = function (field) {
+      var dict = {},
+        data = this.extract(field);
+      data.forEach(function (obj) {
+        if (dict[obj]) {
+          dict[obj] += 1;
+        } else {
+          dict[obj] = 1;
+        }
+      });
+      var max = undefined,
+        prop, mode;
+      for (prop in dict) {
+        if (max) {
+          if (max < dict[prop]) {
+            mode = prop;
+          }
+        } else {
+          mode = prop;
+          max = dict[prop];
+        }
+      }
+      return mode;
+    };
+
+    Collection.prototype.median = function (field) {
+      var values = this.extract(field);
+      values.sort(sub);
+
+      var half = Math.floor(values.length / 2);
+
+      if (values.length % 2) {
+        return values[half];
+      } else {
+        return (values[half - 1] + values[half]) / 2.0;
+      }
+    };
+
+    /**
+     * General utils, including statistical functions
+     */
+    function isDeepProperty(field) {
+      return field.indexOf('.') !== -1;
+    }
+
+    function add(a, b) {
+      return a + b;
+    }
+
+    function sub(a, b) {
+      return a - b;
+    }
+
+    function median(values) {
+      values.sort(sub);
+      var half = Math.floor(values.length / 2);
+      return (values.length % 2) ? values[half] : ((values[half - 1] + values[half]) / 2.0);
+    }
+
+    function average(array) {
+      return (array.reduce(add, 0)) / array.length;
+    }
+
+    function standardDeviation(values) {
+      var avg = average(values);
+      var squareDiffs = values.map(function (value) {
+        var diff = value - avg;
+        var sqrDiff = diff * diff;
+        return sqrDiff;
+      });
+
+      var avgSquareDiff = average(squareDiffs);
+
+      var stdDev = Math.sqrt(avgSquareDiff);
+      return stdDev;
+    }
+
+    function deepProperty(obj, property, isDeep) {
+      if (isDeep === false) {
+        // pass without processing
+        return obj[property];
+      }
       var pieces = property.split('.'),
         root = obj;
       while (pieces.length > 0) {

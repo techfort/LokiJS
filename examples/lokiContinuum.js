@@ -706,6 +706,21 @@ function dbLoaderCallback()
   }
 
   runProjection();
+
+  // Let database load or initialize above and then change 'checking'
+  // fund's inception balance by increasing by 10.
+  // That change should be autosaved after 4 or so seconds
+  // and affect the next run.
+  setTimeout(function() {
+    console.log();
+    console.log("due to autosave timer, you may need to ctrl-c to quit");
+    console.log("wait 5 seconds before quitting to increase checking by 10 on next run");
+    var checkingFund = continuum.getFundCollection().findOne({'name':'checking'});
+    console.log("old inceptionBalance: " + checkingFund.inceptionBalance);
+    checkingFund.inceptionBalance += 10;
+    console.log("new inceptionBalance: " + checkingFund.inceptionBalance);
+    continuum.getFundCollection().update(checkingFund);
+  }, 500);
 }
 
 var continuum = new LokiContinuum("LokiContinuum.db", {
@@ -716,17 +731,3 @@ var continuum = new LokiContinuum("LokiContinuum.db", {
 });
 
 
-// Let database load or initialize above and then change 'checking'
-// fund's inception balance by increasing by 10.
-// That change should be autosaved after 4 or so seconds
-// and affect the next run.
-setTimeout(function() {
-  console.log();
-  console.log("due to autosave timer, you may need to ctrl-c to quit");
-  console.log("wait 5 seconds before quitting to increase checking by 10 on next run");
-  var checkingFund = continuum.getFundCollection().findOne({'name':'checking'});
-  console.log("old inceptionBalance: " + checkingFund.inceptionBalance);
-  checkingFund.inceptionBalance += 10;
-  console.log("new inceptionBalance: " + checkingFund.inceptionBalance);
-  continuum.getFundCollection().update(checkingFund);
-}, 500);

@@ -12,19 +12,24 @@
     // CommonJS
     module.exports = factory();
   } else {
-
-    // Browser globals
-    var loki = factory();
+    console.log('Getting if from normal browser inclusion')
+      // Browser globals
+      //var loki = factory();
+    root.loki = factory();
+    root.thirdParty = root.thirdParty || {};
 
     if (root.loki) {
-      root.thirdParty = root.thirdParty || {};
+
       root.thirdParty.loki = root.loki;
+      /*
       try {
         delete root.loki;
       } catch (err) {
         root.loki = undefined;
       }
+      */
     }
+
   }
 }(this, function () {
 

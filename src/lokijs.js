@@ -12,9 +12,8 @@
     // CommonJS
     module.exports = factory();
   } else {
-    console.log('Getting if from normal browser inclusion')
-      // Browser globals
-      //var loki = factory();
+    // Browser globals
+    //var loki = factory();
     root.loki = factory();
     root.thirdParty = root.thirdParty || {};
 
@@ -22,6 +21,8 @@
 
       root.thirdParty.loki = root.loki;
       /*
+      root.thirdParty = root.thirdParty || {};
+      root.thirdParty.loki = loki;
       try {
         delete root.loki;
       } catch (err) {

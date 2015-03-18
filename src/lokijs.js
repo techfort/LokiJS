@@ -19,7 +19,7 @@
 
     if (root.loki) {
 
-      root.thirdParty.loki = root.loki;
+      root.thirdParty.loki = factory();
       /*
       root.thirdParty = root.thirdParty || {};
       root.thirdParty.loki = loki;

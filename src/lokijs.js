@@ -3212,12 +3212,18 @@
       return result;
     };
 
+    Collection.prototype.extractNumerical = function (field) {
+      return this.extract(field).map(parseBase10).filter(Number).filter(function (n) {
+        return !(isNaN(n));
+      });
+    };
+
     Collection.prototype.avg = function (field) {
-      return average(this.extract(field));
+      return average(this.extractNumerical(field));
     };
 
     Collection.prototype.stdDev = function (field) {
-      return standardDeviation(this.extract(field));
+      return standardDeviation(this.extractNumerical(field));
     };
 
     Collection.prototype.mode = function (field) {
@@ -3246,7 +3252,7 @@
     };
 
     Collection.prototype.median = function (field) {
-      var values = this.extract(field);
+      var values = this.extractNumerical(field);
       values.sort(sub);
 
       var half = Math.floor(values.length / 2);
@@ -3263,6 +3269,14 @@
      */
     function isDeepProperty(field) {
       return field.indexOf('.') !== -1;
+    }
+
+    function parseBase10(num) {
+      return parseFloat(num, 10);
+    }
+
+    function isNotUndefined(obj) {
+      return obj !== undefined;
     }
 
     function add(a, b) {

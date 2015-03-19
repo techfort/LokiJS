@@ -47,13 +47,20 @@ users.insert({
   }
 });
 
-console.log('Simple max: ', users.max('relatives.firstgrade'));
-console.log('Max record: ', users.maxRecord('relatives.firstgrade'));
-console.log('Simple min: ', users.min('age'));
-console.log('Min record: ', users.minRecord('age'));
-console.log('Average: ', users.avg('relatives.firstgrade'));
-console.log('Mode: ', users.mode('relatives.firstgrade'));
-console.log('Median: ', users.median('relatives.firstgrade'));
-console.log('Extract ages: ', users.extract('age'));
-console.log('Standard deviation on firstgrade relatives: ', users.stdDev('relatives.firstgrade'));
-console.log('Standard deviation on ages: ', users.stdDev('age'));
+suite.assertEqual('Simple max: ', 32, users.max('relatives.firstgrade'));
+suite.assertEqual('Max record: ', {
+  index: 3,
+  value: 32
+}, users.maxRecord('relatives.firstgrade'));
+suite.assertEqual('Simple min: ', 12, users.min('age'));
+suite.assertEqual('Min record: ', {
+  index: 6,
+  value: 12
+}, users.minRecord('age'));
+suite.assertEqual('Average: ', 19, users.avg('relatives.firstgrade'));
+suite.assertEqual('Mode: ', 20, users.mode('relatives.firstgrade'));
+suite.assertEqual('Median: ', 17.5, users.median('relatives.firstgrade'));
+suite.assertEqual('Extract ages: ', [35, 20, 40, 15, 28, 12], users.extract('age'));
+suite.assertEqual('Standard deviation on firstgrade relatives: ', 6.48074069840786, users.stdDev('relatives.firstgrade'));
+suite.assertEqual('Standard deviation on ages: ', 10.23067283548187, users.stdDev('age'));
+suite.report();

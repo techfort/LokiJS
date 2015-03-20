@@ -176,8 +176,6 @@
       '$contains': LokiOps.$contains
     };
 
-    var fs = (typeof exports === 'object') ? require('fs') : false;
-
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
         cloned;
@@ -189,7 +187,7 @@
 
     function localStorageAvailable() {
       try {
-        return ('localStorage' in window && window['localStorage'] !== null);
+        return ('localStorage' in window && window.localStorage !== null);
       } catch (e) {
         return false;
       }
@@ -318,7 +316,6 @@
         'changes': [],
         'warning': []
       };
-      var self = this;
 
       var getENV = function () {
         if (typeof window === 'undefined') {
@@ -362,7 +359,7 @@
     }
 
     // db class is an EventEmitter
-    Loki.prototype = new LokiEventEmitter;
+    Loki.prototype = new LokiEventEmitter();
 
     /**
      * configureOptions - allows reconfiguring database options
@@ -397,7 +394,7 @@
           // check if the specified persistence method is known
           if (persistenceMethods[options.persistenceMethod] == 'function') {
             this.persistenceMethod = options.persistenceMethod;
-            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod];
+            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod]();
           }
           // should be throw an error here, or just fall back to defaults ??
         }
@@ -420,7 +417,7 @@
 
         if (this.options.hasOwnProperty('autosaveInterval')) {
           this.autosaveDisable();
-          this.autosaveInterval = parseInt(this.options.autosaveInterval);
+          this.autosaveInterval = parseInt(this.options.autosaveInterval,10);
         }
 
         if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
@@ -431,10 +428,10 @@
       } // end of options processing
 
       // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
-      if (this.persistenceAdapter == null) {
+      if (this.persistenceAdapter === null) {
         this.persistenceMethod = defaultPersistence[this.ENV];
         if (this.persistenceMethod) {
-          this.persistenceAdapter = new persistenceMethods[this.persistenceMethod];
+          this.persistenceAdapter = new persistenceMethods[this.persistenceMethod]();
         }
       }
 
@@ -454,7 +451,7 @@
       var collection = new Collection('anonym', indexesArray);
       collection.insert(docs);
       return collection;
-    }
+    };
 
     Loki.prototype.addCollection = function (name, options) {
       var collection = new Collection(name, options);
@@ -573,10 +570,10 @@
         j = 0;
         if (options && options.hasOwnProperty(coll.name)) {
 
-          var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
+          var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
 
           for (j; j < clen; j++) {
-            var collObj = new(options[coll.name]['proto'])();
+            var collObj = new(options[coll.name].proto)();
             loader(coll.data[j], collObj);
             copyColl.data[j] = collObj;
 
@@ -702,7 +699,7 @@
         if (coll.flushChanges) {
           coll.flushChanges();
         }
-      })
+      });
     };
 
     /*------------------+
@@ -754,7 +751,7 @@
     /**
      * constructor for local storage
      */
-    function LokiLocalStorageAdapter() {};
+    function LokiLocalStorageAdapter() {}
 
     /**
      * loadDatabase() - Load data from localstorage
@@ -1048,7 +1045,7 @@
             var obj2 = rslt.collection.data[b];
 
             return userComparer(obj1, obj2);
-          }
+          };
         })(comparefun, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1081,7 +1078,7 @@
 
             return sortHelper(obj1[prop], obj2[prop], desc);
 
-          }
+          };
         })(propname, isdesc, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1147,7 +1144,7 @@
             var obj2 = rslt.collection.data[b];
 
             return rslt.compoundeval(props, obj1, obj2);
-          }
+          };
         })(properties, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1175,7 +1172,7 @@
       var ubound = index.length - 1;
 
       // when no documents are in collection, return empty range condition
-      if (rcd.length == 0) {
+      if (rcd.length === 0) {
         return [0, -1];
       }
 
@@ -1396,11 +1393,11 @@
             arrayRef = root;
           }
         }
-      };
+      }
 
       // made it this far so must be dot notation on non-array property
       return fun(root, value);
-    }
+    };
 
     /**
      * find() - Used for querying via a mongo-style query object.
@@ -1435,7 +1432,6 @@
         t,
         // collection data length
         i,
-        len,
         emptyQO = true;
 
       // if this was note invoked via findOne()
@@ -1491,7 +1487,7 @@
               // since this is invoked from a constructor we can't return null, so we will
               // make null in coll.findOne();
               if (firstOnly) {
-                if (result.length == 0) return [];
+                if (result.length === 0) return [];
 
                 return result[0];
               }
@@ -1515,7 +1511,7 @@
               result = this.collection.chain().findOr(queryObject[p]).data();
 
               if (firstOnly) {
-                if (result.length == 0) return [];
+                if (result.length === 0) return [];
 
                 return result[0];
               }
@@ -1546,7 +1542,7 @@
       }
 
       // for regex ops, precompile
-      if (operator === '$regex') value = RegExp(value);
+      if (operator === '$regex') value = new RegExp(value);
 
       if (this.collection.data === null) {
         throw new TypeError();
@@ -1611,7 +1607,6 @@
         } else {
           // searching by binary index via calculateRange() utility method
           t = this.collection.data;
-          len = t.length;
 
           var seg = this.calculateRange(operator, property, value, this);
 
@@ -1905,7 +1900,7 @@
       this.persistent = false;
       if (typeof (persistent) !== 'undefined') this.persistent = persistent;
 
-      this.resultset = new Resultset(collection)
+      this.resultset = new Resultset(collection);
       this.resultdata = [];
       this.resultsdirty = false;
 
@@ -1928,7 +1923,7 @@
       };
     }
 
-    DynamicView.prototype = new LokiEventEmitter;
+    DynamicView.prototype = new LokiEventEmitter();
 
 
     /**
@@ -2203,8 +2198,8 @@
       // queue async call to performSortPhase()
       setTimeout(function () {
         self.performSortPhase();
-      }, 1)
-    }
+      }, 1);
+    };
 
     /**
      * performSortPhase() - invoked synchronously or asynchronously to perform final sort phase (if needed)
@@ -2234,7 +2229,7 @@
       this.sortDirty = false;
 
       this.emit('rebuild', this);
-    }
+    };
 
     /**
      * evaluateDocument() - internal method for (re)evaluating document inclusion.
@@ -2462,7 +2457,7 @@
 
       for (var idx = 0; idx < indices.length; idx++) {
         this.ensureIndex(indices[idx]);
-      };
+      }
 
       /**
        * This method creates a clone of the current status of an object and associates operation and collection name,
@@ -2479,7 +2474,7 @@
       // clear all the changes
       function flushChanges() {
         self.changes = [];
-      };
+      }
 
       this.getChanges = function () {
         return self.changes;
@@ -2564,7 +2559,7 @@
       flushChanges();
     }
 
-    Collection.prototype = new LokiEventEmitter;
+    Collection.prototype = new LokiEventEmitter();
 
     /*----------------------------+
     | INDEXING                    |
@@ -2612,7 +2607,7 @@
             if (obj1[prop] === obj2[prop]) return 0;
             if (gtHelper(obj1[prop], obj2[prop])) return 1;
             if (ltHelper(obj1[prop], obj2[prop])) return -1;
-          }
+          };
         })(property, this);
 
       index.values.sort(wrappedComparer);
@@ -2736,7 +2731,6 @@
       docs.forEach(function (d) {
         if (typeof d !== 'object') {
           throw new TypeError('Document needs to be an object');
-          return;
         }
         if (self.clone) {
           obj = JSON.parse(JSON.stringify(d));
@@ -2793,7 +2787,7 @@
       }
       try {
         this.startTransaction();
-        var i, arr = this.get(doc.$loki, true),
+        var arr = this.get(doc.$loki, true),
           obj,
           position;
 
@@ -2913,7 +2907,6 @@
      * delete wrapped
      */
     Collection.prototype.remove = function (doc) {
-      var self = this;
       if (typeof doc === 'number') {
         doc = this.get(doc);
       }
@@ -2942,8 +2935,7 @@
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
           // obj = arr[0],
-          position = arr[1],
-          i;
+          position = arr[1];
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove
@@ -3146,7 +3138,6 @@
       var i = 0,
         len = this.data.length,
         isDotNotation = isDeepProperty(field),
-        sum = 0,
         result = [];
       for (i; i < len; i += 1) {
         result.push(deepProperty(this.data[i], field, isDotNotation));
@@ -3332,7 +3323,7 @@
       while (lo < hi) {
         mid = ((lo + hi) / 2) | 0;
         compared = fun.apply(null, [item, array[mid]]);
-        if (compared == 0) {
+        if (compared === 0) {
           return {
             found: true,
             index: mid
@@ -3347,7 +3338,7 @@
         found: false,
         index: hi
       };
-    };
+    }
 
     function BSonSort(fun) {
       return function (array, item) {
@@ -3364,10 +3355,10 @@
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
       },
       setSort: function (fun) {
-        this.bs = BSonSort(fun);
+        this.bs = new BSonSort(fun);
       },
       bs: function () {
-        return BSonSort(this.sort);
+        return new BSonSort(this.sort);
       },
       set: function (key, value) {
         var pos = this.bs(this.keys, key);

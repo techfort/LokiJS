@@ -228,10 +228,6 @@
       return listener;
     };
 
-    function applyListener(listener, args) {
-      listener.apply(null, args);
-    }
-
     /**
      * @propt emit(eventName, data) - emits a particular event
      * with the option of passing optional parameters which are going to be processed by the callback

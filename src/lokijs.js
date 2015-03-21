@@ -2122,10 +2122,12 @@
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
+        this.queueSortPhase();
       }
 
       if (this.persistent) {
         this.resultsdirty = true;
+        this.queueSortPhase();
       }
 
       return this;
@@ -2148,9 +2150,11 @@
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
+        this.queueSortPhase();
       }
       if (this.persistent) {
         this.resultsdirty = true;
+        this.queueSortPhase();
       }
       return this;
     };
@@ -2265,7 +2269,7 @@
 
         // need to re-sort to sort new document
         if (this.sortFunction || this.sortCriteria) {
-          this.sortDirty = true;
+          this.queueSortPhase();
         }
 
         return;
@@ -2288,6 +2292,11 @@
           if (this.persistent) {
             this.resultdata.length = oldlen - 1;
           }
+        }
+
+        // in case changes to data altered a sort column
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
         }
 
         return;
@@ -2336,6 +2345,11 @@
           if (this.persistent) {
             this.resultdata.length = oldlen - 1;
           }
+        }
+
+        // in case changes to data altered a sort column
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
         }
       }
 

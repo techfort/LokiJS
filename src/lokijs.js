@@ -383,7 +383,7 @@
 
         if (this.options.hasOwnProperty('persistenceMethod')) {
           // check if the specified persistence method is known
-          if (persistenceMethods[options.persistenceMethod] == 'function') {
+          if (typeof(persistenceMethods[options.persistenceMethod]) == 'function') {
             this.persistenceMethod = options.persistenceMethod;
             this.persistenceAdapter = new persistenceMethods[options.persistenceMethod]();
           }

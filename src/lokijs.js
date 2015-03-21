@@ -228,32 +228,23 @@
       return listener;
     };
 
-    function applyListener(listener, args) {
-      listener.apply(null, args);
-    }
-
     /**
-     * @propt emit(eventName, varargs) - emits a particular event
+     * @propt emit(eventName, data) - emits a particular event
      * with the option of passing optional parameters which are going to be processed by the callback
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
      * @param {string} eventName - the name of the event
-     * @param {object} varargs - optional objects passed with the event
+     * @param {object} data - optional object passed with the event
      */
-    LokiEventEmitter.prototype.emit = function (eventName) {
-
-      var args = Array.prototype.slice.call(arguments, 0),
-        self = this;
+    LokiEventEmitter.prototype.emit = function (eventName,data) {
+      var self = this;
       if (eventName && this.events[eventName]) {
-        args.splice(0, 1);
         this.events[eventName].forEach(function (listener) {
-
           if (self.asyncListeners) {
             setTimeout(function () {
-
-              applyListener(listener, args);
+              listener(data);
             }, 1);
           } else {
-            applyListener(listener, args);
+             listener(data);
           }
 
         });

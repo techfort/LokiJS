@@ -1795,7 +1795,6 @@
       for (i = 0; i < len; i++) {
         result.push(data[fr[i]]);
       }
-
       return result;
     };
 
@@ -1900,9 +1899,13 @@
         result.push(mapFun(leftData[i],joinMap[leftData[i][leftJoinProp]] || {}))
       }
 
-      //return data or resultset
-      //TODO: enable returning the resultset.  Can't do that now because resultset relies on an underlying collection
-      return result
+      //return return a new resultset with no filters
+      this.collection = new Collection('joinData');
+      this.collection.insert(result);
+      this.filteredrows = [];
+      this.filterInitialized = false;
+
+      return this;
     };
 
     /**

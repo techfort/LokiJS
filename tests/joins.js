@@ -23,29 +23,33 @@ films.insert([
   {title: 'Raiders of the Lost Ark', filmId: 6, directorId: 3}
 ]);
 
-//Test Basic Join
-var joined = films.mapJoin(directors.data, 'directorId', 'directorId', function(left,right){
-  return {
-    filmTitle: left.title,
-    directorName: right.name
-  }
-})
+// //Test Basic Join
+// var joined = films.mapJoin(directors.data, 'directorId', 'directorId', function(left,right){
+//   return {
+//     filmTitle: left.title,
+//     directorName: right.name
+//   }
+// }).data();
 
-suite.assertEqual('Got the right number of results', joined.length, films.data.length);
-suite.assertEqual('Got correct left field', joined[0].filmTitle, 'Taxi');
-suite.assertEqual('Got correct right field', joined[0].directorName, 'Martin Scorsese');
+// suite.assertEqual('Got the right number of results', joined.length, films.data.length);
+// suite.assertEqual('Got correct left field', joined[0].filmTitle, 'Taxi');
+// suite.assertEqual('Got correct right field', joined[0].directorName, 'Martin Scorsese');
 
 //Test filtered join
 joined = films
           .chain()
           .find({directorId: 3})
+          .simplesort('title')
           .mapJoin(directors.data, 'directorId', 'directorId', function(left,right) {
               return {
                 filmTitle: left.title,
                 directorName: right.name
               }
-          });
-suite.assertEqual('Got right number of filtered results', joined.length, 3)
+          })
+          .find({filmTitle: 'Jaws'})
+          .data();
+
+suite.assertEqual('Got right number of filtered results', joined.length, 3);
 suite.assertEqual('Got correct filtered left field', joined[0].filmTitle, 'Jaws');
 
 suite.report();

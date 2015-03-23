@@ -1795,7 +1795,6 @@
       for (i = 0; i < len; i++) {
         result.push(data[fr[i]]);
       }
-
       return result;
     };
 
@@ -1866,6 +1865,59 @@
       } catch (err) {
         throw err;
       }
+    };
+
+     /**
+     * mapJoin() - Used for left joining data and returning a new array of objects that combine properties from both collections
+     *
+     * @param {Array} joinData - Data array to join to.
+     * @param {String} leftJoinProp - Property name in this result set to join on
+     * @param {String} rightJoinProp - Property name in the joinData to join on
+     * @param {function} mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+
+      var leftData = [],
+          leftDataLength,
+          rightData = [],
+          rightDataLength,
+          key,
+          result = [],
+          obj,
+          joinMap = {};
+
+      //get the left data
+      leftData = this.data();
+      leftDataLength = leftData.length;
+
+      //get the right data
+      if(joinData instanceof Resultset){
+        rightData = joinData.data();
+      } else if(Array.isArray(joinData)){
+        rightData = joinData;
+      } else {
+        throw new TypeError('joinData needs to be an array or result set');
+      }
+      rightDataLength = rightData.length;
+
+      //construct a lookup table
+      for(var i = 0; i < rightDataLength; i++){
+        joinMap[rightData[i][rightJoinProp]] = rightData[i]
+      }
+
+      //run the map function over each object in the resultset
+      for(var i = 0; i < leftDataLength; i++) {
+        result.push(mapFun(leftData[i],joinMap[leftData[i][leftJoinProp]] || {}))
+      }
+
+      //return return a new resultset with no filters
+      this.collection = new Collection('joinData');
+      this.collection.insert(result);
+      this.filteredrows = [];
+      this.filterInitialized = false;
+
+      return this;
     };
 
     /**
@@ -3134,6 +3186,15 @@
         throw err;
       }
     };
+
+    /**
+     * mapJoin - Join two collections on specified properties
+     */
+    Collection.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+      // logic in Resultset class
+      return new Resultset(this).mapJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+    };
+
 
     Collection.prototype.no_op = function () {
       return;

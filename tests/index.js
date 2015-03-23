@@ -7,3 +7,5 @@ require('./nodePersistence');
 require('./testRemove');
 require('./testCryptedFileAdapter');
 require('./testStats');
+require('./joins');
+

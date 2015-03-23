@@ -1868,6 +1868,43 @@
       }
     };
 
+     /**
+     * mapJoin() - Used for left joining data and returning a new array of objects that combine properties from both collections
+     *
+     * @param {Array} joinData - Data array to join to.
+     * @param {String} leftJoinProp - Property name in this result set to join on
+     * @param {String} rightJoinProp - Property name in the joinData to join on
+     * @param {function} mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+
+      var leftData = [],
+          leftDataLength,
+          joinDataLength = joinData.length,
+          key,
+          result = [],
+          obj,
+          joinMap = {};
+
+      leftData = this.data();
+      leftDataLength = leftData.length;
+
+      //construct a lookup table
+      for(var i = 0; i < joinDataLength; i++){
+        joinMap[joinData[i][rightJoinProp]] = joinData[i]
+      }
+
+      //run the map function over each object in the resultset
+      for(var i = 0; i < leftDataLength; i++) {
+        result.push(mapFun(leftData[i],joinMap[leftData[i][leftJoinProp]] || {}))
+      }
+
+      //return data or resultset
+      //TODO: enable returning the resultset.  Can't do that now because resultset relies on an underlying collection
+      return result
+    };
+
     /**
      * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
      *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
@@ -3134,6 +3171,15 @@
         throw err;
       }
     };
+
+    /**
+     * mapJoin - Join two collections on specified properties
+     */
+    Collection.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+      // logic in Resultset class
+      return new Resultset(this).mapJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+    };
+
 
     Collection.prototype.no_op = function () {
       return;

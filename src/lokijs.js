@@ -1880,18 +1880,30 @@
 
       var leftData = [],
           leftDataLength,
-          joinDataLength = joinData.length,
+          rightData = [],
+          rightDataLength,
           key,
           result = [],
           obj,
           joinMap = {};
 
+      //get the left data
       leftData = this.data();
       leftDataLength = leftData.length;
 
+      //get the right data
+      if(joinData instanceof Resultset){
+        rightData = joinData.data();
+      } else if(Array.isArray(joinData)){
+        rightData = joinData;
+      } else {
+        throw new TypeError('joinData needs to be an array or result set');
+      }
+      rightDataLength = rightData.length;
+
       //construct a lookup table
-      for(var i = 0; i < joinDataLength; i++){
-        joinMap[joinData[i][rightJoinProp]] = joinData[i]
+      for(var i = 0; i < rightDataLength; i++){
+        joinMap[rightData[i][rightJoinProp]] = rightData[i]
       }
 
       //run the map function over each object in the resultset

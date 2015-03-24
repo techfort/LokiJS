@@ -22,25 +22,41 @@ films.insert([
   {title: 'ET', filmId: 5, directorId: 3},
   {title: 'Raiders of the Lost Ark', filmId: 6, directorId: 3}
 ]);
+var joined;
 
-//Test Basic Join
-var joined = films.mapJoin(directors.data, 'directorId', 'directorId', function(left,right){
+//Basic non-mapped join
+joined = films.eqJoin(directors.data, 'directorId', 'directorId').data();
+suite.assertEqual('Basic join works', joined[0].left.title, 'Taxi');
+
+//Basic join with map
+joined = films.eqJoin(directors.data, 'directorId', 'directorId', function(left,right){
   return {
     filmTitle: left.title,
     directorName: right.name
   }
 }).data();
-
 suite.assertEqual('Got the right number of results', joined.length, films.data.length);
 suite.assertEqual('Got correct left field', joined[0].filmTitle, 'Taxi');
 suite.assertEqual('Got correct right field', joined[0].directorName, 'Martin Scorsese');
+
+//Basic non-mapped join with chained map
+joined = films.eqJoin(directors.data, 'directorId', 'directorId')
+            .map(function(obj){
+              return {
+                filmTitle: obj.left.title,
+                directorName: obj.right.name
+              }
+            }).data();
+suite.assertEqual('Got correct left field', joined[0].filmTitle, 'Taxi');
+suite.assertEqual('Got correct right field', joined[0].directorName, 'Martin Scorsese');
+
 
 //Test filtered join
 joined = films
           .chain()
           .find({directorId: 3})
           .simplesort('title')
-          .mapJoin(directors.data, 'directorId', 'directorId', function(left,right) {
+          .eqJoin(directors.data, 'directorId', 'directorId', function(left,right) {
               return {
                 filmTitle: left.title,
                 directorName: right.name
@@ -51,5 +67,13 @@ suite.assertEqual('Got pre-filtered join results', joined.data().length, 3);
 //Test chaining after join
 joined.find({filmTitle: 'Jaws'});
 suite.assertEqual('Chaining after join', joined.data()[0].filmTitle, 'Jaws');
+
+//Test calculated keys
+joined = films.chain().eqJoin(directors.data,
+  function(director){return director.directorId + 1},
+  function(film){return film.directorId - 1})
+  .data();
+
+suite.assertEqual('calculated join works', joined[0].right.name, 'Steven Spielberg');
 
 suite.report();

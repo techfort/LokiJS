@@ -1901,15 +1901,15 @@
     };
 
      /**
-     * mapJoin() - Used for left joining data and returning a new array of objects that combine properties from both collections
-     *
+     * eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
+     * eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key
      * @param {Array} joinData - Data array to join to.
-     * @param {String} leftJoinProp - Property name in this result set to join on
-     * @param {String} rightJoinProp - Property name in the joinData to join on
-     * @param {function} mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
-     * @returns {Resultset} this resultset for further chain ops.
+     * @param {String,function} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
+     * @param {String,function} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
+     * @param {function} (optional) mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      */
-    Resultset.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+    Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun) {
 
       var leftData = [],
           leftDataLength,
@@ -1918,6 +1918,8 @@
           key,
           result = [],
           obj,
+          leftKeyisFunction = typeof leftJoinKey === 'function',
+          rightKeyisFunction = typeof rightJoinKey === 'function',
           joinMap = {};
 
       //get the left data
@@ -1935,13 +1937,22 @@
       rightDataLength = rightData.length;
 
       //construct a lookup table
+
       for(var i = 0; i < rightDataLength; i++){
-        joinMap[rightData[i][rightJoinProp]] = rightData[i]
+        key = rightKeyisFunction ? rightJoinKey(rightData[i]) : rightData[i][rightJoinKey]
+        joinMap[key] = rightData[i]
       }
 
-      //run the map function over each object in the resultset
+      if(!mapFun){
+        mapFun = function(left, right){
+          return {left:left, right:right}
+        }
+      }
+
+      //Run map function over each object in the resultset
       for(var i = 0; i < leftDataLength; i++) {
-        result.push(mapFun(leftData[i],joinMap[leftData[i][leftJoinProp]] || {}))
+        key = leftKeyisFunction ? leftJoinKey(leftData[i]) : leftData[i][leftJoinKey];
+        result.push(mapFun(leftData[i],joinMap[key] || {}))
       }
 
       //return return a new resultset with no filters
@@ -1952,6 +1963,17 @@
 
       return this;
     };
+
+    Resultset.prototype.map = function(mapFun){
+      var data = this.data().map(mapFun)
+      //return return a new resultset with no filters
+      this.collection = new Collection('mappedData');
+      this.collection.insert(data);
+      this.filteredrows = [];
+      this.filterInitialized = false;
+
+      return this;
+    }
 
     /**
      * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
@@ -3221,11 +3243,11 @@
     };
 
     /**
-     * mapJoin - Join two collections on specified properties
+     * eqJoin - Join two collections on specified properties
      */
-    Collection.prototype.mapJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+    Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
       // logic in Resultset class
-      return new Resultset(this).mapJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
     };
 
 

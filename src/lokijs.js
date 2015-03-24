@@ -130,6 +130,38 @@
       $in: function (a, b) {
         return b.indexOf(a) > -1;
       },
+      
+      $containsAny: function (a, b) {
+        var checkFn = function () {
+          return false;
+        };
+
+        if (!Array.isArray(b)) {
+          b = [b];
+        }
+
+        if (Array.isArray(a)) {
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (typeof a === 'string') {
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (a && typeof a === 'object') {
+          checkFn = function (curr) {
+            return a.hasOwnProperty(curr);
+          };
+        }
+
+        return b.reduce(function (prev, curr) {
+          if (prev) {
+            return prev;
+          }
+
+          return checkFn(curr);
+        }, false);
+      },
 
       $contains: function (a, b) {
         var checkFn = function () {
@@ -173,7 +205,8 @@
       '$ne': LokiOps.$ne,
       '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
-      '$contains': LokiOps.$contains
+      '$contains': LokiOps.$contains,
+      '$containsAny': LokiOps.$containsAny
     };
 
     function clone(data, method) {
@@ -1543,7 +1576,7 @@
       // for now only enabling for non-chained query (who's set of docs matches index)
       // or chained queries where it is the first filter applied and prop is indexed
       if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-        operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
+        operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$containsAny' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property

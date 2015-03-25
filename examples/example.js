@@ -89,7 +89,8 @@ window.runExample = function () {
         // create an example project
         var prj = projects.insert({
             name: 'LokiJS',
-            owner: stan
+            owner: stan,
+            tags: ['critical', 'public']
         });
 
         // query for user
@@ -134,6 +135,18 @@ window.runExample = function () {
         trace('Example: where test');
         trace(users.where(function (obj) {
             return obj.age > 30;
+        }));
+        
+        trace('Example: $contains and $containsAny');
+        trace(projects.find({
+            'tags': {
+                '$contains': [ 'critical', 'top secret' ]
+            }
+        }));
+        trace(projects.find({
+            'tags': {
+                '$containsAny': [ 'critical', 'top secret' ]
+            }
         }));
         trace('End view test');
         sep();

@@ -4,3 +4,4 @@ demos/desktop_app/log
 demos/desktop_app/demo.json
 coverage/
 testCollections
+LokiContinuum.db

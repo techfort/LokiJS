@@ -4,3 +4,8 @@ require('./eventEmitter');
 require('./changesApi');
 require('./testCollection');
 require('./nodePersistence');
+require('./testRemove');
+require('./testCryptedFileAdapter');
+require('./testStats');
+require('./joins');
+

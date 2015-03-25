@@ -1,6 +1,7 @@
 # LokiJS
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
 [![npm version](https://badge.fury.io/js/lokijs.svg)](http://badge.fury.io/js/lokijs)
+![alt packagequality](http://npm.packagequality.com/badge/lokijs.png)
 
 ## Overview
 
@@ -20,7 +21,7 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 
 ## Current state
 
-LokiJS is at version 1.1 [Wintar]. While the roadmap is exciting, LokiJS is at the moment stable.
+LokiJS is at version 1.2 [Schnee]. While the roadmap is exciting, LokiJS is at the moment stable.
 As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
 
 Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!

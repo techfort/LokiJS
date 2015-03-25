@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "version": "1.1.14",
+  "version": "1.2.3",
   "description": "Fast document oriented javascript in-memory database",
   "homepage": "http://lokijs.org",
   "main": "src/lokijs.js",
@@ -32,11 +32,7 @@
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
-  "dependencies": {
-    "gordian": "0.0.9",
-    "istanbul": "^0.3.2",
-    "mocha": "^2.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "gordian": "0.0.9",
     "gulp": "^3.8.10",

@@ -29,6 +29,74 @@
       }
     };
 
+    // Sort helper that support null and undefined
+    function ltHelper(prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return true;
+      }
+      if (prop2 === undefined) {
+        return false;
+      }
+      if (prop1 === null) {
+        return true;
+      }
+      if (prop2 === null) {
+        return false;
+      }
+      return prop1 < prop2;
+    }
+
+    function gtHelper(prop1, prop2, equal) {
+      if (prop1 === prop2) {
+        if (equal) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if (prop1 === undefined) {
+        return false;
+      }
+      if (prop2 === undefined) {
+        return true;
+      }
+      if (prop1 === null) {
+        return false;
+      }
+      if (prop2 === null) {
+        return true;
+      }
+      return prop1 > prop2;
+    }
+
+    function sortHelper(prop1, prop2, desc) {
+      if (prop1 === prop2) {
+        return 0;
+      }
+      if (desc) {
+        if (ltHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      } else {
+        if (gtHelper(prop1, prop2)) {
+          return 1;
+        } else {
+          return -1;
+        }
+      }
+    }
+
     var LokiOps = {
       // comparison operators
       $eq: function (a, b) {
@@ -36,19 +104,19 @@
       },
 
       $gt: function (a, b) {
-        return a > b;
+        return gtHelper(a, b);
       },
 
       $gte: function (a, b) {
-        return a >= b;
+        return gtHelper(a, b, true);
       },
 
       $lt: function (a, b) {
-        return a < b;
+        return ltHelper(a, b);
       },
 
       $lte: function (a, b) {
-        return a <= b;
+        return ltHelper(a, b, true);
       },
 
       $ne: function (a, b) {
@@ -62,23 +130,84 @@
       $in: function (a, b) {
         return b.indexOf(a) > -1;
       },
+      
+      $containsAny: function (a, b) {
+        var checkFn = function () {
+          return false;
+        };
+
+        if (!Array.isArray(b)) {
+          b = [b];
+        }
+
+        if (Array.isArray(a)) {
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (typeof a === 'string') {
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (a && typeof a === 'object') {
+          checkFn = function (curr) {
+            return a.hasOwnProperty(curr);
+          };
+        }
+
+        return b.reduce(function (prev, curr) {
+          if (prev) {
+            return prev;
+          }
+
+          return checkFn(curr);
+        }, false);
+      },
 
       $contains: function (a, b) {
+        var checkFn = function () {
+          return true;
+        };
+
+        if (!Array.isArray(b)) {
+          b = [b];
+        }
+
         if (Array.isArray(a)) {
-          return a.indexOf(b) !== -1;
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (typeof a === 'string') {
+          checkFn = function (curr) {
+            return a.indexOf(curr) !== -1;
+          };
+        } else if (a && typeof a === 'object') {
+          checkFn = function (curr) {
+            return a.hasOwnProperty(curr);
+          };
         }
 
-        if (typeof a === 'string') {
-          return a.indexOf(b) !== -1;
-        }
+        return b.reduce(function (prev, curr) {
+          if (!prev) {
+            return prev;
+          }
 
-        if (a && typeof a === 'object') {
-          return a.hasOwnProperty(b);
-        }
-
+          return checkFn(curr);
+        }, true);
       }
     };
-    var fs = (typeof exports === 'object') ? require('fs') : false;
+
+    var operators = {
+      '$eq': LokiOps.$eq,
+      '$gt': LokiOps.$gt,
+      '$gte': LokiOps.$gte,
+      '$lt': LokiOps.$lt,
+      '$lte': LokiOps.$lte,
+      '$ne': LokiOps.$ne,
+      '$regex': LokiOps.$regex,
+      '$in': LokiOps.$in,
+      '$contains': LokiOps.$contains,
+      '$containsAny': LokiOps.$containsAny
+    };
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -91,7 +220,7 @@
 
     function localStorageAvailable() {
       try {
-        return ('localStorage' in window && window['localStorage'] !== null);
+        return ('localStorage' in window && window.localStorage !== null);
       } catch (e) {
         return false;
       }
@@ -128,35 +257,27 @@
       if (!event) {
         event = this.events[eventName] = [];
       }
-      return event.push(listener) - 1;
+      event.push(listener);
+      return listener;
     };
 
-    function applyListener(listener, args) {
-      listener.apply(null, args);
-    }
-
     /**
-     * @propt emit(eventName, varargs) - emits a particular event
+     * @propt emit(eventName, data) - emits a particular event
      * with the option of passing optional parameters which are going to be processed by the callback
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
      * @param {string} eventName - the name of the event
-     * @param {object} varargs - optional objects passed with the event
+     * @param {object} data - optional object passed with the event
      */
-    LokiEventEmitter.prototype.emit = function (eventName) {
-
-      var args = Array.prototype.slice.call(arguments, 0),
-        self = this;
+    LokiEventEmitter.prototype.emit = function (eventName,data) {
+      var self = this;
       if (eventName && this.events[eventName]) {
-        args.splice(0, 1);
         this.events[eventName].forEach(function (listener) {
-
           if (self.asyncListeners) {
             setTimeout(function () {
-
-              applyListener(listener, args);
+              listener(data);
             }, 1);
           } else {
-            applyListener(listener, args);
+             listener(data);
           }
 
         });
@@ -168,9 +289,10 @@
     /**
      * @prop remove() - removes the listener at position 'index' from the event 'eventName'
      */
-    LokiEventEmitter.prototype.removeListener = function (eventName, index) {
+    LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       if (this.events[eventName]) {
-        this.events[eventName].splice(index, 1);
+        var listeners = this.events[eventName];
+        listeners.splice(listeners.indexOf(listener), 1);
       }
     };
 
@@ -218,7 +340,6 @@
         'changes': [],
         'warning': []
       };
-      var self = this;
 
       var getENV = function () {
         if (typeof window === 'undefined') {
@@ -244,29 +365,25 @@
       //   might want to review whether we can consolidate.
       if (options && options.hasOwnProperty('env')) {
         this.ENV = options.env;
-      }
-      else {
+      } else {
         this.ENV = getENV();
       }
-      
+
       // not sure if this is necessary now that i have refactored the line above
       if (this.ENV === 'undefined') {
         this.ENV = 'NODEJS';
       }
 
-      if (this.ENV === 'NODEJS') {
-        this.fs = fs;
-      }
-      if (typeof (options) !== 'undefined') {
-        this.configureOptions(options, true);
-      }
+      //if (typeof (options) !== 'undefined') {
+      this.configureOptions(options, true);
+      //}
 
       this.on('init', this.clearChanges);
 
     }
 
     // db class is an EventEmitter
-    Loki.prototype = new LokiEventEmitter;
+    Loki.prototype = new LokiEventEmitter();
 
     /**
      * configureOptions - allows reconfiguring database options
@@ -275,42 +392,71 @@
      * @param {boolean} initialConfig - (optional) if this is a reconfig, don't pass this
      */
     Loki.prototype.configureOptions = function (options, initialConfig) {
+      var defaultPersistence = {
+          'NODEJS': 'fs',
+          'BROWSER': 'localStorage',
+          'CORDOVA': null
+        },
+        persistenceMethods = {
+          'fs': LokiFsAdapter,
+          'localStorage': LokiLocalStorageAdapter
+        };
+
       this.options = {};
 
-      if (typeof (options) !== 'undefined') {
-        this.options = options;
-      }
-
       this.persistenceMethod = null;
-
-      if (this.options.hasOwnProperty('persistenceMethod')) {
-        this.persistenceMethod = options.persistenceMethod;
-      }
-
       // retain reference to optional persistence adapter 'instance'
       // currently keeping outside options because it can't be serialized
       this.persistenceAdapter = null;
 
-      // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
-      if (this.options.hasOwnProperty('adapter')) {
-        this.persistenceMethod = 'adapter';
-        this.persistenceAdapter = options.adapter;
-      }
+      // process the options
+      if (typeof (options) !== 'undefined') {
+        this.options = options;
 
-      // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-      if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
-        this.loadDatabase({}, options.autoloadCallback);
-      }
 
-      if (this.options.hasOwnProperty('autosaveInterval')) {
-        this.autosaveDisable();
-        this.autosaveInterval = parseInt(this.options.autosaveInterval);
-      }
+        if (this.options.hasOwnProperty('persistenceMethod')) {
+          // check if the specified persistence method is known
+          if (typeof(persistenceMethods[options.persistenceMethod]) == 'function') {
+            this.persistenceMethod = options.persistenceMethod;
+            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod]();
+          }
+          // should be throw an error here, or just fall back to defaults ??
+        }
 
-      if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
-        this.autosaveDisable();
-        this.autosave = true;
-        this.autosaveEnable();
+        // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+        if (this.options.hasOwnProperty('adapter')) {
+          this.persistenceMethod = 'adapter';
+          this.persistenceAdapter = options.adapter;
+        }
+
+
+        // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
+        if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
+          // for autoload, let the constructor complete before firing callback
+          var self = this;
+          setTimeout(function () {
+            self.loadDatabase(options, options.autoloadCallback);
+          }, 1);
+        }
+
+        if (this.options.hasOwnProperty('autosaveInterval')) {
+          this.autosaveDisable();
+          this.autosaveInterval = parseInt(this.options.autosaveInterval,10);
+        }
+
+        if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
+          this.autosaveDisable();
+          this.autosave = true;
+          this.autosaveEnable();
+        }
+      } // end of options processing
+
+      // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
+      if (this.persistenceAdapter === null) {
+        this.persistenceMethod = defaultPersistence[this.ENV];
+        if (this.persistenceMethod) {
+          this.persistenceAdapter = new persistenceMethods[this.persistenceMethod]();
+        }
       }
 
     };
@@ -329,7 +475,7 @@
       var collection = new Collection('anonym', indexesArray);
       collection.insert(docs);
       return collection;
-    }
+    };
 
     Loki.prototype.addCollection = function (name, options) {
       var collection = new Collection(name, options);
@@ -385,7 +531,6 @@
           return;
         }
       }
-      throw 'No such collection';
     };
 
     Loki.prototype.getName = function () {
@@ -396,11 +541,14 @@
      * serializeReplacer - used to prevent certain properties from being serialized
      *
      */
-    Loki.prototype.serializeReplacer = function(key, value)
-    {
-      switch(key) {
-        case 'autosaveHandle' : return null;
-        default : return value;
+    Loki.prototype.serializeReplacer = function (key, value) {
+      switch (key) {
+      case 'autosaveHandle':
+        return null;
+      case 'persistenceAdapter':
+        return null;
+      default:
+        return value;
       }
     };
 
@@ -425,8 +573,7 @@
         coll,
         copyColl,
         clen,
-        j,
-        upgradeNeeded = false;
+        j;
 
       this.name = obj.name;
 
@@ -434,10 +581,6 @@
       this.databaseVersion = 1.0;
       if (obj.hasOwnProperty('databaseVersion')) {
         this.databaseVersion = obj.databaseVersion;
-      }
-
-      if (this.databaseVersion !== this.engineVersion) {
-        upgradeNeeded = true;
       }
 
       this.collections = [];
@@ -451,12 +594,12 @@
         j = 0;
         if (options && options.hasOwnProperty(coll.name)) {
 
-          var loader = options[coll.name]['inflate'] ? options[coll.name]['inflate'] : Utils.copyProperties;
+          var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
 
           for (j; j < clen; j++) {
-            var obj = new(options[coll.name]['proto'])();
-            loader(coll.data[j], obj);
-            copyColl.data[j] = obj;
+            var collObj = new(options[coll.name].proto)();
+            loader(coll.data[j], collObj);
+            copyColl.data[j] = collObj;
 
           }
         } else {
@@ -466,43 +609,10 @@
           }
         }
 
-        // rough object upgrade, once file format stabilizes we will probably remove this
-        if (upgradeNeeded && this.engineVersion == 1.1) {
-          // we are upgrading a 1.0 database to 1.1, so initialize new properties
-          copyColl.transactional = false;
-          copyColl.cloneObjects = false;
-          copyColl.asyncListeners = true;
-          copyColl.disableChangesApi = true;
-
-          console.warn("upgrading database, loki id is now called '$loki' instead of 'id'");
-
-          // for current collection, if there is at least one document see if its missing $loki key
-          if (copyColl.data.length > 0) {
-            if (!copyColl.data[0].hasOwnProperty('$loki')) {
-              var dlen = copyColl.data.length;
-              var currDoc = null;
-
-              // for each document, set $loki to old 'id' column
-              // if it has 'originalId' column, move to 'id'
-              for (var idx = 0; idx < dlen; idx++) {
-                currDoc = copyColl.data[idx];
-
-                currDoc['$loki'] = currDoc['id'];
-                delete currDoc.id;
-
-                if (currDoc.hasOwnProperty['originalId']) {
-                  currDoc['id'] = currDoc['originalId'];
-                }
-              }
-            }
-          }
-        } else {
-          // not an upgrade or upgrade after 1.1, so copy new collection level options
-          copyColl.transactional = coll.transactional;
-          copyColl.asyncListeners = coll.asyncListeners;
-          copyColl.disableChangesApi = coll.disableChangesApi;
-          copyColl.cloneObjects = coll.cloneObjects;
-        }
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
@@ -529,19 +639,9 @@
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
 
-          // now that we support multisort, if upgrading from 1.0 database, convert single criteria to array of 1 criteria
-          if (upgradeNeeded && typeof (colldv.sortColumn) !== 'undefined' && colldv.sortColumn != null) {
-            var isdesc = false;
-            if (typeof (colldv.sortColumnDesc) !== 'undefined') {
-              isdesc = colldv.sortColumnDesc;
-            }
-
-            dv.sortCriteria = [colldv.sortColumn, isdesc];
-          } else {
-            dv.sortCriteria = colldv.sortCriteria;
-          }
-
+          dv.sortCriteria = colldv.sortCriteria;
           dv.sortFunction = null;
+
           dv.sortDirty = colldv.sortDirty;
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
           dv.resultset.searchIsChained = colldv.resultset.searchIsChained;
@@ -623,12 +723,87 @@
         if (coll.flushChanges) {
           coll.flushChanges();
         }
-      })
+      });
     };
 
     /*------------------+
     | PERSISTENCE       |
     -------------------*/
+
+
+    /** there are two build in persistence adapters for internal use
+     * fs             for use in Nodejs type environments
+     * localStorage   for use in browser environment
+     * defined as helper classes here so its easy and clean to use
+     */
+
+    /**
+     * constructor for fs
+     */
+    function LokiFsAdapter() {
+      this.fs = require('fs');
+    }
+
+    /**
+     * loadDatabase() - Load data from file, will throw an error if the file does not exist
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+      this.fs.readFile(dbname, {
+        encoding: 'utf8'
+      }, function readFileCallback(err, data) {
+        if (err) {
+          callback(new Error(err));
+        } else {
+          callback(data);
+        }
+      });
+    };
+
+    /**
+     * saveDatabase() - save data to file, will throw an error if the file can't be saved
+     * might want to expand this to avoid dataloss on partial save
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+      this.fs.writeFile(dbname, dbstring, callback);
+    };
+
+
+    /**
+     * constructor for local storage
+     */
+    function LokiLocalStorageAdapter() {}
+
+    /**
+     * loadDatabase() - Load data from localstorage
+     * @param {string} dbname - the name of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+      if (localStorageAvailable()) {
+        callback(localStorage.getItem(dbname));
+      } else {
+        callback(new Error('localStorage is not available'));
+      }
+    };
+
+    /**
+     * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
+     * might want to expand this to avoid dataloss on partial save
+     * @param {string} dbname - the filename of the database to load
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+      if (localStorageAvailable()) {
+        localStorage.setItem(dbname, dbstring);
+        callback(null);
+      } else {
+        callback(new Error('localStorage is not available'));
+      }
+    };
 
     /**
      * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
@@ -647,76 +822,25 @@
         },
         self = this;
 
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          this.fs.readFile(this.filename, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              return cFun(err, null);
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      if (this.persistenceAdapter !== null) {
+
+        this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
+          if (typeof (dbString) === 'string') {
+            self.loadJSON(dbString, options || {});
+            cFun(null);
+          } else {
+            console.warn('lokijs loadDatabase : Database not found');
+            if (typeof (dbString) === "object") {
+              cFun(dbString);
+            } else {
+              cFun('Database not found');
             }
-            self.loadJSON(data, options || {});
-            cFun(null, data);
-          });
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            var data = localStorage.getItem(this.filename);
-
-            self.loadJSON(data, options || {});
-            cFun(null, data);
-          } else {
-            cFun(new Error('localStorage is not available'));
           }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if user has given us an adapter reference (in loki constructor options)
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-              if (typeof (dbString) === 'undefined' || dbString === null) {
-                console.warn('lokijs loadDatabase : Database not found');
-                cFun('Database not found');
-              } else {
-                self.loadJSON(dbString);
-                cFun(null);
-              }
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      };
-
-      // user did not provide persistenceMethod, default to environment detection
-      if (this.ENV === 'NODEJS') {
-        this.fs.readFile(this.filename, {
-          encoding: 'utf8'
-        }, function readFileCallback(err, data) {
-          if (err) {
-            return cFun(err, null);
-          }
-          if (!data.length) {
-            data = self.serialize();
-          }
-          self.loadJSON(data, options || {});
-          cFun(null, data);
         });
-      } else if (this.ENV === 'BROWSER') {
-        if (localStorageAvailable()) {
-          var data = localStorage.getItem(this.filename);
 
-          self.loadJSON(data, options || {});
-          cFun(null, data);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
       } else {
-        cFun(new Error('unknown environment'));
+        cFun(new Error('persistenceAdapter not configured'));
       }
     };
 
@@ -737,53 +861,20 @@
         },
         self = this;
 
-      // for now assume whichever method below succeeds and reset dirty flags
-      // in future we may move this into each if block if no exceptions occur.
-      this.autosaveClearFlags();
-
-      // If user has specified a persistenceMethod, use it
-      if (this.persistenceMethod != null) {
-        if (this.persistenceMethod === 'fs') {
-          self.fs.writeFile(self.filename, self.serialize(), cFun);
-        }
-
-        if (this.persistenceMethod === 'localStorage') {
-          if (localStorageAvailable()) {
-            localStorage.setItem(self.filename, self.serialize());
-            cFun(null);
-          } else {
-            cFun(new Error('localStorage is not available'));
-          }
-        }
-
-        if (this.persistenceMethod === 'adapter') {
-          // test if loki persistence adapter instance was provided in loki constructor options
-          if (this.persistenceAdapter !== null) {
-            this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
-              cFun(null);
-            });
-          } else {
-            cFun(new Error('persistenceAdapter not configured'));
-          }
-        }
-
-        return;
-      };
-
-      // persist in nodejs
-      if (this.ENV === 'NODEJS') {
-        self.fs.writeFile(self.filename, self.serialize(), cFun);
-      } else if (this.ENV === 'BROWSER' || this.ENV === 'CORDOVA') {
-        if (localStorageAvailable()) {
-          localStorage.setItem(self.filename, self.serialize());
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      if (this.persistenceAdapter !== null) {
+        this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
+          // for now assume that save went ok and reset dirty flags
+          // in future we may move this into each if block if no exceptions occur.
+          self.autosaveClearFlags();
           cFun(null);
-        } else {
-          cFun(new Error('localStorage is not available'));
-        }
+        });
       } else {
-        cFun(new Error('unknown environment'));
+        cFun(new Error('persistenceAdapter not configured'));
       }
+
     };
+
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
 
@@ -978,7 +1069,7 @@
             var obj2 = rslt.collection.data[b];
 
             return userComparer(obj1, obj2);
-          }
+          };
         })(comparefun, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1009,25 +1100,9 @@
             var obj1 = rslt.collection.data[a];
             var obj2 = rslt.collection.data[b];
 
-            if (obj1[prop] === obj2[prop]) {
-              return 0;
-            }
-            if (desc) {
-              if (obj1[prop] < obj2[prop]) {
-                return 1;
-              }
-              if (obj1[prop] > obj2[prop]) {
-                return -1;
-              }
-            } else {
-              if (obj1[prop] > obj2[prop]) {
-                return 1;
-              }
-              if (obj1[prop] < obj2[prop]) {
-                return -1;
-              }
-            }
-          }
+            return sortHelper(obj1[prop], obj2[prop], desc);
+
+          };
         })(propname, isdesc, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1068,11 +1143,7 @@
         }
       }
 
-      if (isdesc) {
-        return (obj1[firstProp] < obj2[firstProp]) ? 1 : -1;
-      } else {
-        return (obj1[firstProp] > obj2[firstProp]) ? 1 : -1;
-      }
+      return sortHelper(obj1[firstProp], obj2[firstProp], isdesc);
     };
 
     /**
@@ -1097,7 +1168,7 @@
             var obj2 = rslt.collection.data[b];
 
             return rslt.compoundeval(props, obj1, obj2);
-          }
+          };
         })(properties, this);
 
       this.filteredrows.sort(wrappedComparer);
@@ -1125,7 +1196,7 @@
       var ubound = index.length - 1;
 
       // when no documents are in collection, return empty range condition
-      if (rcd.length == 0) {
+      if (rcd.length === 0) {
         return [0, -1];
       }
 
@@ -1135,27 +1206,27 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
-        if (val < minVal || val > maxVal) {
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
           return [0, -1];
         }
         break;
       case '$gt':
-        if (val >= maxVal) {
+        if (gtHelper(val, maxVal, true)) {
           return [0, -1];
         }
         break;
       case '$gte':
-        if (val > maxVal) {
+        if (gtHelper(val, maxVal)) {
           return [0, -1];
         }
         break;
       case '$lt':
-        if (val <= minVal) {
+        if (ltHelper(val, minVal, true)) {
           return [0, -1];
         }
         break;
       case '$lte':
-        if (val < minVal) {
+        if (ltHelper(val, minVal)) {
           return [0, -1];
         }
         break;
@@ -1165,7 +1236,7 @@
       while (min < max) {
         mid = Math.floor((min + max) / 2);
 
-        if (rcd[index[mid]][prop] < val) {
+        if (ltHelper(rcd[index[mid]][prop], val)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -1181,7 +1252,7 @@
       while (min < max) {
         mid = Math.floor((min + max) / 2);
 
-        if (val < rcd[index[mid]][prop]) {
+        if (ltHelper(val, rcd[index[mid]][prop])) {
           max = mid;
         } else {
           min = mid + 1;
@@ -1205,20 +1276,23 @@
         return [lbound, ubound];
 
       case '$gt':
-        if (uval <= val) {
+        if (ltHelper(uval, val, true)) {
           return [0, -1];
         }
 
         return [ubound, rcd.length - 1];
 
       case '$gte':
-        if (lval < val) {
+        if (ltHelper(lval, val)) {
           return [0, -1];
         }
 
         return [lbound, rcd.length - 1];
 
       case '$lt':
+        if (lbound === 0 && ltHelper(lval, val)) {
+          return [0, 0];
+        }
         return [0, lbound - 1];
 
       case '$lte':
@@ -1226,11 +1300,127 @@
           ubound--;
         }
 
+        if (ubound === 0 && ltHelper(uval, val)) {
+          return [0, 0];
+        }
         return [0, ubound];
 
       default:
         return [0, rcd.length - 1];
       }
+    };
+
+    /**
+     * findOr() - oversee the operation of OR'ed query expressions.
+     *    OR'ed expression evaluation runs each expression individually against the full collection,
+     *    and finally does a set OR on each expression's results.
+     *    Each evaluation can utilize a binary index to prevent multiple linear array scans.
+     *
+     * @param {array} expressionArray - array of expressions
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.findOr = function (expressionArray) {
+      var fri = 0,
+        ei = 0,
+        fr = null,
+        docset = [],
+        expResultset = null;
+
+      // if filter is already initialized we need to query against only those items already in filter.
+      // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
+      if (this.filterInitialized) {
+        docset = [];
+
+        for (ei = 0; ei < expressionArray.length; ei++) {
+          // we need to branch existing query to run each filter separately and combine results
+          expResultset = this.branch();
+          expResultset.find(expressionArray[ei]);
+          expResultset.data();
+
+          // add any document 'hits'
+          fr = expResultset.filteredrows;
+          for (fri = 0; fri < fr.length; fri++) {
+            if (docset.indexOf(fr[fri]) === -1) {
+              docset.push(fr[fri]);
+            }
+          }
+        }
+
+        this.filteredrows = docset;
+      } else {
+        for (ei = 0; ei < expressionArray.length; ei++) {
+          // we will let each filter run independently against full collection and mashup document hits later
+          expResultset = this.collection.chain();
+          expResultset.find(expressionArray[ei]);
+          expResultset.data();
+
+          // add any document 'hits'
+          fr = expResultset.filteredrows;
+          for (fri = 0; fri < fr.length; fri++) {
+            if (this.filteredrows.indexOf(fr[fri]) === -1) {
+              this.filteredrows.push(fr[fri]);
+            }
+          }
+        }
+      }
+
+      this.filterInitialized = true;
+
+      // possibly sort indexes
+      return this;
+    };
+
+    /**
+     * findAnd() - oversee the operation of AND'ed query expressions.
+     *    AND'ed expression evaluation runs each expression progressively against the full collection,
+     *    internally utilizing existing chained resultset functionality.
+     *    Only the first filter can utilize a binary index.
+     *
+     * @param {array} expressionArray - array of expressions
+     * @returns {Resultset} this resultset for further chain ops.
+     */
+    Resultset.prototype.findAnd = function (expressionArray) {
+      // we have already implementing method chaining in this (our Resultset class)
+      // so lets just progressively apply user supplied and filters
+      for (var i = 0; i < expressionArray.length; i++) {
+        this.find(expressionArray[i]);
+      }
+
+      return this;
+    };
+
+    /**
+     * dotSubScan - helper function used for dot notation queries.
+     */
+    Resultset.prototype.dotSubScan = function (root, property, fun, value) {
+      var arrayRef = null;
+      var pathIndex, subIndex;
+      var paths = property.split('.');
+      var path;
+
+      for (pathIndex = 0; pathIndex < paths.length; pathIndex++) {
+        path = paths[pathIndex];
+
+        // foreach already detected parent was array so this must be where we iterate
+        if (arrayRef) {
+          // iterate all sub-array items to see if any yield hits
+          for (subIndex = 0; subIndex < arrayRef.length; subIndex++) {
+            if (fun(arrayRef[subIndex][path], value)) {
+              return true;
+            }
+          }
+        }
+        // else not yet determined if subarray scan is involved
+        else {
+          root = root[path];
+          if (Array.isArray(root)) {
+            arrayRef = root;
+          }
+        }
+      }
+
+      // made it this far so must be dot notation on non-array property
+      return fun(root, value);
     };
 
     /**
@@ -1257,17 +1447,6 @@
         operator,
         p,
         key,
-        operators = {
-          '$eq': LokiOps.$eq,
-          '$gt': LokiOps.$gt,
-          '$gte': LokiOps.$gte,
-          '$lt': LokiOps.$lt,
-          '$lte': LokiOps.$lte,
-          '$ne': LokiOps.$ne,
-          '$regex': LokiOps.$regex,
-          '$in': LokiOps.$in,
-          '$contains': LokiOps.$contains
-        },
         searchByIndex = false,
         result = [],
         index = null,
@@ -1277,10 +1456,19 @@
         t,
         // collection data length
         i,
-        len;
+        emptyQO = true;
 
-      if (typeof (firstOnly) === 'undefined') {
-        firstOnly = false;
+      // if this was note invoked via findOne()
+      firstOnly = firstOnly || false;
+
+      // if passed in empty object {}, interpret as 'getAll'
+      // more performant than object.keys
+      for (p in queryObject) {
+        emptyQO = false;
+        break;
+      }
+      if (emptyQO) {
+        queryObject = 'getAll';
       }
 
       // apply no filters if they want all
@@ -1303,6 +1491,60 @@
       for (p in queryObject) {
         if (queryObject.hasOwnProperty(p)) {
           property = p;
+
+          // injecting $and and $or expression tree evaluation here.
+          if (p === '$and') {
+            if (this.searchIsChained) {
+              this.findAnd(queryObject[p]);
+
+              // for chained find with firstonly,
+              if (firstOnly && this.filteredrows.length > 1) {
+                this.filteredrows = this.filteredrows.slice(0, 1);
+              }
+
+              return this;
+            } else {
+              // our $and operation internally chains filters
+              result = this.collection.chain().findAnd(queryObject[p]).data();
+
+              // if this was coll.findOne() return first object or empty array if null
+              // since this is invoked from a constructor we can't return null, so we will
+              // make null in coll.findOne();
+              if (firstOnly) {
+                if (result.length === 0) return [];
+
+                return result[0];
+              }
+
+              // not first only return all results
+              return result;
+            }
+          }
+
+          if (p === '$or') {
+            if (this.searchIsChained) {
+              this.findOr(queryObject[p]);
+
+              if (firstOnly && this.filteredrows.length > 1) {
+                this.filteredrows = this.filteredrows.slice(0, 1);
+              }
+
+              return this;
+            } else {
+              // call out to helper function to determine $or results
+              result = this.collection.chain().findOr(queryObject[p]).data();
+
+              if (firstOnly) {
+                if (result.length === 0) return [];
+
+                return result[0];
+              }
+
+              // not first only return all results
+              return result;
+            }
+          }
+
           if (p.indexOf('.') != -1) {
             usingDotNotation = true;
           }
@@ -1324,7 +1566,7 @@
       }
 
       // for regex ops, precompile
-      if (operator === '$regex') value = RegExp(value);
+      if (operator === '$regex') value = new RegExp(value);
 
       if (this.collection.data === null) {
         throw new TypeError();
@@ -1334,7 +1576,7 @@
       // for now only enabling for non-chained query (who's set of docs matches index)
       // or chained queries where it is the first filter applied and prop is indexed
       if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-        operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
+        operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$containsAny' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property
@@ -1373,14 +1615,8 @@
             // if using dot notation then treat property as keypath such as 'name.first'.
             // currently supporting dot notation for non-indexed conditions only
             if (usingDotNotation) {
-              var root, paths;
               while (i--) {
-                root = t[i];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[i], property, fun, value)) {
                   result.push(t[i]);
                 }
               }
@@ -1395,7 +1631,6 @@
         } else {
           // searching by binary index via calculateRange() utility method
           t = this.collection.data;
-          len = t.length;
 
           var seg = this.calculateRange(operator, property, value, this);
 
@@ -1403,7 +1638,7 @@
           // so return object itself
           if (firstOnly) {
             if (seg[1] !== -1) {
-              return this.data[seg[0]];
+              return t[index.values[seg[0]]];
             }
 
             return [];
@@ -1430,14 +1665,8 @@
 
             // currently supporting dot notation for non-indexed conditions only
             if (usingDotNotation) {
-              var root, paths;
               while (i--) {
-                root = t[this.filteredrows[i]];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
                   result.push(this.filteredrows[i]);
                 }
               }
@@ -1471,15 +1700,8 @@
             i = t.length;
 
             if (usingDotNotation) {
-              var root, paths;
-
               while (i--) {
-                root = t[i];
-                paths = property.split('.');
-                paths.forEach(function (path) {
-                  root = root[path];
-                });
-                if (fun(root, value)) {
+                if (this.dotSubScan(t[i], property, fun, value)) {
                   result.push(i);
                 }
               }
@@ -1606,7 +1828,6 @@
       for (i = 0; i < len; i++) {
         result.push(data[fr[i]]);
       }
-
       return result;
     };
 
@@ -1679,6 +1900,81 @@
       }
     };
 
+     /**
+     * eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
+     * eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key
+     * @param {Array} joinData - Data array to join to.
+     * @param {String,function} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
+     * @param {String,function} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
+     * @param {function} (optional) mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
+     */
+    Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun) {
+
+      var leftData = [],
+          leftDataLength,
+          rightData = [],
+          rightDataLength,
+          key,
+          result = [],
+          obj,
+          leftKeyisFunction = typeof leftJoinKey === 'function',
+          rightKeyisFunction = typeof rightJoinKey === 'function',
+          joinMap = {};
+
+      //get the left data
+      leftData = this.data();
+      leftDataLength = leftData.length;
+
+      //get the right data
+      if(joinData instanceof Resultset){
+        rightData = joinData.data();
+      } else if(Array.isArray(joinData)){
+        rightData = joinData;
+      } else {
+        throw new TypeError('joinData needs to be an array or result set');
+      }
+      rightDataLength = rightData.length;
+
+      //construct a lookup table
+
+      for(var i = 0; i < rightDataLength; i++){
+        key = rightKeyisFunction ? rightJoinKey(rightData[i]) : rightData[i][rightJoinKey]
+        joinMap[key] = rightData[i]
+      }
+
+      if(!mapFun){
+        mapFun = function(left, right){
+          return {left:left, right:right}
+        }
+      }
+
+      //Run map function over each object in the resultset
+      for(var i = 0; i < leftDataLength; i++) {
+        key = leftKeyisFunction ? leftJoinKey(leftData[i]) : leftData[i][leftJoinKey];
+        result.push(mapFun(leftData[i],joinMap[key] || {}))
+      }
+
+      //return return a new resultset with no filters
+      this.collection = new Collection('joinData');
+      this.collection.insert(result);
+      this.filteredrows = [];
+      this.filterInitialized = false;
+
+      return this;
+    };
+
+    Resultset.prototype.map = function(mapFun){
+      var data = this.data().map(mapFun)
+      //return return a new resultset with no filters
+      this.collection = new Collection('mappedData');
+      this.collection.insert(data);
+      this.filteredrows = [];
+      this.filterInitialized = false;
+
+      return this;
+    }
+
     /**
      * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
      *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
@@ -1702,7 +1998,7 @@
       this.persistent = false;
       if (typeof (persistent) !== 'undefined') this.persistent = persistent;
 
-      this.resultset = new Resultset(collection)
+      this.resultset = new Resultset(collection);
       this.resultdata = [];
       this.resultsdirty = false;
 
@@ -1725,7 +2021,7 @@
       };
     }
 
-    DynamicView.prototype = new LokiEventEmitter;
+    DynamicView.prototype = new LokiEventEmitter();
 
 
     /**
@@ -1829,9 +2125,7 @@
       this.sortFunction = comparefun;
       this.sortCriteria = null;
 
-      this.resultset.sort(comparefun);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -1854,9 +2148,7 @@
       ];
       this.sortFunction = null;
 
-      this.resultset.simplesort(propname, isdesc);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -1874,9 +2166,7 @@
       this.sortCriterial = criteria;
       this.sortFunction = null;
 
-      this.resultset.compoundsort(criteria);
-
-      this.sortDirty = false;
+      this.queueSortPhase();
 
       return this;
     };
@@ -1912,8 +2202,7 @@
       this.resultset = this.cachedresultset;
 
       if (this.persistent) {
-        // i don't like the idea of keeping duplicate cached rows for each (possibly) persistent view
-        // so we will for now just rebuild the persistent dynamic view data in this worst case scenario
+        // for now just rebuild the persistent dynamic view data in this worst case scenario
         // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
         this.resultdata = this.resultset.data();
 
@@ -1940,10 +2229,12 @@
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
+        this.queueSortPhase();
       }
 
       if (this.persistent) {
         this.resultsdirty = true;
+        this.queueSortPhase();
       }
 
       return this;
@@ -1966,9 +2257,11 @@
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
+        this.queueSortPhase();
       }
       if (this.persistent) {
         this.resultsdirty = true;
+        this.queueSortPhase();
       }
       return this;
     };
@@ -1979,42 +2272,65 @@
      * @returns {array} An array of documents representing the current DynamicView contents.
      */
     DynamicView.prototype.data = function () {
-      if (this.sortDirty) {
-        if (this.sortFunction) {
-          this.resultset.sort(this.sortFunction);
-        }
-        if (this.sortCriteria) {
-          this.resultset.compoundsort(this.sortCriteria);
-        }
-        this.sortDirty = false;
-        if (this.persistent) {
-          this.resultsdirty = true; // newly sorted, if persistent we need to rebuild resultdata
-        }
+      // using final sort phase as 'catch all' for a few use cases which require full rebuild
+      if (this.sortDirty || this.resultsdirty || !this.resultset.filterInitialized) {
+        this.performSortPhase();
       }
 
-      // if nonpersistent return resultset data evaluation
       if (!this.persistent) {
-        // not sure if this emit will be useful, but if view is non-persistent
-        // we will raise event only if resulset has yet to be initialized.
-        // user can intercept via dynView.on('rebuild', myCallback);
-        // emit is async wait 1 ms so our data() call should exec before event fired
-        if (!this.resultset.filterInitialized) {
-          this.emit('rebuild', this);
-        }
-
         return this.resultset.data();
       }
 
-      // Persistent Views - we pay price of bulk row copy on first data() access after new filters applied
-      if (this.resultsdirty) {
-        this.resultdata = this.resultset.data();
-        this.resultsdirty = false;
+      return this.resultdata;
+    };
 
-        // user can intercept via dynView.on('rebuild', myCallback);
-        this.emit('rebuild', this);
+    /**
+     *
+     */
+    DynamicView.prototype.queueSortPhase = function () {
+      var self = this;
+
+      // already queued? exit without queuing again
+      if (this.sortDirty) {
+        return;
       }
 
-      return this.resultdata;
+      this.sortDirty = true;
+
+      // queue async call to performSortPhase()
+      setTimeout(function () {
+        self.performSortPhase();
+      }, 1);
+    };
+
+    /**
+     * performSortPhase() - invoked synchronously or asynchronously to perform final sort phase (if needed)
+     *
+     */
+    DynamicView.prototype.performSortPhase = function () {
+      // async call to this may have been pre-empted by synchronous call to data before async could fire
+      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) {
+        return;
+      }
+
+      if (this.sortFunction) {
+        this.resultset.sort(this.sortFunction);
+      }
+
+      if (this.sortCriteria) {
+        this.resultset.compoundsort(this.sortCriteria);
+      }
+
+      if (!this.persistent) {
+        return;
+      }
+
+      // persistent view, rebuild local resultdata array
+      this.resultdata = this.resultset.data();
+      this.resultsdirty = false;
+      this.sortDirty = false;
+
+      this.emit('rebuild', this);
     };
 
     /**
@@ -2060,7 +2376,7 @@
 
         // need to re-sort to sort new document
         if (this.sortFunction || this.sortCriteria) {
-          this.sortDirty = true;
+          this.queueSortPhase();
         }
 
         return;
@@ -2083,6 +2399,11 @@
           if (this.persistent) {
             this.resultdata.length = oldlen - 1;
           }
+        }
+
+        // in case changes to data altered a sort column
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
         }
 
         return;
@@ -2111,6 +2432,7 @@
       var ofr = this.resultset.filteredrows;
       var oldPos = ofr.indexOf(objIndex);
       var oldlen = ofr.length;
+      var idx;
 
       if (oldPos !== -1) {
         // if not last row in resultdata, swap last to hole and truncate last row
@@ -2118,13 +2440,33 @@
           ofr[oldPos] = ofr[oldlen - 1];
           ofr.length = oldlen - 1;
 
-          this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-          this.resultdata.length = oldlen - 1;
+          if (this.persistent) {
+            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
+            this.resultdata.length = oldlen - 1;
+          }
         }
         // last row, so just truncate last row
         else {
           ofr.length = oldlen - 1;
-          this.resultdata.length = oldlen - 1;
+
+          if (this.persistent) {
+            this.resultdata.length = oldlen - 1;
+          }
+        }
+
+        // in case changes to data altered a sort column
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
+        }
+      }
+
+      // since we are using filteredrows to store data array positions
+      // if they remove a document (whether in our view or not),
+      // we need to adjust array positions -1 for all document array references after that position
+      oldlen = ofr.length;
+      for (idx = 0; idx < oldlen; idx++) {
+        if (ofr[idx] > objIndex) {
+          ofr[idx] --;
         }
       }
     };
@@ -2184,7 +2526,7 @@
       this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
       // option to make event listeners async, default is sync
-      this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : true;
+      this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;
 
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
@@ -2198,6 +2540,8 @@
       this.events = {
         'insert': [],
         'update': [],
+        'pre-insert': [],
+        'pre-update': [],
         'close': [],
         'flushbuffer': [],
         'error': [],
@@ -2210,18 +2554,22 @@
 
       // initialize the id index
       this.ensureId();
-      var indices;
+      var indices = [];
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
       //if (typeof (indices) !== 'undefined') {
-      if (options) {
-        indices = options.indices || [];
-      } else {
-        indices = [];
+      if (options && options.indices) {
+        if (Object.prototype.toString.call(options.indices) === '[object Array]') {
+          indices = options.indices;
+        } else if (typeof options.indices === 'string') {
+          indices = [options.indices];
+        } else {
+          throw new TypeError('Indices needs to be a string or an array of strings');
+        }
       }
 
       for (var idx = 0; idx < indices.length; idx++) {
         this.ensureIndex(indices[idx]);
-      };
+      }
 
       /**
        * This method creates a clone of the current status of an object and associates operation and collection name,
@@ -2238,7 +2586,7 @@
       // clear all the changes
       function flushChanges() {
         self.changes = [];
-      };
+      }
 
       this.getChanges = function () {
         return self.changes;
@@ -2323,7 +2671,7 @@
       flushChanges();
     }
 
-    Collection.prototype = new LokiEventEmitter;
+    Collection.prototype = new LokiEventEmitter();
 
     /*----------------------------+
     | INDEXING                    |
@@ -2369,9 +2717,9 @@
             var obj2 = coll.data[b];
 
             if (obj1[prop] === obj2[prop]) return 0;
-            if (obj1[prop] > obj2[prop]) return 1;
-            if (obj1[prop] < obj2[prop]) return -1;
-          }
+            if (gtHelper(obj1[prop], obj2[prop])) return 1;
+            if (ltHelper(obj1[prop], obj2[prop])) return -1;
+          };
         })(property, this);
 
       index.values.sort(wrappedComparer);
@@ -2476,62 +2824,44 @@
 
     /**
      * generate document method - ensure objects have id and objType properties
-     * Come to think of it, really unfortunate name because of what document normally refers to in js.
-     * that's why there's an alias below but until I have this implemented
      * @param {object} the document to be inserted (or an array of objects)
-     * @returns document or documents (if array)
+     * @returns document or documents (if passed an array of objects)
      */
     Collection.prototype.insert = function (doc) {
+
+      if (!doc) {
+        var error = new Error('Object cannot be null');
+        this.emit('error', error);
+        throw error;
+      }
+
       var self = this;
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
-      if (Array.isArray(doc)) {
-        doc.forEach(function (d) {
-          if (self.clone) {
-            obj = JSON.parse(JSON.stringify(d));
-          } else {
-            obj = d;
-          }
-          //d.objType = self.objType;
-          if (typeof obj.meta === 'undefined') {
-            obj.meta = {
-              revision: 0,
-              created: 0
-            };
-          }
-          self.add(obj);
-          self.emit('insert', obj);
+      var docs = Array.isArray(doc) ? doc : [doc];
 
-        });
-        return obj;
-      } else {
-        if (typeof doc !== 'object') {
+      docs.forEach(function (d) {
+        if (typeof d !== 'object') {
           throw new TypeError('Document needs to be an object');
-          return;
-        }
-        if (!doc) {
-          var error = new Error('Object cannot be null');
-          this.emit('error', error);
-          throw error;
         }
         if (self.clone) {
-          obj = JSON.parse(JSON.stringify(doc));
+          obj = JSON.parse(JSON.stringify(d));
         } else {
-          obj = doc;
+          obj = d;
         }
-        //doc.objType = self.objType;
 
-        if (typeof doc.meta === 'undefined') {
+        if (typeof obj.meta === 'undefined') {
           obj.meta = {
             revision: 0,
             created: 0
           };
         }
+        self.emit('pre-insert', obj);
         self.add(obj);
         self.emit('insert', obj);
 
-        return obj;
-      }
+      });
+      return obj;
     };
 
     Collection.prototype.clear = function () {
@@ -2569,14 +2899,14 @@
       }
       try {
         this.startTransaction();
-        var i, arr = this.get(doc.$loki, true),
+        var arr = this.get(doc.$loki, true),
           obj,
           position;
 
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
-
+        this.emit('pre-update', doc);
         obj = arr[0];
 
         // get current position in data array
@@ -2664,11 +2994,35 @@
       }
     };
 
+
+    Collection.prototype.removeWhere = function (query) {
+      var list;
+      if (typeof query === 'function') {
+        list = this.data.filter(query);
+      } else {
+        list = new Resultset(this, query);
+      }
+      var len = list.length;
+      while (len--) {
+        this.remove(list[len]);
+      }
+
+    };
+
+    Collection.prototype.removeDataOnly = function () {
+      this.removeWhere(function (obj) {
+        return true;
+      });
+    };
+
     /**
      * delete wrapped
      */
     Collection.prototype.remove = function (doc) {
-      var self = this;
+      if (typeof doc === 'number') {
+        doc = this.get(doc);
+      }
+
       if ('object' !== typeof doc) {
         throw new Error('Parameter is not an object');
       }
@@ -2693,8 +3047,7 @@
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
           // obj = arr[0],
-          position = arr[1],
-          i;
+          position = arr[1];
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove
@@ -2726,17 +3079,17 @@
      * Get by Id - faster than other methods because of the searching algorithm
      */
     Collection.prototype.get = function (id, returnPosition) {
+
       var retpos = returnPosition || false,
         data = this.idIndex,
         max = data.length - 1,
         min = 0,
         mid = Math.floor(min + (max - min) / 2);
 
+      id = typeof id === 'number' ? id : parseInt(id, 10);
+
       if (isNaN(id)) {
-        id = parseInt(id);
-        if (isNaN(id)) {
-          throw 'Passed id is not an integer';
-        }
+        throw 'Passed id is not an integer';
       }
 
       while (data[min] < data[max]) {
@@ -2889,11 +3242,261 @@
       }
     };
 
+    /**
+     * eqJoin - Join two collections on specified properties
+     */
+    Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+      // logic in Resultset class
+      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+    };
+
+
     Collection.prototype.no_op = function () {
       return;
     };
 
+    Collection.prototype.extract = function (field) {
+      var i = 0,
+        len = this.data.length,
+        isDotNotation = isDeepProperty(field),
+        result = [];
+      for (i; i < len; i += 1) {
+        result.push(deepProperty(this.data[i], field, isDotNotation));
+      }
+      return result;
+    };
+
+    Collection.prototype.max = function (field) {
+      return Math.max.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.min = function (field) {
+      return Math.min.apply(null, this.extract(field));
+    };
+
+    Collection.prototype.maxRecord = function (field) {
+      var i = 0,
+        len = this.data.length,
+        deep = isDeepProperty(field),
+        result = {
+          index: 0,
+          value: undefined
+        },
+        max = undefined;
+
+      for (i; i < len; i += 1) {
+        if (max !== undefined) {
+          if (max < deepProperty(this.data[i], field, deep)) {
+            max = deepProperty(this.data[i], field, deep);
+            result.index = this.data[i].$loki;
+          }
+        } else {
+          max = deepProperty(this.data[i], field, deep);
+          result.index = this.data[i].$loki;
+        }
+      }
+      result.value = max;
+      return result;
+    };
+
+    Collection.prototype.minRecord = function (field) {
+      var i = 0,
+        len = this.data.length,
+        deep = isDeepProperty(field),
+        result = {
+          index: 0,
+          value: undefined
+        },
+        min = undefined;
+
+      for (i; i < len; i += 1) {
+        if (min !== undefined) {
+          if (min > deepProperty(this.data[i], field, deep)) {
+            min = deepProperty(this.data[i], field, deep);
+            result.index = this.data[i].$loki;
+          }
+        } else {
+          min = deepProperty(this.data[i], field, deep);
+          result.index = this.data[i].$loki;
+        }
+      }
+      result.value = min;
+      return result;
+    };
+
+    Collection.prototype.extractNumerical = function (field) {
+      return this.extract(field).map(parseBase10).filter(Number).filter(function (n) {
+        return !(isNaN(n));
+      });
+    };
+
+    Collection.prototype.avg = function (field) {
+      return average(this.extractNumerical(field));
+    };
+
+    Collection.prototype.stdDev = function (field) {
+      return standardDeviation(this.extractNumerical(field));
+    };
+
+    Collection.prototype.mode = function (field) {
+      var dict = {},
+        data = this.extract(field);
+      data.forEach(function (obj) {
+        if (dict[obj]) {
+          dict[obj] += 1;
+        } else {
+          dict[obj] = 1;
+        }
+      });
+      var max = undefined,
+        prop, mode;
+      for (prop in dict) {
+        if (max) {
+          if (max < dict[prop]) {
+            mode = prop;
+          }
+        } else {
+          mode = prop;
+          max = dict[prop];
+        }
+      }
+      return mode;
+    };
+
+    Collection.prototype.median = function (field) {
+      var values = this.extractNumerical(field);
+      values.sort(sub);
+
+      var half = Math.floor(values.length / 2);
+
+      if (values.length % 2) {
+        return values[half];
+      } else {
+        return (values[half - 1] + values[half]) / 2.0;
+      }
+    };
+
+    /**
+     * General utils, including statistical functions
+     */
+    function isDeepProperty(field) {
+      return field.indexOf('.') !== -1;
+    }
+
+    function parseBase10(num) {
+      return parseFloat(num, 10);
+    }
+
+    function isNotUndefined(obj) {
+      return obj !== undefined;
+    }
+
+    function add(a, b) {
+      return a + b;
+    }
+
+    function sub(a, b) {
+      return a - b;
+    }
+
+    function median(values) {
+      values.sort(sub);
+      var half = Math.floor(values.length / 2);
+      return (values.length % 2) ? values[half] : ((values[half - 1] + values[half]) / 2.0);
+    }
+
+    function average(array) {
+      return (array.reduce(add, 0)) / array.length;
+    }
+
+    function standardDeviation(values) {
+      var avg = average(values);
+      var squareDiffs = values.map(function (value) {
+        var diff = value - avg;
+        var sqrDiff = diff * diff;
+        return sqrDiff;
+      });
+
+      var avgSquareDiff = average(squareDiffs);
+
+      var stdDev = Math.sqrt(avgSquareDiff);
+      return stdDev;
+    }
+
+    function deepProperty(obj, property, isDeep) {
+      if (isDeep === false) {
+        // pass without processing
+        return obj[property];
+      }
+      var pieces = property.split('.'),
+        root = obj;
+      while (pieces.length > 0) {
+        root = root[pieces.shift()];
+      }
+      return root;
+    }
+
+    function binarySearch(array, item, fun) {
+      var lo = 0,
+        hi = array.length,
+        compared,
+        mid;
+      while (lo < hi) {
+        mid = ((lo + hi) / 2) | 0;
+        compared = fun.apply(null, [item, array[mid]]);
+        if (compared === 0) {
+          return {
+            found: true,
+            index: mid
+          };
+        } else if (compared < 0) {
+          hi = mid;
+        } else {
+          lo = mid + 1;
+        }
+      }
+      return {
+        found: false,
+        index: hi
+      };
+    }
+
+    function BSonSort(fun) {
+      return function (array, item) {
+        return binarySearch(array, item, fun);
+      };
+    }
+
+    function KeyValueStore() {}
+
+    KeyValueStore.prototype = {
+      keys: [],
+      values: [],
+      sort: function (a, b) {
+        return (a < b) ? -1 : ((a > b) ? 1 : 0);
+      },
+      setSort: function (fun) {
+        this.bs = new BSonSort(fun);
+      },
+      bs: function () {
+        return new BSonSort(this.sort);
+      },
+      set: function (key, value) {
+        var pos = this.bs(this.keys, key);
+        if (pos.found) {
+          this.values[pos.index] = value;
+        } else {
+          this.keys.splice(pos.index, 0, key);
+          this.values.splice(pos.index, 0, value);
+        }
+      },
+      get: function (key) {
+        return this.values[binarySearch(this.keys, key, this.sort).index];
+      }
+    };
+
     Loki.Collection = Collection;
+    Loki.KeyValueStore = KeyValueStore;
     return Loki;
   }());
 

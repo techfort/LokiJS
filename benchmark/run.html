@@ -10,14 +10,15 @@
 <button id="runTaffy">run Taffy</button>
 <button id="runLoki">run Loki</button>
 <button id="runNeDB">run NeDB</button>
+<button id="runRaw">run raw array insert</button>
 <script type="text/javascript">
 
 document.getElementById('runLoki').addEventListener('click', runLokiBenchmark);
 document.getElementById('runTaffy').addEventListener('click', runTaffyBenchmark);
 document.getElementById('runNeDB').addEventListener('click', runNeDBBenchmark);
+document.getElementById('runRaw').addEventListener('click', runRawBenchmark);
 
-
-var size = 1000;
+var size = 100000;
 
 var generateData = function(size){
 
@@ -79,7 +80,20 @@ function runLokiBenchmark(){
 	var j = size;
 	console.profile('Profiling Loki');
 	while(j--){
-		lokis.document(coll[j]);
+		lokis.insert(coll[j]);
+	}
+	console.trace();
+	console.profileEnd();
+}
+
+function runRawBenchmark(){
+	// initialize loki
+	var db = [];
+
+	var j = size;
+	console.profile('Profiling Raw');
+	while(j--){
+		db.push(coll[j]);
 	}
 	console.trace();
 	console.profileEnd();

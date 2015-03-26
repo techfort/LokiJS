@@ -4,8 +4,8 @@
 //   suite = new gordian('testEvents'),
 //   users = db.addCollection('users');
 
-describe('remove', function() {
-  it('removes', function() {
+describe('remove', function () {
+  it('removes', function () {
     var db = new loki();
     var users = db.addCollection('users');
 
@@ -42,18 +42,17 @@ describe('remove', function() {
     users.removeWhere(function (obj) {
       return obj.age > 35;
     });
-    suite.assertEqual('Users length after removeWhere()', users.data.length, 4);
+    expect(users.data.length).toEqual(4);
     users.removeWhere({
       'age': {
         $gt: 25
       }
     });
-    suite.assertEqual('Users length after removeWhere()', users.data.length, 2);
+    expect(users.data.length).toEqual(2);
     users.remove(6);
-    suite.assertEqual('Users length after remove(int)', users.data.length, 1);
+    expect(users.data.length).toEqual(1);
     users.removeDataOnly();
-    suite.assertEqual('No users left after removeDataOnly()', users.data.length, 0);
-    suite.assertEqual('DynamicView still in existence after removing data', !!users.getDynamicView('testview'), true);
-  })
-})
-// suite.report();
+    expect(users.data.length).toEqual(0);
+    expect(!!users.getDynamicView('testview')).toEqual(true);
+  });
+});

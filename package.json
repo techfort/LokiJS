@@ -24,10 +24,12 @@
     "test": "make test && istanbul cover tests/"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "admin@obeliskos.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave",
+      "email": "admin@obeliskos.com"
+    }
+  ],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
@@ -39,6 +41,7 @@
     "gulp-concat": "^2.4.1",
     "gulp-uglify": "^1.0.1",
     "istanbul": "^0.3.2",
+    "karma-phantomjs-launcher": "^0.1.4",
     "mocha": "^2.0.1",
     "should": "^4.3.0",
     "uglify-js": "^2.4.15"

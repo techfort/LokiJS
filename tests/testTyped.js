@@ -4,8 +4,8 @@
 //   gordian = require('gordian'),
 //   suite = new gordian('testTyped');
 
-describe('typed', function() {
-  it('works', function() {
+describe('typed', function () {
+  it('works', function () {
     var db = new loki('test.json');
     var users;
 
@@ -71,9 +71,7 @@ describe('typed', function() {
     });
 
     users = db.getCollection('users');
-    suite.assertEqual('Inflated object prototype', users.get(1) instanceof User, true);
-  })
-})
-
-//
-// suite.report();
+    //suite.assertEqual('Inflated object prototype', users.get(1) instanceof User, true);
+    expect(users.get(1) instanceof User).toEqual(true);
+  });
+});

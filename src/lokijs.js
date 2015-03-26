@@ -148,15 +148,15 @@
             },
 
             $containsAny: function (a, b) {
-                var checkFn = function () {
-                    return false;
-                };
-
+                var checkFn;
+                
                 if (!Array.isArray(b)) {
                     b = [b];
                 }
 
-                checkFn = containsCheckFn(a, b);
+                checkFn = containsCheckFn(a, b) || function () {
+                    return false;
+                };
 
                 return b.reduce(function (prev, curr) {
                     if (prev) {
@@ -168,15 +168,15 @@
             },
 
             $contains: function (a, b) {
-                var checkFn = function () {
-                    return true;
-                };
-
+                var checkFn;
+                
                 if (!Array.isArray(b)) {
                     b = [b];
                 }
 
-                checkFn = containsCheckFn(a, b);
+                checkFn = containsCheckFn(a, b) || function () {
+                    return true;
+                };
 
                 return b.reduce(function (prev, curr) {
                     if (!prev) {

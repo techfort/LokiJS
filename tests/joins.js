@@ -1,28 +1,32 @@
-var Loki = require('../src/lokijs.js'),
-  gordian = require('gordian'),
-  suite = new gordian('testJoins'),
-  db = new Loki('testJoins', {
-    persistenceMethod: null
-  }),
-  directors = db.addCollection('directors'),
-  films = db.addCollection('films');
+describe('joins', function() {
+  var db, directors, films;
 
-directors.insert([
-  {name: 'Martin Scorsese', directorId: 1},
-  {name: 'Francis Ford Coppola', directorId: 2},
-  {name: 'Steven Spielberg', directorId: 3},
-  {name: 'Quentin Tarantino', directorId: 4}
-]);
+  beforeEach(function() {
+      db = new loki('testJoins', {
+        persistenceMethod: null
+      }),
+      directors = db.addCollection('directors'),
+      films = db.addCollection('films');
 
-films.insert([
-  {title: 'Taxi', filmId: 1, directorId: 1},
-  {title: 'Raging Bull', filmId: 2, directorId: 1},
-  {title: 'The Godfather', filmId: 3, directorId: 2},
-  {title: 'Jaws', filmId: 4, directorId: 3},
-  {title: 'ET', filmId: 5, directorId: 3},
-  {title: 'Raiders of the Lost Ark', filmId: 6, directorId: 3}
-]);
-var joined;
+    directors.insert([
+      {name: 'Martin Scorsese', directorId: 1},
+      {name: 'Francis Ford Coppola', directorId: 2},
+      {name: 'Steven Spielberg', directorId: 3},
+      {name: 'Quentin Tarantino', directorId: 4}
+    ]);
+
+    films.insert([
+      {title: 'Taxi', filmId: 1, directorId: 1},
+      {title: 'Raging Bull', filmId: 2, directorId: 1},
+      {title: 'The Godfather', filmId: 3, directorId: 2},
+      {title: 'Jaws', filmId: 4, directorId: 3},
+      {title: 'ET', filmId: 5, directorId: 3},
+      {title: 'Raiders of the Lost Ark', filmId: 6, directorId: 3}
+    ]);
+  })
+
+  it('works', function() {
+    var joined;
 
 //Basic non-mapped join
 joined = films.eqJoin(directors.data, 'directorId', 'directorId').data();
@@ -75,5 +79,12 @@ joined = films.chain().eqJoin(directors.data,
   .data();
 
 suite.assertEqual('calculated join works', joined[0].right.name, 'Steven Spielberg');
+  })
+})
+// var Loki = require('../src/lokijs.js'),
+//   gordian = require('gordian'),
+//   suite = new gordian('testJoins'),
 
-suite.report();
+
+
+// suite.report();

@@ -22,7 +22,7 @@ example usage [here](https://github.com/techfort/LokiJS/wiki)
 ## Current state
 
 LokiJS is at version 1.2 [Schnee]. While the roadmap is exciting, LokiJS is at the moment stable.
-As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, hybrid mobile apps (such as phonegap/cordova), or the jvm through engines such as rhino.
+As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
 
 Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
 

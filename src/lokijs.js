@@ -387,7 +387,7 @@
             var defaultPersistence = {
                     'NODEJS': 'fs',
                     'BROWSER': 'localStorage',
-                    'CORDOVA': null
+                    'CORDOVA': 'localStorage'
                 },
                 persistenceMethods = {
                     'fs': LokiFsAdapter,

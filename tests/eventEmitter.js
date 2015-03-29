@@ -1,43 +1,36 @@
 // var loki = require('../src/lokijs.js'),
-describe('eventEmitter', function() {
+describe('eventEmitter', function () {
   var db;
 
-  beforeEach(function() {
+  beforeEach(function () {
     db = new loki('test', {
-      persistenceMethod: null
-    }),
-    // gordian = require('gordian'),
-    // suite = new gordian('testEvents'),
-    users = db.addCollection('users', {
-      asyncListeners: false
-    });
+        persistenceMethod: null
+      }),
+      users = db.addCollection('users', {
+        asyncListeners: false
+      });
 
     users.insert({
       name: 'joe'
     });
-  })
-
-  it('async', function testAsync() {
-    suite.assertEqual('DB events async', db.asyncListeners, false);
   });
 
-  it('emit', function() {
+  it('async', function testAsync() {
+    expect(db.asyncListeners).toBe(false);
+  });
+
+  it('emit', function () {
     var index = db.on('test', function test(obj) {
-      suite.assertEqual('Argument passed to event', 42, obj);
+      expect(obj).toEqual(42);
     });
 
     db.emit('test', 42);
     db.removeListener('test', index);
 
-    suite.assertEqual('Event has no listeners attached', db.events['test'].length, 0);
+    expect(db.events['test'].length).toEqual(0);
 
-    suite.assertThrows('No event testEvent', function testEvent() {
+    expect(function testEvent() {
       db.emit('testEvent');
-    }, Error);
-  })
-})
-
-// testAsync();
-// testEmit();
-
-// suite.report();
+    }).toThrow(new Error('No event testEvent defined'));
+  });
+});

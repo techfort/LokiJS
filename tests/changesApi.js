@@ -1,16 +1,16 @@
 // var loki = require('../src/lokijs.js'),
-describe('changesApi', function() {
-  it('does what it says on the tin', function() {
+describe('changesApi', function () {
+  it('does what it says on the tin', function () {
     var db = new loki(),
-    // gordian = require('gordian'),
-    // suite = new gordian('testEvents'),
-    options = {
-      asyncListeners: false,
-      disableChangesApi: false
-    },
-    users = db.addCollection('users', options),
-    test = db.addCollection('test', options),
-    test2 = db.addCollection('test2', options);
+      // gordian = require('gordian'),
+      // suite = new gordian('testEvents'),
+      options = {
+        asyncListeners: false,
+        disableChangesApi: false
+      },
+      users = db.addCollection('users', options),
+      test = db.addCollection('test', options),
+      test2 = db.addCollection('test2', options);
 
     var u = users.insert({
       name: 'joe'
@@ -26,31 +26,31 @@ describe('changesApi', function() {
 
     var userChanges = db.generateChangesNotification(['users']);
 
-    suite.assertEqual('Single collection changes', 2, userChanges.length);
-    suite.assertEqual('Check serialized changes', db.serializeChanges(['users']), JSON.stringify(userChanges));
+    expect(userChanges.length).toEqual(2);
+    expect(db.serializeChanges(['users'])).toEqual(JSON.stringify(userChanges));
 
     var someChanges = db.generateChangesNotification(['users', 'test2']);
 
-    suite.assertEqual('Changes number for selected collections', 3, someChanges.length);
+    expect(someChanges.length).toEqual(3);
     var allChanges = db.generateChangesNotification();
 
-    suite.assertEqual('Changes number for all collections', 4, allChanges.length);
+    expect(allChanges.length).toEqual(4);
     users.setChangesApi(false);
-    suite.assertEqual('Changes Api disabled', true, users.disableChangesApi);
+    expect(users.disableChangesApi).toEqual(true);
 
     u.name = 'john';
     users.update(u);
     var newChanges = db.generateChangesNotification(['users']);
 
-    suite.assertEqual('Change should not register after Api disabled', 2, newChanges.length);
+    expect(newChanges.length).toEqual(2);
     db.clearChanges();
 
-    suite.assertEqual('clearChanges should wipe changes', 0, users.getChanges().length);
+    expect(users.getChanges().length).toEqual(0);
 
     u.name = 'jim';
     users.update(u);
     users.flushChanges();
 
-    suite.assertEqual('Collection level changes flush', 0, users.getChanges().length);
-  })
-})
+    expect(users.getChanges().length).toEqual(0);
+  });
+});

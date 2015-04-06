@@ -20,6 +20,7 @@ LokiJS is ideal for the following scenarios:
 LokiJS supports indexing and views and achieves high-performance through maintaining a binary-index for data.
 
 example usage [here](https://github.com/techfort/LokiJS/wiki)
+
 Sandbox / Playground [here](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
 
 ## Current state

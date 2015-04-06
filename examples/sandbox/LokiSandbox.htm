@@ -1,0 +1,430 @@
+<!--	
+  Loki Sandbox :
+  To support LokiJS project at  : https://github.com/techfort/LokiJS
+
+  This web page is designed to allow you to experiment with loki and/or inspect existing saved loki database files.
+
+  You can experiment, running queries on the default sample database or load a saved database from
+  your filesystem, and inspect and/or run queries on it to inspect results.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loki Sandbox</title>
+
+    <script src="../../src/lokijs.js"></script>
+    <script src="jquery-2.1.0.min.js"></script>
+    <script src="sandbox.min.js"></script>
+    <link rel="stylesheet" href="sandbox.min.css">
+
+    <style>
+      body {
+          margin: 0;
+          font-family: 'Segoe UI', 'sans-serif';
+      }
+      a:link
+      {
+        color: #99F;
+        text-decoration: none;
+        font-size: 14pt;
+      }
+      a:hover
+      {
+        color: #77F;
+        text-decoration: underline;
+      }
+      a:visited
+      {
+        color: #99F;
+      }
+      input.vpatel[type=radio], input.vpatel[type=checkbox] {
+        display:none;
+      }
+
+      input.vpatel[type=radio] + label, input.vpatel[type=checkbox] + label {
+        display:inline-block;
+        margin:-2px;
+        padding: 4px 12px;
+        margin-bottom: 0;
+        font-size: 14px;
+        line-height: 20px;
+        color: #333;
+        text-align: center;
+        text-shadow: 0 1px 1px rgba(255,255,255,0.75);
+        vertical-align: middle;
+        cursor: pointer;
+        background-color: #f5f5f5;
+        background-image: -moz-linear-gradient(top,#fff,#e6e6e6);
+        background-image: -webkit-gradient(linear,0 0,0 100%,from(#fff),to(#e6e6e6));
+        background-image: -webkit-linear-gradient(top,#fff,#e6e6e6);
+        background-image: -o-linear-gradient(top,#fff,#e6e6e6);
+		    background-image: linear-gradient(to bottom,#fff,#e6e6e6);
+		    background-repeat: repeat-x;
+		    border: 1px solid #ccc;
+		    border-color: #e6e6e6 #e6e6e6 #bfbfbf;
+		    border-color: rgba(0,0,0,0.1) rgba(0,0,0,0.1) rgba(0,0,0,0.25);
+		    border-bottom-color: #b3b3b3;
+		    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff',endColorstr='#ffe6e6e6',GradientType=0);
+		    filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+		    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,0.2),0 1px 2px rgba(0,0,0,0.05);
+		    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,0.2),0 1px 2px rgba(0,0,0,0.05);
+		    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2),0 1px 2px rgba(0,0,0,0.05);
+      }
+
+      input.vpatel[type=radio]:checked + label, input.vpatel[type=checkbox]:checked + label{
+        background-image: none;
+		    outline: 0;
+		    -webkit-box-shadow: inset 0 2px 4px rgba(0,0,0,0.15),0 1px 2px rgba(0,0,0,0.05);
+		    -moz-box-shadow: inset 0 2px 4px rgba(0,0,0,0.15),0 1px 2px rgba(0,0,0,0.05);
+		    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15),0 1px 2px rgba(0,0,0,0.05);
+			    background-color:#c8c8c8;
+      }
+      button.minimal {
+        background: #e3e3e3;
+        border: 1px solid #bbb;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        -webkit-box-shadow: inset 0 0 1px 1px #f6f6f6;
+        -moz-box-shadow: inset 0 0 1px 1px #f6f6f6;
+        box-shadow: inset 0 0 1px 1px #f6f6f6;
+        color: #333;
+        font: bold 20px "helvetica neue", helvetica, arial, sans-serif;
+        line-height: 1;
+        padding: 8px 0 9px;
+        text-align: center;
+        text-shadow: 0 1px 0 #fff;
+        width: 150px; 
+      }
+      button.minimal:hover {
+        background: #d9d9d9;
+        -webkit-box-shadow: inset 0 0 1px 1px #eaeaea;
+        -moz-box-shadow: inset 0 0 1px 1px #eaeaea;
+        box-shadow: inset 0 0 1px 1px #eaeaea;
+        color: #222;
+        cursor: pointer; 
+      }
+      button.minimal:active {
+        background: #d0d0d0;
+        -webkit-box-shadow: inset 0 0 1px 1px #e3e3e3;
+        -moz-box-shadow: inset 0 0 1px 1px #e3e3e3;
+        box-shadow: inset 0 0 1px 1px #e3e3e3;
+        color: #000; 
+      }
+    </style>
+</head>
+
+<body style="background-color:#444; color:#fff">
+
+  <h1 style="font-family:'Segoe UI', 'sans-serif'">Loki Sandbox</h3>
+
+  <div id="divLokiCode">
+  </div>
+
+  <div id="divLoader" style="position:absolute; top:10px; right: 400px">
+    <i>Import database : </i> <input style='height:30px; width:200px;' id='file-import' type="file" onchange="dbImport()" />
+  </div>
+
+  <div style="position: absolute; top:10px; right:10px">
+    <input class="vpatel" type="radio" id="radio1" name="radios" value="all" checked onclick="tabMode(1)">
+    <label for="radio1">Text Output</label>
+    <input class="vpatel" type="radio" id="radio2" name="radios" value="false" onclick="tabMode(2)">
+    <label for="radio2">Object Inspector</label>
+    <input class="vpatel" type="radio" id="radio3" name="radios" value="true" onclick="tabMode(3)">
+    <label for="radio3">About</label>
+  </div>
+
+  <table width="100%" style="table-layout:fixed">
+    <tr>
+      <td width="50%" valign="top">
+        <h2 style="font-family:'Segoe UI', 'sans-serif'">Sandbox Editor</h2>
+        <div id="divLokiEditor">
+          <textarea id="jsedit"></textarea>
+          <br />
+          <button class="minimal" onclick="runloki();">Run</button>
+        </div>
+      </td>
+      <td width="50%" valign="top">
+        <div id="divTextOutput">
+          <h2 style="font-family:'Segoe UI', 'sans-serif'">Text Output</h2>
+          
+          <div id="divText">
+            <textarea id="lsoutput"></textarea>
+          </div>
+        </div>
+        <div id="divInspector" style="display:none">
+          <h2>Object Inspector</h2>
+          <div id="divInspect" style="overflow-y:auto">
+            <div id="divPrettyPrint">
+            </div>
+          </div>
+          <br/>
+          <button class="minimal" onclick="console.log(db)" style="width:220px">Log db to Console</button>
+        </div>
+        <div id="divAbout" style="display:none; padding: 20px">
+          <h2>About Loki Sandbox 0.2.0</h2>
+          <p style="font-size:18px">
+              Loki Sandbox is a simple utility web page which lets you experiment with LokiJS using a browser environment.
+              An example database is created by default (in memory), along with sample javascript interaction to populate, query, and sandbox logging capabilities.
+          </p>
+          <p style="font-size:18px">
+            If you have databases which have been saved to the filesystem (from node.js, node webkit, or cordova), you load load them and inspect and/or
+            query their contents.
+          <p style="font-size:18px">
+            This utility page is to support <a href="http://lokijs.org" target="_blank">LokiJS</a>.<br /><br/>
+            You can also view the <a href="https://github.com/techfort/LokiJS" target="_blank">GitHub page</a>.
+          </p>
+        </div>
+        <br/>
+      </td>
+    </tr>
+  </table>
+
+  <script>
+    var sbv = {
+      editorJS: null,
+      editorOutput: null,
+    }
+
+    var db = new loki('sandbox');
+
+    function tabMode(mode) {
+      $("#divTextOutput").hide();
+      $("#divInspector").hide();
+      $("#divAbout").hide();
+
+      switch(mode) {
+        case 1 : $("#divTextOutput").show(); break;
+        case 2 : $("#divInspector").show(); break;
+        case 3 : $("#divAbout").show(); break;
+      }
+    }
+
+    $(document).ready(function () {
+      // Help user quickly identify errors in their code by displaying alert with msg, line and col
+      window.onerror = function (msg, url, line, col, error) {
+          alertify.error(msg + " (line " + line + " col " + col + ")");
+      };
+
+      $(window).resize(function () {
+          if (typeof (windowResize) == typeof (Function)) windowResize();
+      });
+
+      $("body").css("background-color", "#222");
+
+      setupEditor();
+
+      setTimeout(function() {
+        windowResize();
+        runloki();
+      }, 250);
+    });
+
+    function windowResize() {
+      setTimeout(function() {
+        try {
+          sbv.editorJS.setSize("100%", $(window).height() - 250);
+          sbv.editorOutput.setSize("100%", $(window).height() - 250);
+        }
+        catch(err) {
+        }
+      }, 200);
+
+      $("#divInspect").height($(window).height() - 250);
+    }
+
+    // event handler called when user picks file to import
+    function dbImport()	{
+      var file = document.getElementById('file-import').files[0];
+      if(file) {
+        var reader = new FileReader();
+
+        reader.readAsText(file, "UTF-8");
+
+        reader.onload = dbLoaded;
+        reader.onerror = errorHandler;
+      }
+    }
+
+    // callback event fired when after file import is done
+    function dbLoaded(evt) {
+      var filename = $("#file-import").val().replace(/^.*[\\\/]/, '');
+      var filestring = evt.target.result;
+
+      db.loadJSON(filestring);
+
+      var control = $("#file-import");
+      control.replaceWith( control = control.clone( true ) );
+
+      $("#divLokiCode").empty();
+      sbv.editorJS.setValue("// insert your code here\r\n\r\n//This statement sends to Text Output\r\nlogObject(db);\r\n\r\n//This statement sends to Inspector\r\ninspectObject(db);");
+      runloki();
+    }
+
+    function setupEditor() {
+      sbv.editorJS = CodeMirror.fromTextArea(document.getElementById("jsedit"), {
+        smartIndent: false,
+        lineNumbers: true,
+        theme: "pastel-on-dark",
+        mode: "javascript",
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+        extraKeys: {
+          "Ctrl-Q": function (cm) {
+              cm.foldCode(cm.getCursor());
+          },
+          "F11": function (cm) {
+              cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+          },
+          "Esc": function (cm) {
+              if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+          }
+        }
+      });
+
+      sbv.editorOutput = CodeMirror.fromTextArea(document.getElementById("lsoutput"), {
+        smartIndent: false,
+        lineNumbers: true,
+        theme: "pastel-on-dark",
+        mode: "javascript",
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+        extraKeys: {
+          "Ctrl-Q": function (cm) {
+              cm.foldCode(cm.getCursor());
+          },
+          "F11": function (cm) {
+              cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+          },
+          "Esc": function (cm) {
+              if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+          }
+        }
+      });
+
+      var initCode = "// This database has already been created for you.\r\n";
+      initCode += "// var db = new loki('sandbox');\r\n\r\n";
+      initCode += "// Add a collection to the database\r\n";
+      initCode += "var items = db.addCollection('items');\r\n\r\n";
+      initCode += "// Add some documents to the collection\r\n";
+      initCode += "items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });\r\n";
+      initCode += "items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });\r\n";
+      initCode += "items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });\r\n";
+      initCode += "items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });\r\n\r\n";
+      initCode += "// Find and update an existing document\r\n";
+      initCode += "var tyrfing = items.findOne({'name': 'tyrfing'});\r\n";
+      initCode += "tyrfing.owner = 'arngrim';\r\n";
+      initCode += "items.update(tyrfing);\r\n\r\n";
+      initCode += "// These statements send to Text Output\r\n";
+      initCode += "logText('tyrfing value :');\r\n";
+      initCode += "logObject(tyrfing);\r\n";
+      initCode += "logText('odins items');\r\n";
+      initCode += "logObject(items.find({ 'owner': 'odin' }));\r\n\r\n";
+      initCode += "// This statement sends to Inspector\r\n";
+      initCode += "inspectObject(db);\r\n";
+
+      sbv.editorJS.setValue(initCode);
+      sbv.editorOutput.setValue('Welcome to loki sandbox 0.1.0\r\n');
+    }
+
+    function logText(message) {
+        var oldText = sbv.editorOutput.getValue();
+        oldText += message + "\r\n";
+        sbv.editorOutput.setValue(oldText);
+    }
+
+    function logObject(obj) {
+        var oldText = sbv.editorOutput.getValue();
+        oldText += JSON.stringify(obj, undefined, 2) + "\r\n";
+        sbv.editorOutput.setValue(oldText);
+    }
+
+    function inspectObject(obj) {
+        $("#divInspect").empty();
+        var tbl = prettyPrint(obj, { /* options such as maxDepth, etc. */ });
+        $("#divInspect").append(tbl);
+    }
+
+    function runloki() {
+        $("#divLokiCode").empty();
+        sbv.editorOutput.setValue('');
+
+        var s = document.createElement("script");
+        var ls = "(function() { ";
+        ls += sbv.editorJS.getValue();
+        ls += " }());"
+
+        s.innerHTML = ls;
+
+        // give dom a chance to clean out by waiting a bit?
+        setTimeout(function () {
+            document.getElementById("divLokiCode").appendChild(s);
+        }, 250);
+
+    }
+
+    function errorHandler(evt) {
+        alertify.error('load error');
+    }
+
+    function toggleVisibility(id) {
+        var e = document.getElementById(id);
+        if (e.style.display == 'block')
+            e.style.display = 'none';
+        else
+            e.style.display = 'block';
+    }
+
+    var hookScripts = function (url, src) {
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.id = 'scriptDynamic';
+        s.src = url || null;
+        s.innerHTML = src || null;
+        document.getElementsByTagName("head")[0].appendChild(s);
+    };
+
+    // function to inspect a variable/expression highlighted in a script or markup editor
+    function sb_inspect() {
+        var strSelection;
+        var scriptSelection = editorScript.getSelection();
+        var markupSelection = editorMarkup.getSelection();
+
+        if (scriptSelection != "" && markupSelection != "") alertify.error("Ambiguous selection; Highlighted code exists in both editors; using Script selection", "", 0);
+
+        if (scriptSelection == "" && markupSelection == "") {
+            alertify.alert("This feature requires you to select a variable or object in the script editor before clicking 'Inspect'.");
+            return;
+        }
+
+        if (scriptSelection != "") strSelection = scriptSelection;
+        else strSelection = markupSelection;
+
+        var objResult;
+        try {
+            objResult = eval(strSelection);
+        }
+        catch (exc) {
+            alertify.error("malformed inspection selection");
+            return;
+        }
+
+        var tbl = prettyPrint(objResult, { /* options such as maxDepth, etc. */ });
+        $(tbl).dialog({ title: 'Trident Object/Variable Inspector', width: 'auto', maxHeight: ($(window).height() - 50) });
+    }
+
+    function getURLParameter(sParam) {
+        var sPageURL = window.location.hash.substring(1);
+
+        var sURLVariables = sPageURL.split('&');
+        for (var i = 0; i < sURLVariables.length; i++) {
+            var sParameterName = sURLVariables[i].split('=');
+            if (sParameterName[0] == sParam) {
+                return decodeURIComponent(sParameterName[1]);
+            }
+        }
+    }
+
+  </script>
+</body>
+</html>

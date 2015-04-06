@@ -3000,22 +3000,15 @@
         Object.keys(self.constraints.unique).forEach(function (key) {
           if (obj.hasOwnProperty(key)) {
             if (self.constraints.unique[key][obj[key]]) {
-              found = true;
-              prop = key;
+              self.emit('error', 'Duplicate key for key ' + key + ' (value ' + obj[key] +
+                ' + already in collection)');
+              self.data.pop();
+              throw new Error('Duplicate key for property ' + key);
             } else {
-              // only add the element if all previoius checks for unique fields passed
-              if (!found) {
-                self.constraints.unique[key][obj[key]] = self.maxId;
-              }
+              self.constraints.unique[key][obj[key]] = self.maxId;
             }
           }
         });
-        if (found) {
-          self.emit('error', 'Duplicate key for key ' + prop + ' (value ' + obj[key] +
-            ' + already in collection)');
-          self.data.pop();
-          return undefined;
-        }
 
 
         // now that we can efficiently determine the data[] position of newly added document,

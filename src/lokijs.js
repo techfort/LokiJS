@@ -3083,7 +3083,10 @@
         var arr = this.get(doc.$loki, true),
           // obj = arr[0],
           position = arr[1];
-
+        var self = this;
+        Object.keys(this.constraints.unique).forEach(function (key) {
+          delete self.constraints.unique[key][doc[key]];
+        });
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove
         for (var idx = 0; idx < this.DynamicViews.length; idx++) {

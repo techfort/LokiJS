@@ -21,10 +21,5 @@ describe('Constraints', function () {
     var byUsername = coll.by('username');
     expect(byUsername('jack').name).toEqual('Jack');
 
-    var joe = coll.get(1);
-    joe.username = 'jack';
-    coll.update(joe);
-    expect(coll.get(1).username).toEqual('joe');
-
   });
-})
+});

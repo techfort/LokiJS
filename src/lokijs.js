@@ -2898,7 +2898,6 @@
      * Update method
      */
     Collection.prototype.update = function (doc) {
-
       if (Object.keys(this.binaryIndices).length > 0) {
         this.flagBinaryIndexesDirty();
       }
@@ -2920,12 +2919,14 @@
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
           obj,
-          position;
+          position,
+          self = this;
 
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
         this.emit('pre-update', doc);
+
         obj = arr[0];
 
         // get current position in data array
@@ -2933,6 +2934,7 @@
 
         // operate the update
         this.data[position] = doc;
+
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
@@ -3005,7 +3007,7 @@
               self.data.pop();
               throw new Error('Duplicate key for property ' + key);
             } else {
-              self.constraints.unique[key][obj[key]] = self.maxId;
+              self.constraints.unique[key][obj[key]] = obj;
             }
           }
         });
@@ -3085,6 +3087,7 @@
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
+          self.constraints.unique[key][doc[key]] = null;
           delete self.constraints.unique[key][doc[key]];
         });
         // now that we can efficiently determine the data[] position of newly added document,
@@ -3160,7 +3163,7 @@
         };
       }
       return (this.constraints.unique[field] && this.constraints.unique[field][value]) ?
-        this.get(this.constraints.unique[field][value]) : undefined;
+        this.constraints.unique[field][value] : undefined;
     };
 
     /**

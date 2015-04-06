@@ -19,16 +19,14 @@ LokiJS is ideal for the following scenarios:
 
 LokiJS supports indexing and views and achieves high-performance through maintaining a binary-index for data.
 
-example usage [here](https://github.com/techfort/LokiJS/wiki)
+## Demo
 
-Sandbox / Playground [here](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
+The following demos are available:
+- [Sandbox / Playground] (https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
+- a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/'
 
-## Current state
-
-LokiJS is at version 1.2 [Schnee]. While the roadmap is exciting, LokiJS is at the moment stable.
-As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
-
-Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
+## Wiki
+Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki)
 
 ### Main Features
 
@@ -38,6 +36,13 @@ Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dav
 4. Built-in persistence adapters, and the ability to support user-defined ones
 5. Changes API
 
+## Current state
+
+LokiJS is at version 1.2 [Schnee]. While the roadmap is exciting, LokiJS is at the moment stable.
+As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
+
+Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
+
 ## Installation
 
 For browser environments you simply need the lokijs.js file contained in src/
@@ -46,9 +51,7 @@ You can use bower to install lokijs with `bower install lokijs`
 
 For node environments you can install through `npm install lokijs`.
 
-## Demo
 
-There's a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/'
 
 ## Roadmap
 

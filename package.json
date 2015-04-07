@@ -21,7 +21,12 @@
     "in-memory"
   ],
   "scripts": {
-    "test": "karma start karma.conf.js --single-run"
+    "lint": "jshint src/**.js",
+    "test": "karma start karma.conf.js --single-run",
+    "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
+    "build:indexedAdapter": "uglifyjs src/lokiIndexedAdapter.js > build/lokiIndexedAdapter.min.js",
+    "build": "npm run build:lokijs && npm run build:indexedAdapter",
+    "clean": "rimraf build/* coverage/* node_modules"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
   "contributors": [{
@@ -35,9 +40,6 @@
   "dependencies": {},
   "devDependencies": {
     "gordian": "0.0.9",
-    "gulp": "^3.8.10",
-    "gulp-concat": "^2.4.1",
-    "gulp-uglify": "^1.0.1",
     "istanbul": "^0.3.2",
     "karma": "^0.12.31",
     "karma-cli": "0.0.4",
@@ -46,6 +48,7 @@
     "mocha": "^2.0.1",
     "phantomjs": "^1.9.16",
     "should": "^4.3.0",
-    "uglify-js": "^2.4.15"
+    "uglify-js": "^2.4.17",
+    "rimraf": "^2.3.2"
   }
 }

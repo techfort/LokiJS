@@ -2317,6 +2317,7 @@
       }
 
       if (!this.persistent) {
+        this.sortDirty = false;
         return;
       }
 

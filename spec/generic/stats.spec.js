@@ -1,9 +1,8 @@
-// var loki = require('../src/lokijs.js'),
-//   db = new loki(),
-//   gordian = require('gordian'),
-//   suite = new gordian('testEvents'),
-//   users = db.addCollection('users');
-
+ if (typeof(window) === 'undefined') {
+    var loki = require('../../src/lokijs.js');
+    var suite= require('../helpers/assert-helpers.js').suite;
+  }
+  
 describe('stats', function () {
   var db = new loki();
   var users = db.addCollection('users');

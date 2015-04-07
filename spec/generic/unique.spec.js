@@ -1,3 +1,5 @@
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+
 describe('Constraints', function () {
   var db;
   beforeEach(function () {

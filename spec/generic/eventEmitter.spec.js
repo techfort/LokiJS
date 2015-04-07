@@ -1,4 +1,5 @@
-// var loki = require('../src/lokijs.js'),
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+
 describe('eventEmitter', function () {
   var db;
 

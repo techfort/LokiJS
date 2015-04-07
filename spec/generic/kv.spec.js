@@ -1,7 +1,4 @@
-// var loki = require('../src/lokijs.js'),
-// 	gordian = require('gordian'),
-// 	suite = new gordian('testKv'),
-// 	store = new loki.KeyValueStore();
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
 
 describe('kv', function () {
   it('works', function () {

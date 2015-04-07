@@ -1,4 +1,5 @@
-// var loki = require('../src/lokijs.js'),
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+
 describe('changesApi', function () {
   it('does what it says on the tin', function () {
     var db = new loki(),

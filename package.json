@@ -22,35 +22,39 @@
   ],
   "scripts": {
     "lint": "jshint src/**.js",
-    "test": "karma start karma.conf.js --single-run",
+    "test:browser": "karma start karma.conf.js --single-run",
+    "test:node": "jasmine",
+    "test": "npm run test:browser && npm run test:node",
     "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
     "build:indexedAdapter": "uglifyjs src/lokiIndexedAdapter.js > build/lokiIndexedAdapter.min.js",
     "build": "npm run build:lokijs && npm run build:indexedAdapter",
     "clean": "rimraf build/* coverage/* node_modules"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "admin@obeliskos.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave",
+      "email": "admin@obeliskos.com"
+    }
+  ],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
   "dependencies": {},
   "devDependencies": {
-    "jshint": "^2.6.3",
-    "gordian": "0.0.9",
     "istanbul": "^0.3.2",
+    "jasmine": "^2.2.1",
+    "jshint": "^2.6.3",
     "karma": "^0.12.31",
     "karma-cli": "0.0.4",
+    "karma-coverage": "^0.2.7",
     "karma-jasmine": "^0.3.5",
     "karma-phantomjs-launcher": "^0.1.4",
-    "karma-coverage": "^0.2.7",
     "mocha": "^2.0.1",
     "phantomjs": "^1.9.16",
+    "rimraf": "^2.3.2",
     "should": "^4.3.0",
-    "uglify-js": "^2.4.17",
-    "rimraf": "^2.3.2"
+    "uglify-js": "^2.4.17"
   }
 }

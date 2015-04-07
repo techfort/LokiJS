@@ -16,8 +16,9 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'src/lokijs.js',
-      'tests/helper.js',
-      'tests/*.js'
+      'spec/helpers/*.js',
+      'spec/generic/*.js',
+      'spec/browser/*.js'
     ],
 
 

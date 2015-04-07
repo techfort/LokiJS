@@ -1,3 +1,4 @@
+console.log("loading helpers");
 var suite = {
   assertEqual: function(message, actual, expected) {
     expect(actual).toEqual(expected);
@@ -17,5 +18,12 @@ var suite = {
 
   assertThrows: function(message, fn) {
     expect(fn).toThrow();
+  }
+};
+
+// required for node testing but forbidden on browser testing
+if (typeof(window) === 'undefined'){
+  module.exports = {
+    suite: suite
   }
 }

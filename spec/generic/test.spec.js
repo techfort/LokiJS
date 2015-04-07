@@ -1,7 +1,8 @@
-// to be run in node
-// var gordian = require('gordian'),
-// suite = new gordian('LokiTests'),
-// loki = require('../src/lokijs.js'),
+if (typeof(window) === 'undefined') {
+  var loki = require('../../src/lokijs.js');
+  var suite= require('../helpers/assert-helpers.js').suite;
+}
+
 describe('loki', function () {
     var db,
       users,

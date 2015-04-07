@@ -1,8 +1,4 @@
-// var loki = require('../src/lokijs.js'),
-//   db = new loki(),
-//   gordian = require('gordian'),
-//   suite = new gordian('testEvents'),
-//   users = db.addCollection('users');
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
 
 describe('remove', function () {
   it('removes', function () {

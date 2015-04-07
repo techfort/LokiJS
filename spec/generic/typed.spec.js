@@ -1,9 +1,5 @@
-// var loki = require('../src/lokijs.js'),
-//   db,
-//   users,
-//   gordian = require('gordian'),
-//   suite = new gordian('testTyped');
-
+if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+  
 describe('typed', function () {
   it('works', function () {
     var db = new loki('test.json');

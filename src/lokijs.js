@@ -2927,7 +2927,14 @@
           throw new Error('Trying to update a document not in collection.');
         }
         this.emit('pre-update', doc);
-
+        // ---- WIP -----
+        /*
+        Object.keys(this.constraints.unique).forEach(function (key) {
+          if (self.constraints.unique[key][doc[key]] !== arr[0]) {
+            arr[0][key] = ??
+          }
+        });
+        */
         obj = arr[0];
 
         // get current position in data array

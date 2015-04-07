@@ -1,11 +1,11 @@
-var loki = require('../src/lokijs.js'),
-	db = new loki('perftest'),
+// var loki = require('../src/lokijs.js'),
+var db = new loki('perftest'),
     samplecoll = null,
     arraySize = 5000,			// how large of a dataset to generate
     totalIterations = 20000,	// how many times we search it
     results = [],
 	getIterations = 2000000;	// get is crazy fast due to binary search so this needs separate scale
-  
+
 function genRandomVal()
 {
     var text = "";
@@ -19,47 +19,48 @@ function genRandomVal()
 
 // in addition to the loki id we will create a key of our own
 // (customId) which is number from 1- totalIterations
-// we will later perform find() queries against customId with and 
+// we will later perform find() queries against customId with and
 // without an index
 
 function initializeDB() {
 	db = new loki('perftest');
-  
+
 	var start, end, totalTime;
 	var totalTimes = [];
 	var totalMS = 0.0;
 
-	samplecoll = db.addCollection('samplecoll');  
+	samplecoll = db.addCollection('samplecoll');
   /*
     {
       asyncListeners: true,
       disableChangesApi: true,
       transactional: false,
-      clone: false 
+      clone: false
     }
-  ); 
+  );
   */
-    
+
 	for (var idx=0; idx < arraySize; idx++) {
    	var v1 = genRandomVal();
     var v2 = genRandomVal();
-    
-		start = process.hrtime();
-    	samplecoll.insert({ 
-			customId: idx, 
-			val: v1, 
-			val2: v2, 
+
+		// start = process.hrtime();
+    start = performance.now();
+    	samplecoll.insert({
+			customId: idx,
+			val: v1,
+			val2: v2,
 			val3: "more data 1234567890"
 		});
-		end = process.hrtime(start);
- 		totalTimes.push(end);
+		end = performance.now() - start;
+ 		totalTimes.push([0, end * 1e6]);
    }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	
-    
+
+
 	//var totalMS = end[0] * 1e3 + end[1]/1e6;
 	totalMS = totalMS.toFixed(2);
 	var rate = arraySize * 1000 / totalMS;
@@ -74,12 +75,12 @@ function initializeDB() {
  */
 function initializeWithEval() {
 	var dbTest = new loki('perfInsertWithEval');
-  
+
 	var start, end, totalTime;
 	var totalTimes = [];
 	var totalMS = 0.0;
 
-	var coll = dbTest.addCollection('samplecoll', 
+	var coll = dbTest.addCollection('samplecoll',
     {
       indices: ['customId'],
       asyncListeners: false,
@@ -88,25 +89,27 @@ function initializeWithEval() {
       clone: false
     }
   );
-  
+
   var dv = coll.addDynamicView('test');
   dv.applyFind({'customId': {'$lt': arraySize/4 }});
-    
+
 	for (var idx=0; idx < arraySize; idx++) {
     var v1 = genRandomVal();
     var v2 = genRandomVal();
-    
-		start = process.hrtime();
-   	coll.insert({ 
-			customId: idx, 
-			val: v1, 
-			val2: v2, 
+
+		// start = process.hrtime();
+    start = performance.now();
+   	coll.insert({
+			customId: idx,
+			val: v1,
+			val2: v2,
 			val3: "more data 1234567890"
 		});
-		end = process.hrtime(start);
- 		totalTimes.push(end);
+		// end = process.hrtime(start);
+    end = performance.now() - start;
+ 		totalTimes.push([0, end * 1e6]);
    }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
@@ -121,20 +124,22 @@ function testperfGet() {
 	var start, end;
 	var totalTimes = [];
 	var totalMS = 0.0;
-	
+
 	for (var idx=0; idx < getIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
-        
-		start = process.hrtime();
+
+		// start = process.hrtime();
+    start = performance.now();
         var results = samplecoll.get(customidx);
-		end = process.hrtime(start);
-		totalTimes.push(end);
+		// end = process.hrtime(start);
+    end = performance.now() - start;
+		totalTimes.push([0, end * 1e6]);
     }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	
+
 	totalMS = totalMS.toFixed(2);
 	var rate = getIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
@@ -150,20 +155,22 @@ function testperfFind(multiplier) {
 	if (typeof(multiplier) != "undefined") {
 		loopIterations = loopIterations * multiplier;
 	}
-	
+
 	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
-        
-		start = process.hrtime();
+
+		// start = process.hrtime();
+    start = performance.now();
         var results = samplecoll.find({ 'customId': customidx });
-		end = process.hrtime(start);
-		totalTimes.push(end);
+		// end = process.hrtime(start);
+    end = performance.now() - start;
+		totalTimes.push([0, end * 1e6]);
     }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	
+
 	totalMS = totalMS.toFixed(2);
 	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
@@ -179,20 +186,22 @@ function testperfRS(multiplier) {
 	if (typeof(multiplier) != "undefined") {
 		loopIterations = loopIterations * multiplier;
 	}
-	
+
 	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
-        
-		start = process.hrtime();
+
+		// start = process.hrtime();
+    start = performance.now();
         var results = samplecoll.chain().find({ 'customId': customidx }).data();
-		end = process.hrtime(start)
-		totalTimes.push(end);
+		// end = process.hrtime(start)
+    end = performance.now() - start;
+		totalTimes.push([0, end * 1e6]);
     }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 	}
-	
+
 	totalMS = totalMS.toFixed(2);
 	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
@@ -206,43 +215,47 @@ function testperfDV(multiplier) {
 	var totalTimes2 = [];
 	var totalMS = 0;
 	var totalMS2 = 0;
-    
+
 	var loopIterations = totalIterations;
 	if (typeof(multiplier) != "undefined") {
 		loopIterations = loopIterations * multiplier;
 	}
-	
+
 	for (var idx=0; idx < loopIterations; idx++) {
     	var customidx = Math.floor(Math.random() * arraySize) + 1;
-       
-		start = process.hrtime();
+
+		// start = process.hrtime();
+    start = performance.now();
 		var dv = samplecoll.addDynamicView("perfview");
         dv.applyFind({ 'customId': customidx });
         var results = dv.data();
-		end = process.hrtime(start);
-		totalTimes.push(end);
-      
+		// end = process.hrtime(start);
+    end = performance.now() - start;
+		totalTimes.push([0, end * 1e6]);
+
       	// test speed of repeated query on an already set up dynamicview
-      	start2 = process.hrtime();
+      	// start2 = process.hrtime();
+        start2 = performance.now();
         var results = dv.data();
-        end2 = process.hrtime(start2);
-		totalTimes2.push(end2);
-        
+        // end2 = process.hrtime(start2);
+        end2 = performance.now() - start2;
+		totalTimes2.push([0, end2 * 1e6]);
+
         samplecoll.removeDynamicView("perfview");
     }
-    
+
 	for(var idx=0; idx < totalTimes.length; idx++) {
 		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
 		totalMS2 += totalTimes2[idx][0] * 1e3 + totalTimes2[idx][1]/1e6;
 	}
-	
+
 	totalMS = totalMS.toFixed(2);
 	totalMS2 = totalMS2.toFixed(2);
 	var rate = loopIterations * 1000 / totalMS;
 	var rate2 = loopIterations * 1000 / totalMS2;
 	rate = rate.toFixed(2);
 	rate2 = rate2.toFixed(2);
-	
+
 	console.log("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 	console.log("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s) " + loopIterations + " iterations");
 }

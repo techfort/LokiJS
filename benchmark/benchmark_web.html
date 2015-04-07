@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <script type="text/javascript" src="../src/lokijs.js"></script>
+  <script type="text/javascript" src="./benchmark_web.js"></script>
+</head>
+<body>
+  <h2>Loki browser benchmark</h2>
+  
+  <p>Practical browser benchmark to guage performance across 
+  various browser environments.  Chrome is by far the fastest browser 
+  environment for loki.</p>
+  
+  <p><b>Close console (if visible) and press start. Results will display in page when done.</b></p>
+  <br/>
+  <button onclick="start()">Start</button>
+  <p id="waitMessage" style="display:none"><i>This may take a minute please wait...</i></p>
+  <br/>
+
+  <div id="output"></div>
+  
+  <script>
+    function start() {
+      document.getElementById("waitMessage").style.display = "";
+
+      setTimeout(function() {
+        startBenchmark(document.getElementById("output"));
+      }, 100);
+    }
+  </script>
+</body>
+</html>

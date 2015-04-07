@@ -4,7 +4,10 @@ var db = new loki('perftest'),
     arraySize = 5000,			// how large of a dataset to generate
     totalIterations = 20000,	// how many times we search it
     results = [],
-	getIterations = 2000000;	// get is crazy fast due to binary search so this needs separate scale
+    getIterations = 2000000;	// get is crazy fast due to binary search so this needs separate scale
+
+var domElement = null;
+    
 
 function genRandomVal()
 {
@@ -65,7 +68,7 @@ function initializeDB() {
 	totalMS = totalMS.toFixed(2);
 	var rate = arraySize * 1000 / totalMS;
 	rate = rate.toFixed(2);
-    console.log("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
+    trace("load (insert) : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 /**
@@ -117,7 +120,7 @@ function initializeWithEval() {
 	totalMS = totalMS.toFixed(2);
 	var rate = arraySize * 1000 / totalMS;
 	rate = rate.toFixed(2);
-    console.log("load (insert with dynamic view registered) : " + totalMS + "ms (" + rate + ") ops/s");
+    trace("load (insert with dynamic view registered) : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 function testperfGet() {
@@ -143,7 +146,7 @@ function testperfGet() {
 	totalMS = totalMS.toFixed(2);
 	var rate = getIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
-	console.log("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
+	trace("coll.get() : " + totalMS + "ms (" + rate + ") ops/s");
 }
 
 function testperfFind(multiplier) {
@@ -174,7 +177,7 @@ function testperfFind(multiplier) {
 	totalMS = totalMS.toFixed(2);
 	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
-	console.log("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+	trace("coll.find() : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function testperfRS(multiplier) {
@@ -205,7 +208,7 @@ function testperfRS(multiplier) {
 	totalMS = totalMS.toFixed(2);
 	var rate = loopIterations * 1000 / totalMS;
 	rate = rate.toFixed(2);
-	console.log("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+	trace("resultset chained find() :  " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function testperfDV(multiplier) {
@@ -256,24 +259,87 @@ function testperfDV(multiplier) {
 	rate = rate.toFixed(2);
 	rate2 = rate2.toFixed(2);
 
-	console.log("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
-	console.log("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s) " + loopIterations + " iterations");
+	trace("loki dynamic view first find : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+	trace("loki dynamic view subsequent finds : " + totalMS2 + "ms (" + rate2 + " ops/s) " + loopIterations + " iterations");
 }
 
-initializeDB();
-//initializeWithEval();
+function trace(string) 
+{
+    domElement.innerHTML = domElement.innerHTML + string + "<br/>";
+}
 
-testperfGet();	// get bechmark on id field
+// async yielding after each step to avoid browser warnings of long running scripts
+function runStep(step) 
+{
+  switch (step) {
+    case 1 : 
+      trace("-- Beginning benchmark --");
+      initializeDB();
+      setTimeout(function() { runStep(2) }, 100);
+      break;
+    case 2 : 
+      testperfGet();
+      setTimeout(function() { runStep(3) }, 100);
+      trace("");
+      trace("-- Benchmarking query on non-indexed column --");
+      break;
+    case 3 : 
+      testperfFind();	// find benchmark on unindexed customid field
+      setTimeout(function() { runStep(4) }, 100);
+      break;
+    case 4 : 
+      testperfRS();	// resultset find benchmark on unindexed customid field
+      setTimeout(function() { runStep(5) }, 100);
+      break;
+    case 5 : 
+      testperfDV();
+      setTimeout(function() { runStep(6) }, 100);
+      trace("");
+      trace("-- Adding Binary Index to query column and repeating benchmarks --");
+      break;
+    case 6 : 
+      samplecoll.ensureIndex("customId");
+      setTimeout(function() { runStep(7) }, 100);
+      break;
+    case 7 : 
+      testperfFind(20);
+      setTimeout(function() { runStep(8) }, 100);
+      break;
+    case 8 : 
+      testperfRS(15);
+      setTimeout(function() { runStep(9) }, 100);
+      break;
+    case 9 : 
+      testperfDV(15);
+      trace("");
+      trace("done.");
+      break;
+  }
+}
 
-console.log("");
-console.log("-- Benchmarking query on NON-INDEXED column --");
-testperfFind();	// find benchmark on unindexed customid field
-testperfRS();	// resultset find benchmark on unindexed customid field
-testperfDV();	// dataview find benchmarks on unindexed customid field
+function startBenchmark(divElement) 
+{
+  domElement = divElement;
 
-console.log("");
-console.log("-- ADDING BINARY INDEX to query column and repeating benchmarks --");
-samplecoll.ensureIndex("customId");
-testperfFind(20);
-testperfRS(15);
-testperfDV(15);
+  // async yielding after each step to avoid browser warnings of long running scripts
+  runStep(1);
+  
+  /*
+  initializeDB();
+
+  testperfGet();	// get bechmark on id field
+
+  trace("-- Benchmarking query on NON-INDEXED column --");
+
+  testperfFind();	// find benchmark on unindexed customid field
+  testperfRS();	// resultset find benchmark on unindexed customid field
+  testperfDV();	// dataview find benchmarks on unindexed customid field
+
+  trace("");
+  trace("-- ADDING BINARY INDEX to query column and repeating benchmarks --");
+  samplecoll.ensureIndex("customId");
+  testperfFind(20);
+  testperfRS(15);
+  testperfDV(15);
+  */
+}

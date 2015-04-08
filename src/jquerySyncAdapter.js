@@ -25,7 +25,7 @@
 
     function JquerySyncAdapterError() {}
 
-    JquerySyncAdapterError.prototype = new Error;
+    JquerySyncAdapterError.prototype = new Error();
     if (!options) {
       throw new JquerySyncAdapterError('No options configured in JquerySyncAdapter');
     }

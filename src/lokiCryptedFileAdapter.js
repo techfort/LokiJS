@@ -1,8 +1,9 @@
 /**
- * Loki CryptedFile Adapter (need to include this script to use it)
+ * @file lokiCryptedFileAdapter.js 
  * @author Hans Klunder <Hans.Klunder@bigfoot.com>
- *
- *
+ */
+ 
+ /*
  * The default Loki File adapter uses plain text JSON files. This adapter crypts the database string and wraps the result
  * in a JSON including enough info to be able to decrypt it (except for the 'secret' of course !)
  *
@@ -12,38 +13,16 @@
  * not using the krypt module to avoid third party dependencies
  */
 
-/*
-  Examples :
-  // SAVE : will save database in 'test.crypted'
-	var cryptedFileAdapter = require('./lokiCryptedFileAdapter');
-	cryptedFileAdapter.setSecret('mySecret'); // you should change 'mySecret' to something supplied by the user
-	var loki=require('lokijs');
-	var db = new loki('test.crypted',{ adapter: cryptedFileAdapter }); //you can use any name, not just '*.crypted'
-	var coll = db.addCollection('testColl');
-	coll.insert({test: 'val'});
-	db.saveDatabase();  // could pass callback if needed for async complete
-	
-  // LOAD
-    var cryptedFileAdapter = require('./lokiCryptedFileAdapter');
-	cryptedFileAdapter.setSecret('mySecret'); // you should change 'mySecret' to something supplied by the user
-    var db = new loki('test.crypted', { adapter: cryptedFileAdapter }); //you can use any name, not just '*.crypted'
-    db.loadDatabase(function(result) {
-		console.log('done');
-	});
-  
-  // if you have the krypt module installed you can use:
-	krypt --decrypt test.crypted --secret mySecret
-  to view the contents of the database
-	
+
+/**
+ * require libs
+ * @ignore 
 */
-
-
-
 var fs = require('fs');
 var cryptoLib = require('crypto');
 var isError = require('util').isError;
 
-/**
+/*
  * sensible defaults
  */
 var CIPHER = 'aes-256-cbc',
@@ -53,9 +32,9 @@ var CIPHER = 'aes-256-cbc',
 
 /**
  * encrypt() - encrypt a string
- *
- * @param {string} the serialized JSON object to decrypt.
- * @param {string} the secret to use for encryption
+ * @private
+ * @param {string} input - the serialized JSON object to decrypt.
+ * @param {string} secret - the secret to use for encryption
  */
 function encrypt(input, secret) {
   if (!secret) {
@@ -92,9 +71,9 @@ function encrypt(input, secret) {
 
 /**
  * decrypt() - Decrypt a serialized JSON object
- *
- * @param {string} the serialized JSON object to decrypt.
- * @param {string} the secret to use for decryption
+ * @private
+ * @param {string} input - the serialized JSON object to decrypt.
+ * @param {string} secret - the secret to use for decryption
  */
 function decrypt(input, secret) {
   // Ensure we have something to decrypt
@@ -139,10 +118,10 @@ function decrypt(input, secret) {
 }
 
 /**
- * constructor
- *
+ * The constructor is automatically called on `require` , see examples below
+ * @constructor
  */
-function lokiCryptedFileAdapter() {};
+function lokiCryptedFileAdapter() {}
 
 /**
  * setSecret() - set the secret to be used during encryption and decryption
@@ -155,6 +134,15 @@ lokiCryptedFileAdapter.prototype.setSecret = function setSecret(secret) {
 
 /**
  * loadDatabase() - Retrieves a serialized db string from the catalog.
+ * 
+ *  @example
+  // LOAD
+    var cryptedFileAdapter = require('./lokiCryptedFileAdapter');
+	cryptedFileAdapter.setSecret('mySecret'); // you should change 'mySecret' to something supplied by the user
+    var db = new loki('test.crypted', { adapter: cryptedFileAdapter }); //you can use any name, not just '*.crypted'
+    db.loadDatabase(function(result) {
+		console.log('done');
+	});
  *
  * @param {string} dbname - the name of the database to retrieve.
  * @param {function} callback - callback should accept string param containing serialized db string.
@@ -170,6 +158,22 @@ lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, ca
 };
 
 /**
+ *
+ @example
+  // SAVE : will save database in 'test.crypted'
+	var cryptedFileAdapter = require('./lokiCryptedFileAdapter');
+	cryptedFileAdapter.setSecret('mySecret'); // you should change 'mySecret' to something supplied by the user
+	var loki=require('lokijs');
+	var db = new loki('test.crypted',{ adapter: cryptedFileAdapter }); //you can use any name, not just '*.crypted'
+	var coll = db.addCollection('testColl');
+	coll.insert({test: 'val'});
+	db.saveDatabase();  // could pass callback if needed for async complete
+	
+	 @example
+  // if you have the krypt module installed you can use:
+	krypt --decrypt test.crypted --secret mySecret
+  to view the contents of the database
+	
  * saveDatabase() - Saves a serialized db to the catalog.
  *
  * @param {string} dbname - the name to give the serialized database within the catalog.
@@ -189,5 +193,5 @@ lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, db
   }
 };
 
-module.exports = new lokiCryptedFileAdapter;
+module.exports = new lokiCryptedFileAdapter();
 exports.lokiCryptedFileAdapter = lokiCryptedFileAdapter;

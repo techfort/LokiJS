@@ -1931,8 +1931,8 @@
       //construct a lookup table
 
       for (var i = 0; i < rightDataLength; i++) {
-        key = rightKeyisFunction ? rightJoinKey(rightData[i]) : rightData[i][rightJoinKey]
-        joinMap[key] = rightData[i]
+        key = rightKeyisFunction ? rightJoinKey(rightData[i]) : rightData[i][rightJoinKey];
+        joinMap[key] = rightData[i];
       }
 
       if (!mapFun) {
@@ -1940,14 +1940,14 @@
           return {
             left: left,
             right: right
-          }
-        }
+          };
+        };
       }
 
       //Run map function over each object in the resultset
       for (var i = 0; i < leftDataLength; i++) {
         key = leftKeyisFunction ? leftJoinKey(leftData[i]) : leftData[i][leftJoinKey];
-        result.push(mapFun(leftData[i], joinMap[key] || {}))
+        result.push(mapFun(leftData[i], joinMap[key] || {}));
       }
 
       //return return a new resultset with no filters
@@ -1960,7 +1960,7 @@
     };
 
     Resultset.prototype.map = function (mapFun) {
-      var data = this.data().map(mapFun)
+      var data = this.data().map(mapFun);
         //return return a new resultset with no filters
       this.collection = new Collection('mappedData');
       this.collection.insert(data);
@@ -1968,7 +1968,7 @@
       this.filterInitialized = false;
 
       return this;
-    }
+    };
 
     /**
      * DynamicView class is a versatile 'live' view class which can have filters and sorts applied.

@@ -1,6 +1,7 @@
 var loki = require('../src/lokijs.js'),
 	db = new loki('perftest'),
     samplecoll = null,
+    uniquecoll = null,
     arraySize = 5000,			// how large of a dataset to generate
     totalIterations = 20000,	// how many times we search it
     results = [],
@@ -68,6 +69,29 @@ function initializeDB() {
 }
 
 /**
+ * initializeUnique : to support benchUniquePerf, we will set up another collection
+ * where our customId is enforced as 'unique' using unique index feature of loki.
+ */
+function initializeUnique()
+{
+  uniquecoll = db.addCollection('uniquecoll', {
+    unique: ['customId']
+  });  
+
+	for (var idx=0; idx < arraySize; idx++) {
+    var v1 = genRandomVal();
+    var v2 = genRandomVal();
+    
+    uniquecoll.insert({ 
+      customId: (arraySize - idx), 
+      val: v1, 
+      val2: v2, 
+      val3: "more data 1234567890"
+    });
+  }
+}
+
+/**
  * initializeWithEval : repeat of insert bench with a dynamic view registered.
  *    All inserts will be passed into the view's evaluateDocument() method.
  *    This test is an attempt to gauge the level of impact of that overhead.
@@ -116,6 +140,31 @@ function initializeWithEval() {
 	rate = rate.toFixed(2);
     console.log("load (insert with dynamic view registered) : " + totalMS + "ms (" + rate + ") ops/s");
 }
+
+function benchUniquePerf() 
+{
+	var start, end;
+	var totalTimes = [];
+	var totalMS = 0.0;
+	
+	for (var idx=0; idx < getIterations; idx++) {
+    	var customidx = Math.floor(Math.random() * arraySize) + 1;
+        
+		start = process.hrtime();
+    var results = uniquecoll.by('customidx', customidx);
+		end = process.hrtime(start);
+		totalTimes.push(end);
+    }
+    
+	for(var idx=0; idx < totalTimes.length; idx++) {
+		totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1]/1e6;
+	}
+	
+	totalMS = totalMS.toFixed(2);
+	var rate = getIterations * 1000 / totalMS;
+	rate = rate.toFixed(2);
+	console.log("coll.by() : " + totalMS + "ms (" + rate + ") ops/s");
+};
 
 function testperfGet() {
 	var start, end;
@@ -249,8 +298,10 @@ function testperfDV(multiplier) {
 
 initializeDB();
 //initializeWithEval();
+initializeUnique();
 
 testperfGet();	// get bechmark on id field
+benchUniquePerf();
 
 console.log("");
 console.log("-- Benchmarking query on NON-INDEXED column --");

@@ -23,7 +23,7 @@
   "scripts": {
     "lint": "jshint src/**.js",
     "test:browser": "karma start karma.conf.js --single-run",
-    "test:node": "jasmine",
+    "test:node": "istanbul cover --dir coverage/nodejs jasmine",
     "test": "npm run test:browser && npm run test:node",
     "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
     "build:indexedAdapter": "uglifyjs src/lokiIndexedAdapter.js > build/lokiIndexedAdapter.min.js",
@@ -43,7 +43,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "istanbul": "^0.3.2",
+    "istanbul": "^0.3.13",
     "jasmine": "^2.2.1",
     "jshint": "^2.6.3",
     "karma": "^0.12.31",

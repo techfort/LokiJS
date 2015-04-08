@@ -84,7 +84,7 @@ var lokiIndexedAdapter = (function() {
     if (window && window.indexedDB) return true;
     
     return false;
-  }
+  };
 
   /**
    * loadDatabase() - Retrieves a serialized db string from the catalog.
@@ -123,7 +123,7 @@ var lokiIndexedAdapter = (function() {
         console.log(result.val);
       }
     });
-  }
+  };
 
   // alias
   IndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
@@ -154,7 +154,7 @@ var lokiIndexedAdapter = (function() {
     
     // set (add/update) entry to AKV database
     this.catalog.setAppKey(appName, dbname, dbstring, callback);
-  }
+  };
 
   // alias
   IndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
@@ -188,7 +188,7 @@ var lokiIndexedAdapter = (function() {
         adapter.catalog.deleteAppKey(id);
       }
     });
-  }
+  };
 
   // alias
   IndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
@@ -232,7 +232,7 @@ var lokiIndexedAdapter = (function() {
         });
       }
     });
-  }
+  };
 
   // alias
   IndexedAdapter.prototype.getKeyList = IndexedAdapter.prototype.getDatabaseList;
@@ -289,7 +289,7 @@ var lokiIndexedAdapter = (function() {
         });
       }
     });
-  }
+  };
   
   /**
    * LokiCatalog - underlying App/Key/Value catalog persistence
@@ -325,18 +325,18 @@ var lokiIndexedAdapter = (function() {
         // still supporting opening cursors on app or key alone
         objectStore.createIndex('appkey', 'appkey', {unique:true});
       }
-    }
+    };
 
     openRequest.onsuccess = function(e) {
       cat.db = e.target.result;
 
       if (typeof (callback) === 'function') callback(cat);
-    }
+    };
 
     openRequest.onerror = function(e) {
       throw e;
-    }
-  }
+    };
+  };
 
   LokiCatalog.prototype.getAppKey = function(app, key, callback) {
     var transaction = this.db.transaction(['LokiAKV'], 'readonly');
@@ -362,7 +362,7 @@ var lokiIndexedAdapter = (function() {
         else {
           console.log(lres);
         }
-      }
+      };
     })(callback);
     
     request.onerror = (function(usercallback) {
@@ -373,9 +373,9 @@ var lokiIndexedAdapter = (function() {
         else {
           throw e;
         }
-      }
+      };
     })(callback);
-  }
+  };
 
   LokiCatalog.prototype.getAppKeyById = function (id, callback, data) {
     var transaction = this.db.transaction(['LokiAKV'], 'readonly');
@@ -392,7 +392,7 @@ var lokiIndexedAdapter = (function() {
         }
       };
     })(data, callback);   
-  }
+  };
 
   LokiCatalog.prototype.setAppKey = function (app, key, val, callback) {
     var transaction = this.db.transaction(['LokiAKV'], 'readwrite');
@@ -406,13 +406,13 @@ var lokiIndexedAdapter = (function() {
     request.onsuccess = function(e) {
       var res = e.target.result;
 
-      if (res == null) {
+      if (res === null) {
         res = {
           app:app,
           key:key,
           appkey: app + ',' + key,
           val:val
-        }
+        };
       }
       else {
         res.val = val;
@@ -429,7 +429,7 @@ var lokiIndexedAdapter = (function() {
             console.error('LokiCatalog.setAppKey (set) onerror');
             console.error(request.error);
           }
-        }
+        };
 
       })(callback);
 
@@ -438,7 +438,7 @@ var lokiIndexedAdapter = (function() {
           if (typeof(usercallback) === 'function') {
             usercallback({ success: true });
           }
-        }
+        };
       })(callback);
     };
 
@@ -451,9 +451,9 @@ var lokiIndexedAdapter = (function() {
           console.error('LokiCatalog.setAppKey (get) onerror');
           console.error(request.error);
         }
-      }
+      };
     })(callback);
-  }
+  };
 
   LokiCatalog.prototype.deleteAppKey = function (id, callback) {	
     var transaction = this.db.transaction(['LokiAKV'], 'readwrite');
@@ -475,9 +475,9 @@ var lokiIndexedAdapter = (function() {
           console.error('LokiCatalog.deleteAppKey raised onerror');
           console.error(request.error);
         }
-      }
+      };
     })(callback);
-  }
+  };
 
   LokiCatalog.prototype.getAppKeys = function(app, callback) {
     var transaction = this.db.transaction(['LokiAKV'], 'readonly');
@@ -512,7 +512,7 @@ var lokiIndexedAdapter = (function() {
             console.log(data);
           }
         }
-      }
+      };
     })(localdata, callback);
 
     cursor.onerror = (function(usercallback) {
@@ -524,10 +524,10 @@ var lokiIndexedAdapter = (function() {
           console.error('LokiCatalog.getAppKeys raised onerror');
           console.error(e);
         }
-      }
+      };
     })(callback);
     
-  }
+  };
 
   // Hide 'cursoring' and return array of { id: id, key: key }
   LokiCatalog.prototype.getAllKeys = function (callback) {
@@ -555,16 +555,16 @@ var lokiIndexedAdapter = (function() {
             console.log(data);
           }
         }
-      }
+      };
     })(localdata, callback);
 
     cursor.onerror = (function(usercallback) {
       return function(e) {
         if (typeof(usercallback) === 'function') usercallback(null);
-      }
+      };
     })(callback);
 
-  }
+  };
 
   return IndexedAdapter;
 }());

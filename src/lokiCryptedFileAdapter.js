@@ -142,7 +142,7 @@ function decrypt(input, secret) {
  * constructor
  *
  */
-function lokiCryptedFileAdapter() {};
+function lokiCryptedFileAdapter() {}
 
 /**
  * setSecret() - set the secret to be used during encryption and decryption
@@ -189,5 +189,5 @@ lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, db
   }
 };
 
-module.exports = new lokiCryptedFileAdapter;
+module.exports = new lokiCryptedFileAdapter();
 exports.lokiCryptedFileAdapter = lokiCryptedFileAdapter;

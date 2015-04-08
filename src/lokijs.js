@@ -1961,7 +1961,7 @@
 
     Resultset.prototype.map = function (mapFun) {
       var data = this.data().map(mapFun);
-        //return return a new resultset with no filters
+      //return return a new resultset with no filters
       this.collection = new Collection('mappedData');
       this.collection.insert(data);
       this.filteredrows = [];
@@ -2523,13 +2523,13 @@
       // exact match and unique constraints
       if (options.hasOwnProperty('unique')) {
         options.unique.forEach(function (prop) {
-          self.constraints.unique[prop] = {};
+          self.constraints.unique[prop] = new UniqueIndex(prop);
         });
       }
 
       if (options.hasOwnProperty('exact')) {
         options.exact.forEach(function (prop) {
-          self.constraints.exact[prop] = {};
+          self.constraints.exact[prop] = new ExactIndex(prop);
         });
       }
 
@@ -2927,14 +2927,7 @@
           throw new Error('Trying to update a document not in collection.');
         }
         this.emit('pre-update', doc);
-        // ---- WIP -----
-        /*
-        Object.keys(this.constraints.unique).forEach(function (key) {
-          if (self.constraints.unique[key][doc[key]] !== arr[0]) {
-            arr[0][key] = ??
-          }
-        });
-        */
+
         obj = arr[0];
 
         // get current position in data array
@@ -3007,19 +3000,9 @@
         var found = false,
           prop,
           self = this;
-        Object.keys(self.constraints.unique).forEach(function (key) {
-          if (obj.hasOwnProperty(key)) {
-            if (self.constraints.unique[key][obj[key]]) {
-              self.emit('error', 'Duplicate key for key ' + key + ' (value ' + obj[key] +
-                ' + already in collection)');
-              self.data.pop();
-              throw new Error('Duplicate key for property ' + key);
-            } else {
-              self.constraints.unique[key][obj[key]] = obj;
-            }
-          }
+        Object.keys(this.constraints.unique).forEach(function (key) {
+          self.constraints.unique[key].set(obj);
         });
-
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
@@ -3095,8 +3078,7 @@
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key][doc[key]] = null;
-          delete self.constraints.unique[key][doc[key]];
+          self.constraints.unique[key].remove(doc);
         });
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove
@@ -3170,8 +3152,9 @@
           return self.by(field, value);
         };
       }
-      return (this.constraints.unique[field] && this.constraints.unique[field][value]) ?
-        this.constraints.unique[field][value] : undefined;
+      return (this.constraints.unique[field]) ?
+        this.constraints.unique[field].get(value) :
+        null;
     };
 
     /**
@@ -3554,6 +3537,52 @@
       get: function (key) {
         return this.values[binarySearch(this.keys, key, this.sort).index];
       }
+    };
+
+    function UniqueIndex(uniqueField) {
+      this.field = uniqueField;
+    }
+
+    UniqueIndex.prototype = {
+      keyMap: {},
+      lokiMap: {},
+      set: function (obj) {
+        if (this.keyMap[obj[this.field]]) {
+          throw new Error('Duplicate key for property ' + this.field);
+        } else {
+          this.keyMap[obj[this.field]] = obj;
+          this.lokiMap[obj.$loki] = obj[this.field];
+        }
+      },
+      get: function (key) {
+        return this.keyMap[key];
+      },
+      update: function (obj) {
+        if (this.lokiMap[obj.$loki] !== obj[this.field]) {
+          var old = this.lokiMap[obj.$loki];
+          this.put(obj);
+          this.keyMap[old] = undefined;
+        } else {
+          this.keyMap[obj[this.field]] = obj;
+        }
+      },
+      remove: function (key) {
+        var obj = this.keyMap[key];
+        this.keyMap[key] = undefined;
+        this.lokiMap[obj.$loki] = undefined;
+      },
+      clear: function () {
+        this.keyMap = {};
+        this.lokiMap = {};
+      }
+    };
+
+    function ExactIndex(exactField) {
+      this.field = exactField;
+    }
+
+    ExactIndex.prototype = {
+
     };
 
     Loki.Collection = Collection;

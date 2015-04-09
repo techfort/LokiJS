@@ -2929,7 +2929,9 @@
         this.emit('pre-update', doc);
 
         obj = arr[0];
-
+        Object.keys(this.constraints.unique).forEach(function (key) {
+          self.constraints.unique[key].update(obj);
+        });
         // get current position in data array
         position = arr[1];
 
@@ -3560,7 +3562,8 @@
       update: function (obj) {
         if (this.lokiMap[obj.$loki] !== obj[this.field]) {
           var old = this.lokiMap[obj.$loki];
-          this.put(obj);
+          this.set(obj);
+          // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
           this.keyMap[old] = undefined;
         } else {
           this.keyMap[obj[this.field]] = obj;

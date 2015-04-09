@@ -24,5 +24,11 @@ describe('Constraints', function () {
     var byUsername = coll.by('username');
     expect(byUsername('jack').name).toEqual('Jack');
 
+    var joe = coll.by('username', 'joe');
+    joe.username = 'jack';
+    expect(function () {
+      coll.update(joe)
+    }).toThrow(new Error('Duplicate key for property username'));
+
   });
 });

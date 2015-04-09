@@ -3095,7 +3095,7 @@
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        this.emit('delete');
+        this.emit('delete', arr[0]);
 
       } catch (err) {
         this.rollback();

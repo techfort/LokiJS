@@ -31,12 +31,10 @@
     "clean": "rimraf build/* coverage/* node_modules"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [
-    {
-      "name": "Dave",
-      "email": "admin@obeliskos.com"
-    }
-  ],
+  "contributors": [{
+    "name": "Dave",
+    "email": "admin@obeliskos.com"
+  }],
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"

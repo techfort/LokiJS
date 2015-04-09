@@ -1,7 +1,7 @@
 // Karma configuration
 // Generated on Wed Mar 25 2015 21:28:22 GMT+0000 (GMT)
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -16,15 +16,14 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'src/lokijs.js',
-      'spec/helpers/*.js',
+      'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',
       'spec/browser/*.js'
     ],
 
 
     // list of files to exclude
-    exclude: [
-    ],
+    exclude: [],
 
 
     // preprocess matching files before serving them to the browser
@@ -42,11 +41,11 @@ module.exports = function(config) {
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
     // coverage reporter generates the coverage
     reporters: ['dots', 'coverage'],
-    
+
     // optionally, configure the reporter
     coverageReporter: {
-      type : 'html',
-      dir : 'coverage/'
+      type: 'html',
+      dir: 'coverage/'
     },
 
 

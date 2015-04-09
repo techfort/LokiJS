@@ -30,5 +30,8 @@ describe('Constraints', function () {
       coll.update(joe)
     }).toThrow(new Error('Duplicate key for property username'));
 
+    joe.username = 'jim';
+    coll.update(joe);
+    expect(byUsername('jim')).toEqual(joe);
   });
 });

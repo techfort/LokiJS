@@ -1707,9 +1707,9 @@
           } else {
             // search by index
             t = this.collection.data;
-            var seg = this.calculateRange(operator, property, value, this);
+            var segm = this.calculateRange(operator, property, value, this);
 
-            for (var idx = seg[0]; idx <= seg[1]; idx++) {
+            for (var idx = segm[0]; idx <= segm[1]; idx++) {
               result.push(index.values[idx]);
             }
 
@@ -1760,11 +1760,11 @@
         else {
           // If the filteredrows[] is already initialized, use it
           if (this.filterInitialized) {
-            var i = this.filteredrows.length;
+            var j = this.filteredrows.length; 
 
-            while (i--) {
-              if (viewFunction(this.collection.data[this.filteredrows[i]]) === true) {
-                result.push(this.filteredrows[i]);
+            while (j--) {
+              if (viewFunction(this.collection.data[this.filteredrows[j]]) === true) {
+                result.push(this.filteredrows[j]);
               }
             }
 
@@ -1774,11 +1774,11 @@
           }
           // otherwise this is initial chained op, work against data, push into filteredrows[]
           else {
-            var i = this.collection.data.length;
+            var k = this.collection.data.length;
 
-            while (i--) {
-              if (viewFunction(this.collection.data[i]) === true) {
-                result.push(i);
+            while (k--) {
+              if (viewFunction(this.collection.data[k]) === true) {
+                result.push(k);
               }
             }
 
@@ -1945,9 +1945,9 @@
       }
 
       //Run map function over each object in the resultset
-      for (var i = 0; i < leftDataLength; i++) {
-        key = leftKeyisFunction ? leftJoinKey(leftData[i]) : leftData[i][leftJoinKey];
-        result.push(mapFun(leftData[i], joinMap[key] || {}));
+      for (var j = 0; j < leftDataLength; j++) {
+        key = leftKeyisFunction ? leftJoinKey(leftData[j]) : leftData[j][leftJoinKey];
+        result.push(mapFun(leftData[j], joinMap[key] || {}));
       }
 
       //return return a new resultset with no filters
@@ -2963,8 +2963,7 @@
      * Add object to collection
      */
     Collection.prototype.add = function (obj) {
-      var i,
-        dvlen = this.DynamicViews.length;
+      var dvlen = this.DynamicViews.length;
 
       // if parameter isn't object exit with throw
       if ('object' !== typeof obj) {
@@ -2988,7 +2987,6 @@
       try {
         this.startTransaction();
         this.maxId++;
-        var i;
 
         if (isNaN(this.maxId)) {
           this.maxId = (this.data[this.data.length - 1].$loki + 1);
@@ -2999,16 +2997,15 @@
 
         // add the object
         this.data.push(obj);
-        var found = false,
-          prop,
-          self = this;
+        
+        var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
           self.constraints.unique[key].set(obj);
         });
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-        for (i = 0; i < dvlen; i++) {
+        for (var i = 0; i < dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(this.data.length - 1);
         }
 
@@ -3326,7 +3323,7 @@
           index: 0,
           value: undefined
         },
-        max = undefined;
+        max;
 
       for (i; i < len; i += 1) {
         if (max !== undefined) {
@@ -3351,7 +3348,7 @@
           index: 0,
           value: undefined
         },
-        min = undefined;
+        min;
 
       for (i; i < len; i += 1) {
         if (min !== undefined) {
@@ -3392,7 +3389,7 @@
           dict[obj] = 1;
         }
       });
-      var max = undefined,
+      var max,
         prop, mode;
       for (prop in dict) {
         if (max) {
@@ -3629,11 +3626,11 @@
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
       },
       bs: function () {
-        return BSonSort(this.sort);
+        return new BSonSort(this.sort);
       },
       // and allow override of the default sort
       setSort: function (fun) {
-        this.bs = BSonSort(fun);
+        this.bs = new BSonSort(fun);
       },
       // add the value you want returned  to the key in the index  
       set: function (key, value) {

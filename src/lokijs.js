@@ -1760,7 +1760,7 @@
         else {
           // If the filteredrows[] is already initialized, use it
           if (this.filterInitialized) {
-            var j = this.filteredrows.length; 
+            var j = this.filteredrows.length;
 
             while (j--) {
               if (viewFunction(this.collection.data[this.filteredrows[j]]) === true) {
@@ -2997,7 +2997,7 @@
 
         // add the object
         this.data.push(obj);
-        
+
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
           self.constraints.unique[key].set(obj);
@@ -3145,6 +3145,7 @@
         return this.data[min];
       }
       return null;
+
     };
 
     Collection.prototype.by = function (field, value) {
@@ -3557,6 +3558,9 @@
       },
       get: function (key) {
         return this.keyMap[key];
+      },
+      byId: function (id) {
+        return this.keyMap[this.lokiMap[id]];
       },
       update: function (obj) {
         if (this.lokiMap[obj.$loki] !== obj[this.field]) {

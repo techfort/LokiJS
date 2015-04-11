@@ -33,5 +33,6 @@ describe('Constraints', function () {
     joe.username = 'jim';
     coll.update(joe);
     expect(byUsername('jim')).toEqual(joe);
+
   });
 });

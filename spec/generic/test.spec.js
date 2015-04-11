@@ -61,6 +61,37 @@ describe('loki', function () {
           '$regex': /o/
         }
       }).length).toEqual(2);
+      
+      // $contains
+      expect(users.find({
+        'name': {
+          '$contains': "jo"
+        }
+      }).length).toEqual(2);
+      
+      // $contains using array element
+      expect(users.find({
+        'name': {
+          '$contains': ["jo"]
+        }
+      }).length).toEqual(2);
+      
+   
+      
+        // $contains any with one value
+       expect(users.find({
+        'name': {
+          '$containsAny': 'nas'
+        }
+      }).length).toEqual(1);
+    
+      // $contains any with multiple values
+       expect(users.find({
+        'name': {
+          '$containsAny': ['nas','dave']
+        }
+      }).length).toEqual(2);
+      
 
       // insert() : try inserting existing document (should fail), try adding doc with legacy id column
       var collectionLength = users.data.length;

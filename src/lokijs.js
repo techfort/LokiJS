@@ -3096,11 +3096,15 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
         this.emit('delete', arr[0]);
+        delete doc.$loki;
+        delete doc.meta;
+        return doc;
 
       } catch (err) {
         this.rollback();
         console.error(err.message);
         this.emit('error', err);
+        return null;
       }
     };
 

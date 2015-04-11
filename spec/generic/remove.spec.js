@@ -1,4 +1,4 @@
-if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+if (typeof (window) === 'undefined') var loki = require('../../src/lokijs.js');
 
 describe('remove', function () {
   it('removes', function () {
@@ -50,5 +50,20 @@ describe('remove', function () {
     users.removeDataOnly();
     expect(users.data.length).toEqual(0);
     expect(!!users.getDynamicView('testview')).toEqual(true);
+
+
+    var foo = {
+      name: 'foo',
+      age: 42
+    };
+    users.insert(foo);
+    expect(users.data.length).toEqual(1);
+    var bar = users.remove(foo);
+    expect(users.data.length).toEqual(0);
+    // test that $loki and meta properties have been removed correctly to allow object re-insertion
+    expect(!bar.$loki).toEqual(true);
+    expect(!bar.meta).toEqual(true);
+    users.insert(bar);
+    expect(users.data.length).toEqual(1);
   });
 });

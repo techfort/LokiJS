@@ -3296,6 +3296,27 @@
       return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
     };
 
+    Collection.prototype.stages = {};
+
+    Collection.prototype.getStage = function (name) {
+      if (!this.stages[name]) {
+        this.stages[name] = {};
+      }
+      return this.stages[name];
+    };
+
+    Collection.prototype.stage = function (stageName, obj) {
+      var copy = JSON.parse(JSON.stringify(obj));
+      this.getStage(stageName)[obj.$loki] = obj;
+    };
+
+    Collection.prototype.commit = function (stageName, message) {
+      if (this.getStage(stageName)) {
+
+      } else {
+        throw new Error('No such stage (' + stageName + ')');
+      }
+    };
 
     Collection.prototype.no_op = function () {
       return;

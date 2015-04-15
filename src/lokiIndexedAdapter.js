@@ -406,7 +406,7 @@ var lokiIndexedAdapter = (function() {
     request.onsuccess = function(e) {
       var res = e.target.result;
 
-      if (res === null) {
+      if (res === null || res === undefined) {
         res = {
           app:app,
           key:key,

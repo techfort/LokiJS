@@ -1,4 +1,4 @@
-if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
+if (typeof (window) === 'undefined') var loki = require('../../src/lokijs.js');
 
 describe('Staging and commits', function () {
   beforeEach(function () {
@@ -29,11 +29,14 @@ describe('Staging and commits', function () {
       newDirectorsName = 'Joel and Ethan Cohen',
       message = 'Edited Cohen brothers name';
 
-    var cohen = directors.insert({name: 'Cohen Brothers', directorId: 5});
+    var cohen = directors.insert({
+      name: 'Cohen Brothers',
+      directorId: 5
+    });
     var new_cohen = directors.stage(stageName, cohen);
     new_cohen.name = newDirectorsName;
     expect(cohen.name).toEqual('Cohen Brothers');
-    directors.commit(stageName, message);
+    directors.commitStage(stageName, message);
     expect(directors.get(cohen.$loki).name).toEqual('Joel and Ethan Cohen');
     expect(directors.commitLog[0].message).toEqual(message);
   });

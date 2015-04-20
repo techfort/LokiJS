@@ -3028,6 +3028,10 @@
       while (len--) {
         this.remove(list[len]);
       }
+      var dv;
+      for (dv in this.DynamicViews) {
+        this.DynamicViews[dv].rematerialize();
+      }
 
     };
 

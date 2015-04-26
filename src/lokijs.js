@@ -2765,6 +2765,10 @@
       }
     };
 
+    Collection.prototype.count = function () {
+      return this.data.length;
+    };
+
     /**
      * Rebuild idIndex
      */

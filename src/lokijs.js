@@ -2522,6 +2522,9 @@
 
       // exact match and unique constraints
       if (options.hasOwnProperty('unique')) {
+        if (!Array.isArray(options.unique)) {
+          options.unique = [options.unique];
+        }
         options.unique.forEach(function (prop) {
           self.constraints.unique[prop] = new UniqueIndex(prop);
         });
@@ -2742,6 +2745,18 @@
       index.dirty = false;
 
       this.dirty = true; // for autosave scenarios
+    };
+
+    Collection.prototype.ensureUniqueIndex = function (field) {
+      var index = this.constraints.unique[field];
+      if (!index) {
+        index = this.constraints.unique[field] = new UniqueIndex(field);
+      }
+      var i = 0,
+        len = this.data.length;
+      for (i; i < len; i += 1) {
+        index.set(this.data[i]);
+      }
     };
 
     /**

@@ -2748,15 +2748,15 @@
     };
 
     Collection.prototype.ensureUniqueIndex = function (field) {
+
       var index = this.constraints.unique[field];
       if (!index) {
-        index = this.constraints.unique[field] = new UniqueIndex(field);
+        this.constraints.unique[field] = new UniqueIndex(field);
       }
-      var i = 0,
-        len = this.data.length;
-      for (i; i < len; i += 1) {
-        index.set(this.data[i]);
-      }
+      var self = this;
+      this.data.forEach(function (obj) {
+        self.constraints.unique[field].set(obj);
+      });
     };
 
     /**
@@ -3611,45 +3611,84 @@
 
     function UniqueIndex(uniqueField) {
       this.field = uniqueField;
+      this.keyMap = {};
+      this.lokiMap = {};
     }
-
-    UniqueIndex.prototype = {
-      keyMap: {},
-      lokiMap: {},
-      set: function (obj) {
-        if (this.keyMap[obj[this.field]]) {
-          throw new Error('Duplicate key for property ' + this.field);
-        } else {
-          this.keyMap[obj[this.field]] = obj;
-          this.lokiMap[obj.$loki] = obj[this.field];
-        }
-      },
-      get: function (key) {
-        return this.keyMap[key];
-      },
-      byId: function (id) {
-        return this.keyMap[this.lokiMap[id]];
-      },
-      update: function (obj) {
-        if (this.lokiMap[obj.$loki] !== obj[this.field]) {
-          var old = this.lokiMap[obj.$loki];
-          this.set(obj);
-          // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
-          this.keyMap[old] = undefined;
-        } else {
-          this.keyMap[obj[this.field]] = obj;
-        }
-      },
-      remove: function (key) {
-        var obj = this.keyMap[key];
-        this.keyMap[key] = undefined;
-        this.lokiMap[obj.$loki] = undefined;
-      },
-      clear: function () {
-        this.keyMap = {};
-        this.lokiMap = {};
+    UniqueIndex.prototype.keyMap = {};
+    UniqueIndex.prototype.lokiMap = {};
+    UniqueIndex.prototype.set = function (obj) {
+      if (this.keyMap[obj[this.field]]) {
+        throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
+      } else {
+        this.keyMap[obj[this.field]] = obj;
+        this.lokiMap[obj.$loki] = obj[this.field];
       }
     };
+    UniqueIndex.prototype.get = function (key) {
+      return this.keyMap[key];
+    };
+
+    UniqueIndex.prototype.byId = function (id) {
+      return this.keyMap[this.lokiMap[id]];
+    };
+    UniqueIndex.prototype.update = function (obj) {
+      if (this.lokiMap[obj.$loki] !== obj[this.field]) {
+        var old = this.lokiMap[obj.$loki];
+        this.set(obj);
+        // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
+        this.keyMap[old] = undefined;
+      } else {
+        this.keyMap[obj[this.field]] = obj;
+      }
+    };
+    UniqueIndex.prototype.remove = function (key) {
+      var obj = this.keyMap[key];
+      this.keyMap[key] = undefined;
+      this.lokiMap[obj.$loki] = undefined;
+    };
+    UniqueIndex.prototype.clear = function () {
+      this.keyMap = {};
+      this.lokiMap = {};
+    };
+
+    // UniqueIndex.prototype = {
+    //   keyMap: {},
+    //   lokiMap: {},
+    //   set: function (obj) {
+    //     console.log('setting obj', obj);
+    //     if (this.keyMap[obj[this.field]]) {
+    //       throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
+    //     } else {
+    //       this.keyMap[obj[this.field]] = obj;
+    //       this.lokiMap[obj.$loki] = obj[this.field];
+    //     }
+    //   },
+    //   get: function (key) {
+    //     return this.keyMap[key];
+    //   },
+    //   byId: function (id) {
+    //     return this.keyMap[this.lokiMap[id]];
+    //   },
+    //   update: function (obj) {
+    //     if (this.lokiMap[obj.$loki] !== obj[this.field]) {
+    //       var old = this.lokiMap[obj.$loki];
+    //       this.set(obj);
+    //       // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
+    //       this.keyMap[old] = undefined;
+    //     } else {
+    //       this.keyMap[obj[this.field]] = obj;
+    //     }
+    //   },
+    //   remove: function (key) {
+    //     var obj = this.keyMap[key];
+    //     this.keyMap[key] = undefined;
+    //     this.lokiMap[obj.$loki] = undefined;
+    //   },
+    //   clear: function () {
+    //     this.keyMap = {};
+    //     this.lokiMap = {};
+    //   }
+    // };
 
     function ExactIndex(exactField) {
       this.index = {};

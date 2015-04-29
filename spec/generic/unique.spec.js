@@ -2,12 +2,9 @@ if (typeof (window) === 'undefined') {
   var loki = require('../../src/lokijs.js');
 }
 describe('Constraints', function () {
-  var db;
-  beforeEach(function () {
-    db = new loki();
-  });
 
   it('should retrieve records with by()', function () {
+    var db = new loki();
     var coll = db.addCollection('users', {
       unique: ['username']
     });
@@ -28,11 +25,21 @@ describe('Constraints', function () {
     joe.username = 'jack';
     expect(function () {
       coll.update(joe)
-    }).toThrow(new Error('Duplicate key for property username'));
-
+    }).toThrow(new Error('Duplicate key for property username: ' + joe.username));
     joe.username = 'jim';
     coll.update(joe);
     expect(byUsername('jim')).toEqual(joe);
+  });
 
+  it('should create a unique index', function () {
+    var db = new loki();
+    var coll2 = db.addCollection('moreusers');
+    coll2.insert({
+      name: 'jack'
+    });
+    coll2.insert({
+      name: 'tim'
+    });
+    coll2.ensureUniqueIndex('name');
   });
 });

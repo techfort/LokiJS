@@ -27,7 +27,7 @@
     "pretest": "npm run lint",
     "test": "npm run test:browser && npm run test:node",
     "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
-    "build:indexedAdapter": "uglifyjs src/lokiIndexedAdapter.js > build/lokiIndexedAdapter.min.js",
+    "build:indexedAdapter": "uglifyjs src/loki-indexed-adapter.js > build/loki-indexed-adapter.min.js",
     "build": "npm run build:lokijs && npm run build:indexedAdapter",
     "postbuild": "karma start karma.build.conf.js --single-run",
     "prepublish": "npm run build",

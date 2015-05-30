@@ -2692,6 +2692,24 @@
 
     Collection.prototype = new LokiEventEmitter();
 
+    Collection.prototype.byExample = function(template) {
+      var k, obj, query;
+      query = [];
+      for (k in template) {
+        if (!template.hasOwnProperty(k)) continue;
+        query.push((
+          obj = {},
+          obj[k] = template[k],
+          obj
+        ));
+      }
+      return { '$and': query };
+    };
+
+    Collection.prototype.findObject = function(template) { return this.findOne(this.byExample(template)); };
+
+    Collection.prototype.findObjects = function(template) { return this.find(this.byExample(template)); };
+
     /*----------------------------+
     | INDEXING                    |
     +----------------------------*/

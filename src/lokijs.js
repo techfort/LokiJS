@@ -2693,7 +2693,7 @@
     Collection.prototype = new LokiEventEmitter();
 
     Collection.prototype.byExample = function(template) {
-      var k, obj, query
+      var k, obj, query;
       query = [];
       for (k in template) {
         if (!template.hasOwnProperty(k)) continue;

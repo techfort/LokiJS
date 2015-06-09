@@ -2751,12 +2751,13 @@
 
       var index = this.constraints.unique[field];
       if (!index) {
-        this.constraints.unique[field] = new UniqueIndex(field);
+        this.constraints.unique[field] = index = new UniqueIndex(field);
       }
       var self = this;
       this.data.forEach(function (obj) {
-        self.constraints.unique[field].set(obj);
+        index.set(obj);
       });
+      return index;
     };
 
     /**

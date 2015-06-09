@@ -1540,7 +1540,9 @@
           if (p.indexOf('.') != -1) {
             usingDotNotation = true;
           }
-          if (typeof queryObject[p] !== 'object') {
+
+          // see if query object is in shorthand mode (assuming eq operator)
+          if (queryObject[p] === null || typeof queryObject[p] !== 'object') {
             operator = '$eq';
             value = queryObject[p];
           } else if (typeof queryObject[p] === 'object') {

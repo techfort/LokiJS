@@ -31,7 +31,6 @@
     "build": "npm run build:lokijs && npm run build:indexedAdapter",
     "postbuild": "karma start karma.build.conf.js --single-run",
     "prepublish": "npm run build",
-    "publish": "npm version patch && npm publish && npm run pour:beer",
     "clean": "rimraf build/* coverage/* node_modules",
     "pour:beer": "echo New npm version published, one beer for you !"
   },

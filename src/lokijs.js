@@ -478,7 +478,7 @@
 
     Loki.prototype.loadCollection = function (collection) {
       if (!collection.name) {
-        throw new Error('Collection must be have a name property to be loaded');
+        throw new Error('Collection must have a name property to be loaded');
       }
       this.collections.push(collection);
     };

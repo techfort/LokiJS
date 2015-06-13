@@ -1,6 +1,5 @@
 {
   "name": "lokijs",
-  "version": "1.3.4",
   "main": "[\"src/lokijs.js\"]",
   "ignore": [
     "**/.*",

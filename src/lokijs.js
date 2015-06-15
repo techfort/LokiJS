@@ -1986,14 +1986,23 @@
      * @constructor
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
-     * @param {boolean} persistent - (Optional) If true, the results will be copied into an internal array for read efficiency or binding to.
+     * @param {object} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
      */
-    function DynamicView(collection, name, persistent) {
+    function DynamicView(collection, name, options) {
       this.collection = collection;
       this.name = name;
+      this.options = options || {};
 
-      this.persistent = false;
-      if (typeof (persistent) !== 'undefined') this.persistent = persistent;
+      if (!this.options.hasOwnProperty('persistent')) {
+        this.options.persistent = false;
+      }
+
+      // 'persistentSortPriority': 
+      // 'passive' will defer the sort phase until they call data(). (most efficient overall)
+      // 'active' will sort async whenever next idle. (prioritizes read speeds)
+      if (!this.options.hasOwnProperty('sortPriority')) {
+        this.options.sortPriority = 'passive';
+      }
 
       this.resultset = new Resultset(collection);
       this.resultdata = [];
@@ -2096,7 +2105,7 @@
      *
      */
     DynamicView.prototype.toJSON = function () {
-      var copy = new DynamicView(this.collection, this.name, this.persistent);
+      var copy = new DynamicView(this.collection, this.name, this.options);
 
       copy.resultset = this.resultset;
       copy.resultdata = []; // let's not save data (copy) to minimize size
@@ -2198,7 +2207,7 @@
     DynamicView.prototype.rollback = function () {
       this.resultset = this.cachedresultset;
 
-      if (this.persistent) {
+      if (this.options.persistent) {
         // for now just rebuild the persistent dynamic view data in this worst case scenario
         // (a persistent view utilizing transactions which get rolled back), we already know the filter so not too bad.
         this.resultdata = this.resultset.data();
@@ -2229,7 +2238,7 @@
         this.queueSortPhase();
       }
 
-      if (this.persistent) {
+      if (this.options.persistent) {
         this.resultsdirty = true;
         this.queueSortPhase();
       }
@@ -2256,7 +2265,7 @@
         this.sortDirty = true;
         this.queueSortPhase();
       }
-      if (this.persistent) {
+      if (this.options.persistent) {
         this.resultsdirty = true;
         this.queueSortPhase();
       }
@@ -2274,7 +2283,7 @@
         this.performSortPhase();
       }
 
-      if (!this.persistent) {
+      if (!this.options.persistent) {
         return this.resultset.data();
       }
 
@@ -2294,10 +2303,12 @@
 
       this.sortDirty = true;
 
-      // queue async call to performSortPhase()
-      setTimeout(function () {
-        self.performSortPhase();
-      }, 1);
+      if (this.options.sortPriority === "active") {
+        // queue async call to performSortPhase()
+        setTimeout(function () {
+          self.performSortPhase();
+        }, 1);
+      }
     };
 
     /**
@@ -2318,7 +2329,7 @@
         this.resultset.compoundsort(this.sortCriteria);
       }
 
-      if (!this.persistent) {
+      if (!this.options.persistent) {
         this.sortDirty = false;
         return;
       }
@@ -2368,7 +2379,7 @@
       if (oldPos === -1 && newPos !== -1) {
         ofr.push(objIndex);
 
-        if (this.persistent) {
+        if (this.options.persistent) {
           this.resultdata.push(this.collection.data[objIndex]);
         }
 
@@ -2387,14 +2398,14 @@
           ofr[oldPos] = ofr[oldlen - 1];
           ofr.length = oldlen - 1;
 
-          if (this.persistent) {
+          if (this.options.persistent) {
             this.resultdata[oldPos] = this.resultdata[oldlen - 1];
             this.resultdata.length = oldlen - 1;
           }
         } else {
           ofr.length = oldlen - 1;
 
-          if (this.persistent) {
+          if (this.options.persistent) {
             this.resultdata.length = oldlen - 1;
           }
         }
@@ -2409,7 +2420,7 @@
 
       // was in resultset, should still be now... (update persistent only?)
       if (oldPos !== -1 && newPos !== -1) {
-        if (this.persistent) {
+        if (this.options.persistent) {
           // in case document changed, replace persistent view data with the latest collection.data document
           this.resultdata[oldPos] = this.collection.data[objIndex];
         }
@@ -2438,7 +2449,7 @@
           ofr[oldPos] = ofr[oldlen - 1];
           ofr.length = oldlen - 1;
 
-          if (this.persistent) {
+          if (this.options.persistent) {
             this.resultdata[oldPos] = this.resultdata[oldlen - 1];
             this.resultdata.length = oldlen - 1;
           }
@@ -2447,7 +2458,7 @@
         else {
           ofr.length = oldlen - 1;
 
-          if (this.persistent) {
+          if (this.options.persistent) {
             this.resultdata.length = oldlen - 1;
           }
         }

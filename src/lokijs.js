@@ -3649,11 +3649,13 @@
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
     UniqueIndex.prototype.set = function (obj) {
-      if (this.keyMap[obj[this.field]]) {
-        throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
-      } else {
-        this.keyMap[obj[this.field]] = obj;
-        this.lokiMap[obj.$loki] = obj[this.field];
+      if (obj[this.field] != null ) {
+        if (this.keyMap[obj[this.field]]) {
+          throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
+        } else {
+          this.keyMap[obj[this.field]] = obj;
+          this.lokiMap[obj.$loki] = obj[this.field];
+        }
       }
     };
     UniqueIndex.prototype.get = function (key) {

@@ -237,6 +237,16 @@ describe('loki', function () {
         'testFloat': 1.9
       });
 
+      // test when all records are in range
+      range = rset.calculateRange('$lt', 'testid', 25);
+      expect(range).toEqual([0, 8]);
+      range = rset.calculateRange('$lte', 'testid', 25);
+      expect(range).toEqual([0, 8]);
+      range = rset.calculateRange('$gt', 'testid', 0);
+      expect(range).toEqual([0, 8]);
+      range = rset.calculateRange('$gte', 'testid', 0);
+      expect(range).toEqual([0, 8]);
+
       range = rset.calculateRange('$gte', 'testid', 23);
       expect(range).toEqual([7, 8]);
 

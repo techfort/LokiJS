@@ -1216,10 +1216,16 @@
         if (ltHelper(val, minVal, true)) {
           return [0, -1];
         }
+        if (ltHelper(maxVal, val)) {
+          return [0, rcd.length-1];
+        }
         break;
       case '$lte':
         if (ltHelper(val, minVal)) {
           return [0, -1];
+        }
+        if (ltHelper(maxVal, val, true)) {
+          return [0, rcd.length-1];
         }
         break;
       }

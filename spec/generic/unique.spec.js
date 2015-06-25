@@ -42,4 +42,41 @@ describe('Constraints', function () {
     });
     coll2.ensureUniqueIndex('name');
   });
+
+  it('should not add record with null index', function() {
+    var db = new loki();
+    var coll3 = db.addCollection('nullusers', {
+      unique: ['username']
+    });
+    coll3.insert({
+      username: 'joe',
+      name: 'Joe'
+    });
+    coll3.insert({
+      username: null,
+      name: 'Jack'
+    });
+
+    expect(Object.keys(coll3.constraints.unique.username.keyMap).length).toEqual(1);
+  });
+
+  it('should not throw an error id multiple nulls are added', function() {
+    var db = new loki();
+    var coll4 = db.addCollection('morenullusers', {
+      unique: ['username']
+    });
+    coll4.insert({
+      username: 'joe',
+      name: 'Joe'
+    });
+    coll4.insert({
+      username: null,
+      name: 'Jack'
+    });
+    coll4.insert({
+      username: null,
+      name: 'Jake'
+    });
+    expect(Object.keys(coll4.constraints.unique.username.keyMap).length).toEqual(1);
+  });
 });

@@ -349,7 +349,7 @@ var lokiIndexedAdapter = (function() {
       return function(e) {
         var lres = e.target.result;
 
-        if (typeof(lres) === 'undefined') {
+        if (lres === null || typeof(lres) === 'undefined') {
           lres = { 
             id: 0, 
             success: false 

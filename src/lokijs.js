@@ -3133,7 +3133,9 @@
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].remove(doc);
+          if( doc[key] !== null && typeof doc[key] !== 'undefined' ) {
+            self.constraints.unique[key].remove(doc[key]);
+          }
         });
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove

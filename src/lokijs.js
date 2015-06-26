@@ -3685,8 +3685,12 @@
     };
     UniqueIndex.prototype.remove = function (key) {
       var obj = this.keyMap[key];
-      this.keyMap[key] = undefined;
-      this.lokiMap[obj.$loki] = undefined;
+      if( obj !== null && typeof obj !== 'undefined') {
+        this.keyMap[key] = undefined;
+        this.lokiMap[obj.$loki] = undefined;
+      } else {
+        throw new Error('Key is not in unique index: ' + this.field);
+      }
     };
     UniqueIndex.prototype.clear = function () {
       this.keyMap = {};

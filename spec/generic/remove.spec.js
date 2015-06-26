@@ -66,4 +66,25 @@ describe('remove', function () {
     users.insert(bar);
     expect(users.data.length).toEqual(1);
   });
+
+  it('removes with unique index', function () {
+    var db = new loki();
+    var users1 = db.addCollection('userswithunique', {
+      unique: ['username']
+    });
+
+    var joe = users1.insert({
+      username: 'joe',
+      name: 'joe',
+      age: 39
+    });
+    var jack = users1.insert({
+      username: 'jack',
+      name: 'jack',
+      age: 20
+    });
+    expect(users1.data.length).toEqual(2);
+    users1.removeDataOnly();
+    expect(users1.data.length).toEqual(0);
+  });
 });

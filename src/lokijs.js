@@ -3133,7 +3133,9 @@
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].remove(doc);
+          if( doc[key] !== null && typeof doc[key] !== 'undefined' ) {
+            self.constraints.unique[key].remove(doc[key]);
+          }
         });
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to remove
@@ -3683,8 +3685,12 @@
     };
     UniqueIndex.prototype.remove = function (key) {
       var obj = this.keyMap[key];
-      this.keyMap[key] = undefined;
-      this.lokiMap[obj.$loki] = undefined;
+      if( obj !== null && typeof obj !== 'undefined') {
+        this.keyMap[key] = undefined;
+        this.lokiMap[obj.$loki] = undefined;
+      } else {
+        throw new Error('Key is not in unique index: ' + this.field);
+      }
     };
     UniqueIndex.prototype.clear = function () {
       this.keyMap = {};

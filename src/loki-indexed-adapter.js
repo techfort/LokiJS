@@ -566,5 +566,9 @@ var lokiIndexedAdapter = (function() {
 
   };
 
+  if(module && module.exports) {
+    module.exports = IndexedAdapter; 
+  }
+
   return IndexedAdapter;
 }());

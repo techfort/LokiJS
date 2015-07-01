@@ -1997,6 +1997,7 @@
     function DynamicView(collection, name, options) {
       this.collection = collection;
       this.name = name;
+      this.rebuildPending = false;
       this.options = options || {};
 
       if (!this.options.hasOwnProperty('persistent')) {
@@ -2297,7 +2298,28 @@
     };
 
     /**
-     *
+     * queueRebuildEvent() - When the view is not sorted we may still wish to be notified of rebuild events.
+     *     This event will throttle and queue a single rebuild event when batches of updates affect the view.
+     */
+    DynamicView.prototype.queueRebuildEvent = function() {
+      var self = this;
+
+      if (this.rebuildPending) {
+        return;
+      }
+
+      this.rebuildPending = true;
+
+      setTimeout(function() {
+        self.rebuildPending = false;
+        self.emit('rebuild', this);
+      }, 1);
+    };
+    
+    /**
+     * queueSortPhase : If the view is sorted we will throttle sorting to either :
+     *    (1) passive - when the user calls data(), or
+     *    (2) active - once they stop updating and yield js thread control
      */
     DynamicView.prototype.queueSortPhase = function () {
       var self = this;
@@ -2310,10 +2332,15 @@
       this.sortDirty = true;
 
       if (this.options.sortPriority === "active") {
-        // queue async call to performSortPhase()
+        // active sorting... once they are done and yield js thread, run async performSortPhase()
         setTimeout(function () {
           self.performSortPhase();
         }, 1);
+      }
+      else {
+        // must be passive sorting... since not calling performSortPhase (until data call), lets use queueRebuildEvent to 
+        // potentially notify user that data has changed.
+        this.queueRebuildEvent();
       }
     };
 
@@ -2393,6 +2420,9 @@
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
         }
+        else {
+          this.queueRebuildEvent();
+        }
 
         return;
       }
@@ -2420,6 +2450,9 @@
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
         }
+        else {
+          this.queueRebuildEvent();
+        }
 
         return;
       }
@@ -2433,7 +2466,10 @@
 
         // in case changes to data altered a sort column
         if (this.sortFunction || this.sortCriteria) {
-          this.sortDirty = true;
+          this.queueSortPhase();
+        }
+        else {
+          this.queueRebuildEvent();
         }
 
         return;

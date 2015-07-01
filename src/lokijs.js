@@ -561,7 +561,7 @@
 
       var obj = JSON.parse(serializedDb),
         i = 0,
-        len = obj.collections.length,
+        len = obj.collections ? obj.collections.length : 0,
         coll,
         copyColl,
         clen,

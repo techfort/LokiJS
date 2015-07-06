@@ -23,7 +23,7 @@
 } (this, function (angular, lokijs) {
 	var module = angular.module('lokijs', [])
 		.factory('Loki', function Loki() {
-			return lokijs;
+			return loki;
 		});
 	return module;
 }));

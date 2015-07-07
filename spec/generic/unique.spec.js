@@ -26,6 +26,14 @@ describe('Constraints', function () {
     expect(function () {
       coll.update(joe)
     }).toThrow(new Error('Duplicate key for property username: ' + joe.username));
+
+    expect(function () {
+      coll.insert({
+        username: 'jack',
+        name: 'A different Jack'
+      });
+    }).toThrow(new Error('Duplicate key for property username: ' + joe.username));
+
     joe.username = 'jim';
     coll.update(joe);
     expect(byUsername('jim')).toEqual(joe);

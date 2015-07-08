@@ -3083,13 +3083,14 @@
         obj.$loki = this.maxId;
         obj.meta.version = 0;
 
-        // add the object
-        this.data.push(obj);
-
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
+          // Function set will throw error when unique constraint is not honoured
           self.constraints.unique[key].set(obj);
         });
+
+        // add the object
+        this.data.push(obj);
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion

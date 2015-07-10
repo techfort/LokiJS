@@ -309,6 +309,21 @@
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
 
+      // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
+      // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
+      // Only in that environment should you instantiate the indexed adapter via db.getters.indexedAdapter (where db is loki ref).
+      this.getters = {
+        get indexedAdapter() {
+          var adapter;
+
+          if (typeof require === 'function') {
+            adapter = require("./loki-indexed-adapter.js");
+          }
+
+          return adapter;
+        }
+      };
+      
       this.options = {};
 
       // currently keeping persistenceMethod and persistenceAdapter as loki level properties that

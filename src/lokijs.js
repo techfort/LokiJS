@@ -631,8 +631,16 @@
           copyColl.binaryIndices = coll.binaryIndices;
         }
 
-
         copyColl.ensureId();
+
+        // regenerate unique indexes
+        copyColl.uniqueNames = [];
+        if (coll.hasOwnProperty("uniqueNames")) {
+          copyColl.uniqueNames = coll.uniqueNames;
+          for (j=0; j < copyColl.uniqueNames.length; j++) {
+            copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
+          }
+        }
 
         // in case they are loading a database created before we added dynamic views, handle undefined
         if (typeof (coll.DynamicViews) === 'undefined') continue;
@@ -2573,6 +2581,10 @@
         exact: {}
       };
 
+      // unique contraints contain duplicate object references, so they are not persisted.
+      // we will keep track of properties which have unique contraint applied here, and regenerate on load
+      this.uniqueNames = [];
+
       // the object type of the collection
       this.objType = name;
 
@@ -2596,6 +2608,7 @@
           options.unique = [options.unique];
         }
         options.unique.forEach(function (prop) {
+          self.uniqueNames.push(prop);  // used to regenerate on subsequent database loads
           self.constraints.unique[prop] = new UniqueIndex(prop);
         });
       }
@@ -2839,6 +2852,10 @@
 
       var index = this.constraints.unique[field];
       if (!index) {
+        // keep track of new unique index for regenerate after database (re)load.
+        if (this.uniqueNames.indexOf(field) == -1) {
+          this.uniqueNames.push(field);
+        }
         this.constraints.unique[field] = index = new UniqueIndex(field);
       }
       var self = this;

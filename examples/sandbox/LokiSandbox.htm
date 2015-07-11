@@ -186,7 +186,7 @@
       editorOutput: null,
     }
 
-    var db = new loki('sandbox');
+    var db = new loki('sandbox.db');
 
     function tabMode(mode) {
       $("#divTextOutput").hide();
@@ -251,13 +251,15 @@
       var filename = $("#file-import").val().replace(/^.*[\\\/]/, '');
       var filestring = evt.target.result;
 
+      $("#divLokiCode").empty();
+      sbv.editorJS.setValue('logDatabase();\r\ninspectObject(db);');
+
+      db = new loki('sandbox');
       db.loadJSON(filestring);
 
       var control = $("#file-import");
       control.replaceWith( control = control.clone( true ) );
 
-      $("#divLokiCode").empty();
-      sbv.editorJS.setValue("// insert your code here\r\n\r\n//This statement sends to Text Output\r\nlogObject(db);\r\n\r\n//This statement sends to Inspector\r\ninspectObject(db);");
       runloki();
     }
 
@@ -302,8 +304,7 @@
         }
       });
 
-      var initCode = "// This database has already been created for you.\r\n";
-      initCode += "// var db = new loki('sandbox');\r\n\r\n";
+      var initCode = "var db = new loki('sandbox.db');\r\n\r\n";
       initCode += "// Add a collection to the database\r\n";
       initCode += "var items = db.addCollection('items');\r\n\r\n";
       initCode += "// Add some documents to the collection\r\n";
@@ -325,6 +326,14 @@
 
       sbv.editorJS.setValue(initCode);
       sbv.editorOutput.setValue('Welcome to loki sandbox 0.1.0\r\n');
+    }
+
+    function logDatabase() {
+      var str = db.serialize();
+
+      var oldText = sbv.editorOutput.getValue();
+      oldText += str + "\r\n";
+      sbv.editorOutput.setValue(oldText);
     }
 
     function logText(message) {

@@ -17,14 +17,12 @@ describe('testing unique index serialization', function () {
     users.ensureUniqueIndex('username');
   });
 
-  it('should not have a unique index', function () {
+  it('should have a unique index', function () {
     var ser = db.serialize(),
       reloaded = new loki();
     var loaded = reloaded.loadJSON(ser);
     var coll = reloaded.getCollection('users');
     expect(coll.data.length).toEqual(4);
-    expect(coll.constraints.unique.username).toBeUndefined();
-    coll.ensureUniqueIndex('username');
     expect(coll.constraints.unique.username).toBeDefined();
     var joe = coll.by('username', 'joe');
     expect(joe).toBeDefined();

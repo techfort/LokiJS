@@ -11,7 +11,7 @@
 
   // SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
   // if appContect ('finance' in this example) is omitted, 'loki' will be used
-  var idbAdapter = new lokiIndexedAdapter('finance');
+  var idbAdapter = new LokiIndexedAdapter('finance');
   var db = new loki('test', { adapter: idbAdapter });
   var coll = db.addCollection('testColl');
   coll.insert({test: 'val'});

@@ -2584,6 +2584,10 @@
       // unique contraints contain duplicate object references, so they are not persisted.
       // we will keep track of properties which have unique contraint applied here, and regenerate on load
       this.uniqueNames = [];
+      
+      // transforms will be used to store frequently used query chains as a series of steps 
+      // which itself can be stored along with the database.
+      this.transforms = {};
 
       // the object type of the collection
       this.objType = name;
@@ -2774,6 +2778,18 @@
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    Collection.prototype.addTransform = function (name, transform) {
+      if (this.transforms.hasOwnProperty(name)) {
+        throw new Error("a transform by that name already exists");
+      }
+
+      this.transforms[name] = transform;
+    };
+
+    Collection.prototype.removeTransform = function(name) {
+      delete transforms[name];
+    };
 
     Collection.prototype.byExample = function(template) {
       var k, obj, query;
@@ -3303,8 +3319,48 @@
      * Chain method, used for beginning a series of chained find() and/or view() operations
      * on a collection.
      */
-    Collection.prototype.chain = function () {
-      return new Resultset(this, null, null);
+    Collection.prototype.chain = function (transform, parameters) {
+      var rs = new Resultset(this, null, null);
+
+      if (typeof transform === 'undefined') {
+        return rs;
+      }
+
+      // if transform is name, then look it up in collection transforms
+      if (typeof transform === 'string') {
+        if (this.transforms.hasOwnProperty(transform)) {
+          var idx, 
+            step,
+            func,
+            txArray = this.transforms[transform];
+
+          for(idx=0; idx< txArray.length; idx++) {
+            step = txArray[idx];
+
+            // potentially support many resultset chain operators
+            // potentially support parameterization
+            switch (step.type) {
+              case "find" : rs.find(step.value); break;
+              case "where" : 
+                if (typeof step.value === 'function') {
+                  rs.where(step.value);
+                }
+                break;
+              case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
+              case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
+              case "simplesort" : rs.simplesort(step.value); break;
+              case "map" : break;
+              case "reduce" : break;
+              default : break;
+            }
+          }
+
+          return rs;
+        }
+      }
+
+      // optionally support raw transform object if you dont want to persists it into collection/database.
+
     };
 
     /**

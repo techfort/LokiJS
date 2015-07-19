@@ -3399,10 +3399,13 @@
             case "sort" : rs.sort(step.value); break;
             case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
             case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
-            // following cases break chain by returning array data so make any of these last in transform steps
             case "map" : rs = rs.map(step.value); break;
-            case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
             case "eqJoin" : rs = rs.eqJoin (step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun); break;
+            // following cases break chain by returning array data so make any of these last in transform steps
+            case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
+            // following cases update documents in current filtered resultset (use carefully)
+            case "update" : rs.update(step.value); break;
+            case "remove" : rs.remove(); break;
             default : break;
           }
         }

@@ -26,6 +26,49 @@
         for (prop in src) {
           dest[prop] = src[prop];
         }
+      },
+      // used to recursively scan hierarchical transform step object for param substitution
+      resolveTransformObject : function (subObj, params, depth) {
+        var prop,
+          pname;
+
+        if (typeof depth !== 'number') {
+          depth = 0;
+        }
+
+        if (++depth >= 10) return subObj;
+
+        for (prop in subObj) {
+          if (typeof subObj[prop] === 'string' && subObj[prop].indexOf("[%lktxp]") === 0) {
+            pname = subObj[prop].substring(8);
+            if (params.hasOwnProperty(pname)) {
+              subObj[prop] = params[pname];
+            }            
+          }
+          else if (typeof subObj[prop] === "object") {
+            subObj[prop] = Utils.resolveTransformObject(subObj[prop], params, depth);
+          }
+        }
+        
+        return subObj;
+      },
+      // top level utility to resolve an entire (single) transform (array of steps) for parameter substitution
+      resolveTransformParams: function (transform, params) {
+        var idx, 
+          prop,
+          clonedStep,
+          resolvedTransform = [];
+
+        if (typeof params === 'undefined') return transform;
+
+        // iterate all steps in the transform array
+        for (idx=0; idx < transform.length; idx++) {
+          // clone transform so our scan and replace can operate directly on cloned transform
+          clonedStep = JSON.parse(JSON.stringify(transform[idx]));
+          resolvedTransform.push(Utils.resolveTransformObject(clonedStep, params));
+        }
+
+        return resolvedTransform;
       }
     };
 
@@ -623,12 +666,11 @@
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
-        // if saved in previous format recover id index out of it
-        if (typeof (coll.indices) !== 'undefined') {
-          copyColl.idIndex = coll.indices.id;
-        }
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
+        }
+        if (typeof coll.transforms !== 'undefined') {
+          copyColl.transforms = coll.transforms;
         }
 
         copyColl.ensureId();
@@ -3318,49 +3360,57 @@
     /**
      * Chain method, used for beginning a series of chained find() and/or view() operations
      * on a collection.
+     *
+     * @param {array} transform : Ordered array of transform step objects similar to chain
+     * @param {object} parameters: Object containing properties representing parameters to substitute
+     * @returns {Resultset} : (or data array if any map or join functions where called)
      */
     Collection.prototype.chain = function (transform, parameters) {
-      var rs = new Resultset(this, null, null);
+      var idx, 
+        step,
+        rs = new Resultset(this, null, null);
 
       if (typeof transform === 'undefined') {
         return rs;
       }
 
-      // if transform is name, then look it up in collection transforms
+      // if transform is name, then do lookup first
       if (typeof transform === 'string') {
         if (this.transforms.hasOwnProperty(transform)) {
-          var idx, 
-            step,
-            func,
-            txArray = this.transforms[transform];
-
-          for(idx=0; idx< txArray.length; idx++) {
-            step = txArray[idx];
-
-            // potentially support many resultset chain operators
-            // potentially support parameterization
-            switch (step.type) {
-              case "find" : rs.find(step.value); break;
-              case "where" : 
-                if (typeof step.value === 'function') {
-                  rs.where(step.value);
-                }
-                break;
-              case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
-              case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
-              case "simplesort" : rs.simplesort(step.value); break;
-              case "map" : break;
-              case "reduce" : break;
-              default : break;
-            }
-          }
-
-          return rs;
+          transform = this.transforms[transform];
         }
       }
 
-      // optionally support raw transform object if you dont want to persists it into collection/database.
+      // either they passed in raw transform array or we looked it up, so process
+      if (typeof transform === 'object' && Array.isArray(transform)) {
+        // if parameters were passed, apply them
+        if (typeof parameters !== 'undefined') {
+          transform = Utils.resolveTransformParams(transform, parameters);
+        }
 
+        for(idx = 0; idx < transform.length; idx++) {
+          step = transform[idx];
+
+          switch (step.type) {
+            case "find" : rs.find(step.value); break;
+            case "where" : rs.where(step.value); break;
+            case "simplesort" : rs.simplesort(step.property, step.desc); break;
+            case "compoundsort" : rs.compoundsort(step.value); break;
+            case "sort" : rs.sort(step.value); break;
+            case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
+            case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
+            // following cases break chain by returning array data so make any of these last in transform steps
+            case "map" : rs = rs.map(step.value); break;
+            case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
+            case "eqJoin" : rs = rs.eqJoin (step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun); break;
+            default : break;
+          }
+        }
+
+        return rs;
+      }
+
+      return null;
     };
 
     /**

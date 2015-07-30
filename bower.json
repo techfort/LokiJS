@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "main": "[\"src/lokijs.js\"]",
+  "main": ["src/lokijs.js"],
   "ignore": [
     "**/.*",
     "node_modules",

@@ -617,6 +617,7 @@
      */
     Loki.prototype.loadJSON = function (serializedDb, options) {
 
+      if(serializedDb.length===0) serializedDb=JSON.stringify({});
       var obj = JSON.parse(serializedDb),
         i = 0,
         len = obj.collections ? obj.collections.length : 0,

@@ -497,7 +497,12 @@
         if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
           this.autosaveDisable();
           this.autosave = true;
-          this.autosaveEnable();
+          
+          if(this.options.hasOwnProperty('autosaveCallback')){
+              this.autosaveEnable(options, options.autosaveCallback);
+          }else{
+              this.autosaveEnable();
+          }
         }
       } // end of options processing
 
@@ -965,8 +970,10 @@
     /**
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
+     * @param {object} options - not currently used (remove or allow overrides?)
+     * @param {function} callback - (Optional) user supplied async callback
      */
-    Loki.prototype.autosaveEnable = function () {
+    Loki.prototype.autosaveEnable = function (options, callback) {
       this.autosave = true;
 
       var delay = 5000,
@@ -982,7 +989,7 @@
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
 
         if (self.autosaveDirty()) {
-          self.saveDatabase();
+          self.saveDatabase(callback);
         }
       }, delay);
     };

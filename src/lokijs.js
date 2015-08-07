@@ -145,7 +145,7 @@
         return function (curr) {
           return a.indexOf(curr) !== -1;
         };
-      } else if (typeof a === 'string') {
+      } else if (a && typeof a === 'string') {
         return function (curr) {
           return a.indexOf(curr) !== -1;
         };
@@ -158,6 +158,8 @@
 
     var LokiOps = {
       // comparison operators
+      // a is the value in the collection
+      // b is the query value
       $eq: function (a, b) {
         return a === b;
       },
@@ -217,8 +219,9 @@
           b = [b];
         }
 
+        // return false on check if no check fn is found
         checkFn = containsCheckFn(a, b) || function () {
-          return true;
+          return false;
         };
 
         return b.reduce(function (prev, curr) {

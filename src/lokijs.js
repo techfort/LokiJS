@@ -247,6 +247,9 @@
       '$containsAny': LokiOps.$containsAny
     };
 
+    // making indexing opt-in... our range function knows how to deal with these ops :
+    var indexedOpsList = ['$eq', '$gt', '$gte', '$lt', '$lte'];
+
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
         cloned;
@@ -1652,7 +1655,7 @@
       // for now only enabling for non-chained query (who's set of docs matches index)
       // or chained queries where it is the first filter applied and prop is indexed
       if ((!this.searchIsChained || (this.searchIsChained && !this.filterInitialized)) &&
-        operator !== '$ne' && operator !== '$regex' && operator !== '$contains' && operator !== '$containsAny' && operator !== '$in' && this.collection.binaryIndices.hasOwnProperty(property)) {
+        indexedOpsList.indexOf(operator) !== -1 && this.collection.binaryIndices.hasOwnProperty(property)) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property

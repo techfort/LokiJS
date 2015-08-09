@@ -2840,6 +2840,10 @@
       this.transforms[name] = transform;
     };
 
+    Collection.prototype.setTransform = function (name, transform) {
+      this.transforms[name] = transform;
+    };
+
     Collection.prototype.removeTransform = function(name) {
       delete transforms[name];
     };

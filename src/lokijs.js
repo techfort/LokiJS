@@ -358,21 +358,6 @@
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
 
-      // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
-      // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
-      // Only in that environment should you instantiate the indexed adapter via db.getters.indexedAdapter (where db is loki ref).
-      this.getters = {
-        get indexedAdapter() {
-          var adapter;
-
-          if (typeof require === 'function') {
-            adapter = require("./loki-indexed-adapter.js");
-          }
-
-          return adapter;
-        }
-      };
-      
       this.options = {};
 
       // currently keeping persistenceMethod and persistenceAdapter as loki level properties that
@@ -440,6 +425,19 @@
 
     // db class is an EventEmitter
     Loki.prototype = new LokiEventEmitter();
+
+    // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
+    // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
+    Loki.prototype.getIndexedAdapter = function() {
+      var adapter;
+
+      if (typeof require === 'function') {
+        adapter = require("./loki-indexed-adapter.js");
+      }
+
+      return adapter;
+    };
+
 
     /**
      * configureOptions - allows reconfiguring database options
@@ -703,7 +701,7 @@
         for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
           var colldv = coll.DynamicViews[idx];
 
-          var dv = copyColl.addDynamicView(colldv.name, colldv.persistent);
+          var dv = copyColl.addDynamicView(colldv.name, colldv.options);
           dv.resultdata = colldv.resultdata;
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
@@ -2993,8 +2991,8 @@
      * Each collection maintains a list of DynamicViews associated with it
      **/
 
-    Collection.prototype.addDynamicView = function (name, persistent) {
-      var dv = new DynamicView(this, name, persistent);
+    Collection.prototype.addDynamicView = function (name, options) {
+      var dv = new DynamicView(this, name, options);
       this.DynamicViews.push(dv);
 
       return dv;

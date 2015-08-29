@@ -165,6 +165,56 @@ describe('loki', function () {
     })
   });
 
+  describe('dot notation', function() {
+    it('works', function () {
+      var dnc = db.addCollection('dncoll');
+
+      dnc.insert({
+        first: 'aaa',
+        last: 'bbb',
+        addr: {
+          street: '111 anystreet',
+          state: 'AS',
+          zip: 12345
+        }
+      });
+
+      dnc.insert({
+        first: 'ddd',
+        last: 'eee',
+        addr: {
+          street: '222 anystreet',
+          state: 'FF',
+          zip: 32345
+        }
+      });
+
+      dnc.insert({
+        first: 'jjj',
+        last: 'kkk',
+        addr: {
+          street: '777 anystreet',
+          state: 'WW',
+          zip: 12345
+        }
+      });
+
+      // test dot notation using regular find (with multiple results)
+      var firstResult = dnc.find({"addr.zip": 12345});
+      expect (firstResult.length).toEqual(2);
+      expect (firstResult[0].addr.zip).toEqual(12345);
+      expect (firstResult[1].addr.zip).toEqual(12345);
+
+      // test not notation using findOne
+      var secObj = dnc.findOne({"addr.state": 'FF'});
+
+      expect(secObj !== null).toBeTruthy();
+      expect(secObj.addr.zip).toEqual(32345);
+
+    });
+
+  });
+
   describe('calculateRange', function () {
     it('works', function () {
       var eic = db.addCollection('eic');

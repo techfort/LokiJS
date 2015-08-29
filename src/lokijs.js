@@ -1681,9 +1681,18 @@
           i = t.length;
 
           if (firstOnly) {
-            while (i--) {
-              if (fun(t[i][property], value)) {
-                return (t[i]);
+            if (usingDotNotation) {
+              while(i--) {
+                if (this.dotSubScan(t[i], property, fun, value)) {
+                  return(t[i]);
+                }
+              }
+            }
+            else {
+              while (i--) {
+                if (fun(t[i][property], value)) {
+                  return (t[i]);
+                }
               }
             }
 

@@ -87,7 +87,7 @@
     IndexedAdapter.prototype.checkAvailability = function()
     {
       if (window && window.indexedDB) return true;
-      
+
       return false;
     };
 
@@ -103,7 +103,7 @@
       var adapter = this;
       
       // lazy open/create db reference so dont -need- callback in constructor
-      if (this.catalog === null) {
+      if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
         
@@ -146,7 +146,7 @@
       var adapter = this;
       
       // lazy open/create db reference so dont -need- callback in constructor
-      if (this.catalog === null) {
+      if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
           
@@ -175,7 +175,7 @@
       var adapter = this;
       
       // lazy open/create db reference so dont -need- callback in constructor
-      if (this.catalog === null) {
+      if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
           
@@ -209,7 +209,7 @@
       var adapter = this;
       
       // lazy open/create db reference so dont -need- callback in constructor
-      if (this.catalog === null) {
+      if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
           
@@ -253,7 +253,7 @@
       var adapter = this;
       
       // lazy open/create db reference
-      if (this.catalog === null) {
+      if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
           
@@ -295,7 +295,7 @@
         }
       });
     };
-    
+
     /**
      * LokiCatalog - underlying App/Key/Value catalog persistence
      *    This non-interface class implements the actual persistence.
@@ -304,12 +304,10 @@
     function LokiCatalog(callback) 
     {
       this.db = null;
-
       this.initializeLokiCatalog(callback);
     }
 
-    LokiCatalog.prototype.initializeLokiCatalog = function(callback)
-    {
+    LokiCatalog.prototype.initializeLokiCatalog = function(callback) {
       var openRequest = indexedDB.open('LokiCatalog', 1);
       var cat = this;
       
@@ -572,5 +570,6 @@
     };
 
     return IndexedAdapter;
+
   }());
 }));

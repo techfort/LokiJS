@@ -121,6 +121,80 @@ describe('transforms', function () {
     });
   });
 
+  describe('dynamic view named transform', function() {
+    it('works', function () {
+      var testColl = db.addCollection('test');
 
+      testColl.insert({
+        a: 'first',
+        b: 1
+      });
+
+      testColl.insert({
+        a: 'second',
+        b: 2
+      });
+
+      testColl.insert({
+        a: 'third',
+        b: 3
+      });
+
+      testColl.insert({
+        a: 'fourth',
+        b: 4
+      });
+
+      testColl.insert({
+        a: 'fifth',
+        b: 5
+      });
+
+      testColl.insert({
+        a: 'sixth',
+        b: 6
+      });
+
+      testColl.insert({
+        a: 'seventh',
+        b: 7
+      });
+
+      testColl.insert({
+        a: 'eighth',
+        b: 8
+      });
+
+      // our view should allow only first 4 test records
+      var dv = testColl.addDynamicView('lower');
+      dv.applyFind({ b : {'$lte' : 4 } });
+
+      // our transform will desc sort string column as 'third', 'second', 'fourth', 'first',
+      // and then limit to first two
+      var tx = [
+        {
+          type: 'simplesort',
+          property: 'a',
+          desc: true
+        },
+        {
+          type: 'limit',
+          value: 2
+        }
+      ];
+
+      expect(dv.branchResultset(tx).data().length).toBe(2);
+
+      // now store as named (collection) transform and run off dynamic view
+      testColl.addTransform("desc4limit2", tx);
+
+      var results = dv.branchResultset("desc4limit2").data();
+
+      expect(results.length).toBe(2);
+      expect(results[0].a).toBe("third");
+      expect(results[1].a).toBe("second");
+
+    });
+  });
 
 });

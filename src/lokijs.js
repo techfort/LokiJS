@@ -1114,6 +1114,47 @@
     Resultset.prototype.branch = Resultset.prototype.copy;
 
     /**
+     * transform() - executes a raw array of transform steps against the resultset.
+     *
+     * @param {array} : (Optional) array of transform steps to execute against this resultset.
+     * @param {object} : (Optional) object property hash of parameters, if the transform requires them.
+     * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
+     */
+    Resultset.prototype.transform = function(transform, parameters) {
+      var idx,
+        step,
+        rs = this;
+
+      if (typeof parameters !== 'undefined') {
+        transform = Utils.resolveTransformParams(transform, parameters);
+      }
+
+      for(idx = 0; idx < transform.length; idx++) {
+        step = transform[idx];
+
+        switch (step.type) {
+          case "find" : rs.find(step.value); break;
+          case "where" : rs.where(step.value); break;
+          case "simplesort" : rs.simplesort(step.property, step.desc); break;
+          case "compoundsort" : rs.compoundsort(step.value); break;
+          case "sort" : rs.sort(step.value); break;
+          case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
+          case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
+          case "map" : rs = rs.map(step.value); break;
+          case "eqJoin" : rs = rs.eqJoin (step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun); break;
+          // following cases break chain by returning array data so make any of these last in transform steps
+          case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
+          // following cases update documents in current filtered resultset (use carefully)
+          case "update" : rs.update(step.value); break;
+          case "remove" : rs.remove(); break;
+          default : break;
+        }
+      }
+
+      return rs;
+    };
+
+    /**
      * sort() - User supplied compare function is provided two documents to compare. (chainable)
      *    Example:
      *    rslt.sort(function(obj1, obj2) {
@@ -2187,10 +2228,31 @@
      *    Unlike this dynamic view, the branched resultset will not be 'live' updated,
      *    so your branched query should be immediately resolved and not held for future evaluation.
      *
+     * @param {string, array} : Optional name of collection transform, or an array of transform steps
+     * @param {object} : optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      */
-    DynamicView.prototype.branchResultset = function () {
-      return this.resultset.copy();
+    DynamicView.prototype.branchResultset = function (transform, parameters) {
+      var rs = this.resultset.copy();
+
+      if (typeof transform === 'undefined') {
+        return rs;
+      }
+
+      // if transform is name, then do lookup first
+      if (typeof transform === 'string') {
+        if (this.collection.transforms.hasOwnProperty(transform)) {
+          transform = this.collection.transforms[transform];
+        }
+      }
+
+      // either they passed in raw transform array or we looked it up, so process
+      if (typeof transform === 'object' && Array.isArray(transform)) {
+        // if parameters were passed, apply them
+        return rs.transform(transform, parameters);
+      }
+
+      return rs;
     };
 
     /**
@@ -3391,9 +3453,7 @@
      * @returns {Resultset} : (or data array if any map or join functions where called)
      */
     Collection.prototype.chain = function (transform, parameters) {
-      var idx, 
-        step,
-        rs = new Resultset(this, null, null);
+      var rs = new Resultset(this, null, null);
 
       if (typeof transform === 'undefined') {
         return rs;
@@ -3409,33 +3469,7 @@
       // either they passed in raw transform array or we looked it up, so process
       if (typeof transform === 'object' && Array.isArray(transform)) {
         // if parameters were passed, apply them
-        if (typeof parameters !== 'undefined') {
-          transform = Utils.resolveTransformParams(transform, parameters);
-        }
-
-        for(idx = 0; idx < transform.length; idx++) {
-          step = transform[idx];
-
-          switch (step.type) {
-            case "find" : rs.find(step.value); break;
-            case "where" : rs.where(step.value); break;
-            case "simplesort" : rs.simplesort(step.property, step.desc); break;
-            case "compoundsort" : rs.compoundsort(step.value); break;
-            case "sort" : rs.sort(step.value); break;
-            case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
-            case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
-            case "map" : rs = rs.map(step.value); break;
-            case "eqJoin" : rs = rs.eqJoin (step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun); break;
-            // following cases break chain by returning array data so make any of these last in transform steps
-            case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
-            // following cases update documents in current filtered resultset (use carefully)
-            case "update" : rs.update(step.value); break;
-            case "remove" : rs.remove(); break;
-            default : break;
-          }
-        }
-
-        return rs;
+        return rs.transform(transform, parameters);
       }
 
       return null;

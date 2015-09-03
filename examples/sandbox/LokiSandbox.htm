@@ -13,6 +13,7 @@
     <title>Loki Sandbox</title>
 
     <script src="../../src/lokijs.js"></script>
+    <script src="../../src/loki-indexed-adapter.js"></script>
     <script src="jquery-2.1.0.min.js"></script>
     <script src="sandbox.min.js"></script>
     <link rel="stylesheet" href="sandbox.min.css">
@@ -359,9 +360,7 @@
         sbv.editorOutput.setValue('');
 
         var s = document.createElement("script");
-        var ls = "(function() { ";
-        ls += sbv.editorJS.getValue();
-        ls += " }());"
+        var ls = sbv.editorJS.getValue();
 
         s.innerHTML = ls;
 

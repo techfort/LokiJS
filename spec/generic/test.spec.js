@@ -61,37 +61,37 @@ describe('loki', function () {
           '$regex': /o/
         }
       }).length).toEqual(2);
-      
+
       // $contains
       expect(users.find({
         'name': {
           '$contains': "jo"
         }
       }).length).toEqual(2);
-      
+
       // $contains using array element
       expect(users.find({
         'name': {
           '$contains': ["jo"]
         }
       }).length).toEqual(2);
-      
-   
-      
-        // $contains any with one value
-       expect(users.find({
+
+
+
+      // $contains any with one value
+      expect(users.find({
         'name': {
           '$containsAny': 'nas'
         }
       }).length).toEqual(1);
-    
+
       // $contains any with multiple values
-       expect(users.find({
+      expect(users.find({
         'name': {
-          '$containsAny': ['nas','dave']
+          '$containsAny': ['nas', 'dave']
         }
       }).length).toEqual(2);
-      
+
 
       // insert() : try inserting existing document (should fail), try adding doc with legacy id column
       var collectionLength = users.data.length;
@@ -165,7 +165,7 @@ describe('loki', function () {
     })
   });
 
-  describe('dot notation', function() {
+  describe('dot notation', function () {
     it('works', function () {
       var dnc = db.addCollection('dncoll');
 
@@ -200,13 +200,17 @@ describe('loki', function () {
       });
 
       // test dot notation using regular find (with multiple results)
-      var firstResult = dnc.find({"addr.zip": 12345});
-      expect (firstResult.length).toEqual(2);
-      expect (firstResult[0].addr.zip).toEqual(12345);
-      expect (firstResult[1].addr.zip).toEqual(12345);
+      var firstResult = dnc.find({
+        "addr.zip": 12345
+      });
+      expect(firstResult.length).toEqual(2);
+      expect(firstResult[0].addr.zip).toEqual(12345);
+      expect(firstResult[1].addr.zip).toEqual(12345);
 
       // test not notation using findOne
-      var secObj = dnc.findOne({"addr.state": 'FF'});
+      var secObj = dnc.findOne({
+        "addr.state": 'FF'
+      });
 
       expect(secObj !== null).toBeTruthy();
       expect(secObj.addr.zip).toEqual(32345);
@@ -759,7 +763,9 @@ describe('loki', function () {
       };
 
       // set up a persistent dynamic view with sort
-      var pview = users.addDynamicView('test2', true);
+      var pview = users.addDynamicView('test2', {
+        persistent: true
+      });
       pview.applyFind(query);
       pview.applySimpleSort('age');
 

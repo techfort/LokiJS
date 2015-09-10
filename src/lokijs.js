@@ -28,7 +28,7 @@
         }
       },
       // used to recursively scan hierarchical transform step object for param substitution
-      resolveTransformObject : function (subObj, params, depth) {
+      resolveTransformObject: function (subObj, params, depth) {
         var prop,
           pname;
 
@@ -43,18 +43,17 @@
             pname = subObj[prop].substring(8);
             if (params.hasOwnProperty(pname)) {
               subObj[prop] = params[pname];
-            }            
-          }
-          else if (typeof subObj[prop] === "object") {
+            }
+          } else if (typeof subObj[prop] === "object") {
             subObj[prop] = Utils.resolveTransformObject(subObj[prop], params, depth);
           }
         }
-        
+
         return subObj;
       },
       // top level utility to resolve an entire (single) transform (array of steps) for parameter substitution
       resolveTransformParams: function (transform, params) {
-        var idx, 
+        var idx,
           prop,
           clonedStep,
           resolvedTransform = [];
@@ -62,7 +61,7 @@
         if (typeof params === 'undefined') return transform;
 
         // iterate all steps in the transform array
-        for (idx=0; idx < transform.length; idx++) {
+        for (idx = 0; idx < transform.length; idx++) {
           // clone transform so our scan and replace can operate directly on cloned transform
           clonedStep = JSON.parse(JSON.stringify(transform[idx]));
           resolvedTransform.push(Utils.resolveTransformObject(clonedStep, params));
@@ -429,7 +428,7 @@
 
     // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
     // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
-    Loki.prototype.getIndexedAdapter = function() {
+    Loki.prototype.getIndexedAdapter = function () {
       var adapter;
 
       if (typeof require === 'function') {
@@ -502,11 +501,11 @@
         if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
           this.autosaveDisable();
           this.autosave = true;
-          
-          if(this.options.hasOwnProperty('autosaveCallback')){
-              this.autosaveEnable(options, options.autosaveCallback);
-          }else{
-              this.autosaveEnable();
+
+          if (this.options.hasOwnProperty('autosaveCallback')) {
+            this.autosaveEnable(options, options.autosaveCallback);
+          } else {
+            this.autosaveEnable();
           }
         }
       } // end of options processing
@@ -627,7 +626,7 @@
      */
     Loki.prototype.loadJSON = function (serializedDb, options) {
 
-      if(serializedDb.length===0) serializedDb=JSON.stringify({});
+      if (serializedDb.length === 0) serializedDb = JSON.stringify({});
       var obj = JSON.parse(serializedDb),
         i = 0,
         len = obj.collections ? obj.collections.length : 0,
@@ -690,7 +689,7 @@
         copyColl.uniqueNames = [];
         if (coll.hasOwnProperty("uniqueNames")) {
           copyColl.uniqueNames = coll.uniqueNames;
-          for (j=0; j < copyColl.uniqueNames.length; j++) {
+          for (j = 0; j < copyColl.uniqueNames.length; j++) {
             copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
           }
         }
@@ -897,7 +896,7 @@
           if (typeof (dbString) === 'string') {
             self.loadJSON(dbString, options || {});
             cFun(null);
-            self.emit('loaded', 'database ' +  self.filename + ' loaded');
+            self.emit('loaded', 'database ' + self.filename + ' loaded');
           } else {
             console.warn('lokijs loadDatabase : Database not found');
             if (typeof (dbString) === "object") {
@@ -1122,7 +1121,7 @@
      * @param {object} : (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
      */
-    Resultset.prototype.transform = function(transform, parameters) {
+    Resultset.prototype.transform = function (transform, parameters) {
       var idx,
         step,
         rs = this;
@@ -1131,25 +1130,50 @@
         transform = Utils.resolveTransformParams(transform, parameters);
       }
 
-      for(idx = 0; idx < transform.length; idx++) {
+      for (idx = 0; idx < transform.length; idx++) {
         step = transform[idx];
 
         switch (step.type) {
-          case "find" : rs.find(step.value); break;
-          case "where" : rs.where(step.value); break;
-          case "simplesort" : rs.simplesort(step.property, step.desc); break;
-          case "compoundsort" : rs.compoundsort(step.value); break;
-          case "sort" : rs.sort(step.value); break;
-          case "limit" : rs = rs.limit(step.value); break;  // limit makes copy so update reference
-          case "offset" : rs = rs.offset(step.value); break; // offset makes copy so update reference
-          case "map" : rs = rs.map(step.value); break;
-          case "eqJoin" : rs = rs.eqJoin (step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun); break;
+        case "find":
+          rs.find(step.value);
+          break;
+        case "where":
+          rs.where(step.value);
+          break;
+        case "simplesort":
+          rs.simplesort(step.property, step.desc);
+          break;
+        case "compoundsort":
+          rs.compoundsort(step.value);
+          break;
+        case "sort":
+          rs.sort(step.value);
+          break;
+        case "limit":
+          rs = rs.limit(step.value);
+          break; // limit makes copy so update reference
+        case "offset":
+          rs = rs.offset(step.value);
+          break; // offset makes copy so update reference
+        case "map":
+          rs = rs.map(step.value);
+          break;
+        case "eqJoin":
+          rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun);
+          break;
           // following cases break chain by returning array data so make any of these last in transform steps
-          case "mapReduce" : rs = rs.mapReduce(step.mapFunction, step.reduceFunction); break;
+        case "mapReduce":
+          rs = rs.mapReduce(step.mapFunction, step.reduceFunction);
+          break;
           // following cases update documents in current filtered resultset (use carefully)
-          case "update" : rs.update(step.value); break;
-          case "remove" : rs.remove(); break;
-          default : break;
+        case "update":
+          rs.update(step.value);
+          break;
+        case "remove":
+          rs.remove();
+          break;
+        default:
+          break;
         }
       }
 
@@ -1337,7 +1361,7 @@
           return [0, -1];
         }
         if (ltHelper(maxVal, val)) {
-          return [0, rcd.length-1];
+          return [0, rcd.length - 1];
         }
         break;
       case '$lte':
@@ -1345,7 +1369,7 @@
           return [0, -1];
         }
         if (ltHelper(maxVal, val, true)) {
-          return [0, rcd.length-1];
+          return [0, rcd.length - 1];
         }
         break;
       }
@@ -1725,13 +1749,12 @@
 
           if (firstOnly) {
             if (usingDotNotation) {
-              while(i--) {
+              while (i--) {
                 if (this.dotSubScan(t[i], property, fun, value)) {
-                  return(t[i]);
+                  return (t[i]);
                 }
               }
-            }
-            else {
+            } else {
               while (i--) {
                 if (fun(t[i][property], value)) {
                   return (t[i]);
@@ -2451,7 +2474,7 @@
      * queueRebuildEvent() - When the view is not sorted we may still wish to be notified of rebuild events.
      *     This event will throttle and queue a single rebuild event when batches of updates affect the view.
      */
-    DynamicView.prototype.queueRebuildEvent = function() {
+    DynamicView.prototype.queueRebuildEvent = function () {
       var self = this;
 
       if (this.rebuildPending) {
@@ -2460,12 +2483,12 @@
 
       this.rebuildPending = true;
 
-      setTimeout(function() {
+      setTimeout(function () {
         self.rebuildPending = false;
         self.emit('rebuild', this);
       }, 1);
     };
-    
+
     /**
      * queueSortPhase : If the view is sorted we will throttle sorting to either :
      *    (1) passive - when the user calls data(), or
@@ -2486,8 +2509,7 @@
         setTimeout(function () {
           self.performSortPhase();
         }, 1);
-      }
-      else {
+      } else {
         // must be passive sorting... since not calling performSortPhase (until data call), lets use queueRebuildEvent to 
         // potentially notify user that data has changed.
         this.queueRebuildEvent();
@@ -2569,8 +2591,7 @@
         // need to re-sort to sort new document
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
-        }
-        else {
+        } else {
           this.queueRebuildEvent();
         }
 
@@ -2599,8 +2620,7 @@
         // in case changes to data altered a sort column
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
-        }
-        else {
+        } else {
           this.queueRebuildEvent();
         }
 
@@ -2617,8 +2637,7 @@
         // in case changes to data altered a sort column
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
-        }
-        else {
+        } else {
           this.queueRebuildEvent();
         }
 
@@ -2667,7 +2686,7 @@
       oldlen = ofr.length;
       for (idx = 0; idx < oldlen; idx++) {
         if (ofr[idx] > objIndex) {
-          ofr[idx] --;
+          ofr[idx]--;
         }
       }
     };
@@ -2711,7 +2730,7 @@
       // unique contraints contain duplicate object references, so they are not persisted.
       // we will keep track of properties which have unique contraint applied here, and regenerate on load
       this.uniqueNames = [];
-      
+
       // transforms will be used to store frequently used query chains as a series of steps 
       // which itself can be stored along with the database.
       this.transforms = {};
@@ -2739,7 +2758,7 @@
           options.unique = [options.unique];
         }
         options.unique.forEach(function (prop) {
-          self.uniqueNames.push(prop);  // used to regenerate on subsequent database loads
+          self.uniqueNames.push(prop); // used to regenerate on subsequent database loads
           self.constraints.unique[prop] = new UniqueIndex(prop);
         });
       }
@@ -2918,11 +2937,11 @@
       this.transforms[name] = transform;
     };
 
-    Collection.prototype.removeTransform = function(name) {
+    Collection.prototype.removeTransform = function (name) {
       delete transforms[name];
     };
 
-    Collection.prototype.byExample = function(template) {
+    Collection.prototype.byExample = function (template) {
       var k, obj, query;
       query = [];
       for (k in template) {
@@ -2933,12 +2952,18 @@
           obj
         ));
       }
-      return { '$and': query };
+      return {
+        '$and': query
+      };
     };
 
-    Collection.prototype.findObject = function(template) { return this.findOne(this.byExample(template)); };
+    Collection.prototype.findObject = function (template) {
+      return this.findOne(this.byExample(template));
+    };
 
-    Collection.prototype.findObjects = function(template) { return this.find(this.byExample(template)); };
+    Collection.prototype.findObjects = function (template) {
+      return this.find(this.byExample(template));
+    };
 
     /*----------------------------+
     | INDEXING                    |
@@ -3217,7 +3242,7 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
         this.emit('update', doc);
-
+        return doc;
       } catch (err) {
         this.rollback();
         console.error(err.message);
@@ -3349,7 +3374,7 @@
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
-          if( doc[key] !== null && typeof doc[key] !== 'undefined' ) {
+          if (doc[key] !== null && typeof doc[key] !== 'undefined') {
             self.constraints.unique[key].remove(doc[key]);
           }
         });
@@ -3896,7 +3921,7 @@
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
     UniqueIndex.prototype.set = function (obj) {
-      if (obj[this.field] !== null && typeof(obj[this.field]) !== 'undefined') {
+      if (obj[this.field] !== null && typeof (obj[this.field]) !== 'undefined') {
         if (this.keyMap[obj[this.field]]) {
           throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
         } else {
@@ -3924,7 +3949,7 @@
     };
     UniqueIndex.prototype.remove = function (key) {
       var obj = this.keyMap[key];
-      if( obj !== null && typeof obj !== 'undefined') {
+      if (obj !== null && typeof obj !== 'undefined') {
         this.keyMap[key] = undefined;
         this.lokiMap[obj.$loki] = undefined;
       } else {

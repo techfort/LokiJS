@@ -2026,11 +2026,7 @@
         this.filteredrows = Object.keys(this.collection.data);
       }
 
-      var len = this.filteredrows.length;
-
-      for (var idx = 0; idx < len; idx++) {
-        this.collection.remove(this.filteredrows[idx]);
-      }
+      this.collection.remove(this.data());
 
       this.filteredrows = [];
 

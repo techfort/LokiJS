@@ -693,7 +693,54 @@ describe('loki', function () {
 
       db.removeCollection('eic');
     })
-  })
+  });
+
+  describe('chained removes', function() {
+    it('works', function() {
+      var rsc = db.addCollection('rsc');
+
+      rsc.insert({
+        'testid': 1,
+        'testString': 'hhh',
+        'testFloat': 5.2
+      });
+      rsc.insert({
+        'testid': 1,
+        'testString': 'bbb',
+        'testFloat': 6.2
+      });
+      rsc.insert({
+        'testid': 2,
+        'testString': 'ccc',
+        'testFloat': 6.2
+      });
+      rsc.insert({
+        'testid': 5,
+        'testString': 'zzz',
+        'testFloat': 7.2
+      });
+
+      var docCount = rsc.find().length;
+
+      // verify initial doc count
+      expect(docCount).toEqual(4);
+
+      // remove middle documents
+      rsc.chain().find({testFloat: 6.2}).remove();
+
+
+      // verify new doc count
+      expect(rsc.find().length).toEqual(2);
+      expect(rsc.chain().data().length).toEqual(2);
+
+      // now fetch and retain all remaining documents
+      var results = rsc.chain().simplesort('testString').data();
+
+      // make sure its the documents we expect
+      expect(results[0].testString).toEqual('hhh');
+      expect(results[1].testString).toEqual('zzz');
+    })
+  });
 
   /* Dynamic View Tests */
   describe('stepEvaluateDocument', function () {

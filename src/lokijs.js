@@ -1696,7 +1696,7 @@
           }
 
           // see if query object is in shorthand mode (assuming eq operator)
-          if (queryObject[p] === null || typeof queryObject[p] !== 'object') {
+          if (queryObject[p] === null || (typeof queryObject[p] !== 'object' || queryObject[p] instanceof Date)) {
             operator = '$eq';
             value = queryObject[p];
           } else if (typeof queryObject[p] === 'object') {

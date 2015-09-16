@@ -189,6 +189,21 @@ describe('loki', function () {
         }
       });
 
+      // make sure it can handle case where top level property doesn't exist
+      dnc.insert({
+        first: 'mmm',
+        last: 'nnn'
+      });
+
+      // make sure it can handle case where subscan property doesn't exist
+      dnc.insert({
+        first: 'ooo',
+        last: 'ppp',
+        addr: {
+          state: 'YY'
+        }
+      });
+
       dnc.insert({
         first: 'jjj',
         last: 'kkk',

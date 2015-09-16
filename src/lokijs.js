@@ -1554,6 +1554,10 @@
         }
         // else not yet determined if subarray scan is involved
         else {
+          // if the dot notation is invalid for the current document, then ignore this document
+          if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
+            return false;
+          }
           root = root[path];
           if (Array.isArray(root)) {
             arrayRef = root;

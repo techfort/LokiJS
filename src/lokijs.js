@@ -731,7 +731,8 @@
       if (this.autosave) {
         this.autosaveDisable();
         if (this.autosaveDirty()) {
-          this.saveDatabase();
+          this.saveDatabase(callback);
+          callback = undefined;
         }
       }
 
@@ -2156,7 +2157,7 @@
         this.options.persistent = false;
       }
 
-      // 'persistentSortPriority': 
+      // 'persistentSortPriority':
       // 'passive' will defer the sort phase until they call data(). (most efficient overall)
       // 'active' will sort async whenever next idle. (prioritizes read speeds)
       if (!this.options.hasOwnProperty('sortPriority')) {
@@ -2510,7 +2511,7 @@
           self.performSortPhase();
         }, 1);
       } else {
-        // must be passive sorting... since not calling performSortPhase (until data call), lets use queueRebuildEvent to 
+        // must be passive sorting... since not calling performSortPhase (until data call), lets use queueRebuildEvent to
         // potentially notify user that data has changed.
         this.queueRebuildEvent();
       }
@@ -2731,7 +2732,7 @@
       // we will keep track of properties which have unique contraint applied here, and regenerate on load
       this.uniqueNames = [];
 
-      // transforms will be used to store frequently used query chains as a series of steps 
+      // transforms will be used to store frequently used query chains as a series of steps
       // which itself can be stored along with the database.
       this.transforms = {};
 
@@ -3966,7 +3967,7 @@
       this.field = exactField;
     }
 
-    // add the value you want returned to the key in the index 
+    // add the value you want returned to the key in the index
     ExactIndex.prototype = {
       set: function add(key, val) {
         if (this.index[key]) {
@@ -4018,7 +4019,7 @@
       setSort: function (fun) {
         this.bs = new BSonSort(fun);
       },
-      // add the value you want returned  to the key in the index  
+      // add the value you want returned  to the key in the index
       set: function (key, value) {
         var pos = binarySearch(this.keys, key, this.sort);
         if (pos.found) {

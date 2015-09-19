@@ -75,7 +75,19 @@ describe('sorting and indexing', function () {
       var results = cidx.find({'b': dt2 });
       expect(results[0].a).toBe(2);
 
-      // now verify indices, they are array of 'positions' so both array index and value are zero based
+      // now search for date value equal to dt2 (yet separate object instances)
+      // this should not work when using the default $eq
+      var sdt = new Date(now + 5000);
+      results = cidx.find({'b': sdt});
+      expect(results.length).toBe(0);
+
+      // now try with new $dteq operator
+      results = cidx.find({'b': {'$dteq': sdt}});
+      expect(results.length).toBe(1);
+      expect(results[0].a).toBe(2);
+
+      // now verify indices
+      // they are array of 'positions' so both array index and value are zero based
       expect(cidx.binaryIndices.b.values[0]).toBe(2);
       expect(cidx.binaryIndices.b.values[1]).toBe(4);
       expect(cidx.binaryIndices.b.values[2]).toBe(0);

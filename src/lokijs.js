@@ -181,6 +181,18 @@
         return a === b;
       },
 
+      $dteq: function(a, b) {
+        if (ltHelper(a, b)) {
+          return false;
+        }
+
+        if (gtHelper(a,b)) {
+          return false;
+        }
+
+        return true;
+      },
+
       $gt: function (a, b) {
         return gtHelper(a, b);
       },
@@ -253,6 +265,7 @@
 
     var operators = {
       '$eq': LokiOps.$eq,
+      '$dteq': LokiOps.$dteq,
       '$gt': LokiOps.$gt,
       '$gte': LokiOps.$gte,
       '$lt': LokiOps.$lt,
@@ -265,7 +278,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$gt', '$gte', '$lt', '$lte'];
+    var indexedOpsList = ['$eq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -1365,6 +1378,11 @@
           return [0, -1];
         }
         break;
+      case '$dteq':
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+          return [0, -1];
+        }
+        break;
       case '$gt':
         if (gtHelper(val, maxVal, true)) {
           return [0, -1];
@@ -1435,6 +1453,16 @@
         }
 
         return [lbound, ubound];
+      case '$dteq':
+        if (lval > val || lval < val) {
+          return [0, -1];
+        }
+        if (uval > val || uval < val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+
 
       case '$gt':
         if (ltHelper(uval, val, true)) {

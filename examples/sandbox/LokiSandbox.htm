@@ -187,6 +187,18 @@
       editorOutput: null,
     }
 
+    function getHashParameter (sParam) {
+      var sPageURL = window.location.hash.substring(1);
+
+      var sURLVariables = sPageURL.split('&');
+      for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] === sParam) {
+          return decodeURIComponent(sParameterName[1]);
+        }
+      }
+    }
+    
     var db = new loki('sandbox.db');
 
     function tabMode(mode) {
@@ -214,6 +226,21 @@
       $("body").css("background-color", "#222");
 
       setupEditor();
+      
+      // if the user specifies a rawgist hash parameter, attempt to load and run that gist (url)
+      var rawgist = getHashParameter("rawgist");
+      if (rawgist !== "") {
+        if (rawgist.indexOf("https://gist.githubusercontent.com") !== 0) {
+          console.log("only allowing ajax fetch to gist.githubusercontent.com");
+        }
+
+        console.log ("loading rawgist : " + rawgist);
+
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", gistLoaded);
+        oReq.open("GET", rawgist);
+        oReq.send();
+      }
 
       setTimeout(function() {
         windowResize();
@@ -221,6 +248,12 @@
       }, 250);
     });
 
+    function gistLoaded () {
+      sbv.editorJS.setValue(this.responseText);
+      
+      setTimeout(runloki, 100);
+    }
+    
     function windowResize() {
       setTimeout(function() {
         try {

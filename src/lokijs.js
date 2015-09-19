@@ -1069,7 +1069,7 @@
     Resultset.prototype.limit = function (qty) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var rscopy = this.copy();
@@ -1088,7 +1088,7 @@
     Resultset.prototype.offset = function (pos) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var rscopy = this.copy();
@@ -1196,7 +1196,7 @@
     Resultset.prototype.sort = function (comparefun) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var wrappedComparer =
@@ -1224,7 +1224,7 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -1295,7 +1295,7 @@
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var wrappedComparer =
@@ -1623,7 +1623,7 @@
         // chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
-          this.filteredrows = Object.keys(this.collection.data);
+          this.filteredrows = Object.keys(this.collection.data).map(Number);
           return this;
         }
         // not chained, so return collection data array
@@ -2002,7 +2002,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var len = this.filteredrows.length,
@@ -2028,7 +2028,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       this.collection.remove(this.data());
@@ -2556,7 +2556,7 @@
      */
     DynamicView.prototype.evaluateDocument = function (objIndex) {
       var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(objIndex);
+      var oldPos = ofr.indexOf(+objIndex);
       var oldlen = ofr.length;
 
       // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
@@ -2651,7 +2651,7 @@
      */
     DynamicView.prototype.removeDocument = function (objIndex) {
       var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(objIndex);
+      var oldPos = ofr.indexOf(+objIndex);
       var oldlen = ofr.length;
       var idx;
 

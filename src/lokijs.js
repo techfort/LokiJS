@@ -73,14 +73,6 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
       if (prop1 === undefined) {
         return true;
       }
@@ -93,18 +85,25 @@
       if (prop2 === null) {
         return false;
       }
-      return prop1 < prop2;
+
+      if (prop1 < prop2) {
+        return true;
+      }
+
+      if (prop1 > prop2) {
+        return false;
+      }
+
+      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+      if (equal) {
+        return true;
+      } else {
+        return false;
+      }
+
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
       if (prop1 === undefined) {
         return false;
       }
@@ -117,26 +116,45 @@
       if (prop2 === null) {
         return true;
       }
-      return prop1 > prop2;
+
+      if (prop1 > prop2) {
+        return true;
+      }
+
+      if (prop1 < prop2) {
+        return false;
+      }
+
+      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+      if (equal) {
+        return true;
+      } else {
+        return false;
+      }
+
     }
 
     function sortHelper(prop1, prop2, desc) {
-      if (prop1 === prop2) {
-        return 0;
-      }
-      if (desc) {
-        if (ltHelper(prop1, prop2)) {
+      if (ltHelper(prop1, prop2)) {
+        if (desc) {
           return 1;
-        } else {
-          return -1;
         }
-      } else {
-        if (gtHelper(prop1, prop2)) {
-          return 1;
-        } else {
+        else {
           return -1;
         }
       }
+
+      if (gtHelper(prop1, prop2)) {
+        if (desc) {
+          return -1;
+        }
+        else {
+          return 1;
+        }
+      }
+
+      // not lt, not gt so implied equality-- date compatible
+      return 0;
     }
 
     function containsCheckFn(a, b) {

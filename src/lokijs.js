@@ -516,7 +516,7 @@
 
 
         // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-        if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
+        if (options.autoload && initialConfig) {
           // for autoload, let the constructor complete before firing callback
           var self = this;
           setTimeout(function () {

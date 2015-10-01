@@ -73,14 +73,6 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
       if (prop1 === undefined) {
         return true;
       }
@@ -93,18 +85,25 @@
       if (prop2 === null) {
         return false;
       }
-      return prop1 < prop2;
+
+      if (prop1 < prop2) {
+        return true;
+      }
+
+      if (prop1 > prop2) {
+        return false;
+      }
+
+      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+      if (equal) {
+        return true;
+      } else {
+        return false;
+      }
+
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === prop2) {
-        if (equal) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
       if (prop1 === undefined) {
         return false;
       }
@@ -117,26 +116,45 @@
       if (prop2 === null) {
         return true;
       }
-      return prop1 > prop2;
+
+      if (prop1 > prop2) {
+        return true;
+      }
+
+      if (prop1 < prop2) {
+        return false;
+      }
+
+      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+      if (equal) {
+        return true;
+      } else {
+        return false;
+      }
+
     }
 
     function sortHelper(prop1, prop2, desc) {
-      if (prop1 === prop2) {
-        return 0;
-      }
-      if (desc) {
-        if (ltHelper(prop1, prop2)) {
+      if (ltHelper(prop1, prop2)) {
+        if (desc) {
           return 1;
-        } else {
-          return -1;
         }
-      } else {
-        if (gtHelper(prop1, prop2)) {
-          return 1;
-        } else {
+        else {
           return -1;
         }
       }
+
+      if (gtHelper(prop1, prop2)) {
+        if (desc) {
+          return -1;
+        }
+        else {
+          return 1;
+        }
+      }
+
+      // not lt, not gt so implied equality-- date compatible
+      return 0;
     }
 
     function containsCheckFn(a, b) {
@@ -161,6 +179,18 @@
       // b is the query value
       $eq: function (a, b) {
         return a === b;
+      },
+
+      $dteq: function(a, b) {
+        if (ltHelper(a, b)) {
+          return false;
+        }
+
+        if (gtHelper(a,b)) {
+          return false;
+        }
+
+        return true;
       },
 
       $gt: function (a, b) {
@@ -235,6 +265,7 @@
 
     var operators = {
       '$eq': LokiOps.$eq,
+      '$dteq': LokiOps.$dteq,
       '$gt': LokiOps.$gt,
       '$gte': LokiOps.$gte,
       '$lt': LokiOps.$lt,
@@ -247,7 +278,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$gt', '$gte', '$lt', '$lte'];
+    var indexedOpsList = ['$eq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -485,7 +516,7 @@
 
 
         // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-        if (options.hasOwnProperty('autoload') && typeof (initialConfig) !== 'undefined' && initialConfig) {
+        if (options.autoload && initialConfig) {
           // for autoload, let the constructor complete before firing callback
           var self = this;
           setTimeout(function () {
@@ -1069,7 +1100,7 @@
     Resultset.prototype.limit = function (qty) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var rscopy = this.copy();
@@ -1088,7 +1119,7 @@
     Resultset.prototype.offset = function (pos) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var rscopy = this.copy();
@@ -1196,7 +1227,7 @@
     Resultset.prototype.sort = function (comparefun) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var wrappedComparer =
@@ -1224,7 +1255,7 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -1295,7 +1326,7 @@
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var wrappedComparer =
@@ -1343,6 +1374,11 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+          return [0, -1];
+        }
+        break;
+      case '$dteq':
         if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
           return [0, -1];
         }
@@ -1417,6 +1453,16 @@
         }
 
         return [lbound, ubound];
+      case '$dteq':
+        if (lval > val || lval < val) {
+          return [0, -1];
+        }
+        if (uval > val || uval < val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+
 
       case '$gt':
         if (ltHelper(uval, val, true)) {
@@ -1623,7 +1669,7 @@
         // chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
-          this.filteredrows = Object.keys(this.collection.data);
+          this.filteredrows = Object.keys(this.collection.data).map(Number);
           return this;
         }
         // not chained, so return collection data array
@@ -2002,7 +2048,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       var len = this.filteredrows.length,
@@ -2028,7 +2074,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data);
+        this.filteredrows = Object.keys(this.collection.data).map(Number);
       }
 
       this.collection.remove(this.data());
@@ -2556,7 +2602,7 @@
      */
     DynamicView.prototype.evaluateDocument = function (objIndex) {
       var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(objIndex);
+      var oldPos = ofr.indexOf(+objIndex);
       var oldlen = ofr.length;
 
       // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
@@ -2651,7 +2697,7 @@
      */
     DynamicView.prototype.removeDocument = function (objIndex) {
       var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(objIndex);
+      var oldPos = ofr.indexOf(+objIndex);
       var oldlen = ofr.length;
       var idx;
 

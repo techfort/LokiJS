@@ -122,7 +122,7 @@
   <div id="divLokiCode">
   </div>
 
-  <div id="divLoader" style="position:absolute; top:10px; right: 400px">
+  <div id="divLoader" style="position:absolute; top:10px; right: 420px">
     <i>Import database : </i> <input style='height:30px; width:200px;' id='file-import' type="file" onchange="dbImport()" />
   </div>
 
@@ -132,7 +132,9 @@
     <input class="vpatel" type="radio" id="radio2" name="radios" value="false" onclick="tabMode(2)">
     <label for="radio2">Object Inspector</label>
     <input class="vpatel" type="radio" id="radio3" name="radios" value="true" onclick="tabMode(3)">
-    <label for="radio3">About</label>
+    <label for="radio3">Save / Load</label>
+    <input class="vpatel" type="radio" id="radio4" name="radios" value="true" onclick="tabMode(4)">
+    <label for="radio4">About</label>
   </div>
 
   <table width="100%" style="table-layout:fixed">
@@ -142,7 +144,7 @@
         <div id="divLokiEditor">
           <textarea id="jsedit"></textarea>
           <br />
-          <button class="minimal" onclick="runloki();">Run</button>
+          <button class="minimal" style="width:140px" onclick="runloki();">Run</button>
         </div>
       </td>
       <td width="50%" valign="top">
@@ -162,6 +164,26 @@
           <br/>
           <button class="minimal" onclick="console.log(db)" style="width:220px">Log db to Console</button>
         </div>
+        <div id="divSaveLoad" style="display:none; padding: 20px">
+          <h2>Save / Load</h2>
+          <br/>
+          <table width="100%">
+            <tr>
+              <td valign="top">
+                <label>Script name : </label><br/>
+                <input id="txtScriptName" type='text' style="font-size:16px; height:24px; width:200px" value="lokiscript1"/><br/><br/>
+                <button class="minimal" onclick="saveLokiScript()">Save</button>
+              </td>
+              <td valign="top">
+                <label>Stored Scripts :</label><br/>
+                <select id="selScriptList" size=8 style="font-size:16pt; min-width:200px"></select>
+                <br/><br/>
+                <button class="minimal" onclick="loadLokiScript()">Load</button><br/><br/>
+                <button class="minimal" onclick="deleteLokiScript()">Delete</button>
+              </td>
+            </tr>
+          </table>
+        </div>
         <div id="divAbout" style="display:none; padding: 20px">
           <h2>About Loki Sandbox 0.2.0</h2>
           <p style="font-size:18px">
@@ -175,6 +197,16 @@
             This utility page is to support <a href="http://lokijs.org" target="_blank">LokiJS</a>.<br /><br/>
             You can also view the <a href="https://github.com/techfort/LokiJS" target="_blank">GitHub page</a>.
           </p>
+          <p>
+            Some example logging commands are :<br/>
+            <code>
+              logText(message);<br/>
+              logObject(obj);<br/>
+              inspectObject(obj);<br/>
+              alertify.log(message);<br/><br/>
+            </code>
+            alertify is a bundled library, click <a href="http://fabien-d.github.io/alertify.js/" target="_blank">here</a> to learn more of its capability.
+          </p>
         </div>
         <br/>
       </td>
@@ -182,22 +214,42 @@
   </table>
 
   <script>
+    var db = new loki('sandbox.db');
+    
+    // we will use loki indexed adapter as a generic app/key/value store
+    // we will store scripts instead of serialized loki databases in our 'sandbox' 'app'
+    var sandboxAdapter = new LokiIndexedAdapter('sandbox');
+
     var sbv = {
       editorJS: null,
       editorOutput: null,
     }
 
-    var db = new loki('sandbox.db');
+    // used to retrieve hash (#) parameters 
+    function getHashParameter (sParam) {
+      var sPageURL = window.location.hash.substring(1);
 
+      var sURLVariables = sPageURL.split('&');
+      for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] === sParam) {
+          return decodeURIComponent(sParameterName[1]);
+        }
+      }
+    }
+    
+    // let's user go to different tabs via 
     function tabMode(mode) {
       $("#divTextOutput").hide();
       $("#divInspector").hide();
+      $("#divSaveLoad").hide();
       $("#divAbout").hide();
 
       switch(mode) {
         case 1 : $("#divTextOutput").show(); break;
         case 2 : $("#divInspector").show(); break;
-        case 3 : $("#divAbout").show(); break;
+        case 3 : $("#divSaveLoad").show(); break;
+        case 4 : $("#divAbout").show(); break;
       }
     }
 
@@ -214,13 +266,87 @@
       $("body").css("background-color", "#222");
 
       setupEditor();
+      
+      loadScriptList();
+      
+      // if the user specifies a rawgist hash parameter, attempt to load and run that gist (url)
+      var rawgist = getHashParameter("rawgist");
+      if (rawgist && rawgist !== "") {
+        if (rawgist.indexOf("https://gist.githubusercontent.com") !== 0) {
+          console.log("only allowing ajax fetch to gist.githubusercontent.com");
+        }
 
+        console.log ("loading rawgist : " + rawgist);
+
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", gistLoaded);
+        oReq.open("GET", rawgist);
+        oReq.send();
+      }
+      else {
+        setTimeout(function() {
+          windowResize();
+          runloki();
+        }, 250);
+      }
+    });
+
+    function loadScriptList() {
+      if (!sandboxAdapter.checkAvailability()) {
+        return;
+      }
+      
+      sandboxAdapter.getKeyList(function(results) {
+        $("#selScriptList").empty();
+        
+        results.forEach(function(name) {
+          $("#selScriptList").append($("<option></option>").text(name).val(name));
+        });
+      });
+    }
+
+    function loadLokiScript() {
+      var selectedScript = $("#selScriptList").val();
+      
+      sandboxAdapter.loadKey(selectedScript, function (result) {
+        if (result !== null) {
+          $("#txtScriptName").val(selectedScript);
+          
+          sbv.editorJS.setValue(result);
+        }
+      });
+    }
+
+    function saveLokiScript() {
+      var scriptName = $("#txtScriptName").val();
+
+
+      var scriptText = sbv.editorJS.getValue();
+
+      sandboxAdapter.saveKey(scriptName, scriptText, function() {
+        alertify.success("saved");
+        loadScriptList();
+      });
+    }
+    
+    function deleteLokiScript() {
+      var selectedScript = $("#selScriptList").val();
+
+      // probably should have made this method async with callback, for now will use settimeout
+      sandboxAdapter.deleteKey(selectedScript);
+      alertify.log("deleted");
+      setTimeout(loadScriptList, 200);
+    }
+    
+    function gistLoaded () {
+      sbv.editorJS.setValue(this.responseText);
+      
       setTimeout(function() {
         windowResize();
         runloki();
-      }, 250);
-    });
-
+      }, 100);
+    }
+    
     function windowResize() {
       setTimeout(function() {
         try {
@@ -330,11 +456,7 @@
     }
 
     function logDatabase() {
-      var str = db.serialize();
-
-      var oldText = sbv.editorOutput.getValue();
-      oldText += str + "\r\n";
-      sbv.editorOutput.setValue(oldText);
+      logObject(db, false);
     }
 
     function logText(message) {
@@ -343,10 +465,21 @@
         sbv.editorOutput.setValue(oldText);
     }
 
-    function logObject(obj) {
-        var oldText = sbv.editorOutput.getValue();
+    function logObject(obj, isPretty) {
+      if (typeof(isPretty) === 'undefined') {
+        isPretty = true;
+      }
+      
+      var oldText = sbv.editorOutput.getValue();
+      
+      if (isPretty) {
         oldText += JSON.stringify(obj, undefined, 2) + "\r\n";
-        sbv.editorOutput.setValue(oldText);
+      }
+      else {
+        oldText += JSON.stringify(obj) + "\r\n";
+      }
+      
+      sbv.editorOutput.setValue(oldText);
     }
 
     function inspectObject(obj) {
@@ -363,6 +496,8 @@
         var ls = sbv.editorJS.getValue();
 
         s.innerHTML = ls;
+
+        tabMode(1);
 
         // give dom a chance to clean out by waiting a bit?
         setTimeout(function () {
@@ -392,46 +527,6 @@
         document.getElementsByTagName("head")[0].appendChild(s);
     };
 
-    // function to inspect a variable/expression highlighted in a script or markup editor
-    function sb_inspect() {
-        var strSelection;
-        var scriptSelection = editorScript.getSelection();
-        var markupSelection = editorMarkup.getSelection();
-
-        if (scriptSelection != "" && markupSelection != "") alertify.error("Ambiguous selection; Highlighted code exists in both editors; using Script selection", "", 0);
-
-        if (scriptSelection == "" && markupSelection == "") {
-            alertify.alert("This feature requires you to select a variable or object in the script editor before clicking 'Inspect'.");
-            return;
-        }
-
-        if (scriptSelection != "") strSelection = scriptSelection;
-        else strSelection = markupSelection;
-
-        var objResult;
-        try {
-            objResult = eval(strSelection);
-        }
-        catch (exc) {
-            alertify.error("malformed inspection selection");
-            return;
-        }
-
-        var tbl = prettyPrint(objResult, { /* options such as maxDepth, etc. */ });
-        $(tbl).dialog({ title: 'Trident Object/Variable Inspector', width: 'auto', maxHeight: ($(window).height() - 50) });
-    }
-
-    function getURLParameter(sParam) {
-        var sPageURL = window.location.hash.substring(1);
-
-        var sURLVariables = sPageURL.split('&');
-        for (var i = 0; i < sURLVariables.length; i++) {
-            var sParameterName = sURLVariables[i].split('=');
-            if (sParameterName[0] == sParam) {
-                return decodeURIComponent(sParameterName[1]);
-            }
-        }
-    }
 
   </script>
 </body>

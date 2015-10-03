@@ -660,12 +660,13 @@
             var collObj = new(options[coll.name].proto)();
             loader(coll.data[j], collObj);
             copyColl.data[j] = collObj;
-
+            copyColl.addAutoUpdateObserver(collObj);
           }
         } else {
 
           for (j; j < clen; j++) {
             copyColl.data[j] = coll.data[j];
+            copyColl.addAutoUpdateObserver(copyColl.data[j]);
           }
         }
 
@@ -2782,6 +2783,8 @@
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
 
+      // option to observe objects and update them automatically, ignored if Object.observe is not supported
+      this.autoUpdate = options.hasOwnProperty('autoUpdate') && typeof Object.observe === 'function' ? options.autoUpdate : false;
 
       // currentMaxId - change manually at your own peril!
       this.maxId = 0;
@@ -2822,6 +2825,17 @@
       for (var idx = 0; idx < indices.length; idx++) {
         this.ensureIndex(indices[idx]);
       }
+
+      function observerCallback(changes) {
+        changes.forEach(function (change) {
+          if(!change.object.hasOwnProperty('$loki'))
+            return self.removeAutoUpdateObserver(change.object);
+
+          self.update(change.object, change.name);
+        });
+      }
+
+      this.observerCallback = observerCallback;
 
       /**
        * This method creates a clone of the current status of an object and associates operation and collection name,
@@ -2925,6 +2939,20 @@
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    Collection.prototype.addAutoUpdateObserver = function (object) {
+      if(!this.autoUpdate)
+        return;
+
+      Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
+    };
+
+    Collection.prototype.removeAutoUpdateObserver = function (object) {
+      if(!this.autoUpdate)
+        return;
+
+      Object.unobserve(object, this.observerCallback);
+    };
 
     Collection.prototype.addTransform = function (name, transform) {
       if (this.transforms.hasOwnProperty(name)) {
@@ -3059,6 +3087,11 @@
       }
     };
 
+    Collection.prototype.flagBinaryIndexDirty = function (index) {
+      if(this.binaryIndices[index])
+        this.binaryIndices[index].dirty = true;
+    };
+
     Collection.prototype.count = function () {
       return this.data.length;
     };
@@ -3168,6 +3201,7 @@
         }
         self.emit('pre-insert', obj);
         if (self.add(obj)) {
+          self.addAutoUpdateObserver(obj);
           self.emit('insert', obj);
           results.push(obj);
         } else {
@@ -3191,16 +3225,20 @@
     /**
      * Update method
      */
-    Collection.prototype.update = function (doc) {
+    Collection.prototype.update = function (doc, changedProperty) {
       if (Object.keys(this.binaryIndices).length > 0) {
-        this.flagBinaryIndexesDirty();
+        if(changedProperty !== undefined) {
+          this.flagBinaryIndexDirty(changedProperty);
+        } else {
+          this.flagBinaryIndexesDirty();
+        }
       }
 
       if (Array.isArray(doc)) {
         var k = 0,
           len = doc.length;
         for (k; k < len; k += 1) {
-          this.update(doc[k]);
+          this.update(doc[k], changedProperty);
         }
         return;
       }
@@ -3222,15 +3260,24 @@
         this.emit('pre-update', doc);
 
         obj = arr[0];
-        Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(obj);
-        });
+
+        if(changedProperty === undefined) {
+          Object.keys(this.constraints.unique).forEach(function (key) {
+            self.constraints.unique[key].update(obj);
+          });
+        } else if(this.constraints.unique.hasOwnProperty(changedProperty)) {
+          self.constraints.unique[changedProperty].update(obj);
+        }
+
         // get current position in data array
         position = arr[1];
 
         // operate the update
         this.data[position] = doc;
 
+        if(obj !== doc) {
+          this.addAutoUpdateObserver(doc);
+        }
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
@@ -3386,6 +3433,7 @@
         }
 
         this.data.splice(position, 1);
+        this.removeAutoUpdateObserver(doc);
 
         // remove id from idIndex
         this.idIndex.splice(position, 1);

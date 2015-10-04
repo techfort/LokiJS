@@ -680,6 +680,12 @@
         coll = obj.collections[i];
         copyColl = this.addCollection(coll.name);
 
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
+        copyColl.autoupdate = coll.autoupdate;
+
         // load each element individually
         clen = coll.data.length;
         j = 0;
@@ -700,11 +706,6 @@
             copyColl.addAutoUpdateObserver(copyColl.data[j]);
           }
         }
-
-        copyColl.transactional = coll.transactional;
-        copyColl.asyncListeners = coll.asyncListeners;
-        copyColl.disableChangesApi = coll.disableChangesApi;
-        copyColl.cloneObjects = coll.cloneObjects;
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
@@ -2758,7 +2759,7 @@
     /**
      * @constructor
      * Collection class that handles documents of same type
-     * @param {stirng} collection name
+     * @param {string} collection name
      * @param {array} array of property names to be indicized
      * @param {object} configuration object
      */
@@ -2830,7 +2831,7 @@
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
 
       // option to observe objects and update them automatically, ignored if Object.observe is not supported
-      this.autoUpdate = options.hasOwnProperty('autoUpdate') && typeof Object.observe === 'function' ? options.autoUpdate : false;
+      this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
       // currentMaxId - change manually at your own peril!
       this.maxId = 0;
@@ -2873,11 +2874,26 @@
       }
 
       function observerCallback(changes) {
-        changes.forEach(function (change) {
-          if(!change.object.hasOwnProperty('$loki'))
-            return self.removeAutoUpdateObserver(change.object);
 
-          self.update(change.object, change.name);
+        var changedObjects = typeof Set === 'function' ? new Set() : [];
+
+        if(!changedObjects.add)
+          changedObjects.add = function(object) {
+            if(this.indexOf(object) !== -1)
+              this.push(object);
+            return this;
+          };
+
+        changes.forEach(function (change) {
+          changedObjects.add(change.object);
+        });
+
+        changedObjects.forEach(function (object) {
+          if(!object.hasOwnProperty('$loki'))
+            return self.removeAutoUpdateObserver(object);
+          try {
+            self.update(object);
+          } catch(err) {}
         });
       }
 
@@ -2987,14 +3003,15 @@
     Collection.prototype = new LokiEventEmitter();
 
     Collection.prototype.addAutoUpdateObserver = function (object) {
-      if(!this.autoUpdate)
+
+      if(!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
     };
 
     Collection.prototype.removeAutoUpdateObserver = function (object) {
-      if(!this.autoUpdate)
+      if(!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.unobserve(object, this.observerCallback);
@@ -3271,20 +3288,16 @@
     /**
      * Update method
      */
-    Collection.prototype.update = function (doc, changedProperty) {
+    Collection.prototype.update = function (doc) {
       if (Object.keys(this.binaryIndices).length > 0) {
-        if(changedProperty !== undefined) {
-          this.flagBinaryIndexDirty(changedProperty);
-        } else {
-          this.flagBinaryIndexesDirty();
-        }
+        this.flagBinaryIndexesDirty();
       }
 
       if (Array.isArray(doc)) {
         var k = 0,
           len = doc.length;
         for (k; k < len; k += 1) {
-          this.update(doc[k], changedProperty);
+          this.update(doc[k]);
         }
         return;
       }
@@ -3307,13 +3320,9 @@
 
         obj = arr[0];
 
-        if(changedProperty === undefined) {
-          Object.keys(this.constraints.unique).forEach(function (key) {
-            self.constraints.unique[key].update(obj);
-          });
-        } else if(this.constraints.unique.hasOwnProperty(changedProperty)) {
-          self.constraints.unique[changedProperty].update(obj);
-        }
+        Object.keys(this.constraints.unique).forEach(function (key) {
+          self.constraints.unique[key].update(obj);
+        });
 
         // get current position in data array
         position = arr[1];

@@ -680,6 +680,12 @@
         coll = obj.collections[i];
         copyColl = this.addCollection(coll.name);
 
+        copyColl.transactional = coll.transactional;
+        copyColl.asyncListeners = coll.asyncListeners;
+        copyColl.disableChangesApi = coll.disableChangesApi;
+        copyColl.cloneObjects = coll.cloneObjects;
+        copyColl.autoupdate = coll.autoupdate;
+
         // load each element individually
         clen = coll.data.length;
         j = 0;
@@ -691,19 +697,15 @@
             var collObj = new(options[coll.name].proto)();
             loader(coll.data[j], collObj);
             copyColl.data[j] = collObj;
-
+            copyColl.addAutoUpdateObserver(collObj);
           }
         } else {
 
           for (j; j < clen; j++) {
             copyColl.data[j] = coll.data[j];
+            copyColl.addAutoUpdateObserver(copyColl.data[j]);
           }
         }
-
-        copyColl.transactional = coll.transactional;
-        copyColl.asyncListeners = coll.asyncListeners;
-        copyColl.disableChangesApi = coll.disableChangesApi;
-        copyColl.cloneObjects = coll.cloneObjects;
 
         copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
@@ -2757,7 +2759,7 @@
     /**
      * @constructor
      * Collection class that handles documents of same type
-     * @param {stirng} collection name
+     * @param {string} collection name
      * @param {array} array of property names to be indicized
      * @param {object} configuration object
      */
@@ -2828,6 +2830,8 @@
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
 
+      // option to observe objects and update them automatically, ignored if Object.observe is not supported
+      this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
       // currentMaxId - change manually at your own peril!
       this.maxId = 0;
@@ -2868,6 +2872,32 @@
       for (var idx = 0; idx < indices.length; idx++) {
         this.ensureIndex(indices[idx]);
       }
+
+      function observerCallback(changes) {
+
+        var changedObjects = typeof Set === 'function' ? new Set() : [];
+
+        if(!changedObjects.add)
+          changedObjects.add = function(object) {
+            if(this.indexOf(object) !== -1)
+              this.push(object);
+            return this;
+          };
+
+        changes.forEach(function (change) {
+          changedObjects.add(change.object);
+        });
+
+        changedObjects.forEach(function (object) {
+          if(!object.hasOwnProperty('$loki'))
+            return self.removeAutoUpdateObserver(object);
+          try {
+            self.update(object);
+          } catch(err) {}
+        });
+      }
+
+      this.observerCallback = observerCallback;
 
       /**
        * This method creates a clone of the current status of an object and associates operation and collection name,
@@ -2971,6 +3001,21 @@
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    Collection.prototype.addAutoUpdateObserver = function (object) {
+
+      if(!this.autoupdate || typeof Object.observe !== 'function')
+        return;
+
+      Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
+    };
+
+    Collection.prototype.removeAutoUpdateObserver = function (object) {
+      if(!this.autoupdate || typeof Object.observe !== 'function')
+        return;
+
+      Object.unobserve(object, this.observerCallback);
+    };
 
     Collection.prototype.addTransform = function (name, transform) {
       if (this.transforms.hasOwnProperty(name)) {
@@ -3105,6 +3150,11 @@
       }
     };
 
+    Collection.prototype.flagBinaryIndexDirty = function (index) {
+      if(this.binaryIndices[index])
+        this.binaryIndices[index].dirty = true;
+    };
+
     Collection.prototype.count = function () {
       return this.data.length;
     };
@@ -3214,6 +3264,7 @@
         }
         self.emit('pre-insert', obj);
         if (self.add(obj)) {
+          self.addAutoUpdateObserver(obj);
           self.emit('insert', obj);
           results.push(obj);
         } else {
@@ -3268,15 +3319,20 @@
         this.emit('pre-update', doc);
 
         obj = arr[0];
+
         Object.keys(this.constraints.unique).forEach(function (key) {
           self.constraints.unique[key].update(obj);
         });
+
         // get current position in data array
         position = arr[1];
 
         // operate the update
         this.data[position] = doc;
 
+        if(obj !== doc) {
+          this.addAutoUpdateObserver(doc);
+        }
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
@@ -3432,6 +3488,7 @@
         }
 
         this.data.splice(position, 1);
+        this.removeAutoUpdateObserver(doc);
 
         // remove id from idIndex
         this.idIndex.splice(position, 1);

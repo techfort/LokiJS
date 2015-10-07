@@ -54,7 +54,31 @@ myCtrl.$inject = ['Lokiwork'];
     .then(function(data){               
        Lokiwork.updateDoc("face", "i guess you don't know it");
     });
+    
+  Lokiwork.deleteCurrentDoc();
+  
+  Lokiwork.getCurrentDoc();
+  
+  Lokiwork.getCollection('settings', 'globals');
+  
+  Lokiwork.deleteDatabase("settings");
+  
+  Lokiwork.addDocument("settings", "globals", {name:"user settings", gay: true, brands:false})
+            	.then(function(){             
+              		console.log('successfully created new document');            
+          		});
 ```
+
+###Notes:
+If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.
+
+If you create multiple databases, the code will automatically switch between the databases for you when you specify the current working doc `Lokiwork.setCurrentDoc(...)`  You may not need to ability to have multiple databases, but it's there.
+
+Each angular json file has to be titled, "json1", "json2" for the next one, "json3", etc.
+"db" title has to be spelled exactly "db"
+"collection" title has to be spelled exactly "collection"
+Each Document has to have at least one "name" field with whatever value you want, but "name" has to be there.
+
 ###Demo (not working though, something weird going on with angular + Plnkr)
 [plkr](http://embed.plnkr.co/3H1kgFKWsr341zsWLZvp/preview)
 

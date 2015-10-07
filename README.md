@@ -49,7 +49,7 @@ myCtrl.$inject = ['Lokiwork'];
 ```
 ###Regular use: (you have to set the current doc first)
 
-`Lokiwork.setCurrentDoc(<database>,<collection><document name>)`
+`Lokiwork.setCurrentDoc(<database>, <collection>, <document name>)`
 
 ####Examples
 ```

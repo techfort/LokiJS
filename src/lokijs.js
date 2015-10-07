@@ -2879,7 +2879,7 @@
 
         if(!changedObjects.add)
           changedObjects.add = function(object) {
-            if(this.indexOf(object) !== -1)
+            if(this.indexOf(object) === -1)
               this.push(object);
             return this;
           };

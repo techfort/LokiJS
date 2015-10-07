@@ -1,4 +1,4 @@
-# LokiJS
+# LokiJS Simplified for Angular Dummies
 
 [![Join the chat at https://gitter.im/techfort/LokiJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/techfort/LokiJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)

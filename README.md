@@ -7,6 +7,50 @@
 
 ## Overview
 
+
+This version of Lokijs for Angular simplifies things to the most basic level because i found Loki difficult to work with in a mobile environment.  all you do is setup json files that specify the layout of your data then add, and update entries to the databases.
+
+###Install:
+`bower install --save https://github.com/helzgate/LokiJS.git`
+
+###App:
+`angular.module('app',['lokijs']);`
+
+###Configure database template:
+
+````(function(){
+	angular.module('app').constant(
+	'json1', 
+	{  
+   		"db":"locations",
+   		"collection": "Cities" ,
+		   "documents" :
+			[  
+   		   		{
+					"name": "Tulsa",
+					"enabled" : true,
+					"face" : "You now it"
+   		   		}
+			]
+	}
+	)
+})();
+````
+###Controller:
+```angular.module('app').controller('myCtrl', myCtrl);
+myCtrl.$inject = ['Lokiwork'];
+```
+###Regular use: (you have to set the current doc first)
+
+```
+ Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
+            .then(function(data){               
+               Lokiwork.updateDoc("face", "i guess you don't know it");
+            });
+```
+
+````
+
 LokiJS is a document oriented database written in javascript, published under MIT License.
 Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.
 Runs in node (including cordova/phonegap and node-webkit) and the browser.

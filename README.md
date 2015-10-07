@@ -11,7 +11,7 @@
 This version of Lokijs for Angular simplifies things to the most basic level because i found Loki difficult to work with in a mobile environment.  all you do is setup json files that specify the layout of your data then add, and update entries to the databases.
 
 ###Install:
-`bower install --save https://github.com/helzgate/LokiJS.git`
+`git clone https://github.com/helzgate/LokiJS.git`
 
 ###Html:
 ```

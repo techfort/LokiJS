@@ -49,6 +49,9 @@ myCtrl.$inject = ['Lokiwork'];
 ```
 ###Regular use: (you have to set the current doc first)
 
+Lokiwork.setCurrentDoc(<database>,<collection><document name>)
+
+####Examples
 ```
  Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
     .then(function(data){               
@@ -77,7 +80,6 @@ myCtrl.$inject = ['Lokiwork'];
 - Each angular json file has to be titled, "json1", "json2" for the next one, "json3", etc.
 - "db" title has to be spelled exactly "db"
 - "collection" title has to be spelled exactly "collection"
-- Each Document has to have at least one "name" field with whatever value you want, but "name" has to be there.
 
 ###Demo (not working though, something weird going on with angular + Plnkr)
 [plkr](http://embed.plnkr.co/3H1kgFKWsr341zsWLZvp/preview)

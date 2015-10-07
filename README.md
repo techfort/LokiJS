@@ -13,6 +13,12 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 ###Install:
 `bower install --save https://github.com/helzgate/LokiJS.git`
 
+###Html:
+```
+<script src="bower_components/lokijs/src/lokijs.js"></script>
+<script src="bower_components/lokijs/src/loki-angular.js"></script>
+```
+
 ###App:
 `angular.module('app',['lokijs']);`
 

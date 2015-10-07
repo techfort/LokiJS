@@ -37,19 +37,18 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 })();
 ````
 ###Controller:
-```angular.module('app').controller('myCtrl', myCtrl);
+```
+angular.module('app').controller('myCtrl', myCtrl);
 myCtrl.$inject = ['Lokiwork'];
 ```
 ###Regular use: (you have to set the current doc first)
 
 ```
  Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
-            .then(function(data){               
-               Lokiwork.updateDoc("face", "i guess you don't know it");
-            });
+    .then(function(data){               
+       Lokiwork.updateDoc("face", "i guess you don't know it");
+    });
 ```
-
-````
 
 LokiJS is a document oriented database written in javascript, published under MIT License.
 Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.

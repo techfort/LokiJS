@@ -24,7 +24,8 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 
 ###Configure database template:
 
-````(function(){
+````
+(function(){
 	angular.module('app').constant(
 	'json1', 
 	{  

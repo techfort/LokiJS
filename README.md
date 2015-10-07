@@ -15,8 +15,8 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 
 ###Html:
 ```
-<script src="bower_components/lokijs/src/lokijs.js"></script>
-<script src="bower_components/lokijs/src/loki-angular.js"></script>
+<script src="lokijs/src/lokijs.js"></script>
+<script src="lokijs/src/loki-angular.js"></script>
 ```
 
 ###App:

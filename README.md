@@ -23,7 +23,7 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 `angular.module('app',['lokijs']);`
 
 ###Configure database template:
-
+I might call this file - json_locations.js
 ````
 (function(){
 	angular.module('app').constant(
@@ -76,7 +76,7 @@ myCtrl.$inject = ['Lokiwork'];
 ###Notes:
 - If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.
 
-- If you create multiple databases, the code will automatically switch between the databases for you when you specify the current working doc `Lokiwork.setCurrentDoc(...)`  You may not need to ability to have multiple databases, but it's there.
+- If you create multiple databases, the code will automatically switch between the databases for you when you specify the current working doc `Lokiwork.setCurrentDoc(...)`  You may not need the ability to have multiple databases, but it's there.
 
 - Each angular json file has to be titled, "json1", "json2" for the next one, "json3", etc.
 - "db" title has to be spelled exactly "db"

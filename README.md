@@ -93,6 +93,9 @@ myCtrl.$inject = ['Lokiwork'];
   Lokiwork.addDocument("settings", "globals", {name:"user settings", gay: true, brands:false});
 ```
 
+###Remember!
+A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.
+
 ###Notes:
 - If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.
 

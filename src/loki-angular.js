@@ -157,7 +157,7 @@ First set a working doc like the following:
          });
       }
       
-      function updateDoc(thekey, thevalue){
+      function updateCurrentDoc(thekey, thevalue){
         return $q(function(resolve, reject){
            if(currentDoc){
            _getem('update_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
@@ -167,6 +167,20 @@ First set a working doc like the following:
            }
            else {
              reject("you have to set a current doc first, use: setCurrentDoc(dbName, collName, docName)");
+           }
+         });
+      }
+      
+      function updateDoc(dbName, collName, docName, thekey, thevalue){
+        return $q(function(resolve, reject){
+           if(currentDoc){
+           _getem('update_doc', dbName, collName, docName, thekey, thevalue)
+            .then(function(data){
+              resolve(data[0]);
+            })
+           }
+           else {
+             reject("bad, check parameters)");
            }
          });
       }
@@ -265,6 +279,12 @@ First set a working doc like the following:
                   if(operation === 'update_doc') {
                       if(typeof thevalue === "string"){
                         eval('found.' + thekey +' = \'' + thevalue +'\';');
+                      }
+                      else if(Object.prototype.toString.call( thevalue ) === '[object Array]'){
+                        eval('found.' + thekey +' = \'' + angular.toJson(thevalue) +'\';');
+                      }
+                      else if(Object.prototype.toString.call( thevalue ) === '[object Object]'){
+                        eval('found.' + thekey +' = \'' + angular.toJson(thevalue) +'\';');
                       }
                       else{
                         eval('found.' + thekey +' = ' + thevalue +';');

@@ -138,7 +138,7 @@ First set a working doc like the following:
               currentDoc.collName = collName;
               currentDoc.doc = data;
               currentDoc.lokiNum = data[0].$loki;
-              resolve(data);
+              resolve(data[0]);
             })
          });
       }
@@ -152,7 +152,7 @@ First set a working doc like the following:
               currentDoc.collName = collName;
               currentDoc.doc = data;
               currentDoc.lokiNum = data[0].$loki;
-              resolve(data);
+              resolve(data[0]);
             })
          });
       }
@@ -162,7 +162,7 @@ First set a working doc like the following:
            if(currentDoc){
            _getem('update_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
             .then(function(data){
-              resolve(data);
+              resolve(data[0]);
             })
            }
            else {
@@ -180,7 +180,7 @@ First set a working doc like the following:
               currentDoc.collName = collName;
               currentDoc.doc = data;
               currentDoc.lokiNum = data[0].$loki;
-              resolve(data);
+              resolve(data[0]);
             })
          });
       }
@@ -221,7 +221,11 @@ First set a working doc like the following:
       }
       
       
-      
+      // function _getCollIndex(dbName, collName){
+      //   db.loadDatabase(dbName);
+      //   var coll = db.getCollection(collName);
+        
+      // }
       
       function _getem(operation, dbName, collName, docName, thekey, thevalue){
         return $q(function(resolve, reject){ 

@@ -23,7 +23,7 @@ This version of Lokijs for Angular simplifies things to the most basic level bec
 `angular.module('app',['lokijs']);`
 
 ###Configure database template:
-I might call this file - json_locations.js
+I might call this file -> `json_locations.js` and you can create several. 
 ````
 (function(){
 	angular.module('app').constant(
@@ -61,16 +61,36 @@ myCtrl.$inject = ['Lokiwork'];
     
   Lokiwork.deleteCurrentDoc();
   
+  Lokiwork.deleteDocument('settings','globals', {name:'user settings'});
+  
+  Lokiwork.removeCollection('settings', globals');
+  
   Lokiwork.getCurrentDoc();
   
   Lokiwork.getCollection('settings', 'globals');
+  ```
   
+  ```
+   var collection = {  
+   				"db":"settings",
+   				"collection": "globals" ,
+		   		"documents" :
+					[  
+   		   				{
+							"name": "user settings",
+							"brands" : true,
+							"face" : "You now it"
+   		   				}
+					]
+				};
+   Lokiwork.addCollection(collection);
+   ```
+   
+   
+  ```
   Lokiwork.deleteDatabase("settings");
   
-  Lokiwork.addDocument("settings", "globals", {name:"user settings", gay: true, brands:false})
-            	.then(function(){             
-              		console.log('successfully created new document');            
-          		});
+  Lokiwork.addDocument("settings", "globals", {name:"user settings", gay: true, brands:false});
 ```
 
 ###Notes:

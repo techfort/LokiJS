@@ -1,4 +1,4 @@
-# LokiJS
+# LokiJS Simplified for Angular Dummies
 
 [![Join the chat at https://gitter.im/techfort/LokiJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/techfort/LokiJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
@@ -7,77 +7,142 @@
 
 ## Overview
 
-LokiJS is a document oriented database written in javascript, published under MIT License.
-Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.
-Runs in node (including cordova/phonegap and node-webkit) and the browser.
-LokiJS is ideal for the following scenarios: 
 
-1. client-side in-memory db is ideal (e.g., a session store)
-2. performance critical applications
-3. cordova/phonegap mobile apps where you can leverage the power of javascript and avoid interacting with native databases
-4. data sets loaded into a browser page and synchronised at the end of the work session
-5. node-webkit desktop apps
+This version of Lokijs for Angular simplifies things to the most basic level because i found Loki difficult to work with in a mobile environment.  all you do is setup json files that specify the layout of your data then add, and update entries to the databases.
 
-LokiJS supports indexing and views and achieves high-performance through maintaining unique and binary indexes (indices) for data.
+###Install:
+`git clone https://github.com/helzgate/LokiJS.git`
 
-## Demo
+###Html:
+```
+<script src="lokijs/src/lokijs.js"></script>
+<script src="lokijs/src/loki-angular.js"></script>
+```
 
-The following demos are available:
-- [Sandbox / Playground] (https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
-- a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/'
+###App:
+`angular.module('app',['lokijs']);`
 
-## Wiki
-Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki)
+###Configure database template:
+I might call this file -> `json_locations.js` and you can create several. 
+````
+(function(){
+	angular.module('app').constant(
+	'json1', 
+	{  
+   		"db":"locations",
+   		"collection": "Cities" ,
+		   "documents" :
+			[  
+   		   		{
+					"name": "Tulsa",
+					"enabled" : true,
+					"face" : "You now it"
+   		   		}
+			]
+	}
+	)
+})();
+````
+###Controller:
+```
+angular.module('app').controller('myCtrl', myCtrl);
+myCtrl.$inject = ['Lokiwork'];
+```
+###Usage:
 
-### Main Features
+Lokiwork.setCurrentDoc(dbname, collection, document_identifier);
 
-1. Fast performance NoSQL in-memory database, collections with unique index (1.1M ops/s) and binary-index (500k ops/s)
-2. Runs in multiple environments (browser, node)
-3. Dynamic Views for fast access of data subsets
-4. Built-in persistence adapters, and the ability to support user-defined ones
-5. Changes API
-6. Joins
+`Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"});`
 
-## Current state
+Lokiwork.getCurrentDoc();
 
-LokiJS is at version 1.3 [Eostre].
-As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
+`Lokiwork.getCurrentDoc();`
+ 
+Lokiwork.updateCurrentDoc(name, value);
+  
+`Lokiwork.updateCurrentDoc("power", true);`
 
-Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
+Lokiwork.deleteCurrentDoc();
 
-## Installation
+`Lokiwork.deleteCurrentDoc();`
 
-For browser environments you simply need the lokijs.js file contained in src/
+Lokiwork.getDoc(dbName, collName, docName);
 
-You can use bower to install lokijs with `bower install lokijs`
+`Lokiwork.getDoc("settings", "globals", {name:"user settings"});`
 
-For node environments you can install through `npm install lokijs`.
+Lokiwork.addDocument(dbName, collName, newDoc);
 
+`Lokiwork.addDocument("settings", "globals", doc_obj); //example below`
 
+Lokiwork.updateDoc(dbname, collName, document_identifier, name, value);
 
-## Roadmap
-* exactIndex
-* key-value datastore
-* MRU cache
-* MongoDB API compatibility
-* server standalone (tcp and http servers and clients)
-* replication and horizontal scaling
+`Lokiwork.updateDoc("settings", "globals", {name:"user settings"}, "brands", false});`
 
-## Contact
+Lokiwork.deleteDocument(dbName, collName, document_identifier);
 
-For help / enquiries contact joe.minichino@gmail.com
+`Lokiwork.deleteDocument('settings','globals', {name:'user settings'});`
 
-## Commercial Support
+Lokiwork.getCollection(dbName, collName);
 
-For commercial support contact info.techfort@gmail.com
+`Lokiwork.getCollection('settings', 'globals');`
 
-## License
+Lokwork.addCollection(json_obj);
 
-Copyright (c) 2015 TechFort <joe.minichino@gmail.com>
+`Lokiwork.addCollection(item); // example below`
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Lokiwork.deleteCollection(dbName, collName);
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+`Lokiwork.deleteCollection('settings', globals');`
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Lokiwork.deleteDatabase(dbName);
+ 
+`Lokiwork.deleteDatabase("settings");`
 
+####Further examples:
+  
+  ```
+   var collection = {  
+   				"db":"settings",
+   				"collection": "globals" ,
+		   		"documents" :
+					[  
+   		   				{
+							"name": "user settings",
+							"brands" : true,
+							"face" : "You now it"
+   		   				}
+					]
+				};
+   Lokiwork.addCollection(collection);
+   ```
+   
+With addDocument, you can pass a json document in if it's small enough, otherwise assign it to a variable first.
+```
+Lokiwork.addDocument("settings", "globals", {name:"user settings2", gay: true, brands:false})
+```
+You can also use promises and/or chain them:
+```
+Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
+    .then(function(data){               
+       Lokiwork.updateCurrentDoc("address", "1801 Waters Ridge Drive");
+    });
+```
+
+###Remember!
+A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.
+
+###Notes:
+- If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.
+
+- If you create multiple databases, the code will automatically switch between the databases for you when you specify the current working doc `Lokiwork.setCurrentDoc(...)`  You may not need the ability to have multiple databases, but it's there.
+
+- Each angular json file has to be titled, "json1", "json2" for the next one, "json3", etc.
+- "db" title has to be spelled exactly "db"
+- "collection" title has to be spelled exactly "collection"
+- Since Lokijs is generating all of the database content it should be 100% compatible with native Lokijs commands not listed here but found on the office website shown below.
+
+###Demo (not working though, something weird going on with angular + Plnkr)
+[plkr](http://embed.plnkr.co/3H1kgFKWsr341zsWLZvp/preview)
+
+###The official Lokijs page
+[LokiJS](https://github.com/techfort/LokiJS)

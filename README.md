@@ -48,27 +48,57 @@ I might call this file -> `json_locations.js` and you can create several.
 angular.module('app').controller('myCtrl', myCtrl);
 myCtrl.$inject = ['Lokiwork'];
 ```
-###Regular use: (you have to set the current doc first)
+###Usage:
 
-`Lokiwork.setCurrentDoc(<database>, <collection>, <document name>)`
+Lokiwork.setCurrentDoc(dbname, collection, document_identifier);
 
-####Examples
-```
- Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
-    .then(function(data){               
-       Lokiwork.updateDoc("face", "i guess you don't know it");
-    });
-    
-  Lokiwork.deleteCurrentDoc();
+`Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"});`
+
+Lokiwork.getCurrentDoc();
+
+`Lokiwork.getCurrentDoc();`
+ 
+Lokiwork.updateCurrentDoc(name, value);
   
-  Lokiwork.deleteDocument('settings','globals', {name:'user settings'});
-  
-  Lokiwork.removeCollection('settings', globals');
-  
-  Lokiwork.getCurrentDoc();
-  
-  Lokiwork.getCollection('settings', 'globals');
-  ```
+`Lokiwork.updateCurrentDoc("power", true);`
+
+Lokiwork.deleteCurrentDoc();
+
+`Lokiwork.deleteCurrentDoc();`
+
+Lokiwork.getDoc(dbName, collName, docName);
+
+`Lokiwork.getDoc("settings", "globals", {name:"user settings"});`
+
+Lokiwork.addDocument(dbName, collName, newDoc);
+
+`Lokiwork.addDocument("settings", "globals", doc_obj); //example below`
+
+Lokiwork.updateDoc(dbname, collName, document_identifier, name, value);
+
+`Lokiwork.updateDoc("settings", "globals", {name:"user settings"}, "brands", false});`
+
+Lokiwork.deleteDocument(dbName, collName, document_identifier);
+
+`Lokiwork.deleteDocument('settings','globals', {name:'user settings'});`
+
+Lokiwork.getCollection(dbName, collName);
+
+`Lokiwork.getCollection('settings', 'globals');`
+
+Lokwork.addCollection(json_obj);
+
+`Lokiwork.addCollection(item); // example below`
+
+Lokiwork.deleteCollection(dbName, collName);
+
+`Lokiwork.deleteCollection('settings', globals');`
+
+Lokiwork.deleteDatabase(dbName);
+ 
+`Lokiwork.deleteDatabase("settings");`
+
+####Further examples:
   
   ```
    var collection = {  
@@ -86,11 +116,16 @@ myCtrl.$inject = ['Lokiwork'];
    Lokiwork.addCollection(collection);
    ```
    
-   
-  ```
-  Lokiwork.deleteDatabase("settings");
-  
-  Lokiwork.addDocument("settings", "globals", {name:"user settings", gay: true, brands:false});
+With addDocument, you can pass a json document in if it's small enough, otherwise assign it to a variable first.
+```
+Lokiwork.addDocument("settings", "globals", {name:"user settings2", gay: true, brands:false})
+```
+You can also use promises and/or chain them:
+```
+Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
+    .then(function(data){               
+       Lokiwork.updateCurrentDoc("address", "1801 Waters Ridge Drive");
+    });
 ```
 
 ###Remember!

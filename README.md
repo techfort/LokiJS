@@ -101,6 +101,7 @@ myCtrl.$inject = ['Lokiwork'];
 - Each angular json file has to be titled, "json1", "json2" for the next one, "json3", etc.
 - "db" title has to be spelled exactly "db"
 - "collection" title has to be spelled exactly "collection"
+- Since Lokijs is generating all of the database content it should be 100% compatible with native Lokijs commands not listed here but found on the office website shown below.
 
 ###Demo (not working though, something weird going on with angular + Plnkr)
 [plkr](http://embed.plnkr.co/3H1kgFKWsr341zsWLZvp/preview)

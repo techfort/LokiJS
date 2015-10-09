@@ -5,24 +5,24 @@
  * A lightweight document oriented javascript database
  */
 (function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define(['angular', 'lokijs'], factory);
-  } else if (typeof exports === 'object') {
-    // CommonJS
-    module.exports = factory();
-  } else {
-    // Browser globals
-    root.lokiAngular = factory(
-    	root.angular,
-    	// Use thirdParty.loki if available to cover all legacy cases
-			root.thirdParty && root.thirdParty.loki ?
-				root.thirdParty.loki : root.loki
-	);
-  }
-} (this, function (angular, lokijs) {
-	var module = angular.module('lokijs', [])
-		.factory('Loki', Loki)
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['angular', 'lokijs'], factory);
+    } else if (typeof exports === 'object') {
+        // CommonJS
+        module.exports = factory();
+    } else {
+        // Browser globals
+        root.lokiAngular = factory(
+            root.angular,
+            // Use thirdParty.loki if available to cover all legacy cases
+            root.thirdParty && root.thirdParty.loki ?
+            root.thirdParty.loki : root.loki
+        );
+    }
+}(this, function (angular, lokijs) {
+    var module = angular.module('lokijs', [])
+        .factory('Loki', Loki)
         .service('Lokiwork', Lokiwork);
 
     function Loki() {
@@ -73,11 +73,13 @@
         function deleteDocument(dbName, collName, doc) { //doc should be in {name:value} format 
             return $q(function (resolve, reject) {
                 userDbPreference = dbName;
-                _getem('delete_doc', dbName, collName, "", "", doc)
+                _getem('delete_doc', dbName, collName, doc)
                     .then(function (data) {
                         currentDoc = {};
                         resolve(data);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -114,7 +116,9 @@
                         currentDoc.doc = data;
                         currentDoc.lokiNum = data[0].$loki;
                         resolve(data[0]);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -128,16 +132,20 @@
                         currentDoc.doc = data;
                         currentDoc.lokiNum = data[0].$loki;
                         resolve(data[0]);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
         function updateCurrentDoc(thekey, thevalue) {
             return $q(function (resolve, reject) {
                 if (currentDoc) {
-                    _getem('update_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
+                    _getem('update__current_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
                         .then(function (data) {
                             resolve(data[0]);
+                        }, function(data){
+                            reject(data);
                         });
                 } else {
                     reject("you have to set a current doc first, use: setCurrentDoc(dbName, collName, docName)");
@@ -147,10 +155,13 @@
 
         function updateDoc(dbName, collName, docName, thekey, thevalue) {
             return $q(function (resolve, reject) {
+                userDbPreference = dbName;
                 if (currentDoc) {
                     _getem('update_doc', dbName, collName, docName, thekey, thevalue)
                         .then(function (data) {
                             resolve(data[0]);
+                        }, function(data){
+                            reject(data);
                         });
                 } else {
                     reject("bad, check parameters)");
@@ -168,7 +179,9 @@
                         currentDoc.doc = data;
                         currentDoc.lokiNum = data[0].$loki;
                         resolve(data[0]);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -180,7 +193,9 @@
                         currentColl.dbName = dbName;
                         currentColl.collName = collName;
                         resolve(data);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -191,7 +206,9 @@
                     .then(function (data) {
                         currentColl = {};
                         resolve(data);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -203,7 +220,9 @@
                         currentColl.dbName = collData.db;
                         currentColl.collName = collData.collection;
                         resolve(data);
-                    });
+                    }, function(data){
+                            reject(data);
+                        });
             });
         }
 
@@ -217,9 +236,7 @@
         function _getem(operation, dbName, collName, docName, thekey, thevalue) {
             return $q(function (resolve, reject) {
                 if (db) {
-                    if (operation === 'delete_current_doc' && currentDoc) {
-                        getdata();
-                    } else if (db.filename === dbName) {
+                    if (db.filename === dbName) {
                         getdata();
                     } else {
                         loadDb(dbName)
@@ -236,25 +253,84 @@
                     } else {
                         checkStates().then(function () {
                             getdata();
+                        }, function(data){
+                            reject(data);
                         });
                     }
                 }
+                
+                
 
                 function getdata() {
                     if (operation === 'update_doc' || operation === 'insert_item_in_doc') {
                         db.loadDatabase(dbName);
                         var coll = db.getCollection(collName);
+                        
+                        for(var i in docName) {
+                            currentDoc.key = i;
+                            currentDoc.value = docName[i];
+                        }
+                        for (var x = 0; x < coll.data.length; x++){
+                            if (coll.data[x][currentDoc.key] == currentDoc.value){
+                                currentDoc.lokiNum = coll.data[x].$loki;
+                            }
+                        }
                         found = coll.get(parseInt(currentDoc.lokiNum, 10));
 
                         if (operation === 'update_doc') {
-                            found[thekey] = thevalue;
+                            if( Object.prototype.toString.call( thevalue ) === '[object Array]' ) {
+                                found[thekey] = angular.toJson(thevalue);
+                            }
+                            else if( Object.prototype.toString.call( thevalue ) === '[object Object]' ) {
+                                found[thekey] = angular.toJson(thevalue);
+                            }
+                            else {
+                                found[thekey] = thevalue;
+                            }
                             coll.update(found);
                         } else {
                             found.insert(thevalue);
                         }
                         db.save();
                         resolve(true);
-                    } else if (operation === 'get_doc' || operation === 'set_doc') {
+                    }
+                    else if(operation === 'update_current_doc'){
+                         db.loadDatabase(dbName);
+                        var coll0 = db.getCollection(collName);
+                        found = coll0.get(parseInt(currentDoc.lokiNum, 10));
+                        if( Object.prototype.toString.call( thevalue ) === '[object Array]' ) {
+                            found[thekey] = angular.toJson(thevalue);
+                        }
+                        else if( Object.prototype.toString.call( thevalue ) === '[object Object]' ) {
+                            found[thekey] = angular.toJson(thevalue);
+                        }
+                        else {
+                            found[thekey] = thevalue;
+                        }
+                        coll0.update(found);
+                        
+                        db.save();
+                        resolve(true);
+                    } 
+                    else if (operation === 'delete_current_doc' || operation === 'delete_doc') {
+                        db.loadDatabase(dbName);
+                        var coll6 = db.getCollection(collName);
+                        if(operation === 'delete_doc'){
+                            for(var i in docName) {
+                            currentDoc.key = i;
+                            currentDoc.value = docName[i];
+                        }
+                        for (var x = 0; x < coll6.data.length; x++){
+                            if (coll6.data[x][currentDoc.key] == currentDoc.value){
+                                currentDoc.lokiNum = coll6.data[x].$loki;
+                            }
+                        }
+                        }
+                        coll6.remove(currentDoc.lokiNum);                        
+                        db.save();
+                        resolve(true);
+                    }                    
+                    else if (operation === 'get_doc' || operation === 'set_doc') {
                         db.loadDatabase(dbName);
                         var coll1 = db.getCollection(collName);
                         var found = coll1.find(docName);
@@ -289,17 +365,7 @@
                             resolve(angular.fromJson(found));
                         });
 
-                    } else if (operation === 'delete_doc') {
-                        db.loadDatabase(dbName);
-                        var coll4 = db.getCollection(collName);
-                        var getid = coll4.find(thevalue);
-                        var id = getid[0].$loki;
-                        coll4.remove(id);
-                        db.save(function () {
-                            resolve('deleted');
-                        });
-
-                    }
+                    } 
                     // _getem('delete_doc', dbName, collName, "", "", doc)
                     else if (operation === 'delete_current_doc') {
                         var coll5 = db.getCollection(currentDoc.collName);
@@ -359,8 +425,8 @@
                         console.log('had to initialize all dbs');
                         statesChecked = true;
                         resolve();
-                    }, function () {
-                        reject();
+                    }, function (data) {
+                        reject(data);
                     });
                 } else {
                     console.log('db list already initialized');
@@ -394,9 +460,12 @@
         }
 
         function initialiseDbList() {
-            return $q(function (resolve, reject) {
+            return $q(function (resolve, reject) {                
                 firstFewItemsOfDbList()
                     .then(function () {
+                        if (userPrefJsonFile == 0){
+                            reject('Oops!, you didn\'t specify any starting document');
+                        }
                         var currentdb = $injector.get('json' + userPrefJsonFile);
                         var item = {};
                         item.filename = currentdb.db;
@@ -455,6 +524,8 @@
                             }
                         }
                         iterate_me();
+                    }, function(data){
+                        reject(data);
                     });
             });
         }
@@ -519,5 +590,5 @@
             });
         }
     }
-	return module;
+    return module;
 }));

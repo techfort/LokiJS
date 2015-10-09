@@ -247,12 +247,7 @@
                         found = coll.get(parseInt(currentDoc.lokiNum, 10));
 
                         if (operation === 'update_doc') {
-                            if (typeof thevalue === "string") {
-                                // eval('found.' + thekey +' = \'' + thevalue +'\';');
-                                found[thekey] = thevalue;
-                            } else {
-                                found[thekey] = angular.toJson(thevalue);
-                            }
+                            found[thekey] = thevalue;
                             coll.update(found);
                         } else {
                             found.insert(thevalue);

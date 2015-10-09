@@ -271,7 +271,7 @@
                             currentDoc.value = docName[i];
                         }
                         for (var x = 0; x < coll.data.length; x++){
-                            if (coll.data[x][currentDoc.key] == currentDoc.value){
+                            if (coll.data[x][currentDoc.key] === currentDoc.value){
                                 currentDoc.lokiNum = coll.data[x].$loki;
                             }
                         }
@@ -316,13 +316,13 @@
                         db.loadDatabase(dbName);
                         var coll6 = db.getCollection(collName);
                         if(operation === 'delete_doc'){
-                            for(var i in docName) {
-                            currentDoc.key = i;
-                            currentDoc.value = docName[i];
+                            for(var j in docName) {
+                            currentDoc.key = j;
+                            currentDoc.value = docName[j];
                         }
-                        for (var x = 0; x < coll6.data.length; x++){
-                            if (coll6.data[x][currentDoc.key] == currentDoc.value){
-                                currentDoc.lokiNum = coll6.data[x].$loki;
+                        for (var y = 0; y < coll6.data.length; y++){
+                            if (coll6.data[y][currentDoc.key] === currentDoc.value){
+                                currentDoc.lokiNum = coll6.data[y].$loki;
                             }
                         }
                         }
@@ -463,7 +463,7 @@
             return $q(function (resolve, reject) {                
                 firstFewItemsOfDbList()
                     .then(function () {
-                        if (userPrefJsonFile == 0){
+                        if (userPrefJsonFile === 0){
                             reject('Oops!, you didn\'t specify any starting document');
                         }
                         var currentdb = $injector.get('json' + userPrefJsonFile);

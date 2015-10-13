@@ -141,9 +141,9 @@
         function updateCurrentDoc(thekey, thevalue) {
             return $q(function (resolve, reject) {
                 if (currentDoc) {
-                    _getem('update__current_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
+                    _getem('update_current_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
                         .then(function (data) {
-                            resolve(data[0]);
+                            resolve(data);
                         }, function(data){
                             reject(data);
                         });
@@ -159,7 +159,7 @@
                 if (currentDoc) {
                     _getem('update_doc', dbName, collName, docName, thekey, thevalue)
                         .then(function (data) {
-                            resolve(data[0]);
+                            resolve(data);
                         }, function(data){
                             reject(data);
                         });
@@ -266,6 +266,7 @@
                         db.loadDatabase(dbName);
                         var coll = db.getCollection(collName);
                         
+                        //docName is not simply a docname, this is an object like: {name: 'user settings'}
                         for(var i in docName) {
                             currentDoc.key = i;
                             currentDoc.value = docName[i];
@@ -278,15 +279,7 @@
                         found = coll.get(parseInt(currentDoc.lokiNum, 10));
 
                         if (operation === 'update_doc') {
-                            if( Object.prototype.toString.call( thevalue ) === '[object Array]' ) {
-                                found[thekey] = angular.toJson(thevalue);
-                            }
-                            else if( Object.prototype.toString.call( thevalue ) === '[object Object]' ) {
-                                found[thekey] = angular.toJson(thevalue);
-                            }
-                            else {
-                                found[thekey] = thevalue;
-                            }
+                            found[thekey] = thevalue;
                             coll.update(found);
                         } else {
                             found.insert(thevalue);
@@ -298,15 +291,7 @@
                          db.loadDatabase(dbName);
                         var coll0 = db.getCollection(collName);
                         found = coll0.get(parseInt(currentDoc.lokiNum, 10));
-                        if( Object.prototype.toString.call( thevalue ) === '[object Array]' ) {
-                            found[thekey] = angular.toJson(thevalue);
-                        }
-                        else if( Object.prototype.toString.call( thevalue ) === '[object Object]' ) {
-                            found[thekey] = angular.toJson(thevalue);
-                        }
-                        else {
-                            found[thekey] = thevalue;
-                        }
+                        found[thekey] = thevalue;
                         coll0.update(found);
                         
                         db.save();

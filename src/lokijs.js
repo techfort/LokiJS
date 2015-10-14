@@ -2398,7 +2398,7 @@
      * @returns {DynamicView} Reference to this DynamicView, sorted, for future chain operations.
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
-      this.sortCriterial = criteria;
+      this.sortCriteria = criteria;
       this.sortFunction = null;
 
       this.queueSortPhase();

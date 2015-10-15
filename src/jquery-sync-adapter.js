@@ -23,20 +23,12 @@
   return (function (options) {
     'use strict';
 
-    function JquerySyncAdapterError() {}
-
-    JquerySyncAdapterError.prototype = new Error();
-    if (!options) {
-      throw new JquerySyncAdapterError('No options configured in JquerySyncAdapter');
+    function JquerySyncAdapterError(message) {
+      this.name = "JquerySyncAdapterError";
+      this.message = (message || "");
     }
 
-    if (!options.ajaxLib) {
-      throw new JquerySyncAdapterError('No ajax library specified in JquerySyncAdapter');
-    }
-
-    if (!options.saveUrl || !options.loadUrl) {
-      throw new JquerySyncAdapterError('Please specify load and save url in JquerySyncAdapter');
-    }
+    JquerySyncAdapterError.prototype = Error.prototype;
 
     /**
      * this adapter assumes an object options is passed,
@@ -48,6 +40,21 @@
 
     function JquerySyncAdapter(options) {
       this.options = options;
+      
+      if (!options) {
+        throw new JquerySyncAdapterError('No options configured in JquerySyncAdapter');
+      }
+
+      if (!options.ajaxLib) {
+        throw new JquerySyncAdapterError('No ajaxLib property specified in options');
+      }
+
+      if (!options.save || !options.load) {
+        throw new JquerySyncAdapterError('Please specify load and save properties in options');
+      }
+      if (!options.save.url || !options.load.url) {
+        throw new JquerySyncAdapterError('load and save objects must have url property');
+      }
     }
 
     JquerySyncAdapter.prototype.saveDatabase = function (name, data, callback) {
@@ -81,5 +88,5 @@
 
     return JquerySyncAdapter;
 
-  });
+  }());
 }));

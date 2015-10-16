@@ -3432,15 +3432,7 @@
       } else {
         list = new Resultset(this, query);
       }
-      var len = list.length;
-      while (len--) {
-        this.remove(list[len]);
-      }
-      var dv;
-      for (dv in this.DynamicViews) {
-        this.DynamicViews[dv].rematerialize();
-      }
-
+      this.remove(list);
     };
 
     Collection.prototype.removeDataOnly = function () {

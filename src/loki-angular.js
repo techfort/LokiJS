@@ -60,8 +60,6 @@
         var currentColl = {};
         numOfJsonDatabases = getNumberOfJsonDatabases();
 
-
-
         function getCurrentDoc() {
             return currentDoc;
         }
@@ -143,7 +141,7 @@
                 if (currentDoc) {
                     _getem('update_current_doc', currentDoc.dbName, currentDoc.collName, currentDoc.doc, thekey, thevalue)
                         .then(function (data) {
-                            resolve(data);
+                            resolve(data[0]);
                         }, function(data){
                             reject(data);
                         });
@@ -159,7 +157,7 @@
                 if (currentDoc) {
                     _getem('update_doc', dbName, collName, docName, thekey, thevalue)
                         .then(function (data) {
-                            resolve(data);
+                            resolve(data[0]);
                         }, function(data){
                             reject(data);
                         });
@@ -214,24 +212,17 @@
 
         function addCollection(collData) {
             return $q(function (resolve, reject) {
-                userDbPreference = collData.db;
-                _getem('add_collection', collData.db, '', '', '', collData)
+                var dbobj = breakdown_components(collData);
+                userDbPreference = collData[dbobj.db];
+                _getem('add_collection', userDbPreference, '', '', '', collData)
                     .then(function (data) {
-                        currentColl.dbName = collData.db;
-                        currentColl.collName = collData.collection;
+                        currentColl.dbName = userDbPreference;
                         resolve(data);
                     }, function(data){
                             reject(data);
                         });
             });
         }
-
-
-        // function _getCollIndex(dbName, collName){
-        //   db.loadDatabase(dbName);
-        //   var coll = db.getCollection(collName);
-
-        // }
 
         function _getem(operation, dbName, collName, docName, thekey, thevalue) {
             return $q(function (resolve, reject) {
@@ -332,11 +323,16 @@
                             resolve('collection deleted');
                         });
                     } else if (operation === 'add_collection') {
-                        db.loadDatabase(thevalue.db);
-                        var items = db.addCollection(thevalue.collection);
-                        items.insert(thevalue.documents);
+                        db.loadDatabase(dbName);
+                        var dbobj = breakdown_components(thevalue);
+                        
+                        for (var w=0; w< dbobj.coll_array.length; w++){
+                             var items = db.addCollection(thevalue[dbobj.coll_array[w].coll]);
+                            items.insert(thevalue[dbobj.coll_array[w].docs]);
+                        }
+                        
                         db.save(function () {
-                            resolve('collection added');
+                            resolve('collection(s) added');
                         });
 
                     } else if (operation === 'create_doc') {
@@ -422,23 +418,28 @@
 
         function firstFewItemsOfDbList() {
             return $q(function (resolve, reject) {
-                for (var x = 0; x < numOfJsonDatabases; x++) {
+                for (var x = 0; x >= 0; x++) {
                     if ($injector.has('json' + (x + 1))) {
                         var item = {};
                         var setting = $injector.get('json' + (x + 1));
-                        if (setting.db === userDbPreference) { //userDbPreference is the name
+                        var dbobj = breakdown_components(setting);
+                        if (setting[dbobj.db] === userDbPreference) { //userDbPreference is the name
                             userPrefJsonFile = x + 1; //userPrefJsonFile is the index
                             if (x === (numOfJsonDatabases - 1)) {
                                 resolve();
                             }
                         } else {
-                            item.filename = setting.db;
+                            item.filename = dbobj.db;
                             item.json = x + 1;
                             dbitems.push(item);
                             if (x === (numOfJsonDatabases - 1)) {
                                 resolve();
                             }
                         }
+                    }
+                    else {
+                        resolve();
+                        break;
                     }
                 }
             });
@@ -453,7 +454,8 @@
                         }
                         var currentdb = $injector.get('json' + userPrefJsonFile);
                         var item = {};
-                        item.filename = currentdb.db;
+                        var dbobj = breakdown_components(currentdb);
+                        item.filename = dbobj.db;
                         item.json = userPrefJsonFile;
                         dbitems.push(item);
                         resolve();
@@ -465,9 +467,12 @@
             if (numOfJsonDatabases >= 1) {
                 return numOfJsonDatabases;
             } else {
-                for (var x = 0; x < 10; x++) {
+                for (var x = 0; x >= 0; x++) {
                     if ($injector.has('json' + (x + 1))) {
                         numOfJsonDatabases++;
+                    }
+                    else {
+                        break;
                     }
 
                 }
@@ -490,7 +495,6 @@
                                 console.log('number = ' + current_iteration);
                                 var set = angular.fromJson(setting);
                                 still_running = true;
-                                console.log('about to load' + set.db);
                                 initiateDb(set)
                                     .then(function () {
                                         //lokidbs.push(angular.copy(db));
@@ -550,11 +554,12 @@
 
         function initiateDb(database) {
             return $q(function (resolve, reject) {
+                var dbobj = breakdown_components(database);
                 var db_does_exist = false;
-                if (dbExists(database.db)) {
+                if (dbExists(database[dbobj.db])) {
                     db_does_exist = true;
                 }
-                db = new loki(database.db, {
+                db = new loki(database[dbobj.db], {
                     autoload: true,
                     autoloadCallback: loadHandler, //loadHandler, //for some reason this has to be called like this
                     autosave: true,
@@ -566,13 +571,48 @@
 
                         resolve();
                     } else {
-                        var items = db.addCollection(database.collection);
-                        items.insert(database.documents);
+                        var dbobj = breakdown_components(database);
+                        for(var x = 0; x < dbobj.coll_array.length; x++){
+                            var items = db.addCollection(database[dbobj.coll_array[x].coll]);
+                            items.insert(database[dbobj.coll_array[x].docs]);
+                        }
                         db.save();
                         resolve();
                     }
                 }
             });
+        }
+        function breakdown_components(db_obj){
+              var iterate = 1;
+              var db_id = '';
+              var coll_id = "";
+              var doc_id = "";
+              var collections = [];
+              for(var i in db_obj){
+                  if (iterate > 1){
+                      if(isEven(iterate)){
+                        coll_id = i;
+                      }
+                      else{
+                          doc_id = i; 
+                          var tempobj = {coll: coll_id, docs: doc_id};
+                          collections.push(tempobj);
+                      }                   
+                  }
+                  else {
+                      db_id = i;
+                  }
+                  iterate ++;
+              }
+              
+              var dataobj = {db: db_id, coll_array: collections};
+              return dataobj;
+        }
+        function isEven(n) {
+            return n % 2 === 0;
+        }
+        function isOdd(n) {
+            return Boolean(n % 2);
         }
     }
     return module;

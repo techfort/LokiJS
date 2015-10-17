@@ -326,9 +326,9 @@
                         db.loadDatabase(dbName);
                         var dbobj = breakdown_components(thevalue);
                         
-                        for (var x =0; x< dbobj.coll_array.length; x++){
-                             var items = db.addCollection(thevalue[dbobj.coll_array[x].coll]);
-                            items.insert(thevalue[dbobj.coll_array[x].docs]);
+                        for (var w=0; w< dbobj.coll_array.length; w++){
+                             var items = db.addCollection(thevalue[dbobj.coll_array[w].coll]);
+                            items.insert(thevalue[dbobj.coll_array[w].docs]);
                         }
                         
                         db.save(function () {

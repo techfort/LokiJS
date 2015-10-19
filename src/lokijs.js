@@ -1763,7 +1763,14 @@
       }
 
       // for regex ops, precompile
-      if (operator === '$regex') value = new RegExp(value);
+      if (operator === '$regex') {
+        if (typeof(value) === 'object' && Array.isArray(value)) {
+          value = new RegExp(value[0], value[1]);
+        }
+        else {
+          value = new RegExp(value);
+        }
+      }
 
       if (this.collection.data === null) {
         throw new TypeError();
@@ -2398,7 +2405,7 @@
      * @returns {DynamicView} Reference to this DynamicView, sorted, for future chain operations.
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
-      this.sortCriterial = criteria;
+      this.sortCriteria = criteria;
       this.sortFunction = null;
 
       this.queueSortPhase();
@@ -3425,15 +3432,7 @@
       } else {
         list = new Resultset(this, query);
       }
-      var len = list.length;
-      while (len--) {
-        this.remove(list[len]);
-      }
-      var dv;
-      for (dv in this.DynamicViews) {
-        this.DynamicViews[dv].rematerialize();
-      }
-
+      this.remove(list);
     };
 
     Collection.prototype.removeDataOnly = function () {

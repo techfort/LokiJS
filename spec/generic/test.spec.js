@@ -41,6 +41,33 @@ describe('loki', function () {
 
   describe('core methods', function () {
     it('works', function () {
+      var tdb = new loki('regextests');
+      var tcu = tdb.addCollection('user');
+      tcu.insert({
+        name: 'abcd',
+        age: 25,
+        lang: 'English'
+      });
+
+      tcu.insert({
+        name: 'AbCd',
+        age: 39,
+        lang: 'Italian'
+      });
+
+      tcu.insert({
+        name: 'acdb',
+        age: 30,
+        lang: 'Swedish'
+      });
+
+      tcu.insert({
+        name: 'aBcD',
+        age: 30,
+        lang: 'Swedish'
+      });
+
+
       // findOne()
       var j = users.findOne({
         'name': 'jonas'
@@ -55,10 +82,24 @@ describe('loki', function () {
       });
       expect(result.length).toEqual(2);
 
-      // $regex test
+      // $regex test with raw regex
       expect(users.find({
         'name': {
           '$regex': /o/
+        }
+      }).length).toEqual(2);
+
+      // case insensitive regex with array of ["pattern", "options"]
+      expect(tcu.find({
+        'name': {
+          '$regex': ["abcd", "i"]
+        }
+      }).length).toEqual(3);
+
+      // regex with single encoded string pattern (no options)
+      expect(tcu.find({
+        'name': {
+          '$regex': "cd"
         }
       }).length).toEqual(2);
 

@@ -221,6 +221,10 @@
         return b.indexOf(a) > -1;
       },
 
+      $containsNone: function (a, b) {
+        return !LokiOps.$containsAny(a, b);
+      },
+
       $containsAny: function (a, b) {
         var checkFn;
 
@@ -274,7 +278,8 @@
       '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
       '$contains': LokiOps.$contains,
-      '$containsAny': LokiOps.$containsAny
+      '$containsAny': LokiOps.$containsAny,
+      '$containsNone': LokiOps.$containsNone
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :

@@ -1681,7 +1681,7 @@
         }
         // not chained, so return collection data array
         else {
-          return this.collection.data;
+          return this.collection.data.slice();
         }
       }
 
@@ -2029,7 +2029,7 @@
       // if this is chained resultset with no filters applied, just return collection.data
       if (this.searchIsChained && !this.filterInitialized) {
         if (this.filteredrows.length === 0) {
-          return this.collection.data;
+          return this.collection.data.slice();
         } else {
           // filteredrows must have been set manually, so use it
           this.filterInitialized = true;
@@ -3441,9 +3441,7 @@
     };
 
     Collection.prototype.removeDataOnly = function () {
-      this.removeWhere(function (obj) {
-        return true;
-      });
+      this.remove(this.data.slice());
     };
 
     /**

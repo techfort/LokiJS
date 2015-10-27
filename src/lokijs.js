@@ -1154,16 +1154,28 @@
     Resultset.prototype.branch = Resultset.prototype.copy;
 
     /**
-     * transform() - executes a raw array of transform steps against the resultset.
+     * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
-     * @param {array} : (Optional) array of transform steps to execute against this resultset.
-     * @param {object} : (Optional) object property hash of parameters, if the transform requires them.
+     * @param transform {string|array} : (Optional) name of collection transform or raw transform array
+     * @param parameters {object} : (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
      */
     Resultset.prototype.transform = function (transform, parameters) {
       var idx,
         step,
         rs = this;
+
+      // if transform is name, then do lookup first
+      if (typeof transform === 'string') {
+        if (this.collection.transforms.hasOwnProperty(transform)) {
+          transform = this.collection.transforms[transform];
+        }
+      }
+
+      // either they passed in raw transform array or we looked it up, so process
+      if (typeof transform !== 'object' || !Array.isArray(transform)) {
+          throw new Error("Invalid transform");
+      }
 
       if (typeof parameters !== 'undefined') {
         transform = Utils.resolveTransformParams(transform, parameters);
@@ -2320,26 +2332,13 @@
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      */
     DynamicView.prototype.branchResultset = function (transform, parameters) {
-      var rs = this.resultset.copy();
+      var rs = this.resultset.branch();
 
       if (typeof transform === 'undefined') {
         return rs;
       }
 
-      // if transform is name, then do lookup first
-      if (typeof transform === 'string') {
-        if (this.collection.transforms.hasOwnProperty(transform)) {
-          transform = this.collection.transforms[transform];
-        }
-      }
-
-      // either they passed in raw transform array or we looked it up, so process
-      if (typeof transform === 'object' && Array.isArray(transform)) {
-        // if parameters were passed, apply them
-        return rs.transform(transform, parameters);
-      }
-
-      return rs;
+      return rs.transform(transform, parameters);
     };
 
     /**
@@ -3620,20 +3619,7 @@
         return rs;
       }
 
-      // if transform is name, then do lookup first
-      if (typeof transform === 'string') {
-        if (this.transforms.hasOwnProperty(transform)) {
-          transform = this.transforms[transform];
-        }
-      }
-
-      // either they passed in raw transform array or we looked it up, so process
-      if (typeof transform === 'object' && Array.isArray(transform)) {
-        // if parameters were passed, apply them
-        return rs.transform(transform, parameters);
-      }
-
-      return null;
+      return rs.transform(transform, parameters);
     };
 
     /**

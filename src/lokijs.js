@@ -1677,6 +1677,7 @@
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
           this.filteredrows = Object.keys(this.collection.data).map(Number);
+          this.filterInitialized = true;
           return this;
         }
         // not chained, so return collection data array
@@ -2363,6 +2364,28 @@
     };
 
     /**
+     * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
+     *     Existing options should be retained.
+     */
+    DynamicView.prototype.removeFilters = function () {
+      this.rebuildPending = false;
+      this.resultset = new Resultset(collection);
+      this.resultdata = [];
+      this.resultsdirty = false;
+
+      this.cachedresultset = null;
+
+      // keep ordered filter pipeline
+      this.filterPipeline = [];
+
+      // sorting member variables
+      // we only support one active search, applied using applySort() or applySimpleSort()
+      this.sortFunction = null;
+      this.sortCriteria = null;
+      this.sortDirty = false;
+    };
+
+    /**
      * applySort() - Used to apply a sort to the dynamic view
      *
      * @param {function} comparefun - a javascript compare function used for sorting
@@ -2519,8 +2542,13 @@
      * @returns {array} An array of documents representing the current DynamicView contents.
      */
     DynamicView.prototype.data = function () {
+      // Until a proper initialization phase can be implemented, let us initialize here (if needed)
+      if (this.filterPipeline.length === 0) {
+        this.applyFind();
+      }
+
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
-      if (this.sortDirty || this.resultsdirty || !this.resultset.filterInitialized) {
+      if (this.sortDirty || this.resultsdirty) {
         this.performSortPhase();
       }
 
@@ -2583,7 +2611,7 @@
      */
     DynamicView.prototype.performSortPhase = function () {
       // async call to this may have been pre-empted by synchronous call to data before async could fire
-      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) {
+      if (!this.sortDirty && !this.resultsdirty) {
         return;
       }
 

@@ -2368,7 +2368,7 @@
      */
     DynamicView.prototype.removeFilters = function () {
       this.rebuildPending = false;
-      this.resultset = new Resultset(collection);
+      this.resultset = new Resultset(this.collection);
       this.resultdata = [];
       this.resultsdirty = false;
 

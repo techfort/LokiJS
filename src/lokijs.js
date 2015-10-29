@@ -937,7 +937,6 @@
             cFun(null);
             self.emit('loaded', 'database ' + self.filename + ' loaded');
           } else {
-            console.warn('lokijs loadDatabase : Database not found');
             if (typeof (dbString) === "object") {
               cFun(dbString);
             } else {
@@ -970,16 +969,24 @@
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
-        this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
-          // for now assume that save went ok and reset dirty flags
-          // in future we may move this into each if block if no exceptions occur.
-          self.autosaveClearFlags();
-          cFun(null);
-        });
+        // check if the adapter is requesting (and supports) a 'reference' mode export
+        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+          // filename may seem redundant but loadDatabase will need to expect this same filename
+          this.persistenceAdapter.exportDatabase(this.filename, this, function exportDatabaseCallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
+        // otherwise just pass the serialized database to adapter
+        else {
+          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
       } else {
         cFun(new Error('persistenceAdapter not configured'));
       }
-
     };
 
     // alias

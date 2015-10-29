@@ -1774,7 +1774,7 @@
               }
             }
           } else {
-            throw 'Do not know what you want to do.';
+            throw new Error('Do not know what you want to do.');
           }
           break;
         }
@@ -1978,7 +1978,7 @@
       if ('function' === typeof fun) {
         viewFunction = fun;
       } else {
-        throw 'Argument is not a stored view or a function';
+        throw new TypeError('Argument is not a stored view or a function');
       }
       try {
         // if not a chained query then run directly against data[] and return object []
@@ -2070,7 +2070,7 @@
     Resultset.prototype.update = function (updateFunction) {
 
       if (typeof (updateFunction) !== "function") {
-        throw 'Argument is not a function';
+        throw new TypeError('Argument is not a function');
       }
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
@@ -3110,7 +3110,7 @@
       }
 
       if (property === null || property === undefined) {
-        throw 'Attempting to set index without an associated property';
+        throw new Error('Attempting to set index without an associated property');
       }
 
       if (this.binaryIndices.hasOwnProperty(property) && !force) {
@@ -3343,7 +3343,7 @@
 
       // verify object is a properly formed document
       if (!doc.hasOwnProperty('$loki')) {
-        throw 'Trying to update unsynced document. Please save the document first by using insert() or addMany()';
+        throw new Error('Trying to update unsynced document. Please save the document first by using insert() or addMany()');
       }
       try {
         this.startTransaction();
@@ -3401,7 +3401,7 @@
 
       // if parameter isn't object exit with throw
       if ('object' !== typeof obj) {
-        throw 'Object being added needs to be an object';
+        throw new TypeError('Object being added needs to be an object');
       }
       /*
        * try adding object to collection
@@ -3415,7 +3415,7 @@
       // or the object is carrying its own 'id' property.  If it also has a meta property,
       // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
       if (typeof (obj.$loki) !== "undefined") {
-        throw 'Document is already in collection, please use update()';
+        throw new Error('Document is already in collection, please use update()');
       }
 
       try {
@@ -3555,7 +3555,7 @@
       id = typeof id === 'number' ? id : parseInt(id, 10);
 
       if (isNaN(id)) {
-        throw 'Passed id is not an integer';
+        throw new TypeError('Passed id is not an integer');
       }
 
       while (data[min] < data[max]) {
@@ -3706,7 +3706,7 @@
           fun();
           callback();
         } else {
-          throw 'Argument passed for async execution is not a function';
+          throw new TypeError('Argument passed for async execution is not a function');
         }
       }, 0);
     };

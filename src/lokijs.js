@@ -3076,7 +3076,7 @@
     };
 
     Collection.prototype.removeTransform = function (name) {
-      delete transforms[name];
+      delete this.transforms[name];
     };
 
     Collection.prototype.byExample = function (template) {

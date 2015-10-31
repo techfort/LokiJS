@@ -27,6 +27,107 @@ describe('cloning behavior', function () {
     });
   });
 
+  describe('collection find() cloning works', function() {
+    it('works', function () {
+      var cdb = new loki('cloningEnabled');
+      var citems = db.addCollection('items', {
+        clone: true
+        //, clonemethod: "parse-stringify"
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+      // just to prove that resultset.data() is not giving the user the actual object reference we keep internally
+      // we will modify the object and see if future requests for that object show the change
+      var mj = citems.find({ name: 'mjolnir' })[0];
+      mj.maker = "the dwarves";
+
+      var mj2 = citems.find({ name: 'mjolnir' })[0];
+
+      expect(mj2.maker).toBe("dwarves");
+    });
+  });
+
+  describe('collection findOne() cloning works', function() {
+    it('works', function () {
+      var cdb = new loki('cloningEnabled');
+      var citems = db.addCollection('items', {
+        clone: true
+        //, clonemethod: "parse-stringify"
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+      // just to prove that resultset.data() is not giving the user the actual object reference we keep internally
+      // we will modify the object and see if future requests for that object show the change
+      var mj = citems.findOne({ name: 'mjolnir' });
+      mj.maker = "the dwarves";
+
+      var mj2 = citems.findOne({ name: 'mjolnir' });
+
+      expect(mj2.maker).toBe("dwarves");
+    });
+  });
+
+  describe('collection where() cloning works', function() {
+    it('works', function () {
+      var cdb = new loki('cloningEnabled');
+      var citems = db.addCollection('items', {
+        clone: true
+        //, clonemethod: "parse-stringify"
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+      // just to prove that resultset.data() is not giving the user the actual object reference we keep internally
+      // we will modify the object and see if future requests for that object show the change
+      var mj = citems.where(function(obj) {
+        return obj.name === 'mjolnir' ;
+      })[0];
+      mj.maker = "the dwarves";
+
+      var mj2 = citems.where(function(obj) {
+        return obj.name === 'mjolnir' ;
+      })[0];
+
+      expect(mj2.maker).toBe("dwarves");
+    });
+  });
+
+  describe('collection by() cloning works', function() {
+    it('works', function () {
+      var cdb = new loki('cloningEnabled');
+      var citems = db.addCollection('items', {
+        clone: true,
+        unique: ['name']
+        //, clonemethod: "parse-stringify"
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+      // just to prove that resultset.data() is not giving the user the actual object reference we keep internally
+      // we will modify the object and see if future requests for that object show the change
+      var mj = citems.by("name", "mjolnir");
+      mj.maker = "the dwarves";
+
+      var mj2 = citems.by("name", "mjolnir");
+
+      expect(mj2.maker).toBe("dwarves");
+    });
+  });
+
   describe('resultset data cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');

@@ -312,6 +312,23 @@
       return cloned;
     }
 
+    function cloneObjectArray(objarray, method) {
+      var i,
+        result = [];
+
+      if (method == "parse-stringify") {
+        return clone(objarray, method);
+      }
+
+      i = objarray.length-1;
+
+      for(;i<=0;i--) {
+        result.push(clone(objarray[i], method));
+      }
+
+      return result;
+    }
+
     function localStorageAvailable() {
       try {
         return ('localStorage' in window && window.localStorage !== null);
@@ -3508,7 +3525,13 @@
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        return obj;
+
+        if (this.cloneObjects) {
+          return obj;
+        }
+        else {
+          return clone(obj, this.cloneMethod);
+        }
       } catch (err) {
         this.rollback();
         console.error(err.message);
@@ -3647,7 +3670,13 @@
           return self.by(field, value);
         };
       }
-      return this.constraints.unique[field].get(value);
+
+      if (!this.cloneObjects) {
+        return this.constraints.unique[field].get(value);
+      }
+      else {
+        return clone(this.constraints.unique[field].get(value), this.cloneMethod);
+      }
     };
 
     /**
@@ -3659,7 +3688,12 @@
       if (Array.isArray(result) && result.length === 0) {
         return null;
       } else {
-        return result;
+        if (!this.cloneObjects) {
+          return result;
+        }
+        else {
+          return clone(result, this.cloneMethod);
+        }
       }
     };
 
@@ -3689,8 +3723,15 @@
       if (typeof (query) === 'undefined') {
         query = 'getAll';
       }
-      // find logic moved into Resultset class
-      return new Resultset(this, query, null);
+
+      if (!this.cloneObjects) {
+        return new Resultset(this, query, null);
+      }
+      else {
+        var results = new Resultset(this, query, null);
+
+        return cloneObjectArray(results, this.cloneMethod);
+      }
     };
 
     /**
@@ -3774,8 +3815,14 @@
      * Create view function - filter
      */
     Collection.prototype.where = function (fun) {
-      // find logic moved into Resultset class
-      return new Resultset(this, null, fun);
+      if (!this.cloneObjects) {
+        return new Resultset(this, null, fun);
+      }
+      else {
+        var results = new Resultset(this, null, fun);
+
+        return cloneObjectArray(results, this.cloneMethod);
+      }
     };
 
     /**

@@ -288,9 +288,27 @@
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
         cloned;
-      if (cloneMethod === 'parse-stringify') {
-        cloned = JSON.parse(JSON.stringify(data));
+
+      switch (cloneMethod) {
+        case "parse-stringify": 
+          cloned = JSON.parse(JSON.stringify(data));
+          break;
+        case "jquery-extend-deep":
+          cloned = jQuery.extend(true, {}, data);
+          break;
+        case "shallow":
+          cloned = Object.create(data.prototype || null);
+          Object.keys(data).map(function (i) {
+            cloned[i] = data[i];
+          });
+          break;
+        default:
+          break;
       }
+
+      //if (cloneMethod === 'parse-stringify') {
+      //  cloned = JSON.parse(JSON.stringify(data));
+      //}
       return cloned;
     }
 
@@ -689,6 +707,7 @@
         copyColl.asyncListeners = coll.asyncListeners;
         copyColl.disableChangesApi = coll.disableChangesApi;
         copyColl.cloneObjects = coll.cloneObjects;
+        copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
 
         // load each element individually
@@ -2041,15 +2060,38 @@
     /**
      * data() - Terminates the chain and returns array of filtered documents
      *
+     * @param options {object} : allows specifying 'forceClones' and 'forceCloneMethod' options.
+     *    options :
+     *      forceClones {boolean} : Allows forcing the return of cloned objects even when
+     *        the collection is not configured for clone object.
+     *      forceCloneMethod {string} : Allows overriding the default or collection specified cloning method.
+     *        Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'
+     *
      * @returns {array} Array of documents in the resultset
      */
-    Resultset.prototype.data = function () {
-      var result = [];
+    Resultset.prototype.data = function (options) {
+      var result = [],
+        cd,
+        cl;
+
+      options = options || {};
 
       // if this is chained resultset with no filters applied, just return collection.data
       if (this.searchIsChained && !this.filterInitialized) {
         if (this.filteredrows.length === 0) {
-          return this.collection.data.slice();
+          // determine whether we need to clone objects or not
+          if (this.collection.cloneObjects || options.forceClones) {
+            cd = this.collection.data;
+            cl = cl.length;
+
+            for (i = 0; i < cl; i++) {
+              result.push(clone(cd[i], (options.forceCloneMethod || this.collection.cloneMethod)));
+            }
+          }
+          // otherwise we are not cloning so return sliced array with same object references
+          else {
+            return this.collection.data.slice();
+          }
         } else {
           // filteredrows must have been set manually, so use it
           this.filterInitialized = true;
@@ -2063,7 +2105,12 @@
         len = this.filteredrows.length;
 
       for (i = 0; i < len; i++) {
-        result.push(data[fr[i]]);
+        if (this.collection.cloneObjects || options.forceClones) {
+          result.push(clone(data[fr[i]], (options.forceCloneMethod || this.collection.cloneMethod)));
+        }
+        else {
+          result.push(data[fr[i]]);
+        }
       }
       return result;
     };
@@ -2870,6 +2917,9 @@
       // options to clone objects when inserting them
       this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
+      // default clone method (if enabled) is parse-stringify
+      this.cloneMethod = options.hasOwnProperty('clonemethod') ? options.cloneMethod : "parse-stringify";
+
       // option to make event listeners async, default is sync
       this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;
 
@@ -3301,7 +3351,9 @@
           throw new TypeError('Document needs to be an object');
         }
 
-        obj = self.cloneObjects ? JSON.parse(JSON.stringify(d)) : d;
+        // if configured to clone, do so now... otherwise just use same obj reference
+        obj = self.cloneObjects ? clone(d, self.cloneMethod) : d;
+
         if (typeof obj.meta === 'undefined') {
           obj.meta = {
             revision: 0,
@@ -3665,7 +3717,7 @@
     /** start the transation */
     Collection.prototype.startTransaction = function () {
       if (this.transactional) {
-        this.cachedData = clone(this.data, 'parse-stringify');
+        this.cachedData = clone(this.data, this.cloneMethod);
         this.cachedIndex = this.idIndex;
         this.cachedBinaryIndex = this.binaryIndices;
 

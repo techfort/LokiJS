@@ -221,6 +221,10 @@
         return b.indexOf(a) > -1;
       },
 
+      $containsNone: function (a, b) {
+        return !LokiOps.$containsAny(a, b);
+      },
+
       $containsAny: function (a, b) {
         var checkFn;
 
@@ -274,7 +278,8 @@
       '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
       '$contains': LokiOps.$contains,
-      '$containsAny': LokiOps.$containsAny
+      '$containsAny': LokiOps.$containsAny,
+      '$containsNone': LokiOps.$containsNone
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
@@ -283,10 +288,45 @@
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
         cloned;
-      if (cloneMethod === 'parse-stringify') {
-        cloned = JSON.parse(JSON.stringify(data));
+
+      switch (cloneMethod) {
+        case "parse-stringify": 
+          cloned = JSON.parse(JSON.stringify(data));
+          break;
+        case "jquery-extend-deep":
+          cloned = jQuery.extend(true, {}, data);
+          break;
+        case "shallow":
+          cloned = Object.create(data.prototype || null);
+          Object.keys(data).map(function (i) {
+            cloned[i] = data[i];
+          });
+          break;
+        default:
+          break;
       }
+
+      //if (cloneMethod === 'parse-stringify') {
+      //  cloned = JSON.parse(JSON.stringify(data));
+      //}
       return cloned;
+    }
+
+    function cloneObjectArray(objarray, method) {
+      var i,
+        result = [];
+
+      if (method == "parse-stringify") {
+        return clone(objarray, method);
+      }
+
+      i = objarray.length-1;
+
+      for(;i<=0;i--) {
+        result.push(clone(objarray[i], method));
+      }
+
+      return result;
     }
 
     function localStorageAvailable() {
@@ -684,6 +724,7 @@
         copyColl.asyncListeners = coll.asyncListeners;
         copyColl.disableChangesApi = coll.disableChangesApi;
         copyColl.cloneObjects = coll.cloneObjects;
+        copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
 
         // load each element individually
@@ -932,7 +973,6 @@
             cFun(null);
             self.emit('loaded', 'database ' + self.filename + ' loaded');
           } else {
-            console.warn('lokijs loadDatabase : Database not found');
             if (typeof (dbString) === "object") {
               cFun(dbString);
             } else {
@@ -965,16 +1005,24 @@
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
-        this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback() {
-          // for now assume that save went ok and reset dirty flags
-          // in future we may move this into each if block if no exceptions occur.
-          self.autosaveClearFlags();
-          cFun(null);
-        });
+        // check if the adapter is requesting (and supports) a 'reference' mode export
+        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+          // filename may seem redundant but loadDatabase will need to expect this same filename
+          this.persistenceAdapter.exportDatabase(this.filename, this, function exportDatabaseCallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
+        // otherwise just pass the serialized database to adapter
+        else {
+          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
       } else {
         cFun(new Error('persistenceAdapter not configured'));
       }
-
     };
 
     // alias
@@ -1149,16 +1197,28 @@
     Resultset.prototype.branch = Resultset.prototype.copy;
 
     /**
-     * transform() - executes a raw array of transform steps against the resultset.
+     * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
-     * @param {array} : (Optional) array of transform steps to execute against this resultset.
-     * @param {object} : (Optional) object property hash of parameters, if the transform requires them.
+     * @param transform {string|array} : (Optional) name of collection transform or raw transform array
+     * @param parameters {object} : (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
      */
     Resultset.prototype.transform = function (transform, parameters) {
       var idx,
         step,
         rs = this;
+
+      // if transform is name, then do lookup first
+      if (typeof transform === 'string') {
+        if (this.collection.transforms.hasOwnProperty(transform)) {
+          transform = this.collection.transforms[transform];
+        }
+      }
+
+      // either they passed in raw transform array or we looked it up, so process
+      if (typeof transform !== 'object' || !Array.isArray(transform)) {
+          throw new Error("Invalid transform");
+      }
 
       if (typeof parameters !== 'undefined') {
         transform = Utils.resolveTransformParams(transform, parameters);
@@ -1672,11 +1732,12 @@
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
           this.filteredrows = Object.keys(this.collection.data).map(Number);
+          this.filterInitialized = true;
           return this;
         }
         // not chained, so return collection data array
         else {
-          return this.collection.data;
+          return this.collection.data.slice();
         }
       }
 
@@ -1756,7 +1817,7 @@
               }
             }
           } else {
-            throw 'Do not know what you want to do.';
+            throw new Error('Do not know what you want to do.');
           }
           break;
         }
@@ -1960,7 +2021,7 @@
       if ('function' === typeof fun) {
         viewFunction = fun;
       } else {
-        throw 'Argument is not a stored view or a function';
+        throw new TypeError('Argument is not a stored view or a function');
       }
       try {
         // if not a chained query then run directly against data[] and return object []
@@ -2016,15 +2077,38 @@
     /**
      * data() - Terminates the chain and returns array of filtered documents
      *
+     * @param options {object} : allows specifying 'forceClones' and 'forceCloneMethod' options.
+     *    options :
+     *      forceClones {boolean} : Allows forcing the return of cloned objects even when
+     *        the collection is not configured for clone object.
+     *      forceCloneMethod {string} : Allows overriding the default or collection specified cloning method.
+     *        Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'
+     *
      * @returns {array} Array of documents in the resultset
      */
-    Resultset.prototype.data = function () {
-      var result = [];
+    Resultset.prototype.data = function (options) {
+      var result = [],
+        cd,
+        cl;
+
+      options = options || {};
 
       // if this is chained resultset with no filters applied, just return collection.data
       if (this.searchIsChained && !this.filterInitialized) {
         if (this.filteredrows.length === 0) {
-          return this.collection.data;
+          // determine whether we need to clone objects or not
+          if (this.collection.cloneObjects || options.forceClones) {
+            cd = this.collection.data;
+            cl = cl.length;
+
+            for (i = 0; i < cl; i++) {
+              result.push(clone(cd[i], (options.forceCloneMethod || this.collection.cloneMethod)));
+            }
+          }
+          // otherwise we are not cloning so return sliced array with same object references
+          else {
+            return this.collection.data.slice();
+          }
         } else {
           // filteredrows must have been set manually, so use it
           this.filterInitialized = true;
@@ -2038,7 +2122,12 @@
         len = this.filteredrows.length;
 
       for (i = 0; i < len; i++) {
-        result.push(data[fr[i]]);
+        if (this.collection.cloneObjects || options.forceClones) {
+          result.push(clone(data[fr[i]], (options.forceCloneMethod || this.collection.cloneMethod)));
+        }
+        else {
+          result.push(data[fr[i]]);
+        }
       }
       return result;
     };
@@ -2052,7 +2141,7 @@
     Resultset.prototype.update = function (updateFunction) {
 
       if (typeof (updateFunction) !== "function") {
-        throw 'Argument is not a function';
+        throw new TypeError('Argument is not a function');
       }
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
@@ -2314,26 +2403,13 @@
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      */
     DynamicView.prototype.branchResultset = function (transform, parameters) {
-      var rs = this.resultset.copy();
+      var rs = this.resultset.branch();
 
       if (typeof transform === 'undefined') {
         return rs;
       }
 
-      // if transform is name, then do lookup first
-      if (typeof transform === 'string') {
-        if (this.collection.transforms.hasOwnProperty(transform)) {
-          transform = this.collection.transforms[transform];
-        }
-      }
-
-      // either they passed in raw transform array or we looked it up, so process
-      if (typeof transform === 'object' && Array.isArray(transform)) {
-        // if parameters were passed, apply them
-        return rs.transform(transform, parameters);
-      }
-
-      return rs;
+      return rs.transform(transform, parameters);
     };
 
     /**
@@ -2355,6 +2431,28 @@
       copy.collection = null;
 
       return copy;
+    };
+
+    /**
+     * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
+     *     Existing options should be retained.
+     */
+    DynamicView.prototype.removeFilters = function () {
+      this.rebuildPending = false;
+      this.resultset = new Resultset(this.collection);
+      this.resultdata = [];
+      this.resultsdirty = false;
+
+      this.cachedresultset = null;
+
+      // keep ordered filter pipeline
+      this.filterPipeline = [];
+
+      // sorting member variables
+      // we only support one active search, applied using applySort() or applySimpleSort()
+      this.sortFunction = null;
+      this.sortCriteria = null;
+      this.sortDirty = false;
     };
 
     /**
@@ -2514,8 +2612,13 @@
      * @returns {array} An array of documents representing the current DynamicView contents.
      */
     DynamicView.prototype.data = function () {
+      // Until a proper initialization phase can be implemented, let us initialize here (if needed)
+      if (this.filterPipeline.length === 0) {
+        this.applyFind();
+      }
+
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
-      if (this.sortDirty || this.resultsdirty || !this.resultset.filterInitialized) {
+      if (this.sortDirty || this.resultsdirty) {
         this.performSortPhase();
       }
 
@@ -2578,7 +2681,7 @@
      */
     DynamicView.prototype.performSortPhase = function () {
       // async call to this may have been pre-empted by synchronous call to data before async could fire
-      if (!this.sortDirty && !this.resultsdirty && this.resultset.filterInitialized) {
+      if (!this.sortDirty && !this.resultsdirty) {
         return;
       }
 
@@ -2831,6 +2934,9 @@
       // options to clone objects when inserting them
       this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
+      // default clone method (if enabled) is parse-stringify
+      this.cloneMethod = options.hasOwnProperty('clonemethod') ? options.cloneMethod : "parse-stringify";
+
       // option to make event listeners async, default is sync
       this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;
 
@@ -3037,7 +3143,7 @@
     };
 
     Collection.prototype.removeTransform = function (name) {
-      delete transforms[name];
+      delete this.transforms[name];
     };
 
     Collection.prototype.byExample = function (template) {
@@ -3078,7 +3184,7 @@
       }
 
       if (property === null || property === undefined) {
-        throw 'Attempting to set index without an associated property';
+        throw new Error('Attempting to set index without an associated property');
       }
 
       if (this.binaryIndices.hasOwnProperty(property) && !force) {
@@ -3262,7 +3368,9 @@
           throw new TypeError('Document needs to be an object');
         }
 
-        obj = self.cloneObjects ? JSON.parse(JSON.stringify(d)) : d;
+        // if configured to clone, do so now... otherwise just use same obj reference
+        obj = self.cloneObjects ? clone(d, self.cloneMethod) : d;
+
         if (typeof obj.meta === 'undefined') {
           obj.meta = {
             revision: 0,
@@ -3311,7 +3419,7 @@
 
       // verify object is a properly formed document
       if (!doc.hasOwnProperty('$loki')) {
-        throw 'Trying to update unsynced document. Please save the document first by using insert() or addMany()';
+        throw new Error('Trying to update unsynced document. Please save the document first by using insert() or addMany()');
       }
       try {
         this.startTransaction();
@@ -3369,7 +3477,7 @@
 
       // if parameter isn't object exit with throw
       if ('object' !== typeof obj) {
-        throw 'Object being added needs to be an object';
+        throw new TypeError('Object being added needs to be an object');
       }
       /*
        * try adding object to collection
@@ -3383,7 +3491,7 @@
       // or the object is carrying its own 'id' property.  If it also has a meta property,
       // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
       if (typeof (obj.$loki) !== "undefined") {
-        throw 'Document is already in collection, please use update()';
+        throw new Error('Document is already in collection, please use update()');
       }
 
       try {
@@ -3417,7 +3525,13 @@
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        return obj;
+
+        if (this.cloneObjects) {
+          return obj;
+        }
+        else {
+          return clone(obj, this.cloneMethod);
+        }
       } catch (err) {
         this.rollback();
         console.error(err.message);
@@ -3436,9 +3550,7 @@
     };
 
     Collection.prototype.removeDataOnly = function () {
-      this.removeWhere(function (obj) {
-        return true;
-      });
+      this.remove(this.data.slice());
     };
 
     /**
@@ -3525,7 +3637,7 @@
       id = typeof id === 'number' ? id : parseInt(id, 10);
 
       if (isNaN(id)) {
-        throw 'Passed id is not an integer';
+        throw new TypeError('Passed id is not an integer');
       }
 
       while (data[min] < data[max]) {
@@ -3558,7 +3670,13 @@
           return self.by(field, value);
         };
       }
-      return this.constraints.unique[field].get(value);
+
+      if (!this.cloneObjects) {
+        return this.constraints.unique[field].get(value);
+      }
+      else {
+        return clone(this.constraints.unique[field].get(value), this.cloneMethod);
+      }
     };
 
     /**
@@ -3570,7 +3688,12 @@
       if (Array.isArray(result) && result.length === 0) {
         return null;
       } else {
-        return result;
+        if (!this.cloneObjects) {
+          return result;
+        }
+        else {
+          return clone(result, this.cloneMethod);
+        }
       }
     };
 
@@ -3589,20 +3712,7 @@
         return rs;
       }
 
-      // if transform is name, then do lookup first
-      if (typeof transform === 'string') {
-        if (this.transforms.hasOwnProperty(transform)) {
-          transform = this.transforms[transform];
-        }
-      }
-
-      // either they passed in raw transform array or we looked it up, so process
-      if (typeof transform === 'object' && Array.isArray(transform)) {
-        // if parameters were passed, apply them
-        return rs.transform(transform, parameters);
-      }
-
-      return null;
+      return rs.transform(transform, parameters);
     };
 
     /**
@@ -3613,8 +3723,15 @@
       if (typeof (query) === 'undefined') {
         query = 'getAll';
       }
-      // find logic moved into Resultset class
-      return new Resultset(this, query, null);
+
+      if (!this.cloneObjects) {
+        return new Resultset(this, query, null);
+      }
+      else {
+        var results = new Resultset(this, query, null);
+
+        return cloneObjectArray(results, this.cloneMethod);
+      }
     };
 
     /**
@@ -3641,7 +3758,7 @@
     /** start the transation */
     Collection.prototype.startTransaction = function () {
       if (this.transactional) {
-        this.cachedData = clone(this.data, 'parse-stringify');
+        this.cachedData = clone(this.data, this.cloneMethod);
         this.cachedIndex = this.idIndex;
         this.cachedBinaryIndex = this.binaryIndices;
 
@@ -3689,7 +3806,7 @@
           fun();
           callback();
         } else {
-          throw 'Argument passed for async execution is not a function';
+          throw new TypeError('Argument passed for async execution is not a function');
         }
       }, 0);
     };
@@ -3698,8 +3815,14 @@
      * Create view function - filter
      */
     Collection.prototype.where = function (fun) {
-      // find logic moved into Resultset class
-      return new Resultset(this, null, fun);
+      if (!this.cloneObjects) {
+        return new Resultset(this, null, fun);
+      }
+      else {
+        var results = new Resultset(this, null, fun);
+
+        return cloneObjectArray(results, this.cloneMethod);
+      }
     };
 
     /**

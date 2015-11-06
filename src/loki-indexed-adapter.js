@@ -145,20 +145,29 @@
       var appName = this.app;
       var adapter = this;
       
+      function saveCallback(result) {
+        if (result && result.success === true) {
+          callback(null);
+        }
+        else {
+          callback(new Error("Error saving database"));
+        }
+      }
+
       // lazy open/create db reference so dont -need- callback in constructor
       if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
           
           // now that catalog has been initialized, set (add/update) the AKV entry
-          cat.setAppKey(appName, dbname, dbstring, callback);
+          cat.setAppKey(appName, dbname, dbstring, saveCallback);
         });
         
         return;
       }
       
       // set (add/update) entry to AKV database
-      this.catalog.setAppKey(appName, dbname, dbstring, callback);
+      this.catalog.setAppKey(appName, dbname, dbstring, saveCallback);
     };
 
     // alias

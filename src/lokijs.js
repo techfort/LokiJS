@@ -290,7 +290,7 @@
         cloned;
 
       switch (cloneMethod) {
-        case "parse-stringify": 
+        case "parse-stringify":
           cloned = JSON.parse(JSON.stringify(data));
           break;
         case "jquery-extend-deep":
@@ -442,7 +442,8 @@
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
 
-
+      // enable console output if verbose flag is set (disabled by default)
+      this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
 
       this.events = {
         'init': [],
@@ -604,12 +605,19 @@
     Loki.prototype.anonym = function (docs, indexesArray) {
       var collection = new Collection('anonym', indexesArray);
       collection.insert(docs);
+
+      if(this.verbose)
+        collection.console = console;
+
       return collection;
     };
 
     Loki.prototype.addCollection = function (name, options) {
       var collection = new Collection(name, options);
       this.collections.push(collection);
+
+      if(this.verbose)
+        collection.console = console;
 
       return collection;
     };
@@ -2971,7 +2979,6 @@
       this.ensureId();
       var indices = [];
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
-      //if (typeof (indices) !== 'undefined') {
       if (options && options.indices) {
         if (Object.prototype.toString.call(options.indices) === '[object Array]') {
           indices = options.indices;
@@ -3108,12 +3115,20 @@
         }
       });
 
-      this.on('warning', console.warn);
+      this.on('warning', function (warning) {
+        self.console.warn(warning);
+      });
       // for de-serialization purposes
       flushChanges();
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    Collection.prototype.console = {
+      log: function () {},
+      warn: function () {},
+      error: function () {},
+    };
 
     Collection.prototype.addAutoUpdateObserver = function (object) {
 
@@ -3341,7 +3356,7 @@
 
       } catch (err) {
         this.rollback();
-        console.error(err.message);
+        this.console.error(err.message);
       }
     };
 
@@ -3463,7 +3478,7 @@
         return doc;
       } catch (err) {
         this.rollback();
-        console.error(err.message);
+        this.console.error(err.message);
         this.emit('error', err);
         throw (err); // re-throw error so user does not think it succeeded
       }
@@ -3534,7 +3549,7 @@
         }
       } catch (err) {
         this.rollback();
-        console.error(err.message);
+        this.console.error(err.message);
       }
     };
 
@@ -3613,7 +3628,7 @@
 
       } catch (err) {
         this.rollback();
-        console.error(err.message);
+        this.console.error(err.message);
         this.emit('error', err);
         return null;
       }

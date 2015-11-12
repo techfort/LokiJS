@@ -221,6 +221,10 @@
         return b.indexOf(a) > -1;
       },
 
+      $nin: function (a, b) {
+        return b.indexOf(a) == -1;
+      },
+
       $containsNone: function (a, b) {
         return !LokiOps.$containsAny(a, b);
       },
@@ -277,6 +281,7 @@
       '$ne': LokiOps.$ne,
       '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
+      '$nin': LokiOps.$nin,
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone

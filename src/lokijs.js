@@ -3289,8 +3289,9 @@
     };
 
     Collection.prototype.count = function (query) {
-      if (!query)
+      if (!query) {
         return this.data.length;
+      }
 
       return this.chain().find(query).filteredrows.length;
     };

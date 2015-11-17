@@ -3288,8 +3288,11 @@
         this.binaryIndices[index].dirty = true;
     };
 
-    Collection.prototype.count = function () {
-      return this.data.length;
+    Collection.prototype.count = function (query) {
+      if (!query)
+        return this.data.length;
+
+      return this.chain().find(query).filteredrows.length;
     };
 
     /**

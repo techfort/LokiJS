@@ -253,6 +253,8 @@
                 
 
                 function getdata() {
+                    var found;
+
                     if (operation === 'update_doc' || operation === 'insert_item_in_doc') {
                         db.loadDatabase(dbName);
                         var coll = db.getCollection(collName);
@@ -309,7 +311,7 @@
                     else if (operation === 'get_doc' || operation === 'set_doc') {
                         db.loadDatabase(dbName);
                         var coll1 = db.getCollection(collName);
-                        var found = coll1.find(docName);
+                        found = coll1.find(docName);
                         resolve(angular.fromJson(found));
                     } else if (operation === 'get_collection') {
                         db.loadDatabase(dbName);

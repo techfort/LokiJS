@@ -43,7 +43,8 @@ Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki
 LokiJS is at version 1.3 [Eostre].
 As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
 
-Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. [Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
+Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. 
+[Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!
 
 ## Installation
 

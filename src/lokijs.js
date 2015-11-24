@@ -2565,59 +2565,146 @@
       return this;
     };
 
+
     /**
-     * applyFind() - Adds a mongo-style query option to the DynamicView filter pipeline
+     * Implementation detail.
+     * _indexOfFilterWithId() - Find the index of a filter in the pipeline, by that filter's ID.
+     *
+     * @param {string|number} uid - The unique ID of the filter.
+     * @returns {number}: index of the referenced filter in the pipeline; -1 if not found.
+     */
+    DynamicView.prototype._indexOfFilterWithId = function (uid) {
+      if (typeof uid === 'string' || typeof uid === 'number') {
+        for (var idx = 0, len = this.filterPipeline.length; idx < len; idx += 1) {
+          if (uid === this.filterPipeline[idx].uid) {
+            return idx;
+          }
+        }
+      }
+      return -1;
+    };
+
+    /**
+     * Implementation detail.
+     * _addFilter() - Add the filter object to the end of view's filter pipeline and apply the filter to the resultset.
+     *
+     * @param {object} filter - The filter object. Refer to applyFilter() for extra details.
+     */
+    DynamicView.prototype._addFilter = function (filter) {
+      this.resultset[filter.type](filter.val);
+      this.filterPipeline.push(filter);
+    };
+
+    /**
+     * reapplyFilters() - Reapply all the filters in the current pipeline.
+     *
+     * @returns {DynamicView} this DynamicView object, for further chain ops.
+     */
+    DynamicView.prototype.reapplyFilters = function () {
+      var filters = this.filterPipeline;
+      var sortFunction = this.sortFunction;
+      var sortCriteria = this.sortCriteria;
+
+      this.removeFilters();
+
+      for (var idx = 0, len = filters.length; idx < len; idx += 1) {
+        this._addFilter(filters[idx]);
+      }
+
+      if (sortFunction !== null){
+        this.applySort(sortFunction);
+      }
+      if (sortCriteria !== null) {
+        this.applySortCriteria(sortCriteria);
+      }
+
+      if (this.options.persistent) {
+        this.resultsdirty = true;
+        this.queueSortPhase();
+      }
+
+      return this;
+    };
+
+    /**
+     * applyFilter() - Adds or updates a filter in the DynamicView filter pipeline
+     *
+     * @param {object} filter - A filter object to add to the pipeline.
+     *    The object is in the format { 'type': filter_type, 'val', filter_param, 'uid', optional_filter_id }
+     * @returns {DynamicView} this DynamicView object, for further chain ops.
+     */
+    DynamicView.prototype.applyFilter = function (filter) {
+      var idx = this._indexOfFilterWithId(filter.uid);
+      if (idx >= 0) {
+        this.filterPipeline[idx] = filter;
+        this.reapplyFilters();
+        return;
+      }
+
+      this._addFilter(filter);
+
+      if (this.sortFunction || this.sortCriteria) {
+        this.sortDirty = true;
+        this.queueSortPhase();
+      }
+
+      if (this.options.persistent) {
+        this.resultsdirty = true;
+        this.queueSortPhase();
+      }
+
+      return this;
+    };
+
+    /**
+     * applyFind() - Adds or updates a mongo-style query option in the DynamicView filter pipeline
      *
      * @param {object} query - A mongo-style query object to apply to pipeline
+     * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      */
-    DynamicView.prototype.applyFind = function (query) {
-      this.filterPipeline.push({
+    DynamicView.prototype.applyFind = function (query, uid) {
+      this.applyFilter({
         type: 'find',
-        val: query
+        val: query,
+        uid: uid
       });
-
-      // Apply immediately to Resultset; if persistent we will wait until later to build internal data
-      this.resultset.find(query);
-
-      if (this.sortFunction || this.sortCriteria) {
-        this.sortDirty = true;
-        this.queueSortPhase();
-      }
-
-      if (this.options.persistent) {
-        this.resultsdirty = true;
-        this.queueSortPhase();
-      }
-
       return this;
     };
 
     /**
-     * applyWhere() - Adds a javascript filter function to the DynamicView filter pipeline
+     * applyWhere() - Adds or updates a javascript filter function in the DynamicView filter pipeline
      *
      * @param {function} fun - A javascript filter function to apply to pipeline
+     * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      */
-    DynamicView.prototype.applyWhere = function (fun) {
-      this.filterPipeline.push({
+    DynamicView.prototype.applyWhere = function (fun, uid) {
+      this.applyFilter({
         type: 'where',
-        val: fun
+        val: fun,
+        uid: uid
       });
-
-      // Apply immediately to Resultset; if persistent we will wait until later to build internal data
-      this.resultset.where(fun);
-
-      if (this.sortFunction || this.sortCriteria) {
-        this.sortDirty = true;
-        this.queueSortPhase();
-      }
-      if (this.options.persistent) {
-        this.resultsdirty = true;
-        this.queueSortPhase();
-      }
       return this;
     };
+
+    /**
+     * removeFilter() - Remove the specified filter from the DynamicView filter pipeline
+     *
+     * @param {string|number} uid - The unique ID of the filter to be removed.
+     * @returns {DynamicView} this DynamicView object, for further chain ops.
+     */
+    DynamicView.prototype.removeFilter = function (uid) {
+      var idx = this._indexOfFilterWithId(uid);
+      if (idx < 0) {
+        throw new Error("Dynamic view does not contain a filter with ID: " + uid);
+      }
+
+      this.filterPipeline.splice(idx, 1);
+      this.reapplyFilters();
+      return this;
+    };
+
 
     /**
      * data() - resolves and pending filtering and sorting, then returns document array as result.

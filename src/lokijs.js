@@ -558,6 +558,7 @@
         if (this.options.hasOwnProperty('adapter')) {
           this.persistenceMethod = 'adapter';
           this.persistenceAdapter = options.adapter;
+          this.options.adapter = null;
         }
 
 

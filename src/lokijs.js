@@ -2745,7 +2745,7 @@
 
       setTimeout(function () {
         self.rebuildPending = false;
-        self.emit('rebuild', this);
+        self.emit('rebuild', self);
       }, 1);
     };
 

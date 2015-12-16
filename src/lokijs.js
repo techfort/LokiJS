@@ -85,6 +85,13 @@
       if (prop2 === null) {
         return false;
       }
+      // fix edge case where mixing boolean and strings breaks index calculateRange
+      if (prop1 === true || prop2 === false) {
+        return false;
+      }
+      if (prop1 === false || prop2 === true) {
+        return true;
+      }
 
       if (prop1 < prop2) {
         return true;
@@ -115,6 +122,14 @@
       }
       if (prop2 === null) {
         return true;
+      }
+
+      // fix edge case where mixing boolean and strings breaks index calculateRange
+      if (prop1 === true || prop2 === false) {
+        return true;
+      }
+      if (prop1 === false || prop2 === true) {
+        return false;
       }
 
       if (prop1 > prop2) {

@@ -73,24 +73,11 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === undefined) {
+      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return true;
       }
-      if (prop2 === undefined) {
+      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
         return false;
-      }
-      if (prop1 === null) {
-        return true;
-      }
-      if (prop2 === null) {
-        return false;
-      }
-      // fix edge case where mixing boolean and strings breaks index calculateRange
-      if (prop1 === true || prop2 === false) {
-        return false;
-      }
-      if (prop1 === false || prop2 === true) {
-        return true;
       }
 
       if (prop1 < prop2) {
@@ -111,25 +98,11 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === undefined) {
+      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return false;
       }
-      if (prop2 === undefined) {
+      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
         return true;
-      }
-      if (prop1 === null) {
-        return false;
-      }
-      if (prop2 === null) {
-        return true;
-      }
-
-      // fix edge case where mixing boolean and strings breaks index calculateRange
-      if (prop1 === true || prop2 === false) {
-        return true;
-      }
-      if (prop1 === false || prop2 === true) {
-        return false;
       }
 
       if (prop1 > prop2) {

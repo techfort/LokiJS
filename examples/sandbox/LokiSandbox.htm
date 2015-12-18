@@ -218,7 +218,10 @@
     
     // we will use loki indexed adapter as a generic app/key/value store
     // we will store scripts instead of serialized loki databases in our 'sandbox' 'app'
-    var sandboxAdapter = new LokiIndexedAdapter('sandbox');
+    var sandboxAdapter = null;
+    if (window && window.indexedDB) {
+      sandboxAdapter = new LokiIndexedAdapter('sandbox');
+    }
 
     var sbv = {
       editorJS: null,
@@ -266,8 +269,10 @@
       $("body").css("background-color", "#222");
 
       setupEditor();
-      
-      loadScriptList();
+
+      if (sandboxAdapter) {
+        loadScriptList();
+      }
       
       // if the user specifies a rawgist hash parameter, attempt to load and run that gist (url)
       var rawgist = getHashParameter("rawgist");

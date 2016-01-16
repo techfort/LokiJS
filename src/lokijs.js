@@ -2090,8 +2090,10 @@
      */
     Resultset.prototype.data = function (options) {
       var result = [],
-        cd,
-        cl;
+        data,
+        len,
+        i,
+        method;
 
       options = options || {};
 
@@ -2100,12 +2102,14 @@
         if (this.filteredrows.length === 0) {
           // determine whether we need to clone objects or not
           if (this.collection.cloneObjects || options.forceClones) {
-            cd = this.collection.data;
-            cl = cl.length;
+            data = this.collection.data;
+            len = data.length;
+            method = options.forceCloneMethod || this.collection.cloneMethod;
 
-            for (i = 0; i < cl; i++) {
-              result.push(clone(cd[i], (options.forceCloneMethod || this.collection.cloneMethod)));
+            for (i = 0; i < len; i++) {
+              result.push(clone(data[i], method));
             }
+            return result;
           }
           // otherwise we are not cloning so return sliced array with same object references
           else {
@@ -2117,17 +2121,18 @@
         }
       }
 
-      var data = this.collection.data,
-        fr = this.filteredrows;
+      data = this.collection.data;
+      var fr = this.filteredrows;
+      len = fr.length;
 
-      var i,
-        len = this.filteredrows.length;
-
-      for (i = 0; i < len; i++) {
-        if (this.collection.cloneObjects || options.forceClones) {
-          result.push(clone(data[fr[i]], (options.forceCloneMethod || this.collection.cloneMethod)));
+      if (this.collection.cloneObjects || options.forceClones) {
+        method = options.forceCloneMethod || this.collection.cloneMethod;
+        for (i = 0; i < len; i++) {
+          result.push(clone(data[fr[i]], method));
         }
-        else {
+      }
+      else {
+        for (i = 0; i < len; i++) {
           result.push(data[fr[i]]);
         }
       }

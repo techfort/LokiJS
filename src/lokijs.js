@@ -1727,8 +1727,10 @@
         // chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
-          this.filteredrows = Object.keys(this.collection.data).map(Number);
-          this.filterInitialized = true;
+          if (!this.filterInitialized && this.filteredrows.length === 0) {
+            this.filteredrows = Object.keys(this.collection.data).map(Number);
+            this.filterInitialized = true;
+          }
           return this;
         }
         // not chained, so return collection data array

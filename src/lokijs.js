@@ -1296,11 +1296,9 @@
 
       var wrappedComparer =
         (function (userComparer, rslt) {
+          var data = rslt.collection.data;
           return function (a, b) {
-            var obj1 = rslt.collection.data[a];
-            var obj2 = rslt.collection.data[b];
-
-            return userComparer(obj1, obj2);
+            return userComparer(data[a], data[b]);
           };
         })(comparefun, this);
 
@@ -1328,11 +1326,9 @@
 
       var wrappedComparer =
         (function (prop, desc, rslt) {
+          var data = rslt.collection.data;
           return function (a, b) {
-            var obj1 = rslt.collection.data[a];
-            var obj2 = rslt.collection.data[b];
-
-            return sortHelper(obj1[prop], obj2[prop], desc);
+            return sortHelper(data[a][prop], data[b][prop], desc);
 
           };
         })(propname, isdesc, this);
@@ -1395,11 +1391,9 @@
 
       var wrappedComparer =
         (function (props, rslt) {
+          var data = rslt.collection.data;
           return function (a, b) {
-            var obj1 = rslt.collection.data[a];
-            var obj2 = rslt.collection.data[b];
-
-            return rslt.compoundeval(props, obj1, obj2);
+            return rslt.compoundeval(props, data[a], data[b]);
           };
         })(properties, this);
 

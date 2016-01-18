@@ -3275,8 +3275,8 @@
     };
 
     /*----------------------------+
-     | TTL daemon                  |
-     +----------------------------*/
+    | TTL daemon                  |
+    +----------------------------*/
     Collection.prototype.ttlDaemonFuncGen = function () {
       var collection = this
       var age = this.ttl.age

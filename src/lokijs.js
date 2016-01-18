@@ -1171,7 +1171,7 @@
     Resultset.prototype.offset = function (pos) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       var rscopy = this.copy();
@@ -1291,7 +1291,7 @@
     Resultset.prototype.sort = function (comparefun) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       var wrappedComparer =
@@ -1317,7 +1317,7 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -1386,7 +1386,7 @@
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       var wrappedComparer =
@@ -1728,7 +1728,7 @@
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
           if (!this.filterInitialized && this.filteredrows.length === 0) {
-            this.filteredrows = Object.keys(this.collection.data).map(Number);
+            this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
             this.filterInitialized = true;
           }
           return this;
@@ -2149,7 +2149,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       var len = this.filteredrows.length,
@@ -2175,7 +2175,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       this.collection.remove(this.data());
@@ -4129,6 +4129,10 @@
 
     function isNotUndefined(obj) {
       return obj !== undefined;
+    }
+
+    function mapArrayElementToItsIndex(val, idx) {
+      return idx;
     }
 
     function add(a, b) {

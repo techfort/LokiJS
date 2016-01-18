@@ -2801,10 +2801,11 @@
      *    Called by : collection.insert() and collection.update().
      *
      * @param {int} objIndex - index of document to (re)run through filter pipeline.
+     * @param {bool} isNew - true if the document was just added to the collection.
      */
-    DynamicView.prototype.evaluateDocument = function (objIndex) {
+    DynamicView.prototype.evaluateDocument = function (objIndex, isNew) {
       var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(+objIndex);
+      var oldPos = (isNew) ? (-1) : (ofr.indexOf(+objIndex));
       var oldlen = ofr.length;
 
       // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
@@ -2812,22 +2813,16 @@
       var evalResultset = new Resultset(this.collection);
       evalResultset.filteredrows = [objIndex];
       evalResultset.filterInitialized = true;
-      for (var idx = 0; idx < this.filterPipeline.length; idx++) {
-        switch (this.filterPipeline[idx].type) {
-        case 'find':
-          evalResultset.find(this.filterPipeline[idx].val);
-          break;
-        case 'where':
-          evalResultset.where(this.filterPipeline[idx].val);
-          break;
-        }
+      for (var idx = 0, len = this.filterPipeline.length; idx < len; idx++) {
+        var filterType = this.filterPipeline[idx].type;
+        evalResultset[filterType](this.filterPipeline[idx].val);
       }
 
       // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
       var newPos = (evalResultset.filteredrows.length === 0) ? -1 : 0;
 
       // wasn't in old, shouldn't be now... do nothing
-      if (oldPos == -1 && newPos == -1) return;
+      if (oldPos === -1 && newPos === -1) return;
 
       // wasn't in resultset, should be now... add
       if (oldPos === -1 && newPos !== -1) {
@@ -3553,7 +3548,7 @@
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
         for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-          this.DynamicViews[idx].evaluateDocument(position);
+          this.DynamicViews[idx].evaluateDocument(position, false);
         }
 
         this.idIndex[position] = obj.$loki;
@@ -3618,7 +3613,7 @@
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
         for (var i = 0; i < dvlen; i++) {
-          this.DynamicViews[i].evaluateDocument(this.data.length - 1);
+          this.DynamicViews[i].evaluateDocument(this.data.length - 1, true);
         }
 
         // add new obj id to idIndex

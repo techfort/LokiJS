@@ -73,24 +73,11 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === undefined) {
+      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return true;
       }
-      if (prop2 === undefined) {
+      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
         return false;
-      }
-      if (prop1 === null) {
-        return true;
-      }
-      if (prop2 === null) {
-        return false;
-      }
-      // fix edge case where mixing boolean and strings breaks index calculateRange
-      if (prop1 === true || prop2 === false) {
-        return false;
-      }
-      if (prop1 === false || prop2 === true) {
-        return true;
       }
 
       if (prop1 < prop2) {
@@ -111,25 +98,11 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === undefined) {
+      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return false;
       }
-      if (prop2 === undefined) {
+      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
         return true;
-      }
-      if (prop1 === null) {
-        return false;
-      }
-      if (prop2 === null) {
-        return true;
-      }
-
-      // fix edge case where mixing boolean and strings breaks index calculateRange
-      if (prop1 === true || prop2 === false) {
-        return true;
-      }
-      if (prop1 === false || prop2 === true) {
-        return false;
       }
 
       if (prop1 > prop2) {
@@ -252,8 +225,8 @@
         }
 
         checkFn = containsCheckFn(a, b) || function () {
-            return false;
-          };
+          return false;
+        };
 
         return b.reduce(function (prev, curr) {
           if (prev) {
@@ -273,8 +246,8 @@
 
         // return false on check if no check fn is found
         checkFn = containsCheckFn(a, b) || function () {
-            return false;
-          };
+          return false;
+        };
 
         return b.reduce(function (prev, curr) {
           if (!prev) {
@@ -702,12 +675,12 @@
      */
     Loki.prototype.serializeReplacer = function (key, value) {
       switch (key) {
-        case 'autosaveHandle':
-        case 'persistenceAdapter':
-        case 'constraints':
-          return null;
-        default:
-          return value;
+      case 'autosaveHandle':
+      case 'persistenceAdapter':
+      case 'constraints':
+        return null;
+      default:
+        return value;
       }
     };
 
@@ -846,8 +819,8 @@
     };
 
     /**-------------------------+
-     | Changes API               |
-     +--------------------------*/
+    | Changes API               |
+    +--------------------------*/
 
     /**
      * The Changes API enables the tracking the changes occurred in the collections since the beginning of the session,
@@ -898,8 +871,8 @@
     };
 
     /*------------------+
-     | PERSISTENCE       |
-     -------------------*/
+    | PERSISTENCE       |
+    -------------------*/
 
 
     /** there are two build in persistence adapters for internal use
@@ -986,11 +959,11 @@
      */
     Loki.prototype.loadDatabase = function (options, callback) {
       var cFun = callback || function (err, data) {
-            if (err) {
-              throw err;
-            }
-            return;
-          },
+          if (err) {
+            throw err;
+          }
+          return;
+        },
         self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
@@ -1025,11 +998,11 @@
      */
     Loki.prototype.saveDatabase = function (callback) {
       var cFun = callback || function (err) {
-            if (err) {
-              throw err;
-            }
-            return;
-          },
+          if (err) {
+            throw err;
+          }
+          return;
+        },
         self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
@@ -1246,7 +1219,7 @@
 
       // either they passed in raw transform array or we looked it up, so process
       if (typeof transform !== 'object' || !Array.isArray(transform)) {
-        throw new Error("Invalid transform");
+          throw new Error("Invalid transform");
       }
 
       if (typeof parameters !== 'undefined') {
@@ -1257,46 +1230,46 @@
         step = transform[idx];
 
         switch (step.type) {
-          case "find":
-            rs.find(step.value);
-            break;
-          case "where":
-            rs.where(step.value);
-            break;
-          case "simplesort":
-            rs.simplesort(step.property, step.desc);
-            break;
-          case "compoundsort":
-            rs.compoundsort(step.value);
-            break;
-          case "sort":
-            rs.sort(step.value);
-            break;
-          case "limit":
-            rs = rs.limit(step.value);
-            break; // limit makes copy so update reference
-          case "offset":
-            rs = rs.offset(step.value);
-            break; // offset makes copy so update reference
-          case "map":
-            rs = rs.map(step.value);
-            break;
-          case "eqJoin":
-            rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun);
-            break;
+        case "find":
+          rs.find(step.value);
+          break;
+        case "where":
+          rs.where(step.value);
+          break;
+        case "simplesort":
+          rs.simplesort(step.property, step.desc);
+          break;
+        case "compoundsort":
+          rs.compoundsort(step.value);
+          break;
+        case "sort":
+          rs.sort(step.value);
+          break;
+        case "limit":
+          rs = rs.limit(step.value);
+          break; // limit makes copy so update reference
+        case "offset":
+          rs = rs.offset(step.value);
+          break; // offset makes copy so update reference
+        case "map":
+          rs = rs.map(step.value);
+          break;
+        case "eqJoin":
+          rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun);
+          break;
           // following cases break chain by returning array data so make any of these last in transform steps
-          case "mapReduce":
-            rs = rs.mapReduce(step.mapFunction, step.reduceFunction);
-            break;
+        case "mapReduce":
+          rs = rs.mapReduce(step.mapFunction, step.reduceFunction);
+          break;
           // following cases update documents in current filtered resultset (use carefully)
-          case "update":
-            rs.update(step.value);
-            break;
-          case "remove":
-            rs.remove();
-            break;
-          default:
-            break;
+        case "update":
+          rs.update(step.value);
+          break;
+        case "remove":
+          rs.remove();
+          break;
+        default:
+          break;
         }
       }
 
@@ -1464,42 +1437,42 @@
 
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
-        case '$eq':
-          if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
-            return [0, -1];
-          }
-          break;
-        case '$dteq':
-          if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
-            return [0, -1];
-          }
-          break;
-        case '$gt':
-          if (gtHelper(val, maxVal, true)) {
-            return [0, -1];
-          }
-          break;
-        case '$gte':
-          if (gtHelper(val, maxVal)) {
-            return [0, -1];
-          }
-          break;
-        case '$lt':
-          if (ltHelper(val, minVal, true)) {
-            return [0, -1];
-          }
-          if (ltHelper(maxVal, val)) {
-            return [0, rcd.length - 1];
-          }
-          break;
-        case '$lte':
-          if (ltHelper(val, minVal)) {
-            return [0, -1];
-          }
-          if (ltHelper(maxVal, val, true)) {
-            return [0, rcd.length - 1];
-          }
-          break;
+      case '$eq':
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+          return [0, -1];
+        }
+        break;
+      case '$dteq':
+        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+          return [0, -1];
+        }
+        break;
+      case '$gt':
+        if (gtHelper(val, maxVal, true)) {
+          return [0, -1];
+        }
+        break;
+      case '$gte':
+        if (gtHelper(val, maxVal)) {
+          return [0, -1];
+        }
+        break;
+      case '$lt':
+        if (ltHelper(val, minVal, true)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val)) {
+          return [0, rcd.length - 1];
+        }
+        break;
+      case '$lte':
+        if (ltHelper(val, minVal)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val, true)) {
+          return [0, rcd.length - 1];
+        }
+        break;
       }
 
       // hone in on start position of value
@@ -1535,58 +1508,58 @@
       var uval = rcd[index[ubound]][prop];
 
       switch (op) {
-        case '$eq':
-          if (lval !== val) {
-            return [0, -1];
-          }
-          if (uval !== val) {
-            ubound--;
-          }
+      case '$eq':
+        if (lval !== val) {
+          return [0, -1];
+        }
+        if (uval !== val) {
+          ubound--;
+        }
 
-          return [lbound, ubound];
-        case '$dteq':
-          if (lval > val || lval < val) {
-            return [0, -1];
-          }
-          if (uval > val || uval < val) {
-            ubound--;
-          }
+        return [lbound, ubound];
+      case '$dteq':
+        if (lval > val || lval < val) {
+          return [0, -1];
+        }
+        if (uval > val || uval < val) {
+          ubound--;
+        }
 
-          return [lbound, ubound];
+        return [lbound, ubound];
 
 
-        case '$gt':
-          if (ltHelper(uval, val, true)) {
-            return [0, -1];
-          }
+      case '$gt':
+        if (ltHelper(uval, val, true)) {
+          return [0, -1];
+        }
 
-          return [ubound, rcd.length - 1];
+        return [ubound, rcd.length - 1];
 
-        case '$gte':
-          if (ltHelper(lval, val)) {
-            return [0, -1];
-          }
+      case '$gte':
+        if (ltHelper(lval, val)) {
+          return [0, -1];
+        }
 
-          return [lbound, rcd.length - 1];
+        return [lbound, rcd.length - 1];
 
-        case '$lt':
-          if (lbound === 0 && ltHelper(lval, val)) {
-            return [0, 0];
-          }
-          return [0, lbound - 1];
+      case '$lt':
+        if (lbound === 0 && ltHelper(lval, val)) {
+          return [0, 0];
+        }
+        return [0, lbound - 1];
 
-        case '$lte':
-          if (uval !== val) {
-            ubound--;
-          }
+      case '$lte':
+        if (uval !== val) {
+          ubound--;
+        }
 
-          if (ubound === 0 && ltHelper(uval, val)) {
-            return [0, 0];
-          }
-          return [0, ubound];
+        if (ubound === 0 && ltHelper(uval, val)) {
+          return [0, 0];
+        }
+        return [0, ubound];
 
-        default:
-          return [0, rcd.length - 1];
+      default:
+        return [0, rcd.length - 1];
       }
     };
 
@@ -1734,11 +1707,11 @@
         searchByIndex = false,
         result = [],
         index = null,
-      // comparison function
+        // comparison function
         fun,
-      // collection data
+        // collection data
         t,
-      // collection data length
+        // collection data length
         i,
         emptyQO = true;
 
@@ -2840,12 +2813,12 @@
       evalResultset.filterInitialized = true;
       for (var idx = 0; idx < this.filterPipeline.length; idx++) {
         switch (this.filterPipeline[idx].type) {
-          case 'find':
-            evalResultset.find(this.filterPipeline[idx].val);
-            break;
-          case 'where':
-            evalResultset.where(this.filterPipeline[idx].val);
-            break;
+        case 'find':
+          evalResultset.find(this.filterPipeline[idx].val);
+          break;
+        case 'where':
+          evalResultset.where(this.filterPipeline[idx].val);
+          break;
         }
       }
 
@@ -3284,8 +3257,8 @@
         if (!template.hasOwnProperty(k)) continue;
         query.push((
           obj = {},
-            obj[k] = template[k],
-            obj
+          obj[k] = template[k],
+          obj
         ));
       }
       return {
@@ -3330,8 +3303,8 @@
     };
 
     /*----------------------------+
-     | INDEXING                    |
-     +----------------------------*/
+    | INDEXING                    |
+    +----------------------------*/
 
     /**
      * Ensure binary index on a certain field
@@ -3747,7 +3720,7 @@
       try {
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
-        // obj = arr[0],
+          // obj = arr[0],
           position = arr[1];
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
@@ -3783,8 +3756,8 @@
     };
 
     /*---------------------+
-     | Finding methods     |
-     +----------------------*/
+    | Finding methods     |
+    +----------------------*/
 
     /**
      * Get by Id - faster than other methods because of the searching algorithm

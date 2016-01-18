@@ -3039,6 +3039,11 @@
       this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
       //option to activate a cleaner daemon - clears "aged" documents at set intervals.
+      this.ttl = {
+        age: null,
+        ttlInterval: null,
+        daemon: null
+      };
       this.setTTL(options.ttl || -1, options.ttlInterval)
 
       // currentMaxId - change manually at your own peril!
@@ -3279,19 +3284,18 @@
     /*----------------------------+
      | TTL daemon                  |
      +----------------------------*/
-
-    this.ttl = {
-      age: -1,
-      daemon: null
-    };
-
-    Collection.prototype.ttlDaemonFunc = function daemonFunc() {
-      var now = Date.now()
+    Collection.prototype.ttlDaemonFuncGen = function () {
+      var collection = this
       var age = this.ttl.age
-      this.where(function daemonFilter(member) {
-        var diff = member.meta.updated - now;
-        return age < diff
-      }).remove()
+      return function ttlDaemon() {
+        var now = Date.now()
+        var toRemove = collection.chain().where(function daemonFilter(member) {
+          var timestamp = member.meta.updated || member.meta.created;
+          var diff = now - timestamp;
+          return age < diff
+        });
+        toRemove.remove()
+      }
     }
 
     Collection.prototype.setTTL = function (age, interval) {
@@ -3299,10 +3303,9 @@
         clearInterval(this.ttl.daemon)
       }
       else {
-        this.ttl = {
-          age: age,
-          daemon: setInterval(this.ttlDaemonFunc, interval)
-        }
+        this.ttl.age = age
+        this.ttl.ttlInterval = interval
+        this.ttl.daemon = setInterval(this.ttlDaemonFuncGen(), interval)
       }
     };
 

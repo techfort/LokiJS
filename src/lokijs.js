@@ -73,11 +73,24 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
+      if (prop1 === undefined) {
         return true;
       }
-      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
+      if (prop2 === undefined) {
         return false;
+      }
+      if (prop1 === null) {
+        return true;
+      }
+      if (prop2 === null) {
+        return false;
+      }
+      // fix edge case where mixing boolean and strings breaks index calculateRange
+      if (prop1 === true || prop2 === false) {
+        return false;
+      }
+      if (prop1 === false || prop2 === true) {
+        return true;
       }
 
       if (prop1 < prop2) {
@@ -98,11 +111,25 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
+      if (prop1 === undefined) {
         return false;
       }
-      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
+      if (prop2 === undefined) {
         return true;
+      }
+      if (prop1 === null) {
+        return false;
+      }
+      if (prop2 === null) {
+        return true;
+      }
+
+      // fix edge case where mixing boolean and strings breaks index calculateRange
+      if (prop1 === true || prop2 === false) {
+        return true;
+      }
+      if (prop1 === false || prop2 === true) {
+        return false;
       }
 
       if (prop1 > prop2) {
@@ -169,12 +196,12 @@
         return a === b;
       },
 
-      $dteq: function (a, b) {
+      $dteq: function(a, b) {
         if (ltHelper(a, b)) {
           return false;
         }
 
-        if (gtHelper(a, b)) {
+        if (gtHelper(a,b)) {
           return false;
         }
 
@@ -313,9 +340,9 @@
         return clone(objarray, method);
       }
 
-      i = objarray.length - 1;
+      i = objarray.length-1;
 
-      for (; i <= 0; i--) {
+      for(;i<=0;i--) {
         result.push(clone(objarray[i], method));
       }
 
@@ -338,8 +365,7 @@
      *
      * @constructor
      */
-    function LokiEventEmitter() {
-    }
+    function LokiEventEmitter() {}
 
     /**
      * @prop Events property is a hashmap, with each property being an array of callbacks
@@ -601,7 +627,7 @@
       var collection = new Collection('anonym', indexesArray);
       collection.insert(docs);
 
-      if (this.verbose)
+      if(this.verbose)
         collection.console = console;
 
       return collection;
@@ -611,7 +637,7 @@
       var collection = new Collection(name, options);
       this.collections.push(collection);
 
-      if (this.verbose)
+      if(this.verbose)
         collection.console = console;
 
       return collection;
@@ -738,7 +764,7 @@
           var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
 
           for (j; j < clen; j++) {
-            var collObj = new (options[coll.name].proto)();
+            var collObj = new(options[coll.name].proto)();
             loader(coll.data[j], collObj);
             copyColl.data[j] = collObj;
             copyColl.addAutoUpdateObserver(collObj);
@@ -841,7 +867,6 @@
       function getCollName(coll) {
         return coll.name;
       }
-
       var changes = [],
         selectedCollections = arrayOfCollectionNames || this.collections.map(getCollName);
 
@@ -921,8 +946,7 @@
     /**
      * constructor for local storage
      */
-    function LokiLocalStorageAdapter() {
-    }
+    function LokiLocalStorageAdapter() {}
 
     /**
      * loadDatabase() - Load data from localstorage
@@ -2603,7 +2627,7 @@
         this._addFilter(filters[idx]);
       }
 
-      if (sortFunction !== null) {
+      if (sortFunction !== null){
         this.applySort(sortFunction);
       }
       if (sortCriteria !== null) {
@@ -3089,9 +3113,9 @@
 
         var changedObjects = typeof Set === 'function' ? new Set() : [];
 
-        if (!changedObjects.add)
-          changedObjects.add = function (object) {
-            if (this.indexOf(object) === -1)
+        if(!changedObjects.add)
+          changedObjects.add = function(object) {
+            if(this.indexOf(object) === -1)
               this.push(object);
             return this;
           };
@@ -3101,12 +3125,11 @@
         });
 
         changedObjects.forEach(function (object) {
-          if (!object.hasOwnProperty('$loki'))
+          if(!object.hasOwnProperty('$loki'))
             return self.removeAutoUpdateObserver(object);
           try {
             self.update(object);
-          } catch (err) {
-          }
+          } catch(err) {}
         });
       }
 
@@ -3218,24 +3241,21 @@
     Collection.prototype = new LokiEventEmitter();
 
     Collection.prototype.console = {
-      log: function () {
-      },
-      warn: function () {
-      },
-      error: function () {
-      },
+      log: function () {},
+      warn: function () {},
+      error: function () {},
     };
 
     Collection.prototype.addAutoUpdateObserver = function (object) {
 
-      if (!this.autoupdate || typeof Object.observe !== 'function')
+      if(!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
     };
 
     Collection.prototype.removeAutoUpdateObserver = function (object) {
-      if (!this.autoupdate || typeof Object.observe !== 'function')
+      if(!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.unobserve(object, this.observerCallback);
@@ -3403,7 +3423,7 @@
     };
 
     Collection.prototype.flagBinaryIndexDirty = function (index) {
-      if (this.binaryIndices[index])
+      if(this.binaryIndices[index])
         this.binaryIndices[index].dirty = true;
     };
 
@@ -3588,7 +3608,7 @@
         // operate the update
         this.data[position] = doc;
 
-        if (obj !== doc) {
+        if(obj !== doc) {
           this.addAutoUpdateObserver(doc);
         }
 
@@ -4254,8 +4274,7 @@
       };
     }
 
-    function KeyValueStore() {
-    }
+    function KeyValueStore() {}
 
     KeyValueStore.prototype = {
       keys: [],
@@ -4288,7 +4307,6 @@
       this.keyMap = {};
       this.lokiMap = {};
     }
-
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
     UniqueIndex.prototype.set = function (obj) {

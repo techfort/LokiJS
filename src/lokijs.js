@@ -3041,7 +3041,7 @@
         ttlInterval: null,
         daemon: null
       };
-      this.setTTL(options.ttl || -1, options.ttlInterval)
+      this.setTTL(options.ttl || -1, options.ttlInterval);
 
       // currentMaxId - change manually at your own peril!
       this.maxId = 0;
@@ -3278,27 +3278,27 @@
     | TTL daemon                  |
     +----------------------------*/
     Collection.prototype.ttlDaemonFuncGen = function () {
-      var collection = this
-      var age = this.ttl.age
+      var collection = this;
+      var age = this.ttl.age;
       return function ttlDaemon() {
-        var now = Date.now()
+        var now = Date.now();
         var toRemove = collection.chain().where(function daemonFilter(member) {
           var timestamp = member.meta.updated || member.meta.created;
           var diff = now - timestamp;
-          return age < diff
+          return age < diff;
         });
-        toRemove.remove()
-      }
-    }
+        toRemove.remove();
+      };
+    };
 
     Collection.prototype.setTTL = function (age, interval) {
       if (age < 0) {
-        clearInterval(this.ttl.daemon)
+        clearInterval(this.ttl.daemon);
       }
       else {
-        this.ttl.age = age
-        this.ttl.ttlInterval = interval
-        this.ttl.daemon = setInterval(this.ttlDaemonFuncGen(), interval)
+        this.ttl.age = age;
+        this.ttl.ttlInterval = interval;
+        this.ttl.daemon = setInterval(this.ttlDaemonFuncGen(), interval);
       }
     };
 

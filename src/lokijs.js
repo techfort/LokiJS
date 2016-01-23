@@ -2073,6 +2073,18 @@
     };
 
     /**
+     * count() - returns the number of documents in the resultset.
+     *
+     * @returns {number} The number of documents in the resultset.
+     */
+    Resultset.prototype.count = function () {
+      if (this.searchIsChained && this.filterInitialized) {
+        return this.filteredrows.length;
+      }
+      return this.collection.count();
+    };
+
+    /**
      * data() - Terminates the chain and returns array of filtered documents
      *
      * @param options {object} : allows specifying 'forceClones' and 'forceCloneMethod' options.
@@ -2695,6 +2707,17 @@
       return this;
     };
 
+    /**
+     * count() - returns the number of documents representing the current DynamicView contents.
+     *
+     * @returns {number} The number of documents representing the current DynamicView contents.
+     */
+    DynamicView.prototype.count = function () {
+      if (this.options.persistent) {
+        return this.resultdata.length;
+      }
+      return this.resultset.count();
+    };
 
     /**
      * data() - resolves and pending filtering and sorting, then returns document array as result.

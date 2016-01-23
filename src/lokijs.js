@@ -2808,6 +2808,7 @@
 
       if (!this.options.persistent) {
         this.sortDirty = false;
+        this.emit('rebuild', this);
         return;
       }
 

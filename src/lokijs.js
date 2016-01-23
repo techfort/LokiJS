@@ -2798,24 +2798,21 @@
         return;
       }
 
-      if (this.sortFunction) {
-        this.resultset.sort(this.sortFunction);
-      }
-
-      if (this.sortCriteria) {
-        this.resultset.compoundsort(this.sortCriteria);
-      }
-
-      if (!this.options.persistent) {
+      if (this.sortDirty) {
+        if (this.sortFunction) {
+          this.resultset.sort(this.sortFunction);
+        } else if (this.sortCriteria) {
+          this.resultset.compoundsort(this.sortCriteria);
+        }
+        
         this.sortDirty = false;
-        this.emit('rebuild', this);
-        return;
       }
 
-      // persistent view, rebuild local resultdata array
-      this.resultdata = this.resultset.data();
-      this.resultsdirty = false;
-      this.sortDirty = false;
+      if (this.options.persistent) {
+        // persistent view, rebuild local resultdata array
+        this.resultdata = this.resultset.data();
+        this.resultsdirty = false;
+      }
 
       this.emit('rebuild', this);
     };

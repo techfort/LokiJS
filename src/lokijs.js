@@ -2613,16 +2613,16 @@
         this._addFilter(filters[idx]);
       }
 
-      if (sortFunction !== null){
-        this.applySort(sortFunction);
-      }
-      if (sortCriteria !== null) {
-        this.applySortCriteria(sortCriteria);
-      }
-
+      this.sortFunction = sortFunction;
+      this.sortCriteria = sortCriteria;
       if (this.options.persistent) {
         this.resultsdirty = true;
+      }
+
+      if (this.sortFunction || this.sortCriteria) {
         this.queueSortPhase();
+      } else {
+        this.queueRebuildEvent();
       }
 
       return this;
@@ -2645,14 +2645,14 @@
 
       this._addFilter(filter);
 
-      if (this.sortFunction || this.sortCriteria) {
-        this.sortDirty = true;
-        this.queueSortPhase();
-      }
-
       if (this.options.persistent) {
         this.resultsdirty = true;
+      }
+
+      if (this.sortFunction || this.sortCriteria) {
         this.queueSortPhase();
+      } else {
+        this.queueRebuildEvent();
       }
 
       return this;
@@ -2732,7 +2732,7 @@
 
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
       if (this.sortDirty || this.resultsdirty) {
-        this.performSortPhase();
+        this.performSortPhase({suppressRebuildEvent: true});
       }
 
       if (!this.options.persistent) {
@@ -2747,14 +2747,12 @@
      *     This event will throttle and queue a single rebuild event when batches of updates affect the view.
      */
     DynamicView.prototype.queueRebuildEvent = function () {
-      var self = this;
-
       if (this.rebuildPending) {
         return;
       }
-
       this.rebuildPending = true;
 
+      var self = this;
       setTimeout(function () {
         self.rebuildPending = false;
         self.emit('rebuild', self);
@@ -2767,15 +2765,13 @@
      *    (2) active - once they stop updating and yield js thread control
      */
     DynamicView.prototype.queueSortPhase = function () {
-      var self = this;
-
       // already queued? exit without queuing again
       if (this.sortDirty) {
         return;
       }
-
       this.sortDirty = true;
 
+      var self = this;
       if (this.options.sortPriority === "active") {
         // active sorting... once they are done and yield js thread, run async performSortPhase()
         setTimeout(function () {
@@ -2792,11 +2788,13 @@
      * performSortPhase() - invoked synchronously or asynchronously to perform final sort phase (if needed)
      *
      */
-    DynamicView.prototype.performSortPhase = function () {
+    DynamicView.prototype.performSortPhase = function (options) {
       // async call to this may have been pre-empted by synchronous call to data before async could fire
       if (!this.sortDirty && !this.resultsdirty) {
         return;
       }
+
+      options = options || {};
 
       if (this.sortDirty) {
         if (this.sortFunction) {
@@ -2814,7 +2812,9 @@
         this.resultsdirty = false;
       }
 
-      this.emit('rebuild', this);
+      if (!options.suppressRebuildEvent) {
+        this.emit('rebuild', this);
+      }
     };
 
     /**
@@ -2942,6 +2942,8 @@
         // in case changes to data altered a sort column
         if (this.sortFunction || this.sortCriteria) {
           this.queueSortPhase();
+        } else {
+          this.queueRebuildEvent();
         }
       }
 

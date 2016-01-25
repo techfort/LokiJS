@@ -1750,6 +1750,7 @@
 
 
       var queryObject = query || 'getAll',
+        queryObjectOp,
         property,
         value,
         operator,
@@ -1802,11 +1803,12 @@
       for (p in queryObject) {
         if (queryObject.hasOwnProperty(p)) {
           property = p;
+          queryObjectOp = queryObject[p];
 
           // injecting $and and $or expression tree evaluation here.
           if (p === '$and') {
             if (this.searchIsChained) {
-              this.findAnd(queryObject[p]);
+              this.findAnd(queryObjectOp);
 
               // for chained find with firstonly,
               if (firstOnly && this.filteredrows.length > 1) {
@@ -1816,7 +1818,7 @@
               return this;
             } else {
               // our $and operation internally chains filters
-              result = this.collection.chain().findAnd(queryObject[p]).data();
+              result = this.collection.chain().findAnd(queryObjectOp).data();
 
               // if this was coll.findOne() return first object or empty array if null
               // since this is invoked from a constructor we can't return null, so we will
@@ -1834,7 +1836,7 @@
 
           if (p === '$or') {
             if (this.searchIsChained) {
-              this.findOr(queryObject[p]);
+              this.findOr(queryObjectOp);
 
               if (firstOnly && this.filteredrows.length > 1) {
                 this.filteredrows = this.filteredrows.slice(0, 1);
@@ -1843,7 +1845,7 @@
               return this;
             } else {
               // call out to helper function to determine $or results
-              result = this.collection.chain().findOr(queryObject[p]).data();
+              result = this.collection.chain().findOr(queryObjectOp).data();
 
               if (firstOnly) {
                 if (result.length === 0) return [];
@@ -1861,14 +1863,15 @@
           }
 
           // see if query object is in shorthand mode (assuming eq operator)
-          if (queryObject[p] === null || (typeof queryObject[p] !== 'object' || queryObject[p] instanceof Date)) {
+          if (queryObjectOp === null || (typeof queryObjectOp !== 'object' || queryObjectOp instanceof Date)) {
             operator = '$eq';
-            value = queryObject[p];
-          } else if (typeof queryObject[p] === 'object') {
-            for (key in queryObject[p]) {
-              if (queryObject[p].hasOwnProperty(key)) {
+            value = queryObjectOp;
+          } else if (typeof queryObjectOp === 'object') {
+            for (key in queryObjectOp) {
+              if (queryObjectOp.hasOwnProperty(key)) {
                 operator = key;
-                value = queryObject[p][key];
+                value = queryObjectOp[key];
+                break;
               }
             }
           } else {
@@ -2042,14 +2045,11 @@
             }
           } else {
             // search by index
-            t = this.collection.data;
             var segm = this.calculateRange(operator, property, value, this);
 
-            for (var idx = segm[0]; idx <= segm[1]; idx++) {
-              result.push(index.values[idx]);
+            for (i = segm[0]; i <= segm[1]; i++) {
+              result.push(index.values[i]);
             }
-
-            this.filteredrows = result;
           }
 
           this.filteredrows = result;

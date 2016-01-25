@@ -206,11 +206,19 @@
       },
 
       $in: function (a, b) {
-        return b.indexOf(a) > -1;
+        return b.indexOf(a) !== -1;
       },
 
       $nin: function (a, b) {
-        return b.indexOf(a) == -1;
+        return b.indexOf(a) === -1;
+      },
+
+      $keyin: function (a, b) {
+        return b[a] !== undefined;
+      },
+
+      $nkeyin: function (a, b) {
+        return b[a] === undefined;
       },
 
       $containsNone: function (a, b) {
@@ -270,6 +278,8 @@
       '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
       '$nin': LokiOps.$nin,
+      '$keyin': LokiOps.$keyin,
+      '$nkeyin': LokiOps.$nkeyin,
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone

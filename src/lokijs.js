@@ -264,6 +264,18 @@
 
           return checkFn(curr);
         }, true);
+      },
+
+      $type: function (a, b) {
+        var type = typeof a;
+        if (type === 'object') {
+          if (Array.isArray(a)) {
+            type = 'array';
+          } else if (a instanceof Date) {
+            type = 'date';
+          }
+        }
+        return type === b;
       }
     };
 
@@ -282,7 +294,8 @@
       '$nkeyin': LokiOps.$nkeyin,
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
-      '$containsNone': LokiOps.$containsNone
+      '$containsNone': LokiOps.$containsNone,
+      '$type': LokiOps.$type
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :

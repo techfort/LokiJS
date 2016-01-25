@@ -269,13 +269,45 @@
       $type: function (a, b) {
         var type = typeof a;
         if (type === 'object') {
-          if (Array.isArray(a)) {
+            if (Array.isArray(a)) {
             type = 'array';
           } else if (a instanceof Date) {
             type = 'date';
           }
         }
         return type === b;
+      },
+
+      $and: function (a, b) {
+        var idx, len, opObj, p;
+        for (idx = 0, len = b.length; idx < len; idx += 1) {
+          opObj = b[idx];
+          for (p in opObj) {
+            if (opObj.hasOwnProperty(p)) {
+              if (!LokiOps[p](a, opObj[p])) {
+                return false;
+              }
+              break;
+            }
+          }
+        }
+        return true;
+      },
+
+      $or: function (a, b) {
+        var idx, len, opObj, p;
+        for (idx = 0, len = b.length; idx < len; idx += 1) {
+          opObj = b[idx];
+          for (p in opObj) {
+            if (opObj.hasOwnProperty(p)) {
+              if (LokiOps[p](a, opObj[p])) {
+                return true;
+              }
+              break;
+            }
+          }
+        }
+        return false;
       }
     };
 
@@ -295,7 +327,9 @@
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone,
-      '$type': LokiOps.$type
+      '$type': LokiOps.$type,
+      '$and': LokiOps.$and,
+      '$or': LokiOps.$or
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :

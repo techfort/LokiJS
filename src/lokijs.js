@@ -3842,11 +3842,12 @@
         };
       }
 
+      var result = this.constraints.unique[field].get(value);
       if (!this.cloneObjects) {
-        return this.constraints.unique[field].get(value);
+        return result;
       }
       else {
-        return clone(this.constraints.unique[field].get(value), this.cloneMethod);
+        return clone(result, this.cloneMethod);
       }
     };
 

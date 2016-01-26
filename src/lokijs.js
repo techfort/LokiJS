@@ -3687,6 +3687,9 @@
           self.constraints.unique[key].set(obj);
         });
 
+        // add new obj id to idIndex
+        this.idIndex.push(obj.$loki);
+
         // add the object
         this.data.push(obj);
 
@@ -3695,9 +3698,6 @@
         for (var i = 0; i < dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(this.data.length - 1, true);
         }
-
-        // add new obj id to idIndex
-        this.idIndex.push(obj.$loki);
 
         this.commit();
         this.dirty = true; // for autosave scenarios

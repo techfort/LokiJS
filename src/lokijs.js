@@ -3702,12 +3702,7 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
 
-        if (this.cloneObjects) {
-          return obj;
-        }
-        else {
-          return clone(obj, this.cloneMethod);
-        }
+        return (this.cloneObjects) ? (clone(obj, this.cloneMethod)) : (obj);
       } catch (err) {
         this.rollback();
         this.console.error(err.message);

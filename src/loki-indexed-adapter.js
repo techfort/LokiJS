@@ -86,7 +86,7 @@
      */
     IndexedAdapter.prototype.checkAvailability = function()
     {
-      if (window && window.indexedDB) return true;
+      if (typeof window !== 'undefined' && window.indexedDB) return true;
 
       return false;
     };

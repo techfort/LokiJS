@@ -4321,12 +4321,13 @@
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
     UniqueIndex.prototype.set = function (obj) {
-      if (obj[this.field] !== null && typeof (obj[this.field]) !== 'undefined') {
-        if (this.keyMap[obj[this.field]]) {
-          throw new Error('Duplicate key for property ' + this.field + ': ' + obj[this.field]);
+      var fieldValue = obj[this.field];
+      if (fieldValue !== null && typeof (fieldValue) !== 'undefined') {
+        if (this.keyMap[fieldValue]) {
+          throw new Error('Duplicate key for property ' + this.field + ': ' + fieldValue);
         } else {
-          this.keyMap[obj[this.field]] = obj;
-          this.lokiMap[obj.$loki] = obj[this.field];
+          this.keyMap[fieldValue] = obj;
+          this.lokiMap[obj.$loki] = fieldValue;
         }
       }
     };

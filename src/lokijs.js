@@ -3895,12 +3895,11 @@
         query = 'getAll';
       }
 
+      var results = new Resultset(this, query, null);
       if (!this.cloneObjects) {
-        return new Resultset(this, query, null);
+        return results;
       }
       else {
-        var results = new Resultset(this, query, null);
-
         return cloneObjectArray(results, this.cloneMethod);
       }
     };
@@ -3986,12 +3985,11 @@
      * Create view function - filter
      */
     Collection.prototype.where = function (fun) {
+      var results = new Resultset(this, null, fun);
       if (!this.cloneObjects) {
-        return new Resultset(this, null, fun);
+        return results;
       }
       else {
-        var results = new Resultset(this, null, fun);
-
         return cloneObjectArray(results, this.cloneMethod);
       }
     };

@@ -2380,6 +2380,10 @@
         this.options.sortPriority = 'passive';
       }
 
+      if (!this.options.hasOwnProperty('minRebuildInterval')) {
+        this.options.minRebuildInterval = 1;
+      }
+
       this.resultset = new Resultset(collection);
       this.resultdata = [];
       this.resultsdirty = false;
@@ -2813,7 +2817,7 @@
       setTimeout(function () {
         self.rebuildPending = false;
         self.emit('rebuild', self);
-      }, 1);
+      }, this.options.minRebuildInterval);
     };
 
     /**
@@ -2833,7 +2837,7 @@
         // active sorting... once they are done and yield js thread, run async performSortPhase()
         setTimeout(function () {
           self.performSortPhase();
-        }, 1);
+        }, this.options.minRebuildInterval);
       } else {
         // must be passive sorting... since not calling performSortPhase (until data call), lets use queueRebuildEvent to
         // potentially notify user that data has changed.

@@ -2891,9 +2891,10 @@
       var evalResultset = new Resultset(this.collection);
       evalResultset.filteredrows = [objIndex];
       evalResultset.filterInitialized = true;
+      var filter;
       for (var idx = 0, len = this.filterPipeline.length; idx < len; idx++) {
-        var filterType = this.filterPipeline[idx].type;
-        evalResultset[filterType](this.filterPipeline[idx].val);
+        filter = this.filterPipeline[idx];
+        evalResultset[filter.type](filter.val);
       }
 
       // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)

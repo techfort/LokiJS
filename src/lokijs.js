@@ -1706,7 +1706,6 @@
           // we need to branch existing query to run each filter separately and combine results
           expResultset = this.branch();
           expResultset.find(expressionArray[ei]);
-          expResultset.data();
 
           // add any document 'hits'
           fr = expResultset.filteredrows;
@@ -1723,7 +1722,6 @@
           // we will let each filter run independently against full collection and mashup document hits later
           expResultset = this.collection.chain();
           expResultset.find(expressionArray[ei]);
-          expResultset.data();
 
           // add any document 'hits'
           fr = expResultset.filteredrows;

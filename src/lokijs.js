@@ -1751,10 +1751,12 @@
     Resultset.prototype.findAnd = function (expressionArray) {
       // we have already implementing method chaining in this (our Resultset class)
       // so lets just progressively apply user supplied and filters
-      for (var i = 0; i < expressionArray.length; i++) {
+      for (var i = 0, len = expressionArray.length; i < len; i++) {
+        if (this.count() === 0) {
+          break;
+        }
         this.find(expressionArray[i]);
       }
-
       return this;
     };
 

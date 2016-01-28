@@ -972,6 +972,22 @@
       this.fs.writeFile(dbname, dbstring, callback);
     };
 
+    /**
+     * deleteDatabase() - delete the database file, will throw an error if the
+     * file can't be deleted
+     * @param {string} dbname - the filename of the database to delete
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+      this.fs.unlink(dbname, function deleteDatabaseCallback(err) {
+        if (err) {
+          callback(new Error(err));
+        } else {
+          callback();
+        }
+      });
+    };
+
 
     /**
      * constructor for local storage
@@ -1000,6 +1016,21 @@
     LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
       if (localStorageAvailable()) {
         localStorage.setItem(dbname, dbstring);
+        callback(null);
+      } else {
+        callback(new Error('localStorage is not available'));
+      }
+    };
+
+    /**
+     * deleteDatabase() - delete the database from localstorage, will throw an error if it
+     * can't be deleted
+     * @param {string} dbname - the filename of the database to delete
+     * @param {function} callback - the callback to handle the result
+     */
+    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+      if (localStorageAvailable()) {
+        localStorage.removeItem(dbname);
         callback(null);
       } else {
         callback(new Error('localStorage is not available'));
@@ -1094,6 +1125,34 @@
 
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
+
+    /**
+     * deleteDatabase - Handles deleting a database from file system, local
+     *    storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {object} options - not currently used (remove or allow overrides?)
+     * @param {function} callback - (Optional) user supplied async callback / error handler
+     */
+    Loki.prototype.deleteDatabase = function (options, callback) {
+      var cFun = callback || function (err, data) {
+          if (err) {
+            throw err;
+          }
+          return;
+        },
+        self = this;
+
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      if (this.persistenceAdapter !== null) {
+        this.persistenceAdapter.deleteDatabase(this.filename, function deleteDatabaseCallback(err) {
+          cFun(err);
+        });
+      } else {
+        cFun(new Error('persistenceAdapter not configured'));
+      }
+    };
 
     /**
      * autosaveDirty - check whether any collections are 'dirty' meaning we need to save (entire) database

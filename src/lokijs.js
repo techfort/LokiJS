@@ -1028,9 +1028,17 @@
 
         this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
           if (typeof (dbString) === 'string') {
-            self.loadJSON(dbString, options || {});
-            cFun(null);
-            self.emit('loaded', 'database ' + self.filename + ' loaded');
+            var parseSuccess = false;
+            try {
+              self.loadJSON(dbString, options || {});
+              parseSuccess = true;
+            } catch (err) {
+              cFun(err);
+            }
+            if (parseSuccess) {
+              cFun(null);
+              self.emit('loaded', 'database ' + self.filename + ' loaded');
+            }
           } else {
             if (typeof (dbString) === "object") {
               cFun(dbString);

@@ -1918,9 +1918,9 @@
       // if an index exists for the property being queried against, use it
       // for now only enabling for non-chained query (who's set of docs matches index)
       // or chained queries where it is the first filter applied and prop is indexed
-      if ((!this.searchIsChained || !this.filterInitialized)
-          && indexedOpsList.indexOf(operator) !== -1
-          && this.collection.binaryIndices[property]) {
+      if ((!this.searchIsChained || !this.filterInitialized) &&
+          indexedOpsList.indexOf(operator) !== -1 &&
+          this.collection.binaryIndices[property]) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property

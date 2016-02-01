@@ -1987,7 +1987,7 @@
           }
         } else {
           // searching by binary index via calculateRange() utility method
-          var seg = this.calculateRange(operator, property, value, this);
+          var seg = this.calculateRange(operator, property, value);
 
           // not chained so this 'find' was designated in Resultset constructor
           // so return object itself
@@ -2053,7 +2053,7 @@
             }
           } else {
             // search by index
-            var segm = this.calculateRange(operator, property, value, this);
+            var segm = this.calculateRange(operator, property, value);
 
             for (i = segm[0]; i <= segm[1]; i++) {
               result.push(index.values[i]);

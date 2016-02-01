@@ -1837,7 +1837,7 @@
 
       if (typeof queryObject === 'object') {
         for (p in queryObject) {
-          if (queryObject.hasOwnProperty(p)) {
+          if (Object.prototype.hasOwnProperty.call(queryObject, p)) {
             property = p;
             queryObjectOp = queryObject[p];
             break;
@@ -1895,7 +1895,7 @@
         value = queryObjectOp;
       } else if (typeof queryObjectOp === 'object') {
         for (key in queryObjectOp) {
-          if (queryObjectOp.hasOwnProperty(key)) {
+          if (Object.prototype.hasOwnProperty.call(queryObjectOp, key)) {
             operator = key;
             value = queryObjectOp[key];
             break;

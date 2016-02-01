@@ -1419,12 +1419,11 @@
       }
 
       var wrappedComparer =
-        (function (userComparer, rslt) {
-          var data = rslt.collection.data;
+        (function (userComparer, data) {
           return function (a, b) {
             return userComparer(data[a], data[b]);
           };
-        })(comparefun, this);
+        })(comparefun, this.collection.data);
 
       this.filteredrows.sort(wrappedComparer);
 

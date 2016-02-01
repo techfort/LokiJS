@@ -1815,40 +1815,36 @@
         return [];
       }
 
-
       var queryObject = query || 'getAll',
-        queryObjectOp,
-        property,
-        value,
-        operator,
-        p,
-        key,
-        searchByIndex = false,
-        result = [],
-        index = null,
-        // comparison function
-        fun,
-        // collection data
-        t,
-        // collection data length
-        i,
-        emptyQO = true;
+          p,
+          property,
+          queryObjectOp,
+          operator,
+          value,
+          key,
+          searchByIndex = false,
+          result = [],
+          index = null,
+          // collection data
+          t,
+          // collection data length
+          i;
 
       // if this was note invoked via findOne()
       firstOnly = firstOnly || false;
 
-      // if passed in empty object {}, interpret as 'getAll'
-      // more performant than object.keys
-      for (p in queryObject) {
-        emptyQO = false;
-        break;
-      }
-      if (emptyQO) {
-        queryObject = 'getAll';
+      if (typeof queryObject === 'object') {
+        for (p in queryObject) {
+          if (queryObject.hasOwnProperty(p)) {
+            property = p;
+            queryObjectOp = queryObject[p];
+            break;
+          }
+        }
       }
 
       // apply no filters if they want all
-      if (queryObject === 'getAll') {
+      if (!property || queryObject === 'getAll') {
         // chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
@@ -1864,88 +1860,73 @@
         }
       }
 
-      // if user is deep querying the object such as find('name.first': 'odin')
-      var usingDotNotation = false;
+      // injecting $and and $or expression tree evaluation here.
+      if (property === '$and') {
+        if (this.searchIsChained) {
+          this.findAnd(queryObjectOp);
 
-      for (p in queryObject) {
-        if (queryObject.hasOwnProperty(p)) {
-          property = p;
-          queryObjectOp = queryObject[p];
-
-          // injecting $and and $or expression tree evaluation here.
-          if (p === '$and') {
-            if (this.searchIsChained) {
-              this.findAnd(queryObjectOp);
-
-              // for chained find with firstonly,
-              if (firstOnly && this.filteredrows.length > 1) {
-                this.filteredrows = this.filteredrows.slice(0, 1);
-              }
-
-              return this;
-            } else {
-              // our $and operation internally chains filters
-              result = this.collection.chain().findAnd(queryObjectOp).data();
-
-              // if this was coll.findOne() return first object or empty array if null
-              // since this is invoked from a constructor we can't return null, so we will
-              // make null in coll.findOne();
-              if (firstOnly) {
-                if (result.length === 0) return [];
-
-                return result[0];
-              }
-
-              // not first only return all results
-              return result;
-            }
+          // for chained find with firstonly,
+          if (firstOnly && this.filteredrows.length > 1) {
+            this.filteredrows = this.filteredrows.slice(0, 1);
           }
 
-          if (p === '$or') {
-            if (this.searchIsChained) {
-              this.findOr(queryObjectOp);
+          return this;
+        } else {
+          // our $and operation internally chains filters
+          result = this.collection.chain().findAnd(queryObjectOp).data();
 
-              if (firstOnly && this.filteredrows.length > 1) {
-                this.filteredrows = this.filteredrows.slice(0, 1);
-              }
+          // if this was coll.findOne() return first object or empty array if null
+          // since this is invoked from a constructor we can't return null, so we will
+          // make null in coll.findOne();
+          if (firstOnly) {
+            if (result.length === 0) return [];
 
-              return this;
-            } else {
-              // call out to helper function to determine $or results
-              result = this.collection.chain().findOr(queryObjectOp).data();
-
-              if (firstOnly) {
-                if (result.length === 0) return [];
-
-                return result[0];
-              }
-
-              // not first only return all results
-              return result;
-            }
+            return result[0];
           }
 
-          if (p.indexOf('.') != -1) {
-            usingDotNotation = true;
-          }
-
-          // see if query object is in shorthand mode (assuming eq operator)
-          if (queryObjectOp === null || (typeof queryObjectOp !== 'object' || queryObjectOp instanceof Date)) {
-            operator = '$eq';
-            value = queryObjectOp;
-          } else if (typeof queryObjectOp === 'object') {
-            for (key in queryObjectOp) {
-              if (queryObjectOp.hasOwnProperty(key)) {
-                operator = key;
-                value = queryObjectOp[key];
-                break;
-              }
-            }
-          } else {
-            throw new Error('Do not know what you want to do.');
-          }
-          break;
+          // not first only return all results
+          return result;
         }
+      }
+
+      if (property === '$or') {
+        if (this.searchIsChained) {
+          this.findOr(queryObjectOp);
+
+          if (firstOnly && this.filteredrows.length > 1) {
+            this.filteredrows = this.filteredrows.slice(0, 1);
+          }
+
+          return this;
+        } else {
+          // call out to helper function to determine $or results
+          result = this.collection.chain().findOr(queryObjectOp).data();
+
+          if (firstOnly) {
+            if (result.length === 0) return [];
+
+            return result[0];
+          }
+
+          // not first only return all results
+          return result;
+        }
+      }
+
+      // see if query object is in shorthand mode (assuming eq operator)
+      if (queryObjectOp === null || (typeof queryObjectOp !== 'object' || queryObjectOp instanceof Date)) {
+        operator = '$eq';
+        value = queryObjectOp;
+      } else if (typeof queryObjectOp === 'object') {
+        for (key in queryObjectOp) {
+          if (queryObjectOp.hasOwnProperty(key)) {
+            operator = key;
+            value = queryObjectOp[key];
+            break;
+          }
+        }
+      } else {
+        throw new Error('Do not know what you want to do.');
       }
 
       // for regex ops, precompile
@@ -1956,10 +1937,6 @@
         else {
           value = new RegExp(value);
         }
-      }
-
-      if (this.collection.data === null) {
-        throw new TypeError();
       }
 
       // if an index exists for the property being queried against, use it
@@ -1977,8 +1954,11 @@
         index = this.collection.binaryIndices[property];
       }
 
+      // if user is deep querying the object such as find('name.first': 'odin')
+      var usingDotNotation = (property.indexOf('.') !== -1);
+
       // the comparison function
-      fun = operators[operator];
+      var fun = operators[operator];
 
       // Query executed differently depending on :
       //    - whether it is chained or not

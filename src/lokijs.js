@@ -1541,7 +1541,7 @@
       var index = this.collection.binaryIndices[prop].values;
       var min = 0;
       var max = index.length - 1;
-      var mid = null;
+      var mid = 0;
       var lbound = 0;
       var ubound = index.length - 1;
 

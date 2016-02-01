@@ -1276,7 +1276,7 @@
     Resultset.prototype.limit = function (qty) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = Object.keys(this.collection.data).map(Number);
+        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
       }
 
       var rscopy = this.copy();

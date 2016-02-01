@@ -1606,7 +1606,7 @@
 
       lbound = min;
 
-      min = 0;
+      // do not reset min, as the upper bound cannot be prior to the found low bound
       max = index.length - 1;
 
       // hone in on end position of value

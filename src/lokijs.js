@@ -3515,7 +3515,6 @@
         }
         this.constraints.unique[field] = index = new UniqueIndex(field);
       }
-      var self = this;
       this.data.forEach(function (obj) {
         index.set(obj);
       });
@@ -3526,20 +3525,20 @@
      * Ensure all binary indices
      */
     Collection.prototype.ensureAllIndexes = function (force) {
-      var objKeys = Object.keys(this.binaryIndices);
-
-      var i = objKeys.length;
-      while (i--) {
-        this.ensureIndex(objKeys[i], force);
+      var key, bIndices = this.binaryIndices;
+      for (key in bIndices) {
+        if (bIndices.hasOwnProperty(key)) {
+          this.ensureIndex(key, force);
+        }
       }
     };
 
     Collection.prototype.flagBinaryIndexesDirty = function () {
-      var objKeys = Object.keys(this.binaryIndices);
-
-      var i = objKeys.length;
-      while (i--) {
-        this.binaryIndices[objKeys[i]].dirty = true;
+      var key, bIndices = this.binaryIndices;
+      for (key in bIndices) {
+        if (bIndices.hasOwnProperty(key)) {
+          bIndices[key].dirty = true;
+        }
       }
     };
 
@@ -3688,9 +3687,7 @@
      * Update method
      */
     Collection.prototype.update = function (doc) {
-      if (Object.keys(this.binaryIndices).length > 0) {
-        this.flagBinaryIndexesDirty();
-      }
+      this.flagBinaryIndexesDirty();
 
       if (Array.isArray(doc)) {
         var k = 0,
@@ -3768,9 +3765,7 @@
         throw new Error('Document is already in collection, please use update()');
       }
 
-      if (Object.keys(this.binaryIndices).length > 0) {
-        this.flagBinaryIndexesDirty();
-      }
+      this.flagBinaryIndexesDirty();
 
       /*
        * try adding object to collection
@@ -3856,9 +3851,7 @@
         throw new Error('Object is not a document stored in the collection');
       }
 
-      if (Object.keys(this.binaryIndices).length > 0) {
-        this.flagBinaryIndexesDirty();
-      }
+      this.flagBinaryIndexesDirty();
 
       try {
         this.startTransaction();

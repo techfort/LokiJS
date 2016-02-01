@@ -4053,7 +4053,7 @@
       if (this.transactional) {
         this.cachedData = null;
         this.cachedIndex = null;
-        this.cachedBinaryIndices = null;
+        this.cachedBinaryIndex = null;
 
         // propagate commit to dynamic views
         for (var idx = 0; idx < this.DynamicViews.length; idx++) {

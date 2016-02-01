@@ -3757,27 +3757,24 @@
      * Add object to collection
      */
     Collection.prototype.add = function (obj) {
-      var dvlen = this.DynamicViews.length;
-
       // if parameter isn't object exit with throw
       if ('object' !== typeof obj) {
         throw new TypeError('Object being added needs to be an object');
       }
-      /*
-       * try adding object to collection
-       */
+      // if object you are adding already has id column it is either already in the collection
+      // or the object is carrying its own 'id' property.  If it also has a meta property,
+      // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
+      if (typeof(obj.$loki) !== 'undefined') {
+        throw new Error('Document is already in collection, please use update()');
+      }
 
       if (Object.keys(this.binaryIndices).length > 0) {
         this.flagBinaryIndexesDirty();
       }
 
-      // if object you are adding already has id column it is either already in the collection
-      // or the object is carrying its own 'id' property.  If it also has a meta property,
-      // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
-      if (typeof (obj.$loki) !== "undefined") {
-        throw new Error('Document is already in collection, please use update()');
-      }
-
+      /*
+       * try adding object to collection
+       */
       try {
         this.startTransaction();
         this.maxId++;
@@ -3789,11 +3786,12 @@
         obj.$loki = this.maxId;
         obj.meta.version = 0;
 
-        var self = this;
-        Object.keys(this.constraints.unique).forEach(function (key) {
-          // Function set will throw error when unique constraint is not honoured
-          self.constraints.unique[key].set(obj);
-        });
+        var key, constrUnique = this.constraints.unique;
+        for (key in constrUnique) {
+          if (constrUnique.hasOwnProperty(key)) {
+            constrUnique[key].set(obj);
+          }
+        }
 
         // add new obj id to idIndex
         this.idIndex.push(obj.$loki);
@@ -3803,8 +3801,10 @@
 
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
+        var addedPos = this.data.length - 1;
+        var dvlen = this.DynamicViews.length;
         for (var i = 0; i < dvlen; i++) {
-          this.DynamicViews[i].evaluateDocument(this.data.length - 1, true);
+          this.DynamicViews[i].evaluateDocument(addedPos, true);
         }
 
         this.commit();

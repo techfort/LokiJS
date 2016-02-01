@@ -3424,37 +3424,36 @@
         throw new Error('Attempting to set index without an associated property');
       }
 
-      if (this.binaryIndices.hasOwnProperty(property) && !force) {
+      if (this.binaryIndices[property] && !force) {
         if (!this.binaryIndices[property].dirty) return;
       }
 
-      this.binaryIndices[property] = {
-        'name': property,
-        'dirty': true,
-        'values': []
-      };
-
-      var index, len = this.data.length,
-        i = 0;
-
-      index = this.binaryIndices[property];
-
       // initialize index values
-      for (i; i < len; i += 1) {
-        index.values.push(i);
+      var i, len = this.data.length;
+      var values = new Array(len);
+      for (i = 0; i < len; i += 1) {
+        values[i] = i;
       }
 
-      var wrappedComparer =
-        (function (prop, coll) {
-          return function (a, b) {
-            var obj1 = coll.data[a];
-            var obj2 = coll.data[b];
+      var index = {
+        'name': property,
+        'dirty': true,
+        'values': values
+      };
+      this.binaryIndices[property] = index;
 
-            if (obj1[prop] === obj2[prop]) return 0;
-            if (gtHelper(obj1[prop], obj2[prop])) return 1;
-            if (ltHelper(obj1[prop], obj2[prop])) return -1;
+      var wrappedComparer =
+        (function (p, data) {
+          return function (a, b) {
+            var objAp = data[a][p],
+                objBp = data[b][p];
+            if (objAp !== objBp) {
+              if (ltHelper(objAp, objBp)) return -1;
+              if (gtHelper(objAp, objBp)) return 1;
+            }
+            return 0;
           };
-        })(property, this);
+        })(property, this.data);
 
       index.values.sort(wrappedComparer);
       index.dirty = false;

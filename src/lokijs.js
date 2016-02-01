@@ -1738,6 +1738,7 @@
       // possibly sort indexes
       return this;
     };
+    Resultset.prototype.$or = Resultset.prototype.findOr;
 
     /**
      * findAnd() - oversee the operation of AND'ed query expressions.
@@ -1753,12 +1754,13 @@
       // so lets just progressively apply user supplied and filters
       for (var i = 0, len = expressionArray.length; i < len; i++) {
         if (this.count() === 0) {
-          break;
+          return this;
         }
         this.find(expressionArray[i]);
       }
       return this;
     };
+    Resultset.prototype.$and = Resultset.prototype.findAnd;
 
     /**
      * dotSubScan - helper function used for dot notation queries.
@@ -1861,9 +1863,9 @@
       }
 
       // injecting $and and $or expression tree evaluation here.
-      if (property === '$and') {
+      if (property === '$and' || property === '$or') {
         if (this.searchIsChained) {
-          this.findAnd(queryObjectOp);
+          this[property](queryObjectOp);
 
           // for chained find with firstonly,
           if (firstOnly && this.filteredrows.length > 1) {
@@ -1873,39 +1875,13 @@
           return this;
         } else {
           // our $and operation internally chains filters
-          result = this.collection.chain().findAnd(queryObjectOp).data();
+          result = this.collection.chain()[property](queryObjectOp).data();
 
           // if this was coll.findOne() return first object or empty array if null
           // since this is invoked from a constructor we can't return null, so we will
           // make null in coll.findOne();
           if (firstOnly) {
-            if (result.length === 0) return [];
-
-            return result[0];
-          }
-
-          // not first only return all results
-          return result;
-        }
-      }
-
-      if (property === '$or') {
-        if (this.searchIsChained) {
-          this.findOr(queryObjectOp);
-
-          if (firstOnly && this.filteredrows.length > 1) {
-            this.filteredrows = this.filteredrows.slice(0, 1);
-          }
-
-          return this;
-        } else {
-          // call out to helper function to determine $or results
-          result = this.collection.chain().findOr(queryObjectOp).data();
-
-          if (firstOnly) {
-            if (result.length === 0) return [];
-
-            return result[0];
+            return (result.length === 0) ? ([]) : (result[0]);
           }
 
           // not first only return all results

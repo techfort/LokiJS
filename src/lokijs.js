@@ -1827,8 +1827,6 @@
           searchByIndex = false,
           result = [],
           index = null,
-          // collection data
-          t,
           // collection data length
           i;
 
@@ -1939,6 +1937,9 @@
       // the comparison function
       var fun = operators[operator];
 
+      // "shortcut" for collection data
+      var t = this.collection.data;
+
       // Query executed differently depending on :
       //    - whether it is chained or not
       //    - whether the property being queried has an index defined
@@ -1949,7 +1950,6 @@
       // If not a chained query, bypass filteredrows and work directly against data
       if (!this.searchIsChained) {
         if (!searchByIndex) {
-          t = this.collection.data;
           i = t.length;
 
           if (firstOnly) {
@@ -1987,8 +1987,6 @@
           }
         } else {
           // searching by binary index via calculateRange() utility method
-          t = this.collection.data;
-
           var seg = this.calculateRange(operator, property, value, this);
 
           // not chained so this 'find' was designated in Resultset constructor
@@ -2013,7 +2011,6 @@
       else {
         // If the filteredrows[] is already initialized, use it
         if (this.filterInitialized) {
-          t = this.collection.data;
           i = this.filteredrows.length;
 
           // currently supporting dot notation for non-indexed conditions only
@@ -2039,7 +2036,6 @@
         else {
           // if not searching by index
           if (!searchByIndex) {
-            t = this.collection.data;
             i = t.length;
 
             if (usingDotNotation) {

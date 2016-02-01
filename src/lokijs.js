@@ -2013,31 +2013,19 @@
       else {
         // If the filteredrows[] is already initialized, use it
         if (this.filterInitialized) {
-          // not searching by index
-          if (!searchByIndex) {
-            t = this.collection.data;
-            i = this.filteredrows.length;
+          t = this.collection.data;
+          i = this.filteredrows.length;
 
-            // currently supporting dot notation for non-indexed conditions only
-            if (usingDotNotation) {
-              while (i--) {
-                if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
-                  result.push(this.filteredrows[i]);
-                }
-              }
-            } else {
-              while (i--) {
-                if (fun(t[this.filteredrows[i]][property], value)) {
-                  result.push(this.filteredrows[i]);
-                }
+          // currently supporting dot notation for non-indexed conditions only
+          if (usingDotNotation) {
+            while (i--) {
+              if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
+                result.push(this.filteredrows[i]);
               }
             }
           } else {
-            // search by index
-            t = index;
-            i = this.filteredrows.length;
             while (i--) {
-              if (fun(t[this.filteredrows[i]], value)) {
+              if (fun(t[this.filteredrows[i]][property], value)) {
                 result.push(this.filteredrows[i]);
               }
             }

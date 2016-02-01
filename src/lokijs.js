@@ -381,7 +381,7 @@
 
     function localStorageAvailable() {
       try {
-        return ('localStorage' in window && window.localStorage !== null);
+        return (window && window.localStorage !== undefined && window.localStorage !== null);
       } catch (e) {
         return false;
       }

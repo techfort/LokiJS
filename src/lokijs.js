@@ -3677,6 +3677,7 @@
       this.idIndex = [];
       this.binaryIndices = {};
       this.cachedIndex = null;
+      this.cachedBinaryIndex = null;
       this.cachedData = null;
       this.maxId = 0;
       this.DynamicViews = [];

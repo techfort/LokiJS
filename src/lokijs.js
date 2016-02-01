@@ -2004,8 +2004,6 @@
           for (i = seg[0]; i <= seg[1]; i++) {
             result.push(t[index.values[i]]);
           }
-
-          this.filteredrows = result;
         }
 
         // not a chained query so return result as data[]

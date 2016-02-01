@@ -1967,20 +1967,20 @@
             }
 
             return [];
-          } else {
-            // if using dot notation then treat property as keypath such as 'name.first'.
-            // currently supporting dot notation for non-indexed conditions only
-            if (usingDotNotation) {
-              while (i--) {
-                if (this.dotSubScan(t[i], property, fun, value)) {
-                  result.push(t[i]);
-                }
+          }
+
+          // if using dot notation then treat property as keypath such as 'name.first'.
+          // currently supporting dot notation for non-indexed conditions only
+          if (usingDotNotation) {
+            while (i--) {
+              if (this.dotSubScan(t[i], property, fun, value)) {
+                result.push(t[i]);
               }
-            } else {
-              while (i--) {
-                if (fun(t[i][property], value)) {
-                  result.push(t[i]);
-                }
+            }
+          } else {
+            while (i--) {
+              if (fun(t[i][property], value)) {
+                result.push(t[i]);
               }
             }
           }
@@ -1994,7 +1994,6 @@
             if (seg[1] !== -1) {
               return t[index.values[seg[0]]];
             }
-
             return [];
           }
 
@@ -2006,66 +2005,62 @@
         // not a chained query so return result as data[]
         return result;
       }
-      // Otherwise this is a chained query
-      else {
-        // If the filteredrows[] is already initialized, use it
-        if (this.filterInitialized) {
-          i = this.filteredrows.length;
 
-          // currently supporting dot notation for non-indexed conditions only
+
+      // Otherwise this is a chained query
+
+      // If the filteredrows[] is already initialized, use it
+      if (this.filterInitialized) {
+        i = this.filteredrows.length;
+
+        // currently supporting dot notation for non-indexed conditions only
+        if (usingDotNotation) {
+          while (i--) {
+            if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
+              result.push(this.filteredrows[i]);
+            }
+          }
+        } else {
+          while (i--) {
+            if (fun(t[this.filteredrows[i]][property], value)) {
+              result.push(this.filteredrows[i]);
+            }
+          }
+        }
+      }
+      // first chained query so work against data[] but put results in filteredrows
+      else {
+        // if not searching by index
+        if (!searchByIndex) {
+          i = t.length;
+
           if (usingDotNotation) {
             while (i--) {
-              if (this.dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
-                result.push(this.filteredrows[i]);
+              if (this.dotSubScan(t[i], property, fun, value)) {
+                result.push(i);
               }
             }
           } else {
             while (i--) {
-              if (fun(t[this.filteredrows[i]][property], value)) {
-                result.push(this.filteredrows[i]);
+              if (fun(t[i][property], value)) {
+                result.push(i);
               }
             }
           }
+        } else {
+          // search by index
+          var segm = this.calculateRange(operator, property, value);
 
-          this.filteredrows = result;
-
-          return this;
-        }
-        // first chained query so work against data[] but put results in filteredrows
-        else {
-          // if not searching by index
-          if (!searchByIndex) {
-            i = t.length;
-
-            if (usingDotNotation) {
-              while (i--) {
-                if (this.dotSubScan(t[i], property, fun, value)) {
-                  result.push(i);
-                }
-              }
-            } else {
-              while (i--) {
-                if (fun(t[i][property], value)) {
-                  result.push(i);
-                }
-              }
-            }
-          } else {
-            // search by index
-            var segm = this.calculateRange(operator, property, value);
-
-            for (i = segm[0]; i <= segm[1]; i++) {
-              result.push(index.values[i]);
-            }
+          for (i = segm[0]; i <= segm[1]; i++) {
+            result.push(index.values[i]);
           }
-
-          this.filteredrows = result;
-          this.filterInitialized = true; // next time work against filteredrows[]
-
-          return this;
         }
 
+        this.filterInitialized = true; // next time work against filteredrows[]
       }
+
+      this.filteredrows = result;
+      return this;
     };
 
 

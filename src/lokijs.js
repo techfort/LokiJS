@@ -283,7 +283,7 @@
         for (idx = 0, len = b.length; idx < len; idx += 1) {
           opObj = b[idx];
           for (p in opObj) {
-            if (opObj.hasOwnProperty(p)) {
+            if (Object.prototype.hasOwnProperty.call(opObj, p)) {
               if (!LokiOps[p](a, opObj[p])) {
                 return false;
               }
@@ -299,7 +299,7 @@
         for (idx = 0, len = b.length; idx < len; idx += 1) {
           opObj = b[idx];
           for (p in opObj) {
-            if (opObj.hasOwnProperty(p)) {
+            if (Object.prototype.hasOwnProperty.call(opObj, p)) {
               if (LokiOps[p](a, opObj[p])) {
                 return true;
               }

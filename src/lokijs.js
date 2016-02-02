@@ -1313,7 +1313,9 @@
     Resultset.prototype.copy = function () {
       var result = new Resultset(this.collection, null, null);
 
-      result.filteredrows = this.filteredrows.slice();
+      if (this.filteredrows.length > 0) {
+        result.filteredrows = this.filteredrows.slice();
+      }
       result.filterInitialized = this.filterInitialized;
 
       return result;
@@ -1690,51 +1692,35 @@
      * @returns {Resultset} this resultset for further chain ops.
      */
     Resultset.prototype.findOr = function (expressionArray) {
-      var fri = 0,
-        ei = 0,
-        fr = null,
-        docset = [],
-        expResultset = null;
+      var fr = null,
+          fri = 0, frlen = 0,
+          docset = [], idxset = [], idx = 0,
+          origCount = this.count();
 
-      // if filter is already initialized we need to query against only those items already in filter.
+      // If filter is already initialized, then we query against only those items already in filter.
       // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
-      if (this.filterInitialized) {
-        docset = [];
-
-        for (ei = 0; ei < expressionArray.length; ei++) {
-          // we need to branch existing query to run each filter separately and combine results
-          expResultset = this.branch();
-          expResultset.find(expressionArray[ei]);
-
-          // add any document 'hits'
-          fr = expResultset.filteredrows;
-          for (fri = 0; fri < fr.length; fri++) {
-            if (docset.indexOf(fr[fri]) === -1) {
-              docset.push(fr[fri]);
-            }
-          }
+      for (var ei = 0, elen = expressionArray.length; ei < elen; ei++) {
+        // we need to branch existing query to run each filter separately and combine results
+        fr = this.branch().find(expressionArray[ei]).filteredrows;
+        frlen = fr.length;
+        // if the find operation did not reduce the initial set, then the initial set is the actual result
+        if (frlen === origCount) {
+          return this;
         }
 
-        this.filteredrows = docset;
-      } else {
-        for (ei = 0; ei < expressionArray.length; ei++) {
-          // we will let each filter run independently against full collection and mashup document hits later
-          expResultset = this.collection.chain();
-          expResultset.find(expressionArray[ei]);
-
-          // add any document 'hits'
-          fr = expResultset.filteredrows;
-          for (fri = 0; fri < fr.length; fri++) {
-            if (this.filteredrows.indexOf(fr[fri]) === -1) {
-              this.filteredrows.push(fr[fri]);
-            }
+        // add any document 'hits'
+        for (fri = 0; fri < frlen; fri++) {
+          idx = fr[fri];
+          if (idxset[idx] === undefined) {
+            idxset[idx] = true;
+            docset.push(idx);
           }
         }
       }
 
+      this.filteredrows = docset;
       this.filterInitialized = true;
 
-      // possibly sort indexes
       return this;
     };
     Resultset.prototype.$or = Resultset.prototype.findOr;

@@ -1290,9 +1290,7 @@
       }
 
       var rscopy = this.copy();
-
       rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
-
       return rscopy;
     };
 
@@ -1309,9 +1307,7 @@
       }
 
       var rscopy = this.copy();
-
-      rscopy.filteredrows = rscopy.filteredrows.splice(pos, rscopy.filteredrows.length);
-
+      rscopy.filteredrows = rscopy.filteredrows.slice(pos);
       return rscopy;
     };
 

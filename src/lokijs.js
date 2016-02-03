@@ -2185,6 +2185,11 @@
         }
       }
       else {
+        // if the filter references all the collection documents, just copy the document array
+        if (len === data.length) {
+          return data.slice();
+        }
+
         for (i = 0; i < len; i++) {
           result.push(data[fr[i]]);
         }

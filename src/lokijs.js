@@ -1843,10 +1843,9 @@
         // chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
         if (this.searchIsChained) {
-          if (!this.filterInitialized && this.filteredrows.length === 0) {
-            this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
-            this.filterInitialized = true;
-          }
+          // A chained search, so simply leave everything as-is.
+          // Note: if no filter at this point, it will be properly
+          // created by the follow-up queries or sorts that need it.
           return this;
         }
         // not chained, so return collection data array

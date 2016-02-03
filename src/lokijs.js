@@ -145,18 +145,18 @@
       return 0;
     }
 
-    function containsCheckFn(a, b) {
+    function containsCheckFn(a) {
       if (Array.isArray(a)) {
-        return function (curr) {
-          return a.indexOf(curr) !== -1;
+        return function (b) {
+          return a.indexOf(b) !== -1;
         };
-      } else if (a && typeof a === 'string') {
-        return function (curr) {
-          return a.indexOf(curr) !== -1;
+      } else if (typeof a === 'string') {
+        return function (b) {
+          return a.indexOf(b) !== -1;
         };
-      } else if (a && typeof a === 'object') {
-        return function (curr) {
-          return a.hasOwnProperty(curr);
+      } else if (typeof a === 'object') {
+        return function (b) {
+          return a.hasOwnProperty(b);
         };
       }
     }
@@ -232,7 +232,7 @@
           b = [b];
         }
 
-        checkFn = containsCheckFn(a, b) || function () {
+        checkFn = containsCheckFn(a) || function () {
           return false;
         };
 
@@ -253,7 +253,7 @@
         }
 
         // return false on check if no check fn is found
-        checkFn = containsCheckFn(a, b) || function () {
+        checkFn = containsCheckFn(a) || function () {
           return false;
         };
 

@@ -1840,18 +1840,14 @@
 
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
-        // chained queries can just do coll.chain().data() but let's
+        // Chained queries can just do coll.chain().data() but let's
         // be versatile and allow this also coll.chain().find().data()
-        if (this.searchIsChained) {
-          // A chained search, so simply leave everything as-is.
-          // Note: if no filter at this point, it will be properly
-          // created by the follow-up queries or sorts that need it.
-          return this;
-        }
-        // not chained, so return collection data array
-        else {
-          return this.collection.data.slice();
-        }
+
+        // If a chained search, simply leave everything as-is.
+        // Note: If no filter at this point, it will be properly
+        // created by the follow-up queries or sorts that need it.
+        // If not chained, then return the collection data array copy.
+        return (this.searchIsChained) ? (this) : (this.collection.data.slice());
       }
 
       // injecting $and and $or expression tree evaluation here.
@@ -2781,21 +2777,11 @@
      * @returns {array} An array of documents representing the current DynamicView contents.
      */
     DynamicView.prototype.data = function () {
-      // Until a proper initialization phase can be implemented, let us initialize here (if needed)
-      if (this.filterPipeline.length === 0) {
-        this.applyFind();
-      }
-
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
       if (this.sortDirty || this.resultsdirty) {
         this.performSortPhase({suppressRebuildEvent: true});
       }
-
-      if (!this.options.persistent) {
-        return this.resultset.data();
-      }
-
-      return this.resultdata;
+      return (this.options.persistent) ? (this.resultdata) : (this.resultset.data());
     };
 
     /**

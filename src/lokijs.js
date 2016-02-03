@@ -3552,47 +3552,64 @@
     };
 
     /**
-     * generate document method - ensure objects have id and objType properties
-     * @param {object} the document to be inserted (or an array of objects)
+     * generate document method - ensure object(s) have meta properties, clone it if necessary, etc.
+     * @param {object} doc: the document to be inserted (or an array of objects)
      * @returns document or documents (if passed an array of objects)
      */
     Collection.prototype.insert = function (doc) {
-
-      if (!doc) {
-        var error = new Error('Object cannot be null');
-        this.emit('error', error);
-        throw error;
+      if (!Array.isArray(doc)) {
+        return this.insertOne(doc);
       }
 
-      var self = this;
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
-      var docs = Array.isArray(doc) ? doc : [doc];
       var results = [];
-      docs.forEach(function (d) {
-        if (typeof d !== 'object') {
-          throw new TypeError('Document needs to be an object');
-        }
-
-        // if configured to clone, do so now... otherwise just use same obj reference
-        obj = self.cloneObjects ? clone(d, self.cloneMethod) : d;
-
-        if (typeof obj.meta === 'undefined') {
-          obj.meta = {
-            revision: 0,
-            created: 0
-          };
-        }
-        self.emit('pre-insert', obj);
-        if (self.add(obj)) {
-          self.addAutoUpdateObserver(obj);
-          self.emit('insert', obj);
-          results.push(obj);
-        } else {
+      for (var i = 0, len = doc.length; i < len; i++) {
+        obj = this.insertOne(doc[i]);
+        if (!obj) {
           return undefined;
         }
-      });
+        results.push(obj);
+      }
       return results.length === 1 ? results[0] : results;
+    };
+
+    /**
+     * generate document method - ensure object has meta properties, clone it if necessary, etc.
+     * @param {object} the document to be inserted
+     * @returns document or 'undefined' if there was a problem inserting it
+     */
+    Collection.prototype.insertOne = function (doc) {
+      var err = null;
+      if (typeof doc !== 'object') {
+        err = new TypeError('Document needs to be an object');
+      } else if (doc === null) {
+        err = new TypeError('Object cannot be null');
+      }
+
+      if (err !== null) {
+        this.emit('error', err);
+        throw err;
+      }
+
+      // if configured to clone, do so now... otherwise just use same obj reference
+      var obj = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
+
+      if (typeof obj.meta === 'undefined') {
+        obj.meta = {
+          revision: 0,
+          created: 0
+        };
+      }
+
+      this.emit('pre-insert', obj);
+      if (!this.add(obj)) {
+        return undefined;
+      }
+
+      this.addAutoUpdateObserver(obj);
+      this.emit('insert', obj);
+      return obj;
     };
 
     Collection.prototype.clear = function () {

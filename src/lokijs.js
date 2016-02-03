@@ -221,6 +221,14 @@
         return b[a] === undefined;
       },
 
+      $containsString: function (a, b) {
+        return (typeof a === 'string') && (a.indexOf(b) !== -1);
+      },
+
+      $containsNoString: function (a, b) {
+        return (typeof a !== 'string') || (a.indexOf(b) === -1);
+      },
+
       $containsNone: function (a, b) {
         return !LokiOps.$containsAny(a, b);
       },
@@ -327,6 +335,8 @@
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone,
+      '$containsString': LokiOps.$containsString,
+      '$containsNoString': LokiOps.$containsNoString,
       '$type': LokiOps.$type,
       '$and': LokiOps.$and,
       '$or': LokiOps.$or

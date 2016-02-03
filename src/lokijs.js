@@ -2143,7 +2143,7 @@
      */
     Resultset.prototype.data = function (options) {
       var result = [],
-        data,
+        data = this.collection.data,
         len,
         i,
         method;
@@ -2155,7 +2155,6 @@
         if (this.filteredrows.length === 0) {
           // determine whether we need to clone objects or not
           if (this.collection.cloneObjects || options.forceClones) {
-            data = this.collection.data;
             len = data.length;
             method = options.forceCloneMethod || this.collection.cloneMethod;
 
@@ -2166,7 +2165,7 @@
           }
           // otherwise we are not cloning so return sliced array with same object references
           else {
-            return this.collection.data.slice();
+            return data.slice();
           }
         } else {
           // filteredrows must have been set manually, so use it
@@ -2174,7 +2173,6 @@
         }
       }
 
-      data = this.collection.data;
       var fr = this.filteredrows;
       len = fr.length;
 

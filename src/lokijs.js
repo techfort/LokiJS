@@ -1286,7 +1286,7 @@
     Resultset.prototype.limit = function (qty) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       var rscopy = this.copy();
@@ -1305,7 +1305,7 @@
     Resultset.prototype.offset = function (pos) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       var rscopy = this.copy();
@@ -1427,7 +1427,7 @@
     Resultset.prototype.sort = function (comparefun) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       var wrappedComparer =
@@ -1452,7 +1452,7 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -1521,7 +1521,7 @@
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       var wrappedComparer =
@@ -2209,7 +2209,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       var len = this.filteredrows.length,
@@ -2235,7 +2235,7 @@
 
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.data.map(mapArrayElementToItsIndex);
+        this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
       this.collection.remove(this.data());
@@ -3369,6 +3369,18 @@
     +----------------------------*/
 
     /**
+     * create a row filter that covers all documents in the collection
+     */
+    Collection.prototype.prepareFullDocIndex = function () {
+      var len = this.data.length;
+      var indexes = new Array(len);
+      for (var i = 0; i < len; i += 1) {
+        indexes[i] = i;
+      }
+      return indexes;
+    };
+
+    /**
      * Ensure binary index on a certain field
      */
     Collection.prototype.ensureIndex = function (property, force) {
@@ -3385,17 +3397,10 @@
         if (!this.binaryIndices[property].dirty) return;
       }
 
-      // initialize index values
-      var i, len = this.data.length;
-      var values = new Array(len);
-      for (i = 0; i < len; i += 1) {
-        values[i] = i;
-      }
-
       var index = {
         'name': property,
         'dirty': true,
-        'values': values
+        'values': this.prepareFullDocIndex()
       };
       this.binaryIndices[property] = index;
 
@@ -4235,10 +4240,6 @@
 
     function isNotUndefined(obj) {
       return obj !== undefined;
-    }
-
-    function mapArrayElementToItsIndex(val, idx) {
-      return idx;
     }
 
     function add(a, b) {

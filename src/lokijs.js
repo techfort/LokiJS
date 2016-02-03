@@ -1289,8 +1289,9 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = this.copy();
-      rscopy.filteredrows = rscopy.filteredrows.slice(0, qty);
+      var rscopy = new Resultset(this.collection, null, null);
+      rscopy.filteredrows = this.filteredrows.slice(0, qty);
+      rscopy.filterInitialized = true;
       return rscopy;
     };
 
@@ -1306,8 +1307,9 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = this.copy();
-      rscopy.filteredrows = rscopy.filteredrows.slice(pos);
+      var rscopy = new Resultset(this.collection, null, null);
+      rscopy.filteredrows = this.filteredrows.slice(pos);
+      rscopy.filterInitialized = true;
       return rscopy;
     };
 

@@ -1463,13 +1463,11 @@
       }
 
       var wrappedComparer =
-        (function (prop, desc, rslt) {
-          var data = rslt.collection.data;
+        (function (prop, desc, data) {
           return function (a, b) {
             return sortHelper(data[a][prop], data[b][prop], desc);
-
           };
-        })(propname, isdesc, this);
+        })(propname, isdesc, this.collection.data);
 
       this.filteredrows.sort(wrappedComparer);
 
@@ -1521,6 +1519,14 @@
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      */
     Resultset.prototype.compoundsort = function (properties) {
+      var prop;
+      if (properties.length === 1) {
+        prop = properties[0];
+        if (Array.isArray(prop)) {
+          return this.simplesort(prop[0], prop[1]);
+        }
+        return this.simplesort(prop);
+      }
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {

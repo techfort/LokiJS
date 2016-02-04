@@ -169,6 +169,10 @@
         return a === b;
       },
 
+      $ne: function (a, b) {
+        return a !== b;
+      },
+
       $dteq: function(a, b) {
         if (ltHelper(a, b)) {
           return false;
@@ -197,14 +201,6 @@
         return ltHelper(a, b, true);
       },
 
-      $ne: function (a, b) {
-        return a !== b;
-      },
-
-      $regex: function (a, b) {
-        return b.test(a);
-      },
-
       $in: function (a, b) {
         return b.indexOf(a) !== -1;
       },
@@ -221,12 +217,12 @@
         return b[a] === undefined;
       },
 
-      $containsString: function (a, b) {
-        return (typeof a === 'string') && (a.indexOf(b) !== -1);
+      $regex: function (a, b) {
+        return b.test(a);
       },
 
-      $containsNoString: function (a, b) {
-        return (typeof a !== 'string') || (a.indexOf(b) === -1);
+      $containsString: function (a, b) {
+        return (typeof a === 'string') && (a.indexOf(b) !== -1);
       },
 
       $containsNone: function (a, b) {
@@ -286,6 +282,15 @@
         return type === b;
       },
 
+      $not: function (a, b) {
+        for (var p in b) {
+          if (Object.prototype.hasOwnProperty.call(b, p)) {
+            return !LokiOps[p](a, b[p]);
+          }
+        }
+        return false;
+      },
+
       $and: function (a, b) {
         var idx, len, opObj, p;
         for (idx = 0, len = b.length; idx < len; idx += 1) {
@@ -321,23 +326,23 @@
 
     var operators = {
       '$eq': LokiOps.$eq,
+      '$ne': LokiOps.$ne,
       '$dteq': LokiOps.$dteq,
       '$gt': LokiOps.$gt,
       '$gte': LokiOps.$gte,
       '$lt': LokiOps.$lt,
       '$lte': LokiOps.$lte,
-      '$ne': LokiOps.$ne,
-      '$regex': LokiOps.$regex,
       '$in': LokiOps.$in,
       '$nin': LokiOps.$nin,
       '$keyin': LokiOps.$keyin,
       '$nkeyin': LokiOps.$nkeyin,
+      '$regex': LokiOps.$regex,
+      '$containsString': LokiOps.$containsString,
       '$contains': LokiOps.$contains,
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone,
-      '$containsString': LokiOps.$containsString,
-      '$containsNoString': LokiOps.$containsNoString,
       '$type': LokiOps.$type,
+      '$not': LokiOps.$not,
       '$and': LokiOps.$and,
       '$or': LokiOps.$or
     };

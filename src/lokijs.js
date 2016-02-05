@@ -1564,8 +1564,8 @@
       var min = 0;
       var max = index.length - 1;
       var mid = 0;
-      var lbound = 0;
-      var ubound = index.length - 1;
+      var lbound = min;
+      var ubound = max;
 
       // when no documents are in collection, return empty range condition
       if (rcd.length === 0) {
@@ -2073,7 +2073,6 @@
      * @returns {Resultset} this resultset for further chain ops.
      */
     Resultset.prototype.where = function (fun) {
-
       var viewFunction,
         result = [];
 
@@ -2288,7 +2287,6 @@
         rightDataLength,
         key,
         result = [],
-        obj,
         leftKeyisFunction = typeof leftJoinKey === 'function',
         rightKeyisFunction = typeof rightJoinKey === 'function',
         joinMap = {};
@@ -2556,13 +2554,8 @@
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      */
     DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
-
-      if (typeof (isdesc) === 'undefined') {
-        isdesc = false;
-      }
-
       this.sortCriteria = [
-        [propname, isdesc]
+        [propname, isdesc || false]
       ];
       this.sortFunction = null;
 
@@ -3293,7 +3286,6 @@
     };
 
     Collection.prototype.addAutoUpdateObserver = function (object) {
-
       if(!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
@@ -3435,7 +3427,6 @@
     };
 
     Collection.prototype.ensureUniqueIndex = function (field) {
-
       var index = this.constraints.unique[field];
       if (!index) {
         // keep track of new unique index for regenerate after database (re)load.
@@ -3488,7 +3479,6 @@
      * Rebuild idIndex
      */
     Collection.prototype.ensureId = function () {
-
       var len = this.data.length,
         i = 0;
 
@@ -3541,7 +3531,6 @@
      * and apply the updatefunctino to those elements iteratively
      */
     Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
-
       var results = this.where(filterFunction),
         i = 0,
         obj;
@@ -3846,12 +3835,11 @@
      * Get by Id - faster than other methods because of the searching algorithm
      */
     Collection.prototype.get = function (id, returnPosition) {
-
       var retpos = returnPosition || false,
-        data = this.idIndex,
-        max = data.length - 1,
-        min = 0,
-        mid = Math.floor(min + (max - min) / 2);
+          data = this.idIndex,
+          max = data.length - 1,
+          min = 0,
+          mid = Math.floor(min + (max - min) / 2);
 
       id = typeof id === 'number' ? id : parseInt(id, 10);
 
@@ -3860,7 +3848,6 @@
       }
 
       while (data[min] < data[max]) {
-
         mid = Math.floor((min + max) / 2);
 
         if (data[mid] < id) {
@@ -3871,7 +3858,6 @@
       }
 
       if (max === min && data[min] === id) {
-
         if (retpos) {
           return [this.data[min], min];
         }
@@ -3958,7 +3944,6 @@
      * simply iterates and returns the first element matching the query
      */
     Collection.prototype.findOneUnindexed = function (prop, value) {
-
       var i = this.data.length,
         doc;
       while (i--) {

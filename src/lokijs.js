@@ -145,6 +145,45 @@
       return 0;
     }
 
+    /**
+     * compoundeval() - helper function for compoundsort(), performing individual object comparisons
+     *
+     * @param {array} properties - array of property names, in order, by which to evaluate sort order
+     * @param {object} obj1 - first object to compare
+     * @param {object} obj2 - second object to compare
+     * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
+     */
+    function compoundeval(properties, obj1, obj2) {
+      var propertyCount = properties.length;
+      if (propertyCount === 0) {
+        throw new Error("Invalid call to compoundeval, need at least one property");
+      }
+
+      var res = 0;
+
+      var prop, isdesc, obj1prop, obj2prop;
+      for (var i = 0; i < propertyCount; i += 1) {
+        prop = properties[i];
+        // decode property, whether just a string property name or subarray [propname, isdesc]
+        if (Array.isArray(prop)) {
+          isdesc = prop[1];
+          prop = prop[0];
+        } else {
+          isdesc = false;
+        }
+
+        obj1prop = obj1[prop];
+        obj2prop = obj2[prop];
+        if (obj1prop !== obj2prop) {
+          res = sortHelper(obj1prop, obj2prop, isdesc);
+          if (res !== 0) {
+            return res;
+          }
+        }
+      }
+      return 0;
+    }
+
     function containsCheckFn(a) {
       if (Array.isArray(a)) {
         return function (b) {
@@ -1475,42 +1514,6 @@
     };
 
     /**
-     * compoundeval() - helper method for compoundsort(), performing individual object comparisons
-     *
-     * @param {array} properties - array of property names, in order, by which to evaluate sort order
-     * @param {object} obj1 - first object to compare
-     * @param {object} obj2 - second object to compare
-     * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
-     */
-    Resultset.prototype.compoundeval = function (properties, obj1, obj2) {
-      var propertyCount = properties.length;
-
-      if (propertyCount === 0) {
-        throw new Error("Invalid call to compoundeval, need at least one property");
-      }
-
-      // decode property, whether just a string property name or subarray [propname, isdesc]
-      var isdesc = false;
-      var firstProp = properties[0];
-      if (typeof (firstProp) !== 'string') {
-        if (Array.isArray(firstProp)) {
-          isdesc = firstProp[1];
-          firstProp = firstProp[0];
-        }
-      }
-
-      if (obj1[firstProp] === obj2[firstProp]) {
-        if (propertyCount === 1) {
-          return 0;
-        } else {
-          return this.compoundeval(properties.slice(1), obj1, obj2, isdesc);
-        }
-      }
-
-      return sortHelper(obj1[firstProp], obj2[firstProp], isdesc);
-    };
-
-    /**
      * compoundsort() - Allows sorting a resultset based on multiple columns.
      *    Example : rs.compoundsort(['age', 'name']); to sort by age and then name (both ascending)
      *    Example : rs.compoundsort(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
@@ -1534,12 +1537,11 @@
       }
 
       var wrappedComparer =
-        (function (props, rslt) {
-          var data = rslt.collection.data;
+        (function (props, data) {
           return function (a, b) {
-            return rslt.compoundeval(props, data[a], data[b]);
+            return compoundeval(props, data[a], data[b]);
           };
-        })(properties, this);
+        })(properties, this.collection.data);
 
       this.filteredrows.sort(wrappedComparer);
 

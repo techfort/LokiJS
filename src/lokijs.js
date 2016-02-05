@@ -54,7 +54,6 @@
       // top level utility to resolve an entire (single) transform (array of steps) for parameter substitution
       resolveTransformParams: function (transform, params) {
         var idx,
-          prop,
           clonedStep,
           resolvedTransform = [];
 
@@ -89,12 +88,7 @@
       }
 
       // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      if (equal) {
-        return true;
-      } else {
-        return false;
-      }
-
+      return equal;
     }
 
     function gtHelper(prop1, prop2, equal) {
@@ -114,31 +108,16 @@
       }
 
       // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      if (equal) {
-        return true;
-      } else {
-        return false;
-      }
-
+      return equal;
     }
 
     function sortHelper(prop1, prop2, desc) {
       if (ltHelper(prop1, prop2)) {
-        if (desc) {
-          return 1;
-        }
-        else {
-          return -1;
-        }
+        return (desc) ? (1) : (-1);
       }
 
       if (gtHelper(prop1, prop2)) {
-        if (desc) {
-          return -1;
-        }
-        else {
-          return 1;
-        }
+        return (desc) ? (-1) : (1);
       }
 
       // not lt, not gt so implied equality-- date compatible
@@ -154,15 +133,10 @@
      * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
      */
     function compoundeval(properties, obj1, obj2) {
-      var propertyCount = properties.length;
-      if (propertyCount === 0) {
-        throw new Error("Invalid call to compoundeval, need at least one property");
-      }
-
       var res = 0;
 
-      var prop, isdesc, obj1prop, obj2prop;
-      for (var i = 0; i < propertyCount; i += 1) {
+      var prop, isdesc, obj1p, obj2p;
+      for (var i = 0, len = properties.length; i < len; i++) {
         prop = properties[i];
         // decode property, whether just a string property name or subarray [propname, isdesc]
         if (Array.isArray(prop)) {
@@ -172,10 +146,10 @@
           isdesc = false;
         }
 
-        obj1prop = obj1[prop];
-        obj2prop = obj2[prop];
-        if (obj1prop !== obj2prop) {
-          res = sortHelper(obj1prop, obj2prop, isdesc);
+        obj1p = obj1[prop];
+        obj2p = obj2[prop];
+        if (obj1p !== obj2p) {
+          res = sortHelper(obj1p, obj2p, isdesc);
           if (res !== 0) {
             return res;
           }
@@ -227,11 +201,7 @@
     }
 
     function containsCheckFn(a) {
-      if (Array.isArray(a)) {
-        return function (b) {
-          return a.indexOf(b) !== -1;
-        };
-      } else if (typeof a === 'string') {
+      if (typeof a === 'string' || Array.isArray(a)) {
         return function (b) {
           return a.indexOf(b) !== -1;
         };
@@ -258,12 +228,7 @@
         if (ltHelper(a, b)) {
           return false;
         }
-
-        if (gtHelper(a,b)) {
-          return false;
-        }
-
-        return true;
+        return !gtHelper(a, b);
       },
 
       $gt: function (a, b) {
@@ -1563,6 +1528,10 @@
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      */
     Resultset.prototype.compoundsort = function (properties) {
+      if (properties.length === 0) {
+        throw new Error("Invalid call to compoundsort, need at least one property");
+      }
+
       var prop;
       if (properties.length === 1) {
         prop = properties[0];

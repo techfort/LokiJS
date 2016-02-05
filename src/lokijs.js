@@ -1605,8 +1605,6 @@
       var min = 0;
       var max = index.length - 1;
       var mid = 0;
-      var lbound = min;
-      var ubound = max;
 
       // when no documents are in collection, return empty range condition
       if (rcd.length === 0) {
@@ -1658,7 +1656,7 @@
 
       // hone in on start position of value
       while (min < max) {
-        mid = Math.floor((min + max) / 2);
+        mid = (min + max) >> 1;
 
         if (ltHelper(rcd[index[mid]][prop], val)) {
           min = mid + 1;
@@ -1667,14 +1665,14 @@
         }
       }
 
-      lbound = min;
+      var lbound = min;
 
       // do not reset min, as the upper bound cannot be prior to the found low bound
       max = index.length - 1;
 
       // hone in on end position of value
       while (min < max) {
-        mid = Math.floor((min + max) / 2);
+        mid = (min + max) >> 1;
 
         if (ltHelper(val, rcd[index[mid]][prop])) {
           max = mid;
@@ -1683,7 +1681,7 @@
         }
       }
 
-      ubound = max;
+      var ubound = max;
 
       var lval = rcd[index[lbound]][prop];
       var uval = rcd[index[ubound]][prop];
@@ -3846,7 +3844,7 @@
           data = this.idIndex,
           max = data.length - 1,
           min = 0,
-          mid = Math.floor(min + (max - min) / 2);
+          mid = (min + max) >> 1;
 
       id = typeof id === 'number' ? id : parseInt(id, 10);
 
@@ -3855,7 +3853,7 @@
       }
 
       while (data[min] < data[max]) {
-        mid = Math.floor((min + max) / 2);
+        mid = (min + max) >> 1;
 
         if (data[mid] < id) {
           min = mid + 1;
@@ -4296,7 +4294,7 @@
         compared,
         mid;
       while (lo < hi) {
-        mid = ((lo + hi) / 2) | 0;
+        mid = (lo + hi) >> 1;
         compared = fun.apply(null, [item, array[mid]]);
         if (compared === 0) {
           return {

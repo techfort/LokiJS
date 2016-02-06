@@ -1200,9 +1200,7 @@
           if (err) {
             throw err;
           }
-          return;
-        },
-        self = this;
+        };
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
@@ -1315,6 +1313,19 @@
       // otherwise return unfiltered Resultset for future filtering
       return this;
     }
+
+    /**
+     * reset() - Reset the resultset to its initial state.
+     *
+     * @returns {Resultset} Reference to this resultset, for future chain operations.
+     */
+    Resultset.prototype.reset = function () {
+      if (this.filteredrows.length > 0) {
+        this.filteredrows = [];
+      }
+      this.filterInitialized = false;
+      return this;
+    };
 
     /**
      * toJSON() - Override of toJSON to avoid circular references
@@ -2489,7 +2500,7 @@
      */
     DynamicView.prototype.removeFilters = function () {
       this.rebuildPending = false;
-      this.resultset = new Resultset(this.collection);
+      this.resultset.reset();
       this.resultdata = [];
       this.resultsdirty = false;
 
@@ -2623,8 +2634,8 @@
      * @param {object} filter - The filter object. Refer to applyFilter() for extra details.
      */
     DynamicView.prototype._addFilter = function (filter) {
-      this.resultset[filter.type](filter.val);
       this.filterPipeline.push(filter);
+      this.resultset[filter.type](filter.val);
     };
 
     /**
@@ -2633,20 +2644,19 @@
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      */
     DynamicView.prototype.reapplyFilters = function () {
-      var filters = this.filterPipeline;
-      var sortFunction = this.sortFunction;
-      var sortCriteria = this.sortCriteria;
+      this.resultset.reset();
 
-      this.removeFilters();
+      this.cachedresultset = null;
+      if (this.options.persistent) {
+        this.resultdata = [];
+        this.resultsdirty = true;
+      }
+
+      var filters = this.filterPipeline;
+      this.filterPipeline = [];
 
       for (var idx = 0, len = filters.length; idx < len; idx += 1) {
         this._addFilter(filters[idx]);
-      }
-
-      this.sortFunction = sortFunction;
-      this.sortCriteria = sortCriteria;
-      if (this.options.persistent) {
-        this.resultsdirty = true;
       }
 
       if (this.sortFunction || this.sortCriteria) {
@@ -2669,15 +2679,16 @@
       var idx = this._indexOfFilterWithId(filter.uid);
       if (idx >= 0) {
         this.filterPipeline[idx] = filter;
-        this.reapplyFilters();
-        return;
+        return this.reapplyFilters();
+      }
+
+      this.cachedresultset = null;
+      if (this.options.persistent) {
+        this.resultdata = [];
+        this.resultsdirty = true;
       }
 
       this._addFilter(filter);
-
-      if (this.options.persistent) {
-        this.resultsdirty = true;
-      }
 
       if (this.sortFunction || this.sortCriteria) {
         this.queueSortPhase();
@@ -2774,8 +2785,10 @@
 
       var self = this;
       setTimeout(function () {
-        self.rebuildPending = false;
-        self.emit('rebuild', self);
+        if (self.rebuildPending) {
+          self.rebuildPending = false;
+          self.emit('rebuild', self);
+        }
       }, this.options.minRebuildInterval);
     };
 
@@ -2822,7 +2835,7 @@
         } else if (this.sortCriteria) {
           this.resultset.compoundsort(this.sortCriteria);
         }
-        
+
         this.sortDirty = false;
       }
 

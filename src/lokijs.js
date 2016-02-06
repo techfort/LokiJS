@@ -112,6 +112,10 @@
     }
 
     function sortHelper(prop1, prop2, desc) {
+      if (prop1 === prop2) {
+        return 0;
+      }
+
       if (ltHelper(prop1, prop2)) {
         return (desc) ? (1) : (-1);
       }
@@ -134,25 +138,13 @@
      */
     function compoundeval(properties, obj1, obj2) {
       var res = 0;
-
-      var prop, isdesc, obj1p, obj2p;
+      var prop, field;
       for (var i = 0, len = properties.length; i < len; i++) {
         prop = properties[i];
-        // decode property, whether just a string property name or subarray [propname, isdesc]
-        if (Array.isArray(prop)) {
-          isdesc = prop[1];
-          prop = prop[0];
-        } else {
-          isdesc = false;
-        }
-
-        obj1p = obj1[prop];
-        obj2p = obj2[prop];
-        if (obj1p !== obj2p) {
-          res = sortHelper(obj1p, obj2p, isdesc);
-          if (res !== 0) {
-            return res;
-          }
+        field = prop[0];
+        res = sortHelper(obj1[field], obj2[field], prop[1]);
+        if (res !== 0) {
+          return res;
         }
       }
       return 0;
@@ -1549,7 +1541,15 @@
         if (Array.isArray(prop)) {
           return this.simplesort(prop[0], prop[1]);
         }
-        return this.simplesort(prop);
+        return this.simplesort(prop, false);
+      }
+
+      // unify the structure of 'properties' to avoid checking it repeatedly while sorting
+      for (var i = 0, len = properties.length; i < len; i += 1) {
+        prop = properties[i];
+        if (!Array.isArray(prop)) {
+          properties[i] = [prop, false];
+        }
       }
 
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
@@ -1813,9 +1813,7 @@
           key,
           searchByIndex = false,
           result = [],
-          index = null,
-          // collection data length
-          i;
+          index = null;
 
       // if this was note invoked via findOne()
       firstOnly = firstOnly || false;
@@ -1921,6 +1919,8 @@
 
       // "shortcut" for collection data
       var t = this.collection.data;
+      // filter data length
+      var i = 0;
 
       // Query executed differently depending on :
       //    - whether it is chained or not

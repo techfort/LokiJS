@@ -1994,22 +1994,27 @@
 
       // Otherwise this is a chained query
 
+      var filter, rowIdx = 0;
+
       // If the filteredrows[] is already initialized, use it
       if (this.filterInitialized) {
-        i = this.filteredrows.length;
+        filter = this.filteredrows;
+        i = filter.length;
 
         // currently supporting dot notation for non-indexed conditions only
         if (usingDotNotation) {
           property = property.split('.');
           while (i--) {
-            if (dotSubScan(t[this.filteredrows[i]], property, fun, value)) {
-              result.push(this.filteredrows[i]);
+            rowIdx = filter[i];
+            if (dotSubScan(t[rowIdx], property, fun, value)) {
+              result.push(rowIdx);
             }
           }
         } else {
           while (i--) {
-            if (fun(t[this.filteredrows[i]][property], value)) {
-              result.push(this.filteredrows[i]);
+            rowIdx = filter[i];
+            if (fun(t[rowIdx][property], value)) {
+              result.push(rowIdx);
             }
           }
         }

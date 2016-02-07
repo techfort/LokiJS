@@ -359,6 +359,14 @@
           }
         }
         return false;
+      },
+
+      $size: function (a, b) {
+        if (!Array.isArray(a)) {
+          return false;
+        } else {
+          return a.length === b;
+        }
       }
     };
 
@@ -382,7 +390,8 @@
       '$type': LokiOps.$type,
       '$not': LokiOps.$not,
       '$and': LokiOps.$and,
-      '$or': LokiOps.$or
+      '$or': LokiOps.$or,
+      '$size': LokiOps.$size
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :

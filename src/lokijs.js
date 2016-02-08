@@ -20,6 +20,8 @@
   return (function () {
     'use strict';
 
+    var hasOwnProperty = Object.prototype.hasOwnProperty;
+
     var Utils = {
       copyProperties: function (src, dest) {
         var prop;
@@ -161,7 +163,7 @@
         pathSegment = propPath[segmIndex];
 
         // if the dot notation is invalid for the current document, then ignore this document
-        if (root === undefined || root === null || !root.hasOwnProperty(pathSegment)) {
+        if (root === undefined || root === null || !hasOwnProperty.call(root, pathSegment)) {
           return false;
         }
 
@@ -199,9 +201,18 @@
         };
       } else if (typeof a === 'object') {
         return function (b) {
-          return a.hasOwnProperty(b);
+          return hasOwnProperty.call(a, b);
         };
       }
+    }
+
+    function doQueryOp(val, op) {
+      for (var p in op) {
+        if (hasOwnProperty.call(op, p)) {
+          return LokiOps[p](val, op[p]);
+        }
+      }
+      return false;
     }
 
     var LokiOps = {
@@ -317,56 +328,43 @@
             type = 'date';
           }
         }
-        return type === b;
+        return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b);
       },
 
-      $not: function (a, b) {
-        for (var p in b) {
-          if (Object.prototype.hasOwnProperty.call(b, p)) {
-            return !LokiOps[p](a, b[p]);
-          }
+      $size: function (a, b) {
+        if (Array.isArray(a)) {
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
         }
         return false;
       },
 
+      $len: function (a, b) {
+        if (typeof a === 'string') {
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
+        }
+        return false;
+      },
+
+      $not: function (a, b) {
+        return !doQueryOp(a, b);
+      },
+
       $and: function (a, b) {
-        var idx, len, opObj, p;
-        for (idx = 0, len = b.length; idx < len; idx += 1) {
-          opObj = b[idx];
-          for (p in opObj) {
-            if (Object.prototype.hasOwnProperty.call(opObj, p)) {
-              if (!LokiOps[p](a, opObj[p])) {
-                return false;
-              }
-              break;
-            }
+        for (var idx = 0, len = b.length; idx < len; idx += 1) {
+          if (!doQueryOp(a, b[idx])) {
+            return false;
           }
         }
         return true;
       },
 
       $or: function (a, b) {
-        var idx, len, opObj, p;
-        for (idx = 0, len = b.length; idx < len; idx += 1) {
-          opObj = b[idx];
-          for (p in opObj) {
-            if (Object.prototype.hasOwnProperty.call(opObj, p)) {
-              if (LokiOps[p](a, opObj[p])) {
-                return true;
-              }
-              break;
-            }
+        for (var idx = 0, len = b.length; idx < len; idx += 1) {
+          if (doQueryOp(a, b[idx])) {
+            return true;
           }
         }
         return false;
-      },
-
-      $size: function (a, b) {
-        if (!Array.isArray(a)) {
-          return false;
-        } else {
-          return a.length === b;
-        }
       }
     };
 
@@ -388,10 +386,11 @@
       '$containsAny': LokiOps.$containsAny,
       '$containsNone': LokiOps.$containsNone,
       '$type': LokiOps.$type,
+      '$size': LokiOps.$size,
+      '$len': LokiOps.$len,
       '$not': LokiOps.$not,
       '$and': LokiOps.$and,
-      '$or': LokiOps.$or,
-      '$size': LokiOps.$size
+      '$or': LokiOps.$or
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
@@ -1829,7 +1828,7 @@
 
       if (typeof queryObject === 'object') {
         for (p in queryObject) {
-          if (Object.prototype.hasOwnProperty.call(queryObject, p)) {
+          if (hasOwnProperty.call(queryObject, p)) {
             property = p;
             queryObjectOp = queryObject[p];
             break;
@@ -1882,7 +1881,7 @@
         value = queryObjectOp;
       } else if (typeof queryObjectOp === 'object') {
         for (key in queryObjectOp) {
-          if (Object.prototype.hasOwnProperty.call(queryObjectOp, key)) {
+          if (hasOwnProperty.call(queryObjectOp, key)) {
             operator = key;
             value = queryObjectOp[key];
             break;
@@ -3165,7 +3164,7 @@
         });
 
         changedObjects.forEach(function (object) {
-          if(!object.hasOwnProperty('$loki'))
+          if(!hasOwnProperty.call(object, '$loki'))
             return self.removeAutoUpdateObserver(object);
           try {
             self.update(object);
@@ -3448,7 +3447,7 @@
     Collection.prototype.ensureAllIndexes = function (force) {
       var key, bIndices = this.binaryIndices;
       for (key in bIndices) {
-        if (bIndices.hasOwnProperty(key)) {
+        if (hasOwnProperty.call(bIndices, key)) {
           this.ensureIndex(key, force);
         }
       }
@@ -3457,7 +3456,7 @@
     Collection.prototype.flagBinaryIndexesDirty = function () {
       var key, bIndices = this.binaryIndices;
       for (key in bIndices) {
-        if (bIndices.hasOwnProperty(key)) {
+        if (hasOwnProperty.call(bIndices, key)) {
           bIndices[key].dirty = true;
         }
       }
@@ -3636,7 +3635,7 @@
       }
 
       // verify object is a properly formed document
-      if (!doc.hasOwnProperty('$loki')) {
+      if (!hasOwnProperty.call(doc, '$loki')) {
         throw new Error('Trying to update unsynced document. Please save the document first by using insert() or addMany()');
       }
       try {
@@ -3720,7 +3719,7 @@
 
         var key, constrUnique = this.constraints.unique;
         for (key in constrUnique) {
-          if (constrUnique.hasOwnProperty(key)) {
+          if (hasOwnProperty.call(constrUnique, key)) {
             constrUnique[key].set(obj);
           }
         }
@@ -3784,7 +3783,7 @@
         return;
       }
 
-      if (!doc.hasOwnProperty('$loki')) {
+      if (!hasOwnProperty.call(doc, '$loki')) {
         throw new Error('Object is not a document stored in the collection');
       }
 

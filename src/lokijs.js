@@ -322,7 +322,7 @@
       $type: function (a, b) {
         var type = typeof a;
         if (type === 'object') {
-            if (Array.isArray(a)) {
+          if (Array.isArray(a)) {
             type = 'array';
           } else if (a instanceof Date) {
             type = 'date';
@@ -1875,7 +1875,7 @@
         if (Array.isArray(value)) {
           value = new RegExp(value[0], value[1]);
         }
-        else {
+        else if (!(value instanceof RegExp)) {
           value = new RegExp(value);
         }
       }

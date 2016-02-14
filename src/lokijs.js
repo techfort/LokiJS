@@ -345,6 +345,10 @@
         return false;
       },
 
+      // field-level logical operators
+      // a is the value in the collection
+      // b is the nested query operation (for '$not')
+      //   or an array of nested query operations (for '$and' and '$or')
       $not: function (a, b) {
         return !doQueryOp(a, b);
       },
@@ -366,31 +370,6 @@
         }
         return false;
       }
-    };
-
-    var operators = {
-      '$eq': LokiOps.$eq,
-      '$ne': LokiOps.$ne,
-      '$dteq': LokiOps.$dteq,
-      '$gt': LokiOps.$gt,
-      '$gte': LokiOps.$gte,
-      '$lt': LokiOps.$lt,
-      '$lte': LokiOps.$lte,
-      '$in': LokiOps.$in,
-      '$nin': LokiOps.$nin,
-      '$keyin': LokiOps.$keyin,
-      '$nkeyin': LokiOps.$nkeyin,
-      '$regex': LokiOps.$regex,
-      '$containsString': LokiOps.$containsString,
-      '$contains': LokiOps.$contains,
-      '$containsAny': LokiOps.$containsAny,
-      '$containsNone': LokiOps.$containsNone,
-      '$type': LokiOps.$type,
-      '$size': LokiOps.$size,
-      '$len': LokiOps.$len,
-      '$not': LokiOps.$not,
-      '$and': LokiOps.$and,
-      '$or': LokiOps.$or
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
@@ -1923,7 +1902,7 @@
       }
 
       // the comparison function
-      var fun = operators[operator];
+      var fun = LokiOps[operator];
 
       // "shortcut" for collection data
       var t = this.collection.data;

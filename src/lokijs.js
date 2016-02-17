@@ -4503,25 +4503,26 @@
 
     function Cache(name, options) {
 
+      options = options || {}
       options.unique = options.unique || ['id'];
       options.indices = options.indices || ['id'];
-      Cache.prototype = new Collection(name, options);
+      Collection.call(this, name, options);
 
       var loadFunc = options.loadFunc;
       var superInsert = Cache.prototype.insert;
 
-      Cache.prototype.insert = options.insert ||
+      this.insert = options.insert ||
         function insert(collection, newMember) {
           superInsert.call(collection, newMember)
         };
-      Cache.prototype.update = options.update ||
+      this.update = options.update ||
         function update(collection, inCollection, newMember) {
           for (var prop in newMember)
             inCollection[prop] = newMember[prop]
           inCollection.meta.updated = Date.now()
         };
 
-      Cache.prototype.exists = options.exists ||
+      this.exists = options.exists ||
         function exists(member, collection) {
           return collection.by('id', member['id'])
         };
@@ -4532,21 +4533,24 @@
         setInterval(boundLoadFunc, config.cacheDataRefreshTime)
       }
 
-      Cache.prototype.setLoadFunc = function (loadFunc) {
-        var boundLoadFunc = loadFunc(this);
-        boundLoadFunc()
-        return setInterval(boundLoadFunc, config.cacheDataRefreshTime)
-      }
+    }
 
-      Cache.prototype.upsert = function (newMember) {
-        var inCollection = this.exists(newMember, this);
-        if (inCollection) {
-          Cache.prototype.update(this, inCollection, newMember)
-        }
-        else {
-          Cache.prototype.insert(this, newMember)
-        }
+    Cache.prototype = Object.create(Collection.prototype)
+
+    Cache.prototype.upsert = function (newMember) {
+      var inCollection = this.exists(newMember, this);
+      if (inCollection) {
+        this.update(this, inCollection, newMember)
       }
+      else {
+        this.insert(this, newMember)
+      }
+    }
+
+    Cache.prototype.setLoadFunc = function (loadFunc) {
+      var boundLoadFunc = loadFunc(this);
+      boundLoadFunc()
+      return setInterval(boundLoadFunc, config.cacheDataRefreshTime)
     }
 
     Loki.Collection = Collection;

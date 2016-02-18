@@ -802,7 +802,7 @@
         dbObject = JSON.parse(serializedDb);
       }
 
-      loadJSONObject(dbObject, options);
+      this.loadJSONObject(dbObject, options);
     };
 
     /**

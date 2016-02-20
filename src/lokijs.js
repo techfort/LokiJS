@@ -795,28 +795,42 @@
      * @param {object} options - apply or override collection level settings
      */
     Loki.prototype.loadJSON = function (serializedDb, options) {
+      var dbObject;
+      if (serializedDb.length === 0) {
+        dbObject = {};
+      } else {
+        dbObject = JSON.parse(serializedDb);
+      }
 
-      if (serializedDb.length === 0) serializedDb = JSON.stringify({});
-      var obj = JSON.parse(serializedDb),
-        i = 0,
-        len = obj.collections ? obj.collections.length : 0,
+      this.loadJSONObject(dbObject, options);
+    };
+
+    /**
+     * loadJSONObject - inflates a loki database from a JS object
+     *
+     * @param {object} dbObject - a serialized loki database string
+     * @param {object} options - apply or override collection level settings
+     */
+    Loki.prototype.loadJSONObject = function (dbObject, options) {
+      var i = 0,
+        len = dbObject.collections ? dbObject.collections.length : 0,
         coll,
         copyColl,
         clen,
         j;
 
-      this.name = obj.name;
+      this.name = dbObject.name;
 
       // restore database version
       this.databaseVersion = 1.0;
-      if (obj.hasOwnProperty('databaseVersion')) {
-        this.databaseVersion = obj.databaseVersion;
+      if (dbObject.hasOwnProperty('databaseVersion')) {
+        this.databaseVersion = dbObject.databaseVersion;
       }
 
       this.collections = [];
 
       for (i; i < len; i += 1) {
-        coll = obj.collections[i];
+        coll = dbObject.collections[i];
         copyColl = this.addCollection(coll.name);
 
         copyColl.transactional = coll.transactional;
@@ -1111,7 +1125,9 @@
             }
           } else {
             if (typeof (dbString) === "object") {
+              self.loadJSONObject(dbString, options || {});
               cFun(dbString);
+              self.emit('loaded', 'database ' + self.filename + ' loaded');
             } else {
               cFun('Database not found');
             }

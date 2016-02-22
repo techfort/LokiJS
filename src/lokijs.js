@@ -756,6 +756,13 @@
 
       for (i = 0; i < len; i += 1) {
         if (this.collections[i].name === collectionName) {
+          var tmpcol = new Collection(collectionName, {});
+          var curcol = this.collections[i];
+          for (var prop in curcol) {
+            if (curcol.hasOwnProperty(prop) && tmpcol.hasOwnProperty(prop)) {
+                curcol[prop] = tmpcol[prop];
+            }
+          }
           this.collections.splice(i, 1);
           return;
         }

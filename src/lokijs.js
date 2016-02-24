@@ -1295,21 +1295,35 @@
      * @param {function} queryFunc - Optional javascript filter function to initialize resultset with.
      * @param {bool} firstOnly - Optional boolean used by collection.findOne().
      */
-    function Resultset(collection, queryObj, queryFunc, firstOnly) {
+    function Resultset(options) {
+      var default_options = {
+        collection: [],
+        queryObj: null,
+        queryFunc: null,
+        firstOnly: false
+      };
+      options = options || {};
+
+      for (var k in default_options) {
+        if (!options.hasOwnProperty(k)) {
+            options[k] = default_options[k];
+        }
+      }
+
       // retain reference to collection we are querying against
-      this.collection = collection;
+      this.collection = options.collection;
 
       // if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
-      this.searchIsChained = (!queryObj && !queryFunc);
+      this.searchIsChained = (!options.queryObj && !options.queryFunc);
       this.filteredrows = [];
       this.filterInitialized = false;
 
       // if user supplied initial queryObj or queryFunc, apply it
-      if (typeof (queryObj) !== "undefined" && queryObj !== null) {
-        return this.find(queryObj, firstOnly);
+      if (typeof (options.queryObj) !== "undefined" && options.queryObj !== null) {
+        return this.find(options.queryObj, options.firstOnly);
       }
-      if (typeof (queryFunc) !== "undefined" && queryFunc !== null) {
-        return this.where(queryFunc);
+      if (typeof (options.queryFunc) !== "undefined" && options.queryFunc !== null) {
+        return this.where(options.queryFunc);
       }
 
       // otherwise return unfiltered Resultset for future filtering
@@ -1352,7 +1366,9 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = new Resultset(this.collection, null, null);
+      var rscopy = new Resultset({
+        collection: this.collection
+      });
       rscopy.filteredrows = this.filteredrows.slice(0, qty);
       rscopy.filterInitialized = true;
       return rscopy;
@@ -1370,7 +1386,9 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = new Resultset(this.collection, null, null);
+      var rscopy = new Resultset({
+        collection: this.collection
+      });
       rscopy.filteredrows = this.filteredrows.slice(pos);
       rscopy.filterInitialized = true;
       return rscopy;
@@ -1382,7 +1400,9 @@
      * @returns {Resultset} Returns a copy of the resultset (set) but the underlying document references will be the same.
      */
     Resultset.prototype.copy = function () {
-      var result = new Resultset(this.collection, null, null);
+      var result = new Resultset({
+        collection: this.collection
+      });
 
       if (this.filteredrows.length > 0) {
         result.filteredrows = this.filteredrows.slice();
@@ -2384,7 +2404,9 @@
         this.options.minRebuildInterval = 1;
       }
 
-      this.resultset = new Resultset(collection);
+      this.resultset = new Resultset({
+        collection: collection
+      });
       this.resultdata = [];
       this.resultsdirty = false;
 
@@ -2428,7 +2450,9 @@
 
       this.resultdata = [];
       this.resultsdirty = true;
-      this.resultset = new Resultset(this.collection);
+      this.resultset = new Resultset({
+        collection: this.collection
+      });
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
@@ -2879,7 +2903,9 @@
 
       // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
       // mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
-      var evalResultset = new Resultset(this.collection);
+      var evalResultset = new Resultset({
+        collection: this.collection
+      });
       evalResultset.filteredrows = [objIndex];
       evalResultset.filterInitialized = true;
       var filter;
@@ -3756,7 +3782,10 @@
       if (typeof query === 'function') {
         list = this.data.filter(query);
       } else {
-        list = new Resultset(this, query);
+        list = new Resultset({
+          collection: this,
+          queryObj: query
+        });
       }
       this.remove(list);
     };
@@ -3892,7 +3921,11 @@
      */
     Collection.prototype.findOne = function (query) {
       // Instantiate Resultset and exec find op passing firstOnly = true param
-      var result = new Resultset(this, query, null, true);
+      var result = new Resultset({
+        collection: this,
+        queryObj: query,
+        firstOnly: true
+      });
       if (Array.isArray(result) && result.length === 0) {
         return null;
       } else {
@@ -3914,7 +3947,9 @@
      * @returns {Resultset} : (or data array if any map or join functions where called)
      */
     Collection.prototype.chain = function (transform, parameters) {
-      var rs = new Resultset(this, null, null);
+      var rs = new Resultset({
+        collection: this
+      });
 
       if (typeof transform === 'undefined') {
         return rs;
@@ -3932,7 +3967,10 @@
         query = 'getAll';
       }
 
-      var results = new Resultset(this, query, null);
+      var results = new Resultset({
+        collection: this,
+        queryObj: query
+      });
       if (!this.cloneObjects) {
         return results;
       }
@@ -4021,7 +4059,10 @@
      * Create view function - filter
      */
     Collection.prototype.where = function (fun) {
-      var results = new Resultset(this, null, fun);
+      var results = new Resultset({
+        collection: this,
+        queryFunc: fun
+      });
       if (!this.cloneObjects) {
         return results;
       }
@@ -4046,7 +4087,7 @@
      */
     Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
       // logic in Resultset class
-      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+      return new Resultset({collection: this}).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
     };
 
     /* ------ STAGING API -------- */

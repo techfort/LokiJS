@@ -1131,7 +1131,7 @@
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             }
           } else {
-            if (typeof (dbString) === "object") {
+            if (typeof (dbString) === "object" && dbString !== null) {
               self.loadJSONObject(dbString, options || {});
               cFun(dbString);
               self.emit('loaded', 'database ' + self.filename + ' loaded');

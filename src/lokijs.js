@@ -1114,18 +1114,20 @@
         },
         self = this;
 
-      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      // The persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
 
         this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
           if (typeof (dbString) === 'string') {
             var parseSuccess = false;
+
             try {
               self.loadJSON(dbString, options || {});
               parseSuccess = true;
             } catch (err) {
               cFun(err);
             }
+
             if (parseSuccess) {
               cFun(null);
               self.emit('loaded', 'database ' + self.filename + ' loaded');
@@ -1133,10 +1135,10 @@
           } else {
             if (typeof (dbString) === "object") {
               self.loadJSONObject(dbString, options || {});
-              cFun(dbString);
+              cFun(null);
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             } else {
-              cFun('Database not found');
+              cFun(new Error('Database not found'));
             }
           }
         });
@@ -1163,17 +1165,17 @@
         },
         self = this;
 
-      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      // The persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
-        // check if the adapter is requesting (and supports) a 'reference' mode export
+        // Check if the adapter is requesting (and supports) a 'reference' mode export
         if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
-          // filename may seem redundant but loadDatabase will need to expect this same filename
+          // Filename may seem redundant but loadDatabase will need to expect this same filename
           this.persistenceAdapter.exportDatabase(this.filename, this, function exportDatabaseCallback(err) {
             self.autosaveClearFlags();
             cFun(err);
           });
         }
-        // otherwise just pass the serialized database to adapter
+        // Otherwise just pass the serialized database to adapter
         else {
           this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
             self.autosaveClearFlags();

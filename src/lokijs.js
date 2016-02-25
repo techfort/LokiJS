@@ -1131,12 +1131,14 @@
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             }
           } else {
-            if (typeof (dbString) === "object" && dbString !== null) {
+            // if adapter has returned an js object (other than null or error) attempt to load from JSON object
+            if (typeof (dbString) === "object" && dbString !== null && !(dbString instanceof Error)) {
               self.loadJSONObject(dbString, options || {});
-              cFun(dbString);
+              cFun(null); // return null on success
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             } else {
-              cFun('Database not found');
+              // error from adapter (either null or instance of error), pass on to 'user' callback
+              cFun(dbstring);
             }
           }
         });

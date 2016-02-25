@@ -1138,7 +1138,7 @@
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             } else {
               // error from adapter (either null or instance of error), pass on to 'user' callback
-              cFun(dbstring);
+              cFun(dbString);
             }
           }
         });

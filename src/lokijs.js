@@ -74,6 +74,19 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
+
+      if (typeof(prop1) === "boolean" && typeof(prop2) === "boolean") {
+        if (equal) {
+          return prop1 === prop2;
+        } else {
+          if (prop1) {
+            return false;
+          } else {
+            return prop2;
+          }
+        }
+      }
+
       if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return true;
       }
@@ -94,6 +107,19 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
+
+      if (typeof(prop1) === "boolean" && typeof(prop2) === "boolean") {
+        if (equal) {
+          return prop1 === prop2;
+        } else {
+          if (prop1) {
+            return !prop2;
+          } else {
+            return false;
+          }
+        }
+      }
+
       if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
         return false;
       }

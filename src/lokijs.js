@@ -95,6 +95,17 @@
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
           return false;
         }
+
+        if (prop1 < prop2) {
+          return true;
+        }
+
+        if (prop1 > prop2) {
+          return false;
+        }
+
+        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+        return equal;
       }
 
       if (prop1 < prop2) {
@@ -131,6 +142,17 @@
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
           return true;
         }
+
+        if (prop1 > prop2) {
+          return true;
+        }
+
+        if (prop1 < prop2) {
+          return false;
+        }
+
+        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+        return equal;
       }
 
       if (prop1 > prop2) {

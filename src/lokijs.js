@@ -74,11 +74,38 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
-      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
-        return true;
-      }
-      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
-        return false;
+
+      // 'falsy' and Boolean handling
+      if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
+        if ((prop1 === true || prop1 === false) && (prop2 === true || prop2 === false)) {
+          if (equal) {
+            return prop1 === prop2;
+          } else {
+            if (prop1) {
+              return false;
+            } else {
+              return prop2;
+            }
+          }
+        }
+
+        if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
+          return true;
+        }
+        if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
+          return false;
+        }
+
+        if (prop1 < prop2) {
+          return true;
+        }
+
+        if (prop1 > prop2) {
+          return false;
+        }
+
+        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+        return equal;
       }
 
       if (prop1 < prop2) {
@@ -94,11 +121,38 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
-      if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
-        return false;
-      }
-      if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
-        return true;
+
+      // 'falsy' and Boolean handling
+      if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
+        if ((prop1 === true || prop1 === false) && (prop2 === true || prop2 === false)) {
+          if (equal) {
+            return prop1 === prop2;
+          } else {
+            if (prop1) {
+              return !prop2;
+            } else {
+              return false;
+            }
+          }
+        }
+
+        if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
+          return false;
+        }
+        if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
+          return true;
+        }
+
+        if (prop1 > prop2) {
+          return true;
+        }
+
+        if (prop1 < prop2) {
+          return false;
+        }
+
+        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
+        return equal;
       }
 
       if (prop1 > prop2) {

@@ -43,7 +43,7 @@ describe('Testing comparator helpers', function () {
     // values of different types.
     //
     // *Primitives: boolean, null, undefined, number, string
-    // *Complex: array, object, date
+    // *Complex: date
 
     expect(ops.$gt(false, false)).toEqual(false);
 
@@ -57,30 +57,72 @@ describe('Testing comparator helpers', function () {
 
     expect(ops.$gt(null, null)).toEqual(false);
 
-    //TODO: bug
-    //expect(ops.$gte(null, null)).toEqual(true);
+    expect(ops.$gte(null, null)).toEqual(true);
 
     expect(ops.$gt(undefined, undefined)).toEqual(false);
 
-    //TODO: bug
-    //expect(ops.$gte(undefined, undefined)).toEqual(true);
+    expect(ops.$gte(undefined, undefined)).toEqual(true);
 
     expect(ops.$gt(-1, 0)).toEqual(false);
 
-    //TODO: should be "false"? https://github.com/techfort/LokiJS/issues/363
-    //expect(ops.$gt(0, 0)).toEqual(false);
+    expect(ops.$gt(0, 0)).toEqual(false);
 
-    //TODO: bug
     expect(ops.$gte(0, 0)).toEqual(true);
 
     expect(ops.$gt(1, 0)).toEqual(true);
 
     expect(ops.$gt(new Date(2010), new Date(2015))).toEqual(false);
 
-    //TODO: bug
-    //expect(ops.$gt(new Date(2015), new Date(2015))).toEqual(false);
+    expect(ops.$gt(new Date(2015), new Date(2015))).toEqual(false);
 
     expect(ops.$gte(new Date(2015), new Date(2015))).toEqual(true);
+  });
+
+  it('$lt works as expected', function () {
+    //Testing strategy:
+    // First, only the same type data will be compared,
+    // both with and without the third optional arg.
+    // This includes all primitives*.
+    //
+    // Then complex* values will be compared.
+    //
+    // Finally, some tests will be ran trying to compare
+    // values of different types.
+    //
+    // *Primitives: boolean, null, undefined, number, string
+    // *Complex: date
+
+    expect(ops.$lt(false, false)).toEqual(false);
+
+    expect(ops.$lte(false, false)).toEqual(true);
+
+    expect(ops.$lt(true, false)).toEqual(false);
+
+    expect(ops.$lt(true, true)).toEqual(false);
+
+    expect(ops.$lte(true, true)).toEqual(true);
+
+    expect(ops.$lt(null, null)).toEqual(false);
+
+    expect(ops.$lte(null, null)).toEqual(true);
+
+    expect(ops.$lt(undefined, undefined)).toEqual(false);
+
+    expect(ops.$lte(undefined, undefined)).toEqual(true);
+
+    expect(ops.$lt(-1, 0)).toEqual(true);
+
+    expect(ops.$lt(0, 0)).toEqual(false);
+
+    expect(ops.$lte(0, 0)).toEqual(true);
+
+    expect(ops.$lt(1, 0)).toEqual(false);
+
+    expect(ops.$lt(new Date(2010), new Date(2015))).toEqual(true);
+
+    expect(ops.$lt(new Date(2015), new Date(2015))).toEqual(false);
+
+    expect(ops.$lte(new Date(2015), new Date(2015))).toEqual(true);
   });
 
 });

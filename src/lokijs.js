@@ -137,7 +137,7 @@
         }
 
         if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
-          return false;
+          return !!equal || false;
         }
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
           return true;

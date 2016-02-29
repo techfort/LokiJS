@@ -1295,9 +1295,8 @@
      * @param {function} queryFunc - Optional javascript filter function to initialize resultset with.
      * @param {bool} firstOnly - Optional boolean used by collection.findOne().
      */
-    function Resultset(options) {
+    function Resultset(collection, options) {
       var default_options = {
-        collection: [],
         queryObj: null,
         queryFunc: null,
         firstOnly: false
@@ -1311,7 +1310,7 @@
       }
 
       // retain reference to collection we are querying against
-      this.collection = options.collection;
+      this.collection = collection;
 
       // if chain() instantiates with null queryObj and queryFunc, so we will keep flag for later
       this.searchIsChained = (!options.queryObj && !options.queryFunc);
@@ -1366,9 +1365,7 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = new Resultset({
-        collection: this.collection
-      });
+      var rscopy = new Resultset(this.collection);
       rscopy.filteredrows = this.filteredrows.slice(0, qty);
       rscopy.filterInitialized = true;
       return rscopy;
@@ -1386,9 +1383,7 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var rscopy = new Resultset({
-        collection: this.collection
-      });
+      var rscopy = new Resultset(this.collection);
       rscopy.filteredrows = this.filteredrows.slice(pos);
       rscopy.filterInitialized = true;
       return rscopy;
@@ -1400,9 +1395,7 @@
      * @returns {Resultset} Returns a copy of the resultset (set) but the underlying document references will be the same.
      */
     Resultset.prototype.copy = function () {
-      var result = new Resultset({
-        collection: this.collection
-      });
+      var result = new Resultset(this.collection);
 
       if (this.filteredrows.length > 0) {
         result.filteredrows = this.filteredrows.slice();
@@ -2404,9 +2397,7 @@
         this.options.minRebuildInterval = 1;
       }
 
-      this.resultset = new Resultset({
-        collection: collection
-      });
+      this.resultset = new Resultset(collection);
       this.resultdata = [];
       this.resultsdirty = false;
 
@@ -2450,9 +2441,7 @@
 
       this.resultdata = [];
       this.resultsdirty = true;
-      this.resultset = new Resultset({
-        collection: this.collection
-      });
+      this.resultset = new Resultset(this.collection);
 
       if (this.sortFunction || this.sortCriteria) {
         this.sortDirty = true;
@@ -2903,9 +2892,7 @@
 
       // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
       // mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
-      var evalResultset = new Resultset({
-        collection: this.collection
-      });
+      var evalResultset = new Resultset(this.collection);
       evalResultset.filteredrows = [objIndex];
       evalResultset.filterInitialized = true;
       var filter;
@@ -3782,8 +3769,7 @@
       if (typeof query === 'function') {
         list = this.data.filter(query);
       } else {
-        list = new Resultset({
-          collection: this,
+        list = new Resultset(this, {
           queryObj: query
         });
       }
@@ -3921,8 +3907,7 @@
      */
     Collection.prototype.findOne = function (query) {
       // Instantiate Resultset and exec find op passing firstOnly = true param
-      var result = new Resultset({
-        collection: this,
+      var result = new Resultset(this, {
         queryObj: query,
         firstOnly: true
       });
@@ -3947,9 +3932,7 @@
      * @returns {Resultset} : (or data array if any map or join functions where called)
      */
     Collection.prototype.chain = function (transform, parameters) {
-      var rs = new Resultset({
-        collection: this
-      });
+      var rs = new Resultset(this);
 
       if (typeof transform === 'undefined') {
         return rs;
@@ -3967,8 +3950,7 @@
         query = 'getAll';
       }
 
-      var results = new Resultset({
-        collection: this,
+      var results = new Resultset(this, {
         queryObj: query
       });
       if (!this.cloneObjects) {
@@ -4059,8 +4041,7 @@
      * Create view function - filter
      */
     Collection.prototype.where = function (fun) {
-      var results = new Resultset({
-        collection: this,
+      var results = new Resultset(this, {
         queryFunc: fun
       });
       if (!this.cloneObjects) {
@@ -4087,7 +4068,7 @@
      */
     Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
       // logic in Resultset class
-      return new Resultset({collection: this}).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
     };
 
     /* ------ STAGING API -------- */

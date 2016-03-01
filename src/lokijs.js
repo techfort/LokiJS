@@ -313,10 +313,18 @@
       },
 
       $keyin: function (a, b) {
-        return b[a] !== undefined;
+        return a in b;
       },
 
       $nkeyin: function (a, b) {
+        return !(a in b);
+      },
+
+      $definedin: function (a, b) {
+        return b[a] !== undefined;
+      },
+
+      $undefinedin: function (a, b) {
         return b[a] === undefined;
       },
 

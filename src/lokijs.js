@@ -1291,9 +1291,10 @@
      *
      * @constructor
      * @param {Collection} collection - The collection which this Resultset will query against.
-     * @param {string} queryObj - Optional mongo-style query object to initialize resultset with.
-     * @param {function} queryFunc - Optional javascript filter function to initialize resultset with.
-     * @param {bool} firstOnly - Optional boolean used by collection.findOne().
+     * @param {Object} options - Object containing one or more options.
+     * @param {string} options.queryObj - Optional mongo-style query object to initialize resultset with.
+     * @param {function} options.queryFunc - Optional javascript filter function to initialize resultset with.
+     * @param {bool} options.firstOnly - Optional boolean used by collection.findOne().
      */
     function Resultset(collection, options) {
       var default_options = {

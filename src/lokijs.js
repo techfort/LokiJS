@@ -1297,18 +1297,11 @@
      * @param {bool} options.firstOnly - Optional boolean used by collection.findOne().
      */
     function Resultset(collection, options) {
-      var default_options = {
-        queryObj: null,
-        queryFunc: null,
-        firstOnly: false
-      };
       options = options || {};
 
-      for (var k in default_options) {
-        if (!options.hasOwnProperty(k)) {
-            options[k] = default_options[k];
-        }
-      }
+      options.queryObj = options.queryObj || null;
+      options.queryFunc = options.queryFunc || null;
+      options.firstOnly = options.firstOnly || false;
 
       // retain reference to collection we are querying against
       this.collection = collection;

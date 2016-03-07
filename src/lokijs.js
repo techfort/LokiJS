@@ -90,7 +90,7 @@
         }
 
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
-            return !!equal || false;
+            return equal;
         }
         if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
           return true;
@@ -105,7 +105,7 @@
         }
 
         // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-        return !!equal;
+        return equal;
       }
 
       if (prop1 < prop2) {
@@ -117,7 +117,7 @@
       }
 
       // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      return !!equal;
+      return equal;
     }
 
     function gtHelper(prop1, prop2, equal) {
@@ -137,7 +137,7 @@
         }
 
         if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
-          return !!equal || false;
+          return equal;
         }
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
           return true;
@@ -152,7 +152,7 @@
         }
 
         // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-        return !!equal;
+        return equal;
       }
 
       if (prop1 > prop2) {
@@ -164,7 +164,7 @@
       }
 
       // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      return !!equal;
+      return equal;
     }
 
     function sortHelper(prop1, prop2, desc) {
@@ -172,11 +172,11 @@
         return 0;
       }
 
-      if (ltHelper(prop1, prop2)) {
+      if (ltHelper(prop1, prop2, false)) {
         return (desc) ? (1) : (-1);
       }
 
-      if (gtHelper(prop1, prop2)) {
+      if (gtHelper(prop1, prop2, false)) {
         return (desc) ? (-1) : (1);
       }
 
@@ -282,14 +282,14 @@
       },
 
       $dteq: function(a, b) {
-        if (ltHelper(a, b)) {
+        if (ltHelper(a, b, false)) {
           return false;
         }
-        return !gtHelper(a, b);
+        return !gtHelper(a, b, false);
       },
 
       $gt: function (a, b) {
-        return gtHelper(a, b);
+        return gtHelper(a, b, false);
       },
 
       $gte: function (a, b) {
@@ -297,7 +297,7 @@
       },
 
       $lt: function (a, b) {
-        return ltHelper(a, b);
+        return ltHelper(a, b, false);
       },
 
       $lte: function (a, b) {
@@ -1678,12 +1678,12 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
-        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
           return [0, -1];
         }
         break;
       case '$dteq':
-        if (ltHelper(val, minVal) || gtHelper(val, maxVal)) {
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
           return [0, -1];
         }
         break;
@@ -1693,7 +1693,7 @@
         }
         break;
       case '$gte':
-        if (gtHelper(val, maxVal)) {
+        if (gtHelper(val, maxVal, false)) {
           return [0, -1];
         }
         break;
@@ -1701,12 +1701,12 @@
         if (ltHelper(val, minVal, true)) {
           return [0, -1];
         }
-        if (ltHelper(maxVal, val)) {
+        if (ltHelper(maxVal, val, false)) {
           return [0, rcd.length - 1];
         }
         break;
       case '$lte':
-        if (ltHelper(val, minVal)) {
+        if (ltHelper(val, minVal, false)) {
           return [0, -1];
         }
         if (ltHelper(maxVal, val, true)) {
@@ -1719,7 +1719,7 @@
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(rcd[index[mid]][prop], val)) {
+        if (ltHelper(rcd[index[mid]][prop], val, false)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -1735,7 +1735,7 @@
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(val, rcd[index[mid]][prop])) {
+        if (ltHelper(val, rcd[index[mid]][prop], false)) {
           max = mid;
         } else {
           min = mid + 1;
@@ -1776,14 +1776,14 @@
         return [ubound, rcd.length - 1];
 
       case '$gte':
-        if (ltHelper(lval, val)) {
+        if (ltHelper(lval, val, false)) {
           return [0, -1];
         }
 
         return [lbound, rcd.length - 1];
 
       case '$lt':
-        if (lbound === 0 && ltHelper(lval, val)) {
+        if (lbound === 0 && ltHelper(lval, val, false)) {
           return [0, 0];
         }
         return [0, lbound - 1];
@@ -1793,7 +1793,7 @@
           ubound--;
         }
 
-        if (ubound === 0 && ltHelper(uval, val)) {
+        if (ubound === 0 && ltHelper(uval, val, false)) {
           return [0, 0];
         }
         return [0, ubound];
@@ -3486,8 +3486,8 @@
             var objAp = data[a][p],
                 objBp = data[b][p];
             if (objAp !== objBp) {
-              if (ltHelper(objAp, objBp)) return -1;
-              if (gtHelper(objAp, objBp)) return 1;
+              if (ltHelper(objAp, objBp, false)) return -1;
+              if (gtHelper(objAp, objBp, false)) return 1;
             }
             return 0;
           };

@@ -4596,6 +4596,7 @@
     };
 
 
+    Loki.LokiOps = LokiOps;
     Loki.Collection = Collection;
     Loki.KeyValueStore = KeyValueStore;
     return Loki;

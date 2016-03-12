@@ -3925,7 +3925,7 @@
       while (data[min] < data[max]) {
         mid = (min + max) >> 1;
 
-        if (data[mid] < id) {
+        if (data[mid].$loki < id) {
           min = mid + 1;
         } else {
           max = mid;

@@ -3944,7 +3944,7 @@
 
     Collection.prototype.by = function (field, value) {
       var self;
-      if (!value) {
+      if (value === undefined) {
         self = this;
         return function (value) {
           return self.by(field, value);

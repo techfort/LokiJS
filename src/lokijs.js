@@ -752,11 +752,11 @@
      *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
      *
      * @param {Array} docs - document array to initialize the anonymous collection with
-     * @param {Array} indexesArray - (Optional) array of property names to index
+     * @param {object} options - configuration object, see Collection constructor
      * @returns {Collection} New collection which you can query or chain
      */
-    Loki.prototype.anonym = function (docs, indexesArray) {
-      var collection = new Collection('anonym', indexesArray);
+    Loki.prototype.anonym = function (docs, options) {
+      var collection = new Collection('anonym', options);
       collection.insert(docs);
 
       if(this.verbose)
@@ -3163,7 +3163,7 @@
       this.cloneObjects = options.hasOwnProperty('clone') ? options.clone : false;
 
       // default clone method (if enabled) is parse-stringify
-      this.cloneMethod = options.hasOwnProperty('clonemethod') ? options.cloneMethod : "parse-stringify";
+      this.cloneMethod = options.hasOwnProperty('cloneMethod') ? options.cloneMethod : "parse-stringify";
 
       // option to make event listeners async, default is sync
       this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;

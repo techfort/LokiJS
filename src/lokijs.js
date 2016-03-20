@@ -258,6 +258,7 @@
           return hasOwnProperty.call(a, b);
         };
       }
+      return null;
     }
 
     function doQueryOp(val, op) {
@@ -341,44 +342,19 @@
       },
 
       $containsAny: function (a, b) {
-        var checkFn;
-
-        if (!Array.isArray(b)) {
-          b = [b];
+        var checkFn = containsCheckFn(a);
+        if (checkFn !== null) {
+          return (Array.isArray(b)) ? (b.some(checkFn)) : (checkFn(b));
         }
-
-        checkFn = containsCheckFn(a) || function () {
-          return false;
-        };
-
-        return b.reduce(function (prev, curr) {
-          if (prev) {
-            return prev;
-          }
-
-          return checkFn(curr);
-        }, false);
+        return false;
       },
 
       $contains: function (a, b) {
-        var checkFn;
-
-        if (!Array.isArray(b)) {
-          b = [b];
+        var checkFn = containsCheckFn(a);
+        if (checkFn !== null) {
+          return (Array.isArray(b)) ? (b.every(checkFn)) : (checkFn(b));
         }
-
-        // return false on check if no check fn is found
-        checkFn = containsCheckFn(a) || function () {
-          return false;
-        };
-
-        return b.reduce(function (prev, curr) {
-          if (!prev) {
-            return prev;
-          }
-
-          return checkFn(curr);
-        }, true);
+        return false;
       },
 
       $type: function (a, b) {

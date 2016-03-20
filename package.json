@@ -32,13 +32,16 @@
     "postbuild": "karma start karma.build.conf.js --single-run",
     "prepublish": "npm run build",
     "clean": "rimraf build/* coverage/* node_modules",
-    "pour:beer": "echo New npm version published, one beer for you !"
+    "pour:beer": "echo New npm version published, one beer for you !",
+    "jsdoc": "./node_modules/.bin/jsdoc ./src/lokijs.js"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "admin@obeliskos.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave",
+      "email": "admin@obeliskos.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
@@ -47,6 +50,7 @@
   "devDependencies": {
     "istanbul": "^0.3.13",
     "jasmine": "^2.2.1",
+    "jsdoc": "^3.4.0",
     "jshint": "^2.6.3",
     "karma": "^0.12.31",
     "karma-cli": "0.0.4",

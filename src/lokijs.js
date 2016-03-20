@@ -475,7 +475,7 @@
      * constructor that inherits EventEmitter to emit events and trigger
      * listeners that have been added to the event through the on(event, callback) method
      *
-     * @constructor
+     * @constructor LokiEventEmitter
      */
     function LokiEventEmitter() {}
 
@@ -541,7 +541,7 @@
 
     /**
      * Loki: The main database class
-     * @constructor
+     * @constructor Loki
      * @param {string} filename - name of the file to be saved to
      * @param {object} options - config object
      */
@@ -1042,7 +1042,8 @@
      */
 
     /**
-     * constructor for fs
+     * @constructor LokiFsAdapter
+     * constructor for fs adapter
      */
     function LokiFsAdapter() {
       this.fs = require('fs');
@@ -1093,6 +1094,7 @@
 
 
     /**
+     * @constructor LokiLocalStorageAdapter
      * constructor for local storage
      */
     function LokiLocalStorageAdapter() {}
@@ -1333,7 +1335,7 @@
      *      .where(function(obj) { return obj.name === 'Toyota' })
      *      .data();
      *
-     * @constructor
+     * @constructor Resultset
      * @param {Collection} collection - The collection which this Resultset will query against.
      * @param {Object} options - Object containing one or more options.
      * @param {string} options.queryObj - Optional mongo-style query object to initialize resultset with.
@@ -2325,8 +2327,8 @@
      * eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
      * eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key
      * @param {Array} joinData - Data array to join to.
-     * @param {String,function} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
-     * @param {String,function} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
+     * @param {(string|function)} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
+     * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
      * @param {function} (optional) mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      */
@@ -2409,7 +2411,7 @@
      *    mydv.applyFind({ 'doors' : 4 });
      *    var results = mydv.data();
      *
-     * @constructor
+     * @constructor DynamicView
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
      * @param {object} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
@@ -2525,7 +2527,7 @@
      *    Unlike this dynamic view, the branched resultset will not be 'live' updated,
      *    so your branched query should be immediately resolved and not held for future evaluation.
      *
-     * @param {string, array} : Optional name of collection transform, or an array of transform steps
+     * @param {(string|array)} : Optional name of collection transform, or an array of transform steps
      * @param {object} : optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      */
@@ -3075,7 +3077,7 @@
 
 
     /**
-     * @constructor
+     * @constructor Collection
      * Collection class that handles documents of same type
      * @param {string} collection name
      * @param {array} array of property names to be indicized

@@ -481,6 +481,7 @@
 
     /**
      * @prop Events property is a hashmap, with each property being an array of callbacks
+     * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.events = {};
 
@@ -488,12 +489,14 @@
      * @prop asyncListeners - boolean determines whether or not the callbacks associated with each event
      * should happen in an async fashion or not
      * Default is false, which means events are synchronous
+     * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.asyncListeners = false;
 
     /**
      * @prop on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
      * @returns {int} the index of the callback in the array of listeners for a particular event
+     * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
       var event = this.events[eventName];
@@ -510,6 +513,7 @@
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
      * @param {string} eventName - the name of the event
      * @param {object} data - optional object passed with the event
+     * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.emit = function (eventName, data) {
       var self = this;
@@ -531,6 +535,7 @@
 
     /**
      * @prop remove() - removes the listener at position 'index' from the event 'eventName'
+     * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       if (this.events[eventName]) {
@@ -648,6 +653,7 @@
      *
      * @param {object} options - configuration options to apply to loki db object
      * @param {boolean} initialConfig - (optional) if this is a reconfig, don't pass this
+     * @memberof Loki
      */
     Loki.prototype.configureOptions = function (options, initialConfig) {
       var defaultPersistence = {
@@ -734,6 +740,7 @@
      * @param {Array} docs - document array to initialize the anonymous collection with
      * @param {object} options - configuration object, see Collection constructor
      * @returns {Collection} New collection which you can query or chain
+     * @memberof Loki
      */
     Loki.prototype.anonym = function (docs, options) {
       var collection = new Collection('anonym', options);
@@ -745,6 +752,12 @@
       return collection;
     };
 
+    /**
+     * Adds a collection to the database.
+     * @param {string} name - name of collection to add
+     * @param {object} options - (optional) options to configure collection with.
+     * @memberof Loki
+     */
     Loki.prototype.addCollection = function (name, options) {
       var collection = new Collection(name, options);
       this.collections.push(collection);
@@ -762,6 +775,12 @@
       this.collections.push(collection);
     };
 
+    /**
+     * Retrieves reference to a collection by name.
+     * @param {string} collectionName - name of collection to look up
+     * @returns {Collection} Reference to collection in database by that name, or null if not found
+     * @memberof Loki
+     */
     Loki.prototype.getCollection = function (collectionName) {
       var i,
         len = this.collections.length;
@@ -792,6 +811,11 @@
       return colls;
     };
 
+    /**
+     * Removes a collection from the database.
+     * @param {string} collectionName - name of collection to remove
+     * @memberof Loki
+     */
     Loki.prototype.removeCollection = function (collectionName) {
       var i,
         len = this.collections.length;
@@ -842,6 +866,7 @@
      *
      * @param {string} serializedDb - a serialized loki database string
      * @param {object} options - apply or override collection level settings
+     * @memberof Loki
      */
     Loki.prototype.loadJSON = function (serializedDb, options) {
       var dbObject;
@@ -859,6 +884,7 @@
      *
      * @param {object} dbObject - a serialized loki database string
      * @param {object} options - apply or override collection level settings
+     * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
       var i = 0,
@@ -960,6 +986,7 @@
     /**
      * close(callback) - emits the close event with an optional callback. Does not actually destroy the db
      * but useful from an API perspective
+     * @memberof Loki
      */
     Loki.prototype.close = function (callback) {
       // for autosave scenarios, we will let close perform final save (if dirty)
@@ -995,6 +1022,7 @@
      * @param {array} optional array of collection names. No arg means all collections are processed.
      * @returns {array} array of changes
      * @see private method createChange() in Collection
+     * @memberof Loki
      */
     Loki.prototype.generateChangesNotification = function (arrayOfCollectionNames) {
       function getCollName(coll) {
@@ -1014,6 +1042,7 @@
     /**
      * serializeChanges() - stringify changes for network transmission
      * @returns {string} string representation of the changes
+     * @memberof Loki
      */
     Loki.prototype.serializeChanges = function (collectionNamesArray) {
       return JSON.stringify(this.generateChangesNotification(collectionNamesArray));
@@ -1021,6 +1050,7 @@
 
     /**
      * clearChanges() - clears all the changes in all collections.
+     * @memberof Loki
      */
     Loki.prototype.clearChanges = function () {
       this.collections.forEach(function (coll) {
@@ -1042,8 +1072,8 @@
      */
 
     /**
+     * A loki persistence adapter which persists using node fs module
      * @constructor LokiFsAdapter
-     * constructor for fs adapter
      */
     function LokiFsAdapter() {
       this.fs = require('fs');
@@ -1053,6 +1083,7 @@
      * loadDatabase() - Load data from file, will throw an error if the file does not exist
      * @param {string} dbname - the filename of the database to load
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
       this.fs.readFile(dbname, {
@@ -1071,6 +1102,7 @@
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
       this.fs.writeFile(dbname, dbstring, callback);
@@ -1081,6 +1113,7 @@
      * file can't be deleted
      * @param {string} dbname - the filename of the database to delete
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
       this.fs.unlink(dbname, function deleteDatabaseCallback(err) {
@@ -1094,8 +1127,8 @@
 
 
     /**
+     * A loki persistence adapter which persists to web browser's local storage object
      * @constructor LokiLocalStorageAdapter
-     * constructor for local storage
      */
     function LokiLocalStorageAdapter() {}
 
@@ -1103,6 +1136,7 @@
      * loadDatabase() - Load data from localstorage
      * @param {string} dbname - the name of the database to load
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiLocalStorageAdapter
      */
     LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
       if (localStorageAvailable()) {
@@ -1117,6 +1151,7 @@
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiLocalStorageAdapter
      */
     LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
       if (localStorageAvailable()) {
@@ -1132,6 +1167,7 @@
      * can't be deleted
      * @param {string} dbname - the filename of the database to delete
      * @param {function} callback - the callback to handle the result
+     * @memberof LokiLocalStorageAdapter
      */
     LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
       if (localStorageAvailable()) {
@@ -1149,6 +1185,7 @@
      *
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
      */
     Loki.prototype.loadDatabase = function (options, callback) {
       var cFun = callback || function (err, data) {
@@ -1199,6 +1236,7 @@
      *
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
      */
     Loki.prototype.saveDatabase = function (callback) {
       var cFun = callback || function (err) {
@@ -1242,6 +1280,7 @@
      *
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
      */
     Loki.prototype.deleteDatabase = function (options, callback) {
       var cFun = callback || function (err, data) {
@@ -1398,6 +1437,7 @@
      *
      * @param {int} qty - The number of documents to return.
      * @returns {Resultset} Returns a copy of the resultset, limited by qty, for subsequent chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.limit = function (qty) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
@@ -1416,6 +1456,7 @@
      *
      * @param {int} pos - Number of documents to skip; all preceding documents are filtered out.
      * @returns {Resultset} Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.offset = function (pos) {
       // if this is chained resultset with no filters applied, we need to populate filteredrows first
@@ -1433,6 +1474,7 @@
      * copy() - To support reuse of resultset in branched query situations.
      *
      * @returns {Resultset} Returns a copy of the resultset (set) but the underlying document references will be the same.
+     * @memberof Resultset
      */
     Resultset.prototype.copy = function () {
       var result = new Resultset(this.collection);
@@ -1445,7 +1487,10 @@
       return result;
     };
 
-    // add branch() as alias of copy()
+    /**
+     * Alias of copy
+     * @memberof Resultset
+     */
     Resultset.prototype.branch = Resultset.prototype.copy;
 
     /**
@@ -1454,6 +1499,7 @@
      * @param transform {string|array} : (Optional) name of collection transform or raw transform array
      * @param parameters {object} : (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
+     * @memberof Resultset
      */
     Resultset.prototype.transform = function (transform, parameters) {
       var idx,
@@ -1537,6 +1583,7 @@
      *
      * @param {function} comparefun - A javascript compare function used for sorting.
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+     * @memberof Resultset
      */
     Resultset.prototype.sort = function (comparefun) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
@@ -1562,6 +1609,7 @@
      * @param {string} propname - name of property to sort by.
      * @param {bool} isdesc - (Optional) If true, the property will be sorted in descending order
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+     * @memberof Resultset
      */
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
@@ -1592,6 +1640,7 @@
      *
      * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
+     * @memberof Resultset
      */
     Resultset.prototype.compoundsort = function (properties) {
       if (properties.length === 0) {
@@ -1856,6 +1905,7 @@
      * @param {object} query - A mongo-style query object used for filtering current results.
      * @param {boolean} firstOnly - (Optional) Used by collection.findOne()
      * @returns {Resultset} this resultset for further chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.find = function (query, firstOnly) {
       if (this.collection.data.length === 0) {
@@ -2124,6 +2174,7 @@
      *
      * @param {function} fun - A javascript function used for filtering current results by.
      * @returns {Resultset} this resultset for further chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.where = function (fun) {
       var viewFunction,
@@ -2189,6 +2240,7 @@
      * count() - returns the number of documents in the resultset.
      *
      * @returns {number} The number of documents in the resultset.
+     * @memberof Resultset
      */
     Resultset.prototype.count = function () {
       if (this.searchIsChained && this.filterInitialized) {
@@ -2208,6 +2260,7 @@
      *        Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'
      *
      * @returns {array} Array of documents in the resultset
+     * @memberof Resultset
      */
     Resultset.prototype.data = function (options) {
       var result = [],
@@ -2263,6 +2316,7 @@
      *
      * @param {function} updateFunction - User supplied updateFunction(obj) will be executed for each document object.
      * @returns {Resultset} this resultset for further chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.update = function (updateFunction) {
 
@@ -2293,6 +2347,7 @@
      * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
      *
      * @returns {Resultset} this (empty) resultset for further chain ops.
+     * @memberof Resultset
      */
     Resultset.prototype.remove = function () {
 
@@ -2314,6 +2369,7 @@
      * @param {function} mapFunction - this function accepts a single document for you to transform and return
      * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
      * @returns The output of your reduceFunction
+     * @memberof Resultset
      */
     Resultset.prototype.mapReduce = function (mapFunction, reduceFunction) {
       try {
@@ -2331,6 +2387,7 @@
      * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
      * @param {function} (optional) mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
+     * @memberof Resultset
      */
     Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun) {
 
@@ -2471,6 +2528,7 @@
      *
      * @param {Object} options - (Optional) allows specification of 'removeWhereFilters' option
      * @returns {DynamicView} This dynamic view for further chained ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.rematerialize = function (options) {
       var fpl,
@@ -2530,6 +2588,7 @@
      * @param {(string|array)} : Optional name of collection transform, or an array of transform steps
      * @param {object} : optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
+     * @memberof DynamicView
      */
     DynamicView.prototype.branchResultset = function (transform, parameters) {
       var rs = this.resultset.branch();
@@ -2565,6 +2624,7 @@
     /**
      * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
      *     Existing options should be retained.
+     * @memberof DynamicView
      */
     DynamicView.prototype.removeFilters = function () {
       this.rebuildPending = false;
@@ -2589,6 +2649,7 @@
      *
      * @param {function} comparefun - a javascript compare function used for sorting
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applySort = function (comparefun) {
       this.sortFunction = comparefun;
@@ -2605,6 +2666,7 @@
      * @param {string} propname - Name of property by which to sort.
      * @param {boolean} isdesc - (Optional) If true, the sort will be in descending order.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
       this.sortCriteria = [
@@ -2625,6 +2687,7 @@
      *
      * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
      * @returns {DynamicView} Reference to this DynamicView, sorted, for future chain operations.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
       this.sortCriteria = criteria;
@@ -2742,6 +2805,7 @@
      * @param {object} filter - A filter object to add to the pipeline.
      *    The object is in the format { 'type': filter_type, 'val', filter_param, 'uid', optional_filter_id }
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applyFilter = function (filter) {
       var idx = this._indexOfFilterWithId(filter.uid);
@@ -2773,6 +2837,7 @@
      * @param {object} query - A mongo-style query object to apply to pipeline
      * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applyFind = function (query, uid) {
       this.applyFilter({
@@ -2789,6 +2854,7 @@
      * @param {function} fun - A javascript filter function to apply to pipeline
      * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.applyWhere = function (fun, uid) {
       this.applyFilter({
@@ -2804,6 +2870,7 @@
      *
      * @param {string|number} uid - The unique ID of the filter to be removed.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
+     * @memberof DynamicView
      */
     DynamicView.prototype.removeFilter = function (uid) {
       var idx = this._indexOfFilterWithId(uid);
@@ -2820,6 +2887,7 @@
      * count() - returns the number of documents representing the current DynamicView contents.
      *
      * @returns {number} The number of documents representing the current DynamicView contents.
+     * @memberof DynamicView
      */
     DynamicView.prototype.count = function () {
       if (this.options.persistent) {
@@ -2832,6 +2900,7 @@
      * data() - resolves and pending filtering and sorting, then returns document array as result.
      *
      * @returns {array} An array of documents representing the current DynamicView contents.
+     * @memberof DynamicView
      */
     DynamicView.prototype.data = function () {
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
@@ -3066,6 +3135,7 @@
      * @param {function} mapFunction - this function accepts a single document for you to transform and return
      * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
      * @returns The output of your reduceFunction
+     * @memberof DynamicView
      */
     DynamicView.prototype.mapReduce = function (mapFunction, reduceFunction) {
       try {
@@ -3077,8 +3147,8 @@
 
 
     /**
-     * @constructor Collection
      * Collection class that handles documents of same type
+     * @constructor Collection
      * @param {string} collection name
      * @param {array} array of property names to be indicized
      * @param {object} configuration object
@@ -3354,6 +3424,12 @@
       Object.unobserve(object, this.observerCallback);
     };
 
+    /**
+     * Adds a named collection transform to the collection
+     * @param {string} name - name to associate with transform
+     * @param {object} transform - a transformation object to save into collection
+     * @memberof Collection
+     */
     Collection.prototype.addTransform = function (name, transform) {
       if (this.transforms.hasOwnProperty(name)) {
         throw new Error("a transform by that name already exists");
@@ -3362,10 +3438,21 @@
       this.transforms[name] = transform;
     };
 
+    /**
+     * Updates a named collection transform to the collection
+     * @param {string} name - name to associate with transform
+     * @param {object} transform - a transformation object to save into collection
+     * @memberof Collection
+     */
     Collection.prototype.setTransform = function (name, transform) {
       this.transforms[name] = transform;
     };
 
+    /**
+     * Removes a named collection transform from the collection
+     * @param {string} name - name of collection transform to remove
+     * @memberof Collection
+     */
     Collection.prototype.removeTransform = function (name) {
       delete this.transforms[name];
     };
@@ -3440,6 +3527,7 @@
 
     /**
      * Ensure binary index on a certain field
+     * @memberof Collection
      */
     Collection.prototype.ensureIndex = function (property, force) {
       // optional parameter to force rebuild whether flagged as dirty or not
@@ -3522,6 +3610,11 @@
         this.binaryIndices[index].dirty = true;
     };
 
+    /**
+     * Quickly determine number of documents in collection (or query)
+     * @param {object} query - (optional) query object to count results of
+     * @memberof Collection
+     */
     Collection.prototype.count = function (query) {
       if (!query) {
         return this.data.length;
@@ -3553,7 +3646,10 @@
     };
 
     /**
-     * Each collection maintains a list of DynamicViews associated with it
+     * Add a dynamic view to the collection
+     * @param {string} name - name of dynamic view to add
+     * @param {object} options - (optional) options to configure dynamic view with
+     * @memberof Collection
      **/
 
     Collection.prototype.addDynamicView = function (name, options) {
@@ -3563,6 +3659,11 @@
       return dv;
     };
 
+    /**
+     * Remove a dynamic view from the collection
+     * @param {string} name - name of dynamic view to remove
+     * @memberof Collection
+     **/
     Collection.prototype.removeDynamicView = function (name) {
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
         if (this.DynamicViews[idx].name === name) {
@@ -3571,6 +3672,11 @@
       }
     };
 
+    /**
+     * Look up dynamic view reference from within the collection
+     * @param {string} name - name of dynamic view to retrieve reference of
+     * @memberof Collection
+     **/
     Collection.prototype.getDynamicView = function (name) {
       for (var idx = 0; idx < this.DynamicViews.length; idx++) {
         if (this.DynamicViews[idx].name === name) {
@@ -3584,6 +3690,9 @@
     /**
      * find and update: pass a filtering function to select elements to be updated
      * and apply the updatefunctino to those elements iteratively
+     * @param {function} filterFunction - filter function whose results will execute update
+     * @param {function} updateFunction - update function to run against filtered documents
+     * @memberof Collection
      */
     Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
       var results = this.where(filterFunction),
@@ -3605,6 +3714,7 @@
      * generate document method - ensure object(s) have meta properties, clone it if necessary, etc.
      * @param {object} doc: the document to be inserted (or an array of objects)
      * @returns document or documents (if passed an array of objects)
+     * @memberof Collection
      */
     Collection.prototype.insert = function (doc) {
       if (!Array.isArray(doc)) {
@@ -3628,6 +3738,7 @@
      * generate document method - ensure object has meta properties, clone it if necessary, etc.
      * @param {object} the document to be inserted
      * @returns document or 'undefined' if there was a problem inserting it
+     * @memberof Collection
      */
     Collection.prototype.insertOne = function (doc) {
       var err = null;
@@ -3662,6 +3773,10 @@
       return obj;
     };
 
+    /**
+     * Empties the collection.
+     * @memberof Collection
+     */
     Collection.prototype.clear = function () {
       this.data = [];
       this.idIndex = [];
@@ -3675,7 +3790,9 @@
     };
 
     /**
-     * Update method
+     * Update and notify collection that a document has changed.
+     * @param {object} doc - document to update within the collection
+     * @memberof Collection
      */
     Collection.prototype.update = function (doc) {
       this.flagBinaryIndexesDirty();
@@ -3698,8 +3815,13 @@
         var arr = this.get(doc.$loki, true),
           obj,
           position,
+          cloneObj,
           self = this;
-
+        
+        if (this.cloneObjects) {
+          cloneObj = clone(obj, this.cloneMethod);
+        }
+        
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
@@ -3731,7 +3853,7 @@
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        this.emit('update', doc);
+        this.emit('update', doc, cloneObj);
         return doc;
       } catch (err) {
         this.rollback();
@@ -3821,7 +3943,9 @@
     };
 
     /**
-     * delete wrapped
+     * Remove a document from the collection
+     * @param {object} doc - document to remove from collection
+     * @memberof Collection
      */
     Collection.prototype.remove = function (doc) {
       if (typeof doc === 'number') {
@@ -3890,6 +4014,7 @@
 
     /**
      * Get by Id - faster than other methods because of the searching algorithm
+     * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {
       var retpos = returnPosition || false,
@@ -3924,6 +4049,10 @@
 
     };
 
+    /**
+     * Retrieve doc by Unique index
+     * @memberof Collection
+     */
     Collection.prototype.by = function (field, value) {
       var self;
       if (value === undefined) {
@@ -3944,6 +4073,7 @@
 
     /**
      * Find one object by index property, by property equal to value
+     * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
       // Instantiate Resultset and exec find op passing firstOnly = true param
@@ -3970,6 +4100,7 @@
      * @param {array} transform : Ordered array of transform step objects similar to chain
      * @param {object} parameters: Object containing properties representing parameters to substitute
      * @returns {Resultset} : (or data array if any map or join functions where called)
+     * @memberof Collection
      */
     Collection.prototype.chain = function (transform, parameters) {
       var rs = new Resultset(this);
@@ -3984,6 +4115,7 @@
     /**
      * Find method, api is similar to mongodb except for now it only supports one search parameter.
      * for more complex queries use view() and storeView()
+     * @memberof Collection
      */
     Collection.prototype.find = function (query) {
       if (typeof (query) === 'undefined') {
@@ -4079,6 +4211,7 @@
 
     /**
      * Create view function - filter
+     * @memberof Collection
      */
     Collection.prototype.where = function (fun) {
       var results = new Resultset(this, {
@@ -4094,6 +4227,7 @@
 
     /**
      * Map Reduce
+     * @memberof Collection
      */
     Collection.prototype.mapReduce = function (mapFunction, reduceFunction) {
       try {
@@ -4105,6 +4239,7 @@
 
     /**
      * eqJoin - Join two collections on specified properties
+     * @memberof Collection
      */
     Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
       // logic in Resultset class
@@ -4120,6 +4255,7 @@
 
     /**
      * create a stage and/or retrieve it
+     * @memberof Collection
      */
     Collection.prototype.getStage = function (name) {
       if (!this.stages[name]) {
@@ -4134,6 +4270,7 @@
 
     /**
      * create a copy of an object and insert it into a stage
+     * @memberof Collection
      */
     Collection.prototype.stage = function (stageName, obj) {
       var copy = JSON.parse(JSON.stringify(obj));
@@ -4144,6 +4281,7 @@
     /**
      * re-attach all objects to the original collection, so indexes and views can be rebuilt
      * then create a message to be inserted in the commitlog
+     * @memberof Collection
      */
     Collection.prototype.commitStage = function (stageName, message) {
       var stage = this.getStage(stageName),
@@ -4166,6 +4304,9 @@
       return;
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.extract = function (field) {
       var i = 0,
         len = this.data.length,
@@ -4177,14 +4318,23 @@
       return result;
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.max = function (field) {
       return Math.max.apply(null, this.extract(field));
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.min = function (field) {
       return Math.min.apply(null, this.extract(field));
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.maxRecord = function (field) {
       var i = 0,
         len = this.data.length,
@@ -4210,6 +4360,9 @@
       return result;
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.minRecord = function (field) {
       var i = 0,
         len = this.data.length,
@@ -4235,20 +4388,32 @@
       return result;
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.extractNumerical = function (field) {
       return this.extract(field).map(parseBase10).filter(Number).filter(function (n) {
         return !(isNaN(n));
       });
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.avg = function (field) {
       return average(this.extractNumerical(field));
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.stdDev = function (field) {
       return standardDeviation(this.extractNumerical(field));
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.mode = function (field) {
       var dict = {},
         data = this.extract(field);
@@ -4274,6 +4439,9 @@
       return mode;
     };
 
+    /**
+     * @memberof Collection
+     */
     Collection.prototype.median = function (field) {
       var values = this.extractNumerical(field);
       values.sort(sub);
@@ -4310,16 +4478,25 @@
       return a - b;
     }
 
+    /**
+     * @memberof Collection
+     */
     function median(values) {
       values.sort(sub);
       var half = Math.floor(values.length / 2);
       return (values.length % 2) ? values[half] : ((values[half - 1] + values[half]) / 2.0);
     }
 
+    /**
+     * @memberof Collection
+     */
     function average(array) {
       return (array.reduce(add, 0)) / array.length;
     }
 
+    /**
+     * @memberof Collection
+     */
     function standardDeviation(values) {
       var avg = average(values);
       var squareDiffs = values.map(function (value) {

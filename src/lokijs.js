@@ -408,7 +408,7 @@
       },
 
       $where: function (a, b) {
-        return b(a);
+        return b(a) === true;
       },
 
       // field-level logical operators

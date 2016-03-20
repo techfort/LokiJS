@@ -407,6 +407,10 @@
         return false;
       },
 
+      $where: function (a, b) {
+        return b(a);
+      },
+
       // field-level logical operators
       // a is the value in the collection
       // b is the nested query operation (for '$not')

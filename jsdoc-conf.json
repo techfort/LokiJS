@@ -1,0 +1,16 @@
+{
+	"tags": {
+		"allowUnknownTags": true,
+		"dictionaries": ["jsdoc","closure"]
+	},
+	"source": {
+		"include": ["src/lokijs.js", "src/loki-indexed-adapter.js"],
+		"includePattern": ".+\\.js(doc)?$",
+		"excludePattern": "(^|\\/|\\\\)_"
+	},
+	"plugins": [],
+	"templates": {
+		"cleverlinks": false,
+		"monospaceLinks": false
+	}
+}

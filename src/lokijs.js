@@ -494,7 +494,9 @@
     LokiEventEmitter.prototype.asyncListeners = false;
 
     /**
-     * @prop on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+     * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+     * @param {string} eventName - the name of the event to listen to
+     * @param {function} listener - callback function of listener to attach
      * @returns {int} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
@@ -508,7 +510,7 @@
     };
 
     /**
-     * @propt emit(eventName, data) - emits a particular event
+     * emit(eventName, data) - emits a particular event
      * with the option of passing optional parameters which are going to be processed by the callback
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
      * @param {string} eventName - the name of the event
@@ -534,7 +536,9 @@
     };
 
     /**
-     * @prop remove() - removes the listener at position 'index' from the event 'eventName'
+     * removeListener() - removes the listener at position 'index' from the event 'eventName'
+     * @param {string} eventName - the name of the event which the listener is attached to
+     * @param {function} listener - the listener callback function to remove from emitter
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
@@ -735,7 +739,8 @@
      * anonym() - shorthand method for quickly creating and populating an anonymous collection.
      *    This collection is not referenced internally so upon losing scope it will be garbage collected.
      *
-     *    Example : var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
+     * @example
+     * var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
      *
      * @param {Array} docs - document array to initialize the anonymous collection with
      * @param {object} options - configuration object, see Collection constructor
@@ -1368,7 +1373,7 @@
      * Resultset class allowing chainable queries.  Intended to be instanced internally.
      *    Collection.find(), Collection.where(), and Collection.chain() instantiate this.
      *
-     *    Example:
+     * @example
      *    mycollection.chain()
      *      .find({ 'doors' : 4 })
      *      .where(function(obj) { return obj.name === 'Toyota' })
@@ -1574,7 +1579,7 @@
 
     /**
      * sort() - User supplied compare function is provided two documents to compare. (chainable)
-     *    Example:
+     * @example
      *    rslt.sort(function(obj1, obj2) {
      *      if (obj1.name === obj2.name) return 0;
      *      if (obj1.name > obj2.name) return 1;
@@ -1635,8 +1640,11 @@
 
     /**
      * compoundsort() - Allows sorting a resultset based on multiple columns.
-     *    Example : rs.compoundsort(['age', 'name']); to sort by age and then name (both ascending)
-     *    Example : rs.compoundsort(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
+     * @example
+     * // to sort by age and then name (both ascending)
+     * rs.compoundsort(['age', 'name']);
+     * // to sort by age (ascending) and then by name (descending)
+     * rs.compoundsort(['age', ['name', true]);
      *
      * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
@@ -2252,11 +2260,10 @@
     /**
      * data() - Terminates the chain and returns array of filtered documents
      *
-     * @param options {object} : allows specifying 'forceClones' and 'forceCloneMethod' options.
-     *    options :
-     *      forceClones {boolean} : Allows forcing the return of cloned objects even when
+     * @param {object} options : allows specifying 'forceClones' and 'forceCloneMethod' options.
+     * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
      *        the collection is not configured for clone object.
-     *      forceCloneMethod {string} : Allows overriding the default or collection specified cloning method.
+     * @param {string} options.forceCloneMethod - Allows overriding the default or collection specified cloning method.
      *        Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'
      *
      * @returns {array} Array of documents in the resultset
@@ -2462,16 +2469,19 @@
      *    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
      *    whenever documents are add/updated/removed so it can remain up-to-date. (chainable)
      *
-     *    Examples:
-     *    var mydv = mycollection.addDynamicView('test');  // default is non-persistent
-     *    mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
-     *    mydv.applyFind({ 'doors' : 4 });
-     *    var results = mydv.data();
+     * @example
+     * var mydv = mycollection.addDynamicView('test');  // default is non-persistent
+     * mydv.applyFind({ 'doors' : 4 });
+     * mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
+     * var results = mydv.data();
      *
      * @constructor DynamicView
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
      * @param {object} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
+     * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
+     * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
+     * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
      */
     function DynamicView(collection, name, options) {
       this.collection = collection;
@@ -2585,8 +2595,8 @@
      *    Unlike this dynamic view, the branched resultset will not be 'live' updated,
      *    so your branched query should be immediately resolved and not held for future evaluation.
      *
-     * @param {(string|array)} : Optional name of collection transform, or an array of transform steps
-     * @param {object} : optional parameters (if optional transform requires them)
+     * @param {(string|array)} transform - Optional name of collection transform, or an array of transform steps
+     * @param {object} parameters - optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      * @memberof DynamicView
      */
@@ -2681,9 +2691,13 @@
 
     /**
      * applySortCriteria() - Allows sorting a resultset based on multiple columns.
-     *    Example : dv.applySortCriteria(['age', 'name']); to sort by age and then name (both ascending)
-     *    Example : dv.applySortCriteria(['age', ['name', true]); to sort by age (ascending) and then by name (descending)
-     *    Example : dv.applySortCriteria(['age', true], ['name', true]); to sort by age (descending) and then by name (descending)
+     * @example
+     * // to sort by age and then name (both ascending)
+     * dv.applySortCriteria(['age', 'name']);
+     * // to sort by age (ascending) and then by name (descending)
+     * dv.applySortCriteria(['age', ['name', true]);
+     * // to sort by age (descending) and then by name (descending)
+     * dv.applySortCriteria(['age', true], ['name', true]);
      *
      * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
      * @returns {DynamicView} Reference to this DynamicView, sorted, for future chain operations.

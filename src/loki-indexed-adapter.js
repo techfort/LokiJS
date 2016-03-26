@@ -59,10 +59,11 @@
      * IndexedAdapter - Loki persistence adapter class for indexedDb.
      *     This class fulfills abstract adapter interface which can be applied to other storage methods
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
+     * @constructor LokiIndexedAdapter
      *
      * @param {string} appname - Application name context can be used to distinguish subdomains or just 'loki'
      */
-    function IndexedAdapter(appname)
+    function LokiIndexedAdapter(appname)
     {
       this.app = 'loki';
 
@@ -83,8 +84,9 @@
      * checkAvailability - used to check if adapter is available
      *
      * @returns {boolean} true if indexeddb is available, false if not.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.checkAvailability = function()
+    LokiIndexedAdapter.prototype.checkAvailability = function()
     {
       if (typeof window !== 'undefined' && window.indexedDB) return true;
 
@@ -96,8 +98,9 @@
      *
      * @param {string} dbname - the name of the database to retrieve.
      * @param {function} callback - callback should accept string param containing serialized db string.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.loadDatabase = function(dbname, callback)
+    LokiIndexedAdapter.prototype.loadDatabase = function(dbname, callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -130,7 +133,7 @@
     };
 
     // alias
-    IndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
+    LokiIndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
 
     /**
      * saveDatabase() - Saves a serialized db to the catalog.
@@ -138,8 +141,9 @@
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {string} dbstring - the serialized db string to save.
      * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.saveDatabase = function(dbname, dbstring, callback)
+    LokiIndexedAdapter.prototype.saveDatabase = function(dbname, dbstring, callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -170,14 +174,15 @@
     };
 
     // alias
-    IndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
+    LokiIndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
 
     /**
      * deleteDatabase() - Deletes a serialized db from the catalog.
      *
      * @param {string} dbname - the name of the database to delete from the catalog.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.deleteDatabase = function(dbname)
+    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname)
     {
       var appName = this.app;
       var adapter = this;
@@ -204,14 +209,15 @@
     };
 
     // alias
-    IndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
+    LokiIndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
 
     /**
      * getDatabaseList() - Retrieves object array of catalog entries for current app.
      *
      * @param {function} callback - should accept array of database names in the catalog for current app.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.getDatabaseList = function(callback)
+    LokiIndexedAdapter.prototype.getDatabaseList = function(callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -248,14 +254,15 @@
     };
 
     // alias
-    IndexedAdapter.prototype.getKeyList = IndexedAdapter.prototype.getDatabaseList;
+    LokiIndexedAdapter.prototype.getKeyList = LokiIndexedAdapter.prototype.getDatabaseList;
 
     /**
      * getCatalogSummary - allows retrieval of list of all keys in catalog along with size
      *
      * @param {function} callback - (Optional) callback to accept result array.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.getCatalogSummary = function(callback)
+    LokiIndexedAdapter.prototype.getCatalogSummary = function(callback)
     {
       var appName = this.app;
       var adapter = this;

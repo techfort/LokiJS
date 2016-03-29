@@ -3590,8 +3590,10 @@
         if (this.uniqueNames.indexOf(field) == -1) {
           this.uniqueNames.push(field);
         }
-        this.constraints.unique[field] = index = new UniqueIndex(field);
       }
+
+      // if index already existed, (re)loading it will likely cause collisions, rebuild always
+      this.constraints.unique[field] = index = new UniqueIndex(field);
       this.data.forEach(function (obj) {
         index.set(obj);
       });

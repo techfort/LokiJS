@@ -56,7 +56,7 @@
   return (function() {
 
     /**
-     * IndexedAdapter - Loki persistence adapter class for indexedDb.
+     * LokiIndexedAdapter - Loki persistence adapter class for indexedDb.
      *     This class fulfills abstract adapter interface which can be applied to other storage methods
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
      * @constructor LokiIndexedAdapter
@@ -133,7 +133,7 @@
     };
 
     // alias
-    LokiIndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
+    LokiIndexedAdapter.prototype.loadKey = LokiIndexedAdapter.prototype.loadDatabase;
 
     /**
      * saveDatabase() - Saves a serialized db to the catalog.
@@ -174,7 +174,7 @@
     };
 
     // alias
-    LokiIndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
+    LokiIndexedAdapter.prototype.saveKey = LokiIndexedAdapter.prototype.saveDatabase;
 
     /**
      * deleteDatabase() - Deletes a serialized db from the catalog.
@@ -209,7 +209,7 @@
     };
 
     // alias
-    LokiIndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
+    LokiIndexedAdapter.prototype.deleteKey = LokiIndexedAdapter.prototype.deleteDatabase;
 
     /**
      * getDatabaseList() - Retrieves object array of catalog entries for current app.
@@ -584,7 +584,7 @@
 
     };
 
-    return IndexedAdapter;
+    return LokiIndexedAdapter;
 
   }());
 }));

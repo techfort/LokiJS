@@ -74,6 +74,7 @@
 
     // Sort helper that support null and undefined
     function ltHelper(prop1, prop2, equal) {
+      var cv1, cv2;
 
       // 'falsy' and Boolean handling
       if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
@@ -95,17 +96,6 @@
         if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
           return true;
         }
-
-        if (prop1 < prop2) {
-          return true;
-        }
-
-        if (prop1 > prop2) {
-          return false;
-        }
-
-        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-        return equal;
       }
 
       if (prop1 === prop2) {
@@ -121,8 +111,8 @@
       }
 
       // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
-      var cv1 = prop1.toString();
-      var cv2 = prop2.toString();
+      cv1 = prop1.toString();
+      cv2 = prop2.toString();
 
       if (cv1 == cv2) {
         return equal;
@@ -136,6 +126,7 @@
     }
 
     function gtHelper(prop1, prop2, equal) {
+      var cv1, cv2;
 
       // 'falsy' and Boolean handling
       if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
@@ -157,17 +148,6 @@
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
           return true;
         }
-
-        if (prop1 > prop2) {
-          return true;
-        }
-
-        if (prop1 < prop2) {
-          return false;
-        }
-
-        // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-        return equal;
       }
 
       if (prop1 === prop2) {
@@ -183,8 +163,8 @@
       }
 
       // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
-      var cv1 = prop1.toString();
-      var cv2 = prop2.toString();
+      cv1 = prop1.toString();
+      cv2 = prop2.toString();
 
       if (cv1 == cv2) {
         return equal;

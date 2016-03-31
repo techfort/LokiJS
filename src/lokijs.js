@@ -108,6 +108,10 @@
         return equal;
       }
 
+      if (prop1 === prop2) {
+        return equal;
+      }
+
       if (prop1 < prop2) {
         return true;
       }
@@ -116,8 +120,19 @@
         return false;
       }
 
-      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      return equal;
+      // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
+      var cv1 = prop1.toString();
+      var cv2 = prop2.toString();
+
+      if (cv1 == cv2) {
+        return equal;
+      }
+
+      if (cv1 < cv2) {
+        return true;
+      }
+
+      return false;
     }
 
     function gtHelper(prop1, prop2, equal) {
@@ -155,6 +170,10 @@
         return equal;
       }
 
+      if (prop1 === prop2) {
+        return equal;
+      }
+
       if (prop1 > prop2) {
         return true;
       }
@@ -163,8 +182,19 @@
         return false;
       }
 
-      // not lt and and not gt so equality assumed-- this ordering of tests is date compatible
-      return equal;
+      // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
+      var cv1 = prop1.toString();
+      var cv2 = prop2.toString();
+
+      if (cv1 == cv2) {
+        return equal;
+      }
+
+      if (cv1 > cv2) {
+        return true;
+      }
+
+      return false;
     }
 
     function sortHelper(prop1, prop2, desc) {
@@ -3581,6 +3611,17 @@
       index.dirty = false;
 
       this.dirty = true; // for autosave scenarios
+    };
+
+    Collection.prototype.getSequencedIndexValues = function(property) {
+      var idx, idxvals = this.binaryIndices[property].values;
+      var result = "";
+
+      for(idx=0; idx<idxvals.length; idx++) {
+        result += " [" + idx + "] " + this.data[idxvals[idx]][property];
+      }
+
+      return result;
     };
 
     Collection.prototype.ensureUniqueIndex = function (field) {

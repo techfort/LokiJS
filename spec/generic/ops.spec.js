@@ -88,3 +88,26 @@ describe('Testing operators', function () {
     expect(res.data()[0].value).toEqual('s');
   });
 });
+
+describe("Individual operator tests", function() {
+
+  var ops;
+  beforeEach(function() {
+    ops = loki.LokiOps;
+  });
+
+  it('$ne op works as expected', function () {
+    expect(ops.$ne(15, 20)).toEqual(true);
+
+    expect(ops.$ne(15, 15.0)).toEqual(false);
+
+    expect(ops.$ne(0, "0")).toEqual(true);
+
+    expect(ops.$ne(NaN, NaN)).toEqual(false);
+
+    expect(ops.$ne(Infinity, Infinity)).toEqual(false);
+
+    expect(ops.$ne(Infinity, -Infinity)).toEqual(true);
+  });
+
+});

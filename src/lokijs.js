@@ -72,7 +72,11 @@
       }
     };
 
-    // Sort helper that support null and undefined
+    /** Helper function for determining 'less-than' conditions for ops, sorting, and binary indices.
+     *     In the future we might want $lt and $gt ops to use their own functionality/helper.
+     *     Since binary indices on a property might need to index [12, NaN, new Date(), Infinity], we
+     *     need this function (as well as gtHelper) to always ensure one value is LT, GT, or EQ to another.
+     */
     function ltHelper(prop1, prop2, equal) {
       var cv1, cv2;
 
@@ -289,6 +293,18 @@
       },
 
       $ne: function (a, b) {
+        if (isNaN(b)) {
+          return !isNaN(a);
+        }
+
+        if (b === Number.POSITIVE_INFINITY) {
+          return (a !== Number.POSITIVE_INFINITY);
+        }
+
+        if (b === Number.NEGATIVE_INFINITY) {
+          return (a !== Number.NEGATIVE_INFINITY);
+        }
+
         return a !== b;
       },
 

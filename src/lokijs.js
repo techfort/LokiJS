@@ -498,13 +498,13 @@
     function LokiEventEmitter() {}
 
     /**
-     * @prop Events property is a hashmap, with each property being an array of callbacks
+     * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.events = {};
 
     /**
-     * @prop asyncListeners - boolean determines whether or not the callbacks associated with each event
+     * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event
      * should happen in an async fashion or not
      * Default is false, which means events are synchronous
      * @memberof LokiEventEmitter
@@ -1533,9 +1533,9 @@
     /**
      * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
-     * @param transform {string|array} : (Optional) name of collection transform or raw transform array
-     * @param parameters {object} : (Optional) object property hash of parameters, if the transform requires them.
-     * @returns {Resultset} : either (this) resultset or a clone of of this resultset (depending on steps)
+     * @param transform {string|array} - (Optional) name of collection transform or raw transform array
+     * @param parameters {object} - (Optional) object property hash of parameters, if the transform requires them.
+     * @returns {Resultset} - either (this) resultset or a clone of of this resultset (depending on steps)
      * @memberof Resultset
      */
     Resultset.prototype.transform = function (transform, parameters) {
@@ -2292,7 +2292,7 @@
     /**
      * data() - Terminates the chain and returns array of filtered documents
      *
-     * @param {object} options : allows specifying 'forceClones' and 'forceCloneMethod' options.
+     * @param {object} options - allows specifying 'forceClones' and 'forceCloneMethod' options.
      * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
      *        the collection is not configured for clone object.
      * @param {string} options.forceCloneMethod - Allows overriding the default or collection specified cloning method.
@@ -3198,9 +3198,9 @@
      * @constructor Collection
      * @implements LokiEventEmitter
      * @param {string} name - collection name
-     * @param {object|array} options - configuration object or array of property names to be indicized
+     * @param {array|object} options - array of property names to be indicized OR a configuration object
      * @param {array} options.unique - array of property names to define unique constraints for
-     * @param {object} options.indices - array property names to define binary indexes for
+     * @param {array} options.indices - array property names to define binary indexes for
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
@@ -3780,7 +3780,7 @@
 
     /**
      * generate document method - ensure object(s) have meta properties, clone it if necessary, etc.
-     * @param {object} doc: the document to be inserted (or an array of objects)
+     * @param {object} doc - the document to be inserted (or an array of objects)
      * @returns document or documents (if passed an array of objects)
      * @memberof Collection
      */
@@ -3804,7 +3804,7 @@
 
     /**
      * generate document method - ensure object has meta properties, clone it if necessary, etc.
-     * @param {object} the document to be inserted
+     * @param {object} doc - the document to be inserted
      * @returns document or 'undefined' if there was a problem inserting it
      * @memberof Collection
      */
@@ -4160,9 +4160,9 @@
      * Chain method, used for beginning a series of chained find() and/or view() operations
      * on a collection.
      *
-     * @param {array} transform : Ordered array of transform step objects similar to chain
-     * @param {object} parameters: Object containing properties representing parameters to substitute
-     * @returns {Resultset} : (or data array if any map or join functions where called)
+     * @param {array} transform - Ordered array of transform step objects similar to chain
+     * @param {object} parameters - Object containing properties representing parameters to substitute
+     * @returns {Resultset} (this) resultset, or data array if any map or join functions where called
      * @memberof Collection
      */
     Collection.prototype.chain = function (transform, parameters) {

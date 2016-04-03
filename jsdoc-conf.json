@@ -1,6 +1,7 @@
 {
 	"opts": {
-		"readme": "./OVERVIEW.md"
+		"readme": "./OVERVIEW.md",
+		"destination": "./jsdoc"
 	},
 	"tags": {
 		"allowUnknownTags": true,

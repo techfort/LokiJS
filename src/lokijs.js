@@ -571,7 +571,9 @@
      * @constructor Loki
      * @implements LokiEventEmitter
      * @param {string} filename - name of the file to be saved to
-     * @param {object} options - config object
+     * @param {object} options - (Optional) config options object
+     * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
+     * @param {boolean} options.verbose - enable console output (default is 'false')
      * @param {boolean} options.autosave - enables autosave
      * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
      * @param {boolean} options.autoload - enables autoload on loki instantiation
@@ -680,7 +682,14 @@
      * configureOptions - allows reconfiguring database options
      *
      * @param {object} options - configuration options to apply to loki db object
-     * @param {boolean} initialConfig - (optional) if this is a reconfig, don't pass this
+     * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
+     * @param {boolean} options.verbose - enable console output (default is 'false')
+     * @param {boolean} options.autosave - enables autosave
+     * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
+     * @param {boolean} options.autoload - enables autoload on loki instantiation
+     * @param {function} options.autoloadCallback - user callback called after database load
+     * @param {adapter} options.adapter - an instance of a loki persistence adapter
+     * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking 
      * @memberof Loki
      */
     Loki.prototype.configureOptions = function (options, initialConfig) {
@@ -1263,7 +1272,6 @@
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
@@ -3189,9 +3197,16 @@
      * Collection class that handles documents of same type
      * @constructor Collection
      * @implements LokiEventEmitter
-     * @param {string} collection name
-     * @param {array} array of property names to be indicized
-     * @param {object} configuration object
+     * @param {string} name - collection name
+     * @param {object|array} options - configuration object or array of property names to be indicized
+     * @param {array} options.unique - array of property names to define unique constraints for
+     * @param {object} options.indices - array property names to define binary indexes for
+     * @param {boolean} options.asyncListeners - default is false
+     * @param {boolean} options.disableChangesApi - default is true
+     * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
+     * @param {boolean} options.cloneObjects - specify whether inserts and queries clone to/from user
+     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
+     * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      */
     function Collection(name, options) {
       // the name of the collection

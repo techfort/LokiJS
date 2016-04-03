@@ -104,10 +104,6 @@ describe("Individual operator tests", function() {
     expect(ops.$ne(0, "0")).toEqual(true);
 
     expect(ops.$ne(NaN, NaN)).toEqual(false);
-
-    expect(ops.$ne(Infinity, Infinity)).toEqual(false);
-
-    expect(ops.$ne(Infinity, -Infinity)).toEqual(true);
   });
 
 });

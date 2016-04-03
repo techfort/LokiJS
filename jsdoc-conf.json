@@ -1,4 +1,7 @@
 {
+	"opts": {
+		"readme": "./OVERVIEW.md"
+	},
 	"tags": {
 		"allowUnknownTags": true,
 		"dictionaries": ["jsdoc","closure"]

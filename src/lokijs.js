@@ -297,14 +297,6 @@
           return !isNaN(a);
         }
 
-        if (b === Number.POSITIVE_INFINITY) {
-          return (a !== Number.POSITIVE_INFINITY);
-        }
-
-        if (b === Number.NEGATIVE_INFINITY) {
-          return (a !== Number.NEGATIVE_INFINITY);
-        }
-
         return a !== b;
       },
 
@@ -577,8 +569,14 @@
     /**
      * Loki: The main database class
      * @constructor Loki
+     * @implements LokiEventEmitter
      * @param {string} filename - name of the file to be saved to
      * @param {object} options - config object
+     * @param {boolean} options.autosave - enables autosave
+     * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
+     * @param {boolean} options.autoload - enables autoload on loki instantiation
+     * @param {function} options.autoloadCallback - user callback called after database load
+     * @param {adapter} options.adapter - an instance of a loki persistence adapter
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -2502,6 +2500,7 @@
      * var results = mydv.data();
      *
      * @constructor DynamicView
+     * @implements LokiEventEmitter
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
      * @param {object} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
@@ -3189,6 +3188,7 @@
     /**
      * Collection class that handles documents of same type
      * @constructor Collection
+     * @implements LokiEventEmitter
      * @param {string} collection name
      * @param {array} array of property names to be indicized
      * @param {object} configuration object

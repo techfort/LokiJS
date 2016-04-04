@@ -3217,11 +3217,12 @@
      * @param {string} name - collection name
      * @param {array|object} options - array of property names to be indicized OR a configuration object
      * @param {array} options.unique - array of property names to define unique constraints for
+     * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
-     * @param {boolean} options.cloneObjects - specify whether inserts and queries clone to/from user
+     * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
      * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      */

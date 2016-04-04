@@ -47,7 +47,7 @@ function encrypt(input, secret) {
 
   try {
 
-    var key = cryptoLib.pbkdf2Sync(secret, salt, ITERATIONS, KEY_LENGTH / 8),
+    var key = cryptoLib.pbkdf2Sync(secret, salt, ITERATIONS, KEY_LENGTH / 8, 'sha1'),
       cipher = cryptoLib.createCipheriv(CIPHER, key, iv);
 
     var encryptedValue = cipher.update(input, 'utf8', 'base64');
@@ -104,7 +104,7 @@ function decrypt(input, secret) {
 
   try {
 
-    var key = cryptoLib.pbkdf2Sync(secret, salt, iterations, keyLength / 8),
+    var key = cryptoLib.pbkdf2Sync(secret, salt, iterations, keyLength / 8, 'sha1'),
       decipher = cryptoLib.createDecipheriv(CIPHER, key, iv);
 
     var decryptedValue = decipher.update(input.value, 'base64', 'utf8');

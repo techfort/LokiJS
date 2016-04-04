@@ -47,9 +47,13 @@
 
 
 <div class="description">
-    LokiIndexedAdapter - Loki persistence adapter class for indexedDb.
-    This class fulfills abstract adapter interface which can be applied to other storage methods
+    Loki persistence adapter class for indexedDb.
+    This class fulfills abstract adapter interface which can be applied to other storage methods. 
     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
+    Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
+    Anywhere a callback is omitted, it should return results (if applicable) to console.
+    IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+    allow separate contexts for separate apps within a domain.
 </div>
 
 
@@ -101,7 +105,7 @@
 
             
 
-            <td class="description last">Application name context can be used to distinguish subdomains or just 'loki'</td>
+            <td class="description last">(Optional) Application name context can be used to distinguish subdomains, 'loki' by default</td>
         </tr>
 
     
@@ -142,7 +146,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line58">line 58</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line25">line 25</a>
     </li></ul></dd>
     
 
@@ -165,6 +169,11 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var idbAdapter = new LokiIndexedAdapter('finance');</code></pre>
 
 
 
@@ -198,7 +207,7 @@
 
 
 <div class="description">
-    checkAvailability - used to check if adapter is available
+    Used to check if adapter is available
 </div>
 
 
@@ -242,7 +251,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line89">line 89</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line64">line 64</a>
     </li></ul></dd>
     
 
@@ -302,7 +311,7 @@
 
 
 <div class="description">
-    deleteDatabase() - Deletes a serialized db from the catalog.
+    Deletes a serialized db from the catalog.
 </div>
 
 
@@ -395,7 +404,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line185">line 185</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line180">line 180</a>
     </li></ul></dd>
     
 
@@ -420,6 +429,12 @@
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// DELETE DATABASE
+idbAdapter.deleteDatabase('test'); // delete 'finance'/'test' value from catalog</code></pre>
+
+
 
         
             
@@ -433,7 +448,7 @@
 
 
 <div class="description">
-    getCatalogSummary - allows retrieval of list of all keys in catalog along with size
+    Allows retrieval of list of all keys in catalog along with size
 </div>
 
 
@@ -526,7 +541,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line265">line 265</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line268">line 268</a>
     </li></ul></dd>
     
 
@@ -564,7 +579,7 @@
 
 
 <div class="description">
-    getDatabaseList() - Retrieves object array of catalog entries for current app.
+    Retrieves object array of catalog entries for current app.
 </div>
 
 
@@ -657,7 +672,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line220">line 220</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line223">line 223</a>
     </li></ul></dd>
     
 
@@ -682,6 +697,16 @@
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>idbAdapter.getDatabaseList(function(result) {
+  // result is array of string names for that appcontext ('finance')
+  result.forEach(function(str) {
+    console.log(str);
+  });
+});</code></pre>
+
+
 
         
             
@@ -695,7 +720,7 @@
 
 
 <div class="description">
-    loadDatabase() - Retrieves a serialized db string from the catalog.
+    Retrieves a serialized db string from the catalog.
 </div>
 
 
@@ -811,7 +836,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line103">line 103</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line86">line 86</a>
     </li></ul></dd>
     
 
@@ -836,6 +861,16 @@
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// LOAD
+var idbAdapter = new LokiIndexedAdapter('finance');
+var db = new loki('test', { adapter: idbAdapter });
+  db.loadDatabase(function(result) {
+  console.log('done');
+});</code></pre>
+
+
 
         
             
@@ -849,7 +884,7 @@
 
 
 <div class="description">
-    saveDatabase() - Saves a serialized db to the catalog.
+    Saves a serialized db to the catalog.
 </div>
 
 
@@ -988,7 +1023,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line146">line 146</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line137">line 137</a>
     </li></ul></dd>
     
 
@@ -1011,6 +1046,16 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
+var idbAdapter = new LokiIndexedAdapter('finance');
+var db = new loki('test', { adapter: idbAdapter });
+var coll = db.addCollection('testColl');
+coll.insert({test: 'val'});
+db.saveDatabase();  // could pass callback if needed for async complete</code></pre>
 
 
 
@@ -1036,7 +1081,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 08:45:08 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

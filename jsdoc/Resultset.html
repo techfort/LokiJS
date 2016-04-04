@@ -259,7 +259,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1404">line 1404</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1420">line 1420</a>
     </li></ul></dd>
     
 
@@ -355,7 +355,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1531">line 1531</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1547">line 1547</a>
     </li></ul></dd>
     
 
@@ -389,7 +389,7 @@
 
 
 <div class="description">
-    compoundsort() - Allows sorting a resultset based on multiple columns.
+    Allows sorting a resultset based on multiple columns.
 </div>
 
 
@@ -482,7 +482,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1685">line 1685</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1702">line 1702</a>
     </li></ul></dd>
     
 
@@ -594,7 +594,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1516">line 1516</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1532">line 1532</a>
     </li></ul></dd>
     
 
@@ -698,7 +698,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2285">line 2285</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2302">line 2302</a>
     </li></ul></dd>
     
 
@@ -758,7 +758,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
 
 <div class="description">
-    data() - Terminates the chain and returns array of filtered documents
+    Terminates the chain and returns array of filtered documents
 </div>
 
 
@@ -925,7 +925,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2304">line 2304</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2321">line 2321</a>
     </li></ul></dd>
     
 
@@ -978,7 +978,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
     
 
-    <h4 class="name" id="eqJoin"><span class="type-signature"></span>eqJoin<span class="signature">(joinData, leftJoinKey, rightJoinKey, (optional))</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    <h4 class="name" id="eqJoin"><span class="type-signature"></span>eqJoin<span class="signature">(joinData, leftJoinKey, rightJoinKey, mapFun)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
 
     
 
@@ -1097,7 +1097,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         <tr>
             
-                <td class="name"><code>(optional)</code></td>
+                <td class="name"><code>mapFun</code></td>
             
 
             <td class="type">
@@ -1113,7 +1113,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}</td>
+            <td class="description last">(Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}</td>
         </tr>
 
     
@@ -1154,7 +1154,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2431">line 2431</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2448">line 2448</a>
     </li></ul></dd>
     
 
@@ -1214,7 +1214,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    find() - Used for querying via a mongo-style query object.
+    Used for querying via a mongo-style query object.
 </div>
 
 
@@ -1330,7 +1330,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1950">line 1950</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1967">line 1967</a>
     </li></ul></dd>
     
 
@@ -1390,7 +1390,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    limit() - Allows you to limit the number of documents passed to next chain operation.
+    Allows you to limit the number of documents passed to next chain operation.
    A resultset copy() is made to avoid altering original resultset.
 </div>
 
@@ -1484,7 +1484,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1479">line 1479</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1495">line 1495</a>
     </li></ul></dd>
     
 
@@ -1537,14 +1537,14 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
     
 
-    <h4 class="name" id="mapReduce"><span class="type-signature"></span>mapReduce<span class="signature">(mapFunction, reduceFunction)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="mapReduce"><span class="type-signature"></span>mapReduce<span class="signature">(mapFunction, reduceFunction)</span><span class="type-signature"> &rarr; {value}</span></h4>
 
     
 
 
 
 <div class="description">
-    mapReduce() - data transformation via user supplied functions
+    data transformation via user supplied functions
 </div>
 
 
@@ -1660,7 +1660,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2413">line 2413</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2430">line 2430</a>
     </li></ul></dd>
     
 
@@ -1692,6 +1692,18 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">value</span>
+
+
+    </dd>
+</dl>
+
     
 
 
@@ -1708,7 +1720,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    offset() - Used for skipping 'pos' number of documents in the resultset.
+    Used for skipping 'pos' number of documents in the resultset.
 </div>
 
 
@@ -1801,7 +1813,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1498">line 1498</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1514">line 1514</a>
     </li></ul></dd>
     
 
@@ -1861,7 +1873,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
+    Removes all document objects which are currently in resultset from collection (as well as resultset)
 </div>
 
 
@@ -1905,7 +1917,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2391">line 2391</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2408">line 2408</a>
     </li></ul></dd>
     
 
@@ -1965,7 +1977,8 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    simplesort() - Simpler, loose evaluation for user to sort based on a property name. (chainable)
+    Simpler, loose evaluation for user to sort based on a property name. (chainable).
+   Sorting based on the same lt/gt helper functions used for binary indices.
 </div>
 
 
@@ -2081,7 +2094,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1651">line 1651</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1668">line 1668</a>
     </li></ul></dd>
     
 
@@ -2141,7 +2154,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    sort() - User supplied compare function is provided two documents to compare. (chainable)
+    User supplied compare function is provided two documents to compare. (chainable)
 </div>
 
 
@@ -2234,7 +2247,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1625">line 1625</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1641">line 1641</a>
     </li></ul></dd>
     
 
@@ -2358,7 +2371,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">(Optional) name of collection transform or raw transform array</td>
+            <td class="description last">name of collection transform or raw transform array</td>
         </tr>
 
     
@@ -2422,7 +2435,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1541">line 1541</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1557">line 1557</a>
     </li></ul></dd>
     
 
@@ -2449,7 +2462,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    - either (this) resultset or a clone of of this resultset (depending on steps)
+    either (this) resultset or a clone of of this resultset (depending on steps)
 </div>
 
 
@@ -2482,7 +2495,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    update() - used to run an update operation on all documents currently in the resultset.
+    Used to run an update operation on all documents currently in the resultset.
 </div>
 
 
@@ -2575,7 +2588,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2360">line 2360</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2377">line 2377</a>
     </li></ul></dd>
     
 
@@ -2728,7 +2741,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2219">line 2219</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2236">line 2236</a>
     </li></ul></dd>
     
 
@@ -2798,7 +2811,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 08:45:08 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

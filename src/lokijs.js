@@ -679,7 +679,7 @@
 
 
     /**
-     * configureOptions - allows reconfiguring database options
+     * Allows reconfiguring database options
      *
      * @param {object} options - configuration options to apply to loki db object
      * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
@@ -769,14 +769,14 @@
     };
 
     /**
-     * anonym() - shorthand method for quickly creating and populating an anonymous collection.
+     * Shorthand method for quickly creating and populating an anonymous collection.
      *    This collection is not referenced internally so upon losing scope it will be garbage collected.
      *
      * @example
      * var results = new loki().anonym(myDocArray).find({'age': {'$gt': 30} });
      *
      * @param {Array} docs - document array to initialize the anonymous collection with
-     * @param {object} options - configuration object, see Collection constructor
+     * @param {object} options - configuration object, see {@link Loki#addCollection} options
      * @returns {Collection} New collection which you can query or chain
      * @memberof Loki
      */
@@ -794,6 +794,15 @@
      * Adds a collection to the database.
      * @param {string} name - name of collection to add
      * @param {object} options - (optional) options to configure collection with.
+     * @param {array} options.unique - array of property names to define unique constraints for
+     * @param {array} options.indices - array property names to define binary indexes for
+     * @param {boolean} options.asyncListeners - default is false
+     * @param {boolean} options.disableChangesApi - default is true
+     * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
+     * @param {boolean} options.cloneObjects - specify whether inserts and queries clone to/from user
+     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
+     * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
+     * @returns {Collection} a reference to the collection which was just added
      * @memberof Loki
      */
     Loki.prototype.addCollection = function (name, options) {
@@ -892,7 +901,12 @@
       }
     };
 
-    // toJson
+    /**
+     * Serialize database to a string which can be loaded via {@link Loki#loadJSON}
+     *
+     * @returns {string} Stringified representation of the loki database.
+     * @memberof Loki
+     */
     Loki.prototype.serialize = function () {
       return JSON.stringify(this, this.serializeReplacer);
     };
@@ -900,7 +914,7 @@
     Loki.prototype.toJson = Loki.prototype.serialize;
 
     /**
-     * loadJSON - inflates a loki database from a serialized JSON string
+     * Inflates a loki database from a serialized JSON string
      *
      * @param {string} serializedDb - a serialized loki database string
      * @param {object} options - apply or override collection level settings
@@ -918,7 +932,7 @@
     };
 
     /**
-     * loadJSONObject - inflates a loki database from a JS object
+     * Inflates a loki database from a JS object
      *
      * @param {object} dbObject - a serialized loki database string
      * @param {object} options - apply or override collection level settings
@@ -1022,8 +1036,10 @@
     };
 
     /**
-     * close(callback) - emits the close event with an optional callback. Does not actually destroy the db
-     * but useful from an API perspective
+     * Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
+     * Does not actually destroy the db.
+     *
+     * @param {function} callback - (Optional) if supplied will be registered with close event before emitting.
      * @memberof Loki
      */
     Loki.prototype.close = function (callback) {
@@ -1053,7 +1069,7 @@
      */
 
     /**
-     * generateChangesNotification() - takes all the changes stored in each
+     * (Changes API) : takes all the changes stored in each
      * collection and creates a single array for the entire database. If an array of names
      * of collections is passed then only the included collections will be tracked.
      *
@@ -1078,7 +1094,7 @@
     };
 
     /**
-     * serializeChanges() - stringify changes for network transmission
+     * (Changes API) - stringify changes for network transmission
      * @returns {string} string representation of the changes
      * @memberof Loki
      */
@@ -1087,7 +1103,7 @@
     };
 
     /**
-     * clearChanges() - clears all the changes in all collections.
+     * (Changes API) : clears all the changes in all collections.
      * @memberof Loki
      */
     Loki.prototype.clearChanges = function () {
@@ -1217,7 +1233,7 @@
     };
 
     /**
-     * loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
+     * Handles loading from file system, local storage, or adapter (indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
@@ -1268,7 +1284,7 @@
     };
 
     /**
-     * saveDatabase - Handles saving to file system, local storage, or adapter (indexeddb)
+     * Handles saving to file system, local storage, or adapter (indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
@@ -1310,7 +1326,7 @@
     Loki.prototype.save = Loki.prototype.saveDatabase;
 
     /**
-     * deleteDatabase - Handles deleting a database from file system, local
+     * Handles deleting a database from file system, local
      *    storage, or adapter (indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
@@ -1469,7 +1485,7 @@
     };
 
     /**
-     * limit() - Allows you to limit the number of documents passed to next chain operation.
+     * Allows you to limit the number of documents passed to next chain operation.
      *    A resultset copy() is made to avoid altering original resultset.
      *
      * @param {int} qty - The number of documents to return.
@@ -1489,7 +1505,7 @@
     };
 
     /**
-     * offset() - Used for skipping 'pos' number of documents in the resultset.
+     * Used for skipping 'pos' number of documents in the resultset.
      *
      * @param {int} pos - Number of documents to skip; all preceding documents are filtered out.
      * @returns {Resultset} Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.
@@ -1533,9 +1549,9 @@
     /**
      * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
-     * @param transform {string|array} - (Optional) name of collection transform or raw transform array
+     * @param transform {string|array} - name of collection transform or raw transform array
      * @param parameters {object} - (Optional) object property hash of parameters, if the transform requires them.
-     * @returns {Resultset} - either (this) resultset or a clone of of this resultset (depending on steps)
+     * @returns {Resultset} either (this) resultset or a clone of of this resultset (depending on steps)
      * @memberof Resultset
      */
     Resultset.prototype.transform = function (transform, parameters) {
@@ -1610,7 +1626,7 @@
     };
 
     /**
-     * sort() - User supplied compare function is provided two documents to compare. (chainable)
+     * User supplied compare function is provided two documents to compare. (chainable)
      * @example
      *    rslt.sort(function(obj1, obj2) {
      *      if (obj1.name === obj2.name) return 0;
@@ -1641,7 +1657,8 @@
     };
 
     /**
-     * simplesort() - Simpler, loose evaluation for user to sort based on a property name. (chainable)
+     * Simpler, loose evaluation for user to sort based on a property name. (chainable).
+     *    Sorting based on the same lt/gt helper functions used for binary indices.
      *
      * @param {string} propname - name of property to sort by.
      * @param {bool} isdesc - (Optional) If true, the property will be sorted in descending order
@@ -1671,7 +1688,7 @@
     };
 
     /**
-     * compoundsort() - Allows sorting a resultset based on multiple columns.
+     * Allows sorting a resultset based on multiple columns.
      * @example
      * // to sort by age and then name (both ascending)
      * rs.compoundsort(['age', 'name']);
@@ -1940,7 +1957,7 @@
     Resultset.prototype.$and = Resultset.prototype.findAnd;
 
     /**
-     * find() - Used for querying via a mongo-style query object.
+     * Used for querying via a mongo-style query object.
      *
      * @param {object} query - A mongo-style query object used for filtering current results.
      * @param {boolean} firstOnly - (Optional) Used by collection.findOne()
@@ -2290,7 +2307,7 @@
     };
 
     /**
-     * data() - Terminates the chain and returns array of filtered documents
+     * Terminates the chain and returns array of filtered documents
      *
      * @param {object} options - allows specifying 'forceClones' and 'forceCloneMethod' options.
      * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
@@ -2351,7 +2368,7 @@
     };
 
     /**
-     * update() - used to run an update operation on all documents currently in the resultset.
+     * Used to run an update operation on all documents currently in the resultset.
      *
      * @param {function} updateFunction - User supplied updateFunction(obj) will be executed for each document object.
      * @returns {Resultset} this resultset for further chain ops.
@@ -2383,7 +2400,7 @@
     };
 
     /**
-     * remove() - removes all document objects which are currently in resultset from collection (as well as resultset)
+     * Removes all document objects which are currently in resultset from collection (as well as resultset)
      *
      * @returns {Resultset} this (empty) resultset for further chain ops.
      * @memberof Resultset
@@ -2403,11 +2420,11 @@
     };
 
     /**
-     * mapReduce() - data transformation via user supplied functions
+     * data transformation via user supplied functions
      *
      * @param {function} mapFunction - this function accepts a single document for you to transform and return
      * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
-     * @returns The output of your reduceFunction
+     * @returns {value} The output of your reduceFunction
      * @memberof Resultset
      */
     Resultset.prototype.mapReduce = function (mapFunction, reduceFunction) {
@@ -2424,7 +2441,7 @@
      * @param {Array} joinData - Data array to join to.
      * @param {(string|function)} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
      * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
-     * @param {function} (optional) mapFun - A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @param {function} mapFun - (Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      * @memberof Resultset
      */
@@ -3482,7 +3499,7 @@
     /**
      * Adds a named collection transform to the collection
      * @param {string} name - name to associate with transform
-     * @param {object} transform - a transformation object to save into collection
+     * @param {array} transform - an array of transformation 'step' objects to save into the collection
      * @memberof Collection
      */
     Collection.prototype.addTransform = function (name, transform) {
@@ -3582,6 +3599,8 @@
 
     /**
      * Ensure binary index on a certain field
+     * @param {string} property - name of property to create binary index on
+     * @param {boolean} force - (Optional) flag indicating whether to construct index immediately
      * @memberof Collection
      */
     Collection.prototype.ensureIndex = function (property, force) {
@@ -3717,6 +3736,9 @@
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
      * @param {object} options - (optional) options to configure dynamic view with
+     * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
+     * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
+     * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
      * @memberof Collection
      **/
 
@@ -3743,6 +3765,7 @@
     /**
      * Look up dynamic view reference from within the collection
      * @param {string} name - name of dynamic view to retrieve reference of
+     * @returns {DynamicView} A reference to the dynamic view with that name
      * @memberof Collection
      **/
     Collection.prototype.getDynamicView = function (name) {
@@ -3781,7 +3804,7 @@
     /**
      * generate document method - ensure object(s) have meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted (or an array of objects)
-     * @returns document or documents (if passed an array of objects)
+     * @returns {object|array} document or documents (if passed an array of objects)
      * @memberof Collection
      */
     Collection.prototype.insert = function (doc) {
@@ -3805,7 +3828,7 @@
     /**
      * generate document method - ensure object has meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted
-     * @returns document or 'undefined' if there was a problem inserting it
+     * @returns {object} document or 'undefined' if there was a problem inserting it
      * @memberof Collection
      */
     Collection.prototype.insertOne = function (doc) {
@@ -3858,7 +3881,7 @@
     };
 
     /**
-     * Update and notify collection that a document has changed.
+     * Updates an object and notifies collection that the document has changed.
      * @param {object} doc - document to update within the collection
      * @memberof Collection
      */
@@ -4077,6 +4100,8 @@
 
     /**
      * Get by Id - faster than other methods because of the searching algorithm
+     * @param {int} id - $loki id of document you want to retrieve
+     * @returns {object|null} Object reference if document was found, or null if not
      * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {
@@ -4114,6 +4139,9 @@
 
     /**
      * Retrieve doc by Unique index
+     * @param {string} field - name of uniquely indexed property to use when doing lookup
+     * @param {value} value - unique value to search for
+     * @returns {object} document matching the value passed
      * @memberof Collection
      */
     Collection.prototype.by = function (field, value) {
@@ -4136,6 +4164,8 @@
 
     /**
      * Find one object by index property, by property equal to value
+     * @param {object} query - query object used to perform search with
+     * @returns {object|null} First matching document, or null if none
      * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
@@ -4176,8 +4206,10 @@
     };
 
     /**
-     * Find method, api is similar to mongodb except for now it only supports one search parameter.
+     * Find method, api is similar to mongodb.
      * for more complex queries use view() and storeView()
+     * @param {object} query - 'mongo-like' query object
+     * @returns {array} Array of matching documents
      * @memberof Collection
      */
     Collection.prototype.find = function (query) {
@@ -4274,6 +4306,9 @@
 
     /**
      * Create view function - filter
+     *
+     * @param {function} fun - filter function to run against all collection docs
+     * @returns {array} all documents which pass your filter function
      * @memberof Collection
      */
     Collection.prototype.where = function (fun) {
@@ -4289,7 +4324,11 @@
     };
 
     /**
-     * Map Reduce
+     * Map Reduce operation
+     *
+     * @param {function} mapFunction - function to use as map function
+     * @param {function} reduceFunction - function to use as reduce function
+     * @returns {data} The result of your mapReduce operation
      * @memberof Collection
      */
     Collection.prototype.mapReduce = function (mapFunction, reduceFunction) {
@@ -4301,7 +4340,13 @@
     };
 
     /**
-     * eqJoin - Join two collections on specified properties
+     * Join two collections on specified properties
+     *
+     * @param {array} joinData - array of documents to 'join' to this collection
+     * @param {string} leftJoinProp - property name in collection
+     * @param {string} rightJoinProp - property name in joinData
+     * @param {function} mapFun - (Optional) map function to use
+     * @returns {Resultset} Result of the mapping operation
      * @memberof Collection
      */
     Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
@@ -4317,7 +4362,7 @@
     Collection.prototype.stages = {};
 
     /**
-     * create a stage and/or retrieve it
+     * (Staging API) create a stage and/or retrieve it
      * @memberof Collection
      */
     Collection.prototype.getStage = function (name) {
@@ -4332,7 +4377,7 @@
     Collection.prototype.commitLog = [];
 
     /**
-     * create a copy of an object and insert it into a stage
+     * (Staging API) create a copy of an object and insert it into a stage
      * @memberof Collection
      */
     Collection.prototype.stage = function (stageName, obj) {
@@ -4342,8 +4387,10 @@
     };
 
     /**
-     * re-attach all objects to the original collection, so indexes and views can be rebuilt
+     * (Staging API) re-attach all objects to the original collection, so indexes and views can be rebuilt
      * then create a message to be inserted in the commitlog
+     * @param {string} stageName - name of stage
+     * @param {string} message
      * @memberof Collection
      */
     Collection.prototype.commitStage = function (stageName, message) {
@@ -4461,6 +4508,10 @@
     };
 
     /**
+     * Calculates the average numerical value of a property
+     *
+     * @param {string} field - name of property in docs to average
+     * @returns {number} average of property in all docs in the collection
      * @memberof Collection
      */
     Collection.prototype.avg = function (field) {
@@ -4468,7 +4519,9 @@
     };
 
     /**
+     * Calculate standard deviation of a field
      * @memberof Collection
+     * @param {string} field
      */
     Collection.prototype.stdDev = function (field) {
       return standardDeviation(this.extractNumerical(field));
@@ -4476,6 +4529,7 @@
 
     /**
      * @memberof Collection
+     * @param {string} field
      */
     Collection.prototype.mode = function (field) {
       var dict = {},
@@ -4504,6 +4558,7 @@
 
     /**
      * @memberof Collection
+     * @param {string} field - property name
      */
     Collection.prototype.median = function (field) {
       var values = this.extractNumerical(field);
@@ -4541,25 +4596,16 @@
       return a - b;
     }
 
-    /**
-     * @memberof Collection
-     */
     function median(values) {
       values.sort(sub);
       var half = Math.floor(values.length / 2);
       return (values.length % 2) ? values[half] : ((values[half - 1] + values[half]) / 2.0);
     }
 
-    /**
-     * @memberof Collection
-     */
     function average(array) {
       return (array.reduce(add, 0)) / array.length;
     }
 
-    /**
-     * @memberof Collection
-     */
     function standardDeviation(values) {
       var avg = average(values);
       var squareDiffs = values.map(function (value) {

@@ -29,40 +29,7 @@
             <pre class="prettyprint source linenums"><code>/*
   Loki IndexedDb Adapter (need to include this script to use it)
 
-  Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
-  Anywhere a callback is omitted, it should return results (if applicable) to console.
-
-  IndexedDb storage is provided per-domain, so we implement app/key/value database to allow separate contexts
-  for separate apps within a domain.
-
-  Examples :
-
-  // SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
-  // if appContect ('finance' in this example) is omitted, 'loki' will be used
-  var idbAdapter = new LokiIndexedAdapter('finance');
-  var db = new loki('test', { adapter: idbAdapter });
-  var coll = db.addCollection('testColl');
-  coll.insert({test: 'val'});
-  db.saveDatabase();  // could pass callback if needed for async complete
-
-  // LOAD
-  var db = new loki('test', { adapter: idbAdapter });
-  db.loadDatabase(function(result) {
-    console.log('done');
-  });
-
-  // GET DATABASE LIST
-  idbAdapter.getDatabaseList(function(result) {
-    // result is array of string names for that appcontext ('finance')
-    result.forEach(function(str) {
-      console.log(str);
-    });
-  });
-
-  // DELETE DATABASE
-  idbAdapter.deleteDatabase('test'); // delete 'finance'/'test' value from catalog
-
-  // CONSOLE USAGE : if using from console for management/diagnostic, here are a few examples :
+  Console Usage can be used for management/diagnostic, here are a few examples :
   adapter.getDatabaseList(); // with no callback passed, this method will log results to console
   adapter.saveDatabase('UserDatabase', JSON.stringify(myDb));
   adapter.loadDatabase('UserDatabase'); // will log the serialized db to console
@@ -84,12 +51,20 @@
   return (function() {
 
     /**
-     * LokiIndexedAdapter - Loki persistence adapter class for indexedDb.
-     *     This class fulfills abstract adapter interface which can be applied to other storage methods
+     * Loki persistence adapter class for indexedDb.
+     *     This class fulfills abstract adapter interface which can be applied to other storage methods. 
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
+     *     Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
+     *     Anywhere a callback is omitted, it should return results (if applicable) to console.
+     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+     *     allow separate contexts for separate apps within a domain.
+     *
+     * @example
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     *
      * @constructor LokiIndexedAdapter
      *
-     * @param {string} appname - Application name context can be used to distinguish subdomains or just 'loki'
+     * @param {string} appname - (Optional) Application name context can be used to distinguish subdomains, 'loki' by default
      */
     function LokiIndexedAdapter(appname)
     {
@@ -109,7 +84,7 @@
     }
 
     /**
-     * checkAvailability - used to check if adapter is available
+     * Used to check if adapter is available
      *
      * @returns {boolean} true if indexeddb is available, false if not.
      * @memberof LokiIndexedAdapter
@@ -122,7 +97,15 @@
     };
 
     /**
-     * loadDatabase() - Retrieves a serialized db string from the catalog.
+     * Retrieves a serialized db string from the catalog.
+     *
+     * @example
+     * // LOAD
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     * var db = new loki('test', { adapter: idbAdapter });
+     *   db.loadDatabase(function(result) {
+     *   console.log('done');
+     * });
      *
      * @param {string} dbname - the name of the database to retrieve.
      * @param {function} callback - callback should accept string param containing serialized db string.
@@ -164,7 +147,15 @@
     LokiIndexedAdapter.prototype.loadKey = LokiIndexedAdapter.prototype.loadDatabase;
 
     /**
-     * saveDatabase() - Saves a serialized db to the catalog.
+     * Saves a serialized db to the catalog.
+     *
+     * @example
+     * // SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     * var db = new loki('test', { adapter: idbAdapter });
+     * var coll = db.addCollection('testColl');
+     * coll.insert({test: 'val'});
+     * db.saveDatabase();  // could pass callback if needed for async complete
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {string} dbstring - the serialized db string to save.
@@ -205,7 +196,11 @@
     LokiIndexedAdapter.prototype.saveKey = LokiIndexedAdapter.prototype.saveDatabase;
 
     /**
-     * deleteDatabase() - Deletes a serialized db from the catalog.
+     * Deletes a serialized db from the catalog.
+     *
+     * @example
+     * // DELETE DATABASE
+     * idbAdapter.deleteDatabase('test'); // delete 'finance'/'test' value from catalog
      *
      * @param {string} dbname - the name of the database to delete from the catalog.
      * @memberof LokiIndexedAdapter
@@ -240,7 +235,15 @@
     LokiIndexedAdapter.prototype.deleteKey = LokiIndexedAdapter.prototype.deleteDatabase;
 
     /**
-     * getDatabaseList() - Retrieves object array of catalog entries for current app.
+     * Retrieves object array of catalog entries for current app.
+     *
+     * @example
+     * idbAdapter.getDatabaseList(function(result) {
+     *   // result is array of string names for that appcontext ('finance')
+     *   result.forEach(function(str) {
+     *     console.log(str);
+     *   });
+     * });
      *
      * @param {function} callback - should accept array of database names in the catalog for current app.
      * @memberof LokiIndexedAdapter
@@ -285,7 +288,7 @@
     LokiIndexedAdapter.prototype.getKeyList = LokiIndexedAdapter.prototype.getDatabaseList;
 
     /**
-     * getCatalogSummary - allows retrieval of list of all keys in catalog along with size
+     * Allows retrieval of list of all keys in catalog along with size
      *
      * @param {function} callback - (Optional) callback to accept result array.
      * @memberof LokiIndexedAdapter
@@ -632,7 +635,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 08:45:08 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

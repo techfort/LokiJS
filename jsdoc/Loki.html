@@ -406,7 +406,7 @@
 
     
 
-    <h4 class="name" id="addCollection"><span class="type-signature"></span>addCollection<span class="signature">(name, options)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="addCollection"><span class="type-signature"></span>addCollection<span class="signature">(name, options)</span><span class="type-signature"> &rarr; {<a href="Collection.html">Collection</a>}</span></h4>
 
     
 
@@ -488,7 +488,217 @@
 
             
 
-            <td class="description last">(optional) options to configure collection with.</td>
+            <td class="description last">(optional) options to configure collection with.
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>unique</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">array of property names to define unique constraints for</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>indices</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">array property names to define binary indexes for</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>asyncListeners</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">default is false</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>disableChangesApi</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">default is true</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>autoupdate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">use Object.observe to update objects automatically (default: false)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cloneObjects</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">specify whether inserts and queries clone to/from user</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cloneMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">'parse-stringify' (default), 'jquery-extend-deep', 'shallow'</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>ttlInterval</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">time interval for clearing out 'aged' documents; not set by default.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -529,7 +739,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line799">line 799</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line808">line 808</a>
     </li></ul></dd>
     
 
@@ -552,6 +762,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    a reference to the collection which was just added
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Collection.html">Collection</a></span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -567,7 +799,7 @@
 
 
 <div class="description">
-    anonym() - shorthand method for quickly creating and populating an anonymous collection.
+    Shorthand method for quickly creating and populating an anonymous collection.
    This collection is not referenced internally so upon losing scope it will be garbage collected.
 </div>
 
@@ -643,7 +875,7 @@
 
             
 
-            <td class="description last">configuration object, see Collection constructor</td>
+            <td class="description last">configuration object, see <a href="Loki.html#addCollection">Loki#addCollection</a> options</td>
         </tr>
 
     
@@ -749,7 +981,7 @@
 
 
 <div class="description">
-    clearChanges() - clears all the changes in all collections.
+    (Changes API) : clears all the changes in all collections.
 </div>
 
 
@@ -793,7 +1025,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1093">line 1093</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1109">line 1109</a>
     </li></ul></dd>
     
 
@@ -824,15 +1056,15 @@
 
     
 
-    <h4 class="name" id="close"><span class="type-signature"></span>close<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="close"><span class="type-signature"></span>close<span class="signature">(callback)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    close(callback) - emits the close event with an optional callback. Does not actually destroy the db
-but useful from an API perspective
+    Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
+Does not actually destroy the db.
 </div>
 
 
@@ -841,6 +1073,55 @@ but useful from an API perspective
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">(Optional) if supplied will be registered with close event before emitting.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -876,7 +1157,7 @@ but useful from an API perspective
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1029">line 1029</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1045">line 1045</a>
     </li></ul></dd>
     
 
@@ -914,7 +1195,7 @@ but useful from an API perspective
 
 
 <div class="description">
-    configureOptions - allows reconfiguring database options
+    Allows reconfiguring database options
 </div>
 
 
@@ -1255,7 +1536,7 @@ but useful from an API perspective
 
 
 <div class="description">
-    deleteDatabase - Handles deleting a database from file system, local
+    Handles deleting a database from file system, local
    storage, or adapter (indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
    persistence method to use, or environment detection (if configuration was not provided).
@@ -1374,7 +1655,7 @@ but useful from an API perspective
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1322">line 1322</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1338">line 1338</a>
     </li></ul></dd>
     
 
@@ -1412,7 +1693,7 @@ but useful from an API perspective
 
 
 <div class="description">
-    generateChangesNotification() - takes all the changes stored in each
+    (Changes API) : takes all the changes stored in each
 collection and creates a single array for the entire database. If an array of names
 of collections is passed then only the included collections will be tracked.
 </div>
@@ -1507,7 +1788,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1065">line 1065</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1081">line 1081</a>
     </li></ul></dd>
     
 
@@ -1667,7 +1948,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line822">line 822</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line831">line 831</a>
     </li></ul></dd>
     
 
@@ -1727,7 +2008,7 @@ of collections is passed then only the included collections will be tracked.
 
 
 <div class="description">
-    loadDatabase - Handles loading from file system, local storage, or adapter (indexeddb)
+    Handles loading from file system, local storage, or adapter (indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
    persistence method to use, or environment detection (if configuration was not provided).
 </div>
@@ -1845,7 +2126,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1228">line 1228</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1244">line 1244</a>
     </li></ul></dd>
     
 
@@ -1883,7 +2164,7 @@ of collections is passed then only the included collections will be tracked.
 
 
 <div class="description">
-    loadJSON - inflates a loki database from a serialized JSON string
+    Inflates a loki database from a serialized JSON string
 </div>
 
 
@@ -1999,7 +2280,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line909">line 909</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line923">line 923</a>
     </li></ul></dd>
     
 
@@ -2037,7 +2318,7 @@ of collections is passed then only the included collections will be tracked.
 
 
 <div class="description">
-    loadJSONObject - inflates a loki database from a JS object
+    Inflates a loki database from a JS object
 </div>
 
 
@@ -2153,7 +2434,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line927">line 927</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line941">line 941</a>
     </li></ul></dd>
     
 
@@ -2284,7 +2565,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line857">line 857</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line866">line 866</a>
     </li></ul></dd>
     
 
@@ -2322,7 +2603,7 @@ of collections is passed then only the included collections will be tracked.
 
 
 <div class="description">
-    saveDatabase - Handles saving to file system, local storage, or adapter (indexeddb)
+    Handles saving to file system, local storage, or adapter (indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
    persistence method to use, or environment detection (if configuration was not provided).
 </div>
@@ -2417,7 +2698,7 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1278">line 1278</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1294">line 1294</a>
     </li></ul></dd>
     
 
@@ -2448,14 +2729,14 @@ of collections is passed then only the included collections will be tracked.
 
     
 
-    <h4 class="name" id="serializeChanges"><span class="type-signature"></span>serializeChanges<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
+    <h4 class="name" id="serialize"><span class="type-signature"></span>serialize<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
 
     
 
 
 
 <div class="description">
-    serializeChanges() - stringify changes for network transmission
+    Serialize database to a string which can be loaded via <a href="Loki.html#loadJSON">Loki#loadJSON</a>
 </div>
 
 
@@ -2499,7 +2780,111 @@ of collections is passed then only the included collections will be tracked.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1085">line 1085</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line910">line 910</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Stringified representation of the loki database.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="serializeChanges"><span class="type-signature"></span>serializeChanges<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
+
+    
+
+
+
+<div class="description">
+    (Changes API) - stringify changes for network transmission
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1101">line 1101</a>
     </li></ul></dd>
     
 
@@ -2569,7 +2954,7 @@ of collections is passed then only the included collections will be tracked.
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 08:45:08 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

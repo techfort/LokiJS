@@ -1,18 +1,17 @@
 {
 	"opts": {
 		"readme": "./OVERVIEW.md",
-		"destination": "./jsdoc"
+		"destination": "./jsdoc",
+		"tutorials": "./tutorials"
 	},
 	"tags": {
 		"allowUnknownTags": true,
 		"dictionaries": ["jsdoc","closure"]
 	},
 	"source": {
-		"include": ["src/lokijs.js", "src/loki-indexed-adapter.js"],
-		"includePattern": ".+\\.js(doc)?$",
-		"excludePattern": "(^|\\/|\\\\)_"
+		"include": ["src/lokijs.js", "src/loki-indexed-adapter.js"]
 	},
-	"plugins": [],
+	"plugins": ["plugins/markdown"],
 	"templates": {
 		"cleverlinks": false,
 		"monospaceLinks": false

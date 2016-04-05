@@ -47,9 +47,9 @@
 
 
 <div class="description">
-    LokiEventEmitter is a minimalist version of EventEmitter. It enables any
+    <p>LokiEventEmitter is a minimalist version of EventEmitter. It enables any
 constructor that inherits EventEmitter to emit events and trigger
-listeners that have been added to the event through the on(event, callback) method
+listeners that have been added to the event through the on(event, callback) method</p>
 </div>
 
 
@@ -190,9 +190,9 @@ listeners that have been added to the event through the on(event, callback) meth
 
             
 
-            <td class="description last">boolean determines whether or not the callbacks associated with each event
+            <td class="description last"><p>boolean determines whether or not the callbacks associated with each event
 should happen in an async fashion or not
-Default is false, which means events are synchronous</td>
+Default is false, which means events are synchronous</p></td>
         </tr>
 
     
@@ -302,7 +302,7 @@ Default is false, which means events are synchronous</td>
 
             
 
-            <td class="description last">a hashmap, with each property being an array of callbacks</td>
+            <td class="description last"><p>a hashmap, with each property being an array of callbacks</p></td>
         </tr>
 
     
@@ -375,9 +375,9 @@ Default is false, which means events are synchronous</td>
 
 
 <div class="description">
-    emit(eventName, data) - emits a particular event
+    <p>emit(eventName, data) - emits a particular event
 with the option of passing optional parameters which are going to be processed by the callback
-provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
+provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)</p>
 </div>
 
 
@@ -429,7 +429,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">the name of the event</td>
+            <td class="description last"><p>the name of the event</p></td>
         </tr>
 
     
@@ -452,7 +452,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">optional object passed with the event</td>
+            <td class="description last"><p>optional object passed with the event</p></td>
         </tr>
 
     
@@ -531,7 +531,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
 
 <div class="description">
-    on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+    <p>on(eventName, listener) - adds a listener to the queue of callbacks associated to an event</p>
 </div>
 
 
@@ -583,7 +583,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">the name of the event to listen to</td>
+            <td class="description last"><p>the name of the event to listen to</p></td>
         </tr>
 
     
@@ -606,7 +606,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">callback function of listener to attach</td>
+            <td class="description last"><p>callback function of listener to attach</p></td>
         </tr>
 
     
@@ -674,7 +674,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
         
 <div class="param-desc">
-    the index of the callback in the array of listeners for a particular event
+    <p>the index of the callback in the array of listeners for a particular event</p>
 </div>
 
 
@@ -707,7 +707,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
 
 <div class="description">
-    removeListener() - removes the listener at position 'index' from the event 'eventName'
+    <p>removeListener() - removes the listener at position 'index' from the event 'eventName'</p>
 </div>
 
 
@@ -759,7 +759,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">the name of the event which the listener is attached to</td>
+            <td class="description last"><p>the name of the event which the listener is attached to</p></td>
         </tr>
 
     
@@ -782,7 +782,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last">the listener callback function to remove from emitter</td>
+            <td class="description last"><p>the listener callback function to remove from emitter</p></td>
         </tr>
 
     
@@ -865,13 +865,13 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Apr 04 2016 20:33:47 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

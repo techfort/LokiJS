@@ -6,10 +6,8 @@
 
 ## Documentation Overview
 
-This is an early effort using jsdoc to provide a more accurate and up-to-date version of LokiJS documentation.  Since modifications arise from various contributors, this should allow distributed effort toward 
-maintaining this documentation.  For the time being, you can use it along with LokiJS.org documentation and the 
-GitHub wiki documentation.  Ideally this will emcompass the best of both reference as well as more complete examples 
-and descriptions.
+This is an early effort to provide a more accurate and up-to-date version of LokiJS documentation by using jsdoc.  Since modifications arise from various contributors, this should allow distributed effort toward 
+maintaining this documentation.  
 
 ## Getting Started
 

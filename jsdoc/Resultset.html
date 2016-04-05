@@ -47,8 +47,8 @@
 
 
 <div class="description">
-    Resultset class allowing chainable queries.  Intended to be instanced internally.
-   Collection.find(), Collection.where(), and Collection.chain() instantiate this.
+    <p>Resultset class allowing chainable queries.  Intended to be instanced internally.
+   Collection.find(), Collection.where(), and Collection.chain() instantiate this.</p>
 </div>
 
 
@@ -100,7 +100,7 @@
 
             
 
-            <td class="description last">The collection which this Resultset will query against.</td>
+            <td class="description last"><p>The collection which this Resultset will query against.</p></td>
         </tr>
 
     
@@ -123,7 +123,7 @@
 
             
 
-            <td class="description last">Object containing one or more options.
+            <td class="description last"><p>Object containing one or more options.</p>
                 <h6>Properties</h6>
                 
 
@@ -165,7 +165,7 @@
 
             
 
-            <td class="description last">Optional mongo-style query object to initialize resultset with.</td>
+            <td class="description last"><p>Optional mongo-style query object to initialize resultset with.</p></td>
         </tr>
 
     
@@ -188,7 +188,7 @@
 
             
 
-            <td class="description last">Optional javascript filter function to initialize resultset with.</td>
+            <td class="description last"><p>Optional javascript filter function to initialize resultset with.</p></td>
         </tr>
 
     
@@ -211,7 +211,7 @@
 
             
 
-            <td class="description last">Optional boolean used by collection.findOne().</td>
+            <td class="description last"><p>Optional boolean used by collection.findOne().</p></td>
         </tr>
 
     
@@ -317,7 +317,7 @@
 
 
 <div class="description">
-    Alias of copy
+    <p>Alias of copy</p>
 </div>
 
 
@@ -389,7 +389,7 @@
 
 
 <div class="description">
-    Allows sorting a resultset based on multiple columns.
+    <p>Allows sorting a resultset based on multiple columns.</p>
 </div>
 
 
@@ -441,7 +441,7 @@
 
             
 
-            <td class="description last">array of property names or subarray of [propertyname, isdesc] used evaluate sort order</td>
+            <td class="description last"><p>array of property names or subarray of [propertyname, isdesc] used evaluate sort order</p></td>
         </tr>
 
     
@@ -509,7 +509,7 @@
 
         
 <div class="param-desc">
-    Reference to this resultset, sorted, for future chain operations.
+    <p>Reference to this resultset, sorted, for future chain operations.</p>
 </div>
 
 
@@ -550,7 +550,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
 
 <div class="description">
-    copy() - To support reuse of resultset in branched query situations.
+    <p>copy() - To support reuse of resultset in branched query situations.</p>
 </div>
 
 
@@ -621,7 +621,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    Returns a copy of the resultset (set) but the underlying document references will be the same.
+    <p>Returns a copy of the resultset (set) but the underlying document references will be the same.</p>
 </div>
 
 
@@ -654,7 +654,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
 
 <div class="description">
-    count() - returns the number of documents in the resultset.
+    <p>count() - returns the number of documents in the resultset.</p>
 </div>
 
 
@@ -725,7 +725,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    The number of documents in the resultset.
+    <p>The number of documents in the resultset.</p>
 </div>
 
 
@@ -758,7 +758,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
 
 <div class="description">
-    Terminates the chain and returns array of filtered documents
+    <p>Terminates the chain and returns array of filtered documents</p>
 </div>
 
 
@@ -810,7 +810,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
             
 
-            <td class="description last">allows specifying 'forceClones' and 'forceCloneMethod' options.
+            <td class="description last"><p>allows specifying 'forceClones' and 'forceCloneMethod' options.</p>
                 <h6>Properties</h6>
                 
 
@@ -852,8 +852,8 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
             
 
-            <td class="description last">Allows forcing the return of cloned objects even when
-       the collection is not configured for clone object.</td>
+            <td class="description last"><p>Allows forcing the return of cloned objects even when
+       the collection is not configured for clone object.</p></td>
         </tr>
 
     
@@ -876,8 +876,8 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
             
 
-            <td class="description last">Allows overriding the default or collection specified cloning method.
-       Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'</td>
+            <td class="description last"><p>Allows overriding the default or collection specified cloning method.
+       Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'</p></td>
         </tr>
 
     
@@ -952,7 +952,7 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    Array of documents in the resultset
+    <p>Array of documents in the resultset</p>
 </div>
 
 
@@ -985,8 +985,8 @@ rs.compoundsort(['age', ['name', true]);</code></pre>
 
 
 <div class="description">
-    eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
-eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key
+    <p>eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
+eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key</p>
 </div>
 
 
@@ -1038,7 +1038,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">Data array to join to.</td>
+            <td class="description last"><p>Data array to join to.</p></td>
         </tr>
 
     
@@ -1064,7 +1064,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">Property name in this result set to join on or a function to produce a value to join on</td>
+            <td class="description last"><p>Property name in this result set to join on or a function to produce a value to join on</p></td>
         </tr>
 
     
@@ -1090,7 +1090,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">Property name in the joinData to join on or a function to produce a value to join on</td>
+            <td class="description last"><p>Property name in the joinData to join on or a function to produce a value to join on</p></td>
         </tr>
 
     
@@ -1113,7 +1113,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">(Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}</td>
+            <td class="description last"><p>(Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}</p></td>
         </tr>
 
     
@@ -1181,7 +1181,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    A resultset with data in the format [{left: leftObj, right: rightObj}]
+    <p>A resultset with data in the format [{left: leftObj, right: rightObj}]</p>
 </div>
 
 
@@ -1214,7 +1214,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Used for querying via a mongo-style query object.
+    <p>Used for querying via a mongo-style query object.</p>
 </div>
 
 
@@ -1266,7 +1266,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">A mongo-style query object used for filtering current results.</td>
+            <td class="description last"><p>A mongo-style query object used for filtering current results.</p></td>
         </tr>
 
     
@@ -1289,7 +1289,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">(Optional) Used by collection.findOne()</td>
+            <td class="description last"><p>(Optional) Used by collection.findOne()</p></td>
         </tr>
 
     
@@ -1357,7 +1357,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    this resultset for further chain ops.
+    <p>this resultset for further chain ops.</p>
 </div>
 
 
@@ -1390,8 +1390,8 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Allows you to limit the number of documents passed to next chain operation.
-   A resultset copy() is made to avoid altering original resultset.
+    <p>Allows you to limit the number of documents passed to next chain operation.
+   A resultset copy() is made to avoid altering original resultset.</p>
 </div>
 
 
@@ -1443,7 +1443,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">The number of documents to return.</td>
+            <td class="description last"><p>The number of documents to return.</p></td>
         </tr>
 
     
@@ -1511,7 +1511,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    Returns a copy of the resultset, limited by qty, for subsequent chain ops.
+    <p>Returns a copy of the resultset, limited by qty, for subsequent chain ops.</p>
 </div>
 
 
@@ -1544,7 +1544,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    data transformation via user supplied functions
+    <p>data transformation via user supplied functions</p>
 </div>
 
 
@@ -1596,7 +1596,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">this function accepts a single document for you to transform and return</td>
+            <td class="description last"><p>this function accepts a single document for you to transform and return</p></td>
         </tr>
 
     
@@ -1619,7 +1619,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">this function accepts many (array of map outputs) and returns single value</td>
+            <td class="description last"><p>this function accepts many (array of map outputs) and returns single value</p></td>
         </tr>
 
     
@@ -1687,7 +1687,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    The output of your reduceFunction
+    <p>The output of your reduceFunction</p>
 </div>
 
 
@@ -1720,7 +1720,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Used for skipping 'pos' number of documents in the resultset.
+    <p>Used for skipping 'pos' number of documents in the resultset.</p>
 </div>
 
 
@@ -1772,7 +1772,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">Number of documents to skip; all preceding documents are filtered out.</td>
+            <td class="description last"><p>Number of documents to skip; all preceding documents are filtered out.</p></td>
         </tr>
 
     
@@ -1840,7 +1840,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.
+    <p>Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.</p>
 </div>
 
 
@@ -1873,7 +1873,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Removes all document objects which are currently in resultset from collection (as well as resultset)
+    <p>Removes all document objects which are currently in resultset from collection (as well as resultset)</p>
 </div>
 
 
@@ -1944,7 +1944,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    this (empty) resultset for further chain ops.
+    <p>this (empty) resultset for further chain ops.</p>
 </div>
 
 
@@ -1977,8 +1977,8 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Simpler, loose evaluation for user to sort based on a property name. (chainable).
-   Sorting based on the same lt/gt helper functions used for binary indices.
+    <p>Simpler, loose evaluation for user to sort based on a property name. (chainable).
+   Sorting based on the same lt/gt helper functions used for binary indices.</p>
 </div>
 
 
@@ -2030,7 +2030,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">name of property to sort by.</td>
+            <td class="description last"><p>name of property to sort by.</p></td>
         </tr>
 
     
@@ -2053,7 +2053,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">(Optional) If true, the property will be sorted in descending order</td>
+            <td class="description last"><p>(Optional) If true, the property will be sorted in descending order</p></td>
         </tr>
 
     
@@ -2121,7 +2121,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    Reference to this resultset, sorted, for future chain operations.
+    <p>Reference to this resultset, sorted, for future chain operations.</p>
 </div>
 
 
@@ -2154,7 +2154,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    User supplied compare function is provided two documents to compare. (chainable)
+    <p>User supplied compare function is provided two documents to compare. (chainable)</p>
 </div>
 
 
@@ -2206,7 +2206,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">A javascript compare function used for sorting.</td>
+            <td class="description last"><p>A javascript compare function used for sorting.</p></td>
         </tr>
 
     
@@ -2274,7 +2274,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    Reference to this resultset, sorted, for future chain operations.
+    <p>Reference to this resultset, sorted, for future chain operations.</p>
 </div>
 
 
@@ -2316,7 +2316,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    transform() - executes a named collection transform or raw array of transform steps against the resultset.
+    <p>transform() - executes a named collection transform or raw array of transform steps against the resultset.</p>
 </div>
 
 
@@ -2371,7 +2371,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">name of collection transform or raw transform array</td>
+            <td class="description last"><p>name of collection transform or raw transform array</p></td>
         </tr>
 
     
@@ -2394,7 +2394,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">(Optional) object property hash of parameters, if the transform requires them.</td>
+            <td class="description last"><p>(Optional) object property hash of parameters, if the transform requires them.</p></td>
         </tr>
 
     
@@ -2462,7 +2462,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    either (this) resultset or a clone of of this resultset (depending on steps)
+    <p>either (this) resultset or a clone of of this resultset (depending on steps)</p>
 </div>
 
 
@@ -2495,7 +2495,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    Used to run an update operation on all documents currently in the resultset.
+    <p>Used to run an update operation on all documents currently in the resultset.</p>
 </div>
 
 
@@ -2547,7 +2547,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">User supplied updateFunction(obj) will be executed for each document object.</td>
+            <td class="description last"><p>User supplied updateFunction(obj) will be executed for each document object.</p></td>
         </tr>
 
     
@@ -2615,7 +2615,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    this resultset for further chain ops.
+    <p>this resultset for further chain ops.</p>
 </div>
 
 
@@ -2648,7 +2648,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 <div class="description">
-    where() - Used for filtering via a javascript filter function.
+    <p>where() - Used for filtering via a javascript filter function.</p>
 </div>
 
 
@@ -2700,7 +2700,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
             
 
-            <td class="description last">A javascript function used for filtering current results by.</td>
+            <td class="description last"><p>A javascript function used for filtering current results by.</p></td>
         </tr>
 
     
@@ -2768,7 +2768,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         
 <div class="param-desc">
-    this resultset for further chain ops.
+    <p>this resultset for further chain ops.</p>
 </div>
 
 
@@ -2805,13 +2805,13 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Apr 04 2016 20:33:47 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

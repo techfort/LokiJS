@@ -799,7 +799,7 @@
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
-     * @param {boolean} options.cloneObjects - specify whether inserts and queries clone to/from user
+     * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
      * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @returns {Collection} a reference to the collection which was just added
@@ -2589,6 +2589,7 @@
      * @param {Object} options - (Optional) allows specification of 'removeWhereFilters' option
      * @returns {DynamicView} This dynamic view for further chained ops.
      * @memberof DynamicView
+     * @fires DynamicView.rebuild
      */
     DynamicView.prototype.rematerialize = function (options) {
       var fpl,

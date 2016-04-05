@@ -47,9 +47,9 @@
 
 
 <div class="description">
-    DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
+    <p>DynamicView class is a versatile 'live' view class which can have filters and sorts applied.
    Collection.addDynamicView(name) instantiates this DynamicView object and notifies it
-   whenever documents are add/updated/removed so it can remain up-to-date. (chainable)
+   whenever documents are add/updated/removed so it can remain up-to-date. (chainable)</p>
 </div>
 
 
@@ -101,7 +101,7 @@
 
             
 
-            <td class="description last">A reference to the collection to work against</td>
+            <td class="description last"><p>A reference to the collection to work against</p></td>
         </tr>
 
     
@@ -124,7 +124,7 @@
 
             
 
-            <td class="description last">The name of this dynamic view</td>
+            <td class="description last"><p>The name of this dynamic view</p></td>
         </tr>
 
     
@@ -147,7 +147,7 @@
 
             
 
-            <td class="description last">(Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
+            <td class="description last"><p>(Optional) Pass in object with 'persistent' and/or 'sortPriority' options.</p>
                 <h6>Properties</h6>
                 
 
@@ -189,7 +189,7 @@
 
             
 
-            <td class="description last">indicates if view is to main internal results array in 'resultdata'</td>
+            <td class="description last"><p>indicates if view is to main internal results array in 'resultdata'</p></td>
         </tr>
 
     
@@ -212,7 +212,7 @@
 
             
 
-            <td class="description last">'passive' (sorts performed on call to data) or 'active' (after updates)</td>
+            <td class="description last"><p>'passive' (sorts performed on call to data) or 'active' (after updates)</p></td>
         </tr>
 
     
@@ -235,7 +235,7 @@
 
             
 
-            <td class="description last">minimum rebuild interval (need clarification to docs here)</td>
+            <td class="description last"><p>minimum rebuild interval (need clarification to docs here)</p></td>
         </tr>
 
     
@@ -354,7 +354,7 @@ var results = mydv.data();</code></pre>
 
 
 <div class="description">
-    applyFilter() - Adds or updates a filter in the DynamicView filter pipeline
+    <p>applyFilter() - Adds or updates a filter in the DynamicView filter pipeline</p>
 </div>
 
 
@@ -406,8 +406,8 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">A filter object to add to the pipeline.
-   The object is in the format { 'type': filter_type, 'val', filter_param, 'uid', optional_filter_id }</td>
+            <td class="description last"><p>A filter object to add to the pipeline.
+   The object is in the format { 'type': filter_type, 'val', filter_param, 'uid', optional_filter_id }</p></td>
         </tr>
 
     
@@ -448,7 +448,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2874">line 2874</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2875">line 2875</a>
     </li></ul></dd>
     
 
@@ -475,7 +475,7 @@ var results = mydv.data();</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -508,7 +508,7 @@ var results = mydv.data();</code></pre>
 
 
 <div class="description">
-    applyFind() - Adds or updates a mongo-style query option in the DynamicView filter pipeline
+    <p>applyFind() - Adds or updates a mongo-style query option in the DynamicView filter pipeline</p>
 </div>
 
 
@@ -560,7 +560,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">A mongo-style query object to apply to pipeline</td>
+            <td class="description last"><p>A mongo-style query object to apply to pipeline</p></td>
         </tr>
 
     
@@ -586,7 +586,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">Optional: The unique ID of this filter, to reference it in the future.</td>
+            <td class="description last"><p>Optional: The unique ID of this filter, to reference it in the future.</p></td>
         </tr>
 
     
@@ -627,7 +627,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2906">line 2906</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2907">line 2907</a>
     </li></ul></dd>
     
 
@@ -654,7 +654,7 @@ var results = mydv.data();</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -687,7 +687,7 @@ var results = mydv.data();</code></pre>
 
 
 <div class="description">
-    applySimpleSort() - Used to specify a property used for view translation.
+    <p>applySimpleSort() - Used to specify a property used for view translation.</p>
 </div>
 
 
@@ -739,7 +739,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">Name of property by which to sort.</td>
+            <td class="description last"><p>Name of property by which to sort.</p></td>
         </tr>
 
     
@@ -762,7 +762,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">(Optional) If true, the sort will be in descending order.</td>
+            <td class="description last"><p>(Optional) If true, the sort will be in descending order.</p></td>
         </tr>
 
     
@@ -803,7 +803,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2731">line 2731</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2732">line 2732</a>
     </li></ul></dd>
     
 
@@ -830,7 +830,7 @@ var results = mydv.data();</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -863,7 +863,7 @@ var results = mydv.data();</code></pre>
 
 
 <div class="description">
-    applySort() - Used to apply a sort to the dynamic view
+    <p>applySort() - Used to apply a sort to the dynamic view</p>
 </div>
 
 
@@ -915,7 +915,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">a javascript compare function used for sorting</td>
+            <td class="description last"><p>a javascript compare function used for sorting</p></td>
         </tr>
 
     
@@ -956,7 +956,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2714">line 2714</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2715">line 2715</a>
     </li></ul></dd>
     
 
@@ -983,7 +983,7 @@ var results = mydv.data();</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -1016,7 +1016,7 @@ var results = mydv.data();</code></pre>
 
 
 <div class="description">
-    applySortCriteria() - Allows sorting a resultset based on multiple columns.
+    <p>applySortCriteria() - Allows sorting a resultset based on multiple columns.</p>
 </div>
 
 
@@ -1068,7 +1068,7 @@ var results = mydv.data();</code></pre>
 
             
 
-            <td class="description last">array of property names or subarray of [propertyname, isdesc] used evaluate sort order</td>
+            <td class="description last"><p>array of property names or subarray of [propertyname, isdesc] used evaluate sort order</p></td>
         </tr>
 
     
@@ -1109,7 +1109,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2756">line 2756</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2757">line 2757</a>
     </li></ul></dd>
     
 
@@ -1136,7 +1136,7 @@ var results = mydv.data();</code></pre>
 
         
 <div class="param-desc">
-    Reference to this DynamicView, sorted, for future chain operations.
+    <p>Reference to this DynamicView, sorted, for future chain operations.</p>
 </div>
 
 
@@ -1179,7 +1179,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    applyWhere() - Adds or updates a javascript filter function in the DynamicView filter pipeline
+    <p>applyWhere() - Adds or updates a javascript filter function in the DynamicView filter pipeline</p>
 </div>
 
 
@@ -1231,7 +1231,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">A javascript filter function to apply to pipeline</td>
+            <td class="description last"><p>A javascript filter function to apply to pipeline</p></td>
         </tr>
 
     
@@ -1257,7 +1257,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">Optional: The unique ID of this filter, to reference it in the future.</td>
+            <td class="description last"><p>Optional: The unique ID of this filter, to reference it in the future.</p></td>
         </tr>
 
     
@@ -1298,7 +1298,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2923">line 2923</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2924">line 2924</a>
     </li></ul></dd>
     
 
@@ -1325,7 +1325,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -1358,9 +1358,9 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    branchResultset() - Makes a copy of the internal resultset for branched queries.
+    <p>branchResultset() - Makes a copy of the internal resultset for branched queries.
    Unlike this dynamic view, the branched resultset will not be 'live' updated,
-   so your branched query should be immediately resolved and not held for future evaluation.
+   so your branched query should be immediately resolved and not held for future evaluation.</p>
 </div>
 
 
@@ -1415,7 +1415,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">Optional name of collection transform, or an array of transform steps</td>
+            <td class="description last"><p>Optional name of collection transform, or an array of transform steps</p></td>
         </tr>
 
     
@@ -1438,7 +1438,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">optional parameters (if optional transform requires them)</td>
+            <td class="description last"><p>optional parameters (if optional transform requires them)</p></td>
         </tr>
 
     
@@ -1479,7 +1479,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2653">line 2653</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2654">line 2654</a>
     </li></ul></dd>
     
 
@@ -1506,7 +1506,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    A copy of the internal resultset for branched queries.
+    <p>A copy of the internal resultset for branched queries.</p>
 </div>
 
 
@@ -1539,7 +1539,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    count() - returns the number of documents representing the current DynamicView contents.
+    <p>count() - returns the number of documents representing the current DynamicView contents.</p>
 </div>
 
 
@@ -1583,7 +1583,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2956">line 2956</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2957">line 2957</a>
     </li></ul></dd>
     
 
@@ -1610,7 +1610,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    The number of documents representing the current DynamicView contents.
+    <p>The number of documents representing the current DynamicView contents.</p>
 </div>
 
 
@@ -1643,7 +1643,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    data() - resolves and pending filtering and sorting, then returns document array as result.
+    <p>data() - resolves and pending filtering and sorting, then returns document array as result.</p>
 </div>
 
 
@@ -1687,7 +1687,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2969">line 2969</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2970">line 2970</a>
     </li></ul></dd>
     
 
@@ -1714,7 +1714,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    An array of documents representing the current DynamicView contents.
+    <p>An array of documents representing the current DynamicView contents.</p>
 </div>
 
 
@@ -1747,7 +1747,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    mapReduce() - data transformation via user supplied functions
+    <p>mapReduce() - data transformation via user supplied functions</p>
 </div>
 
 
@@ -1799,7 +1799,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">this function accepts a single document for you to transform and return</td>
+            <td class="description last"><p>this function accepts a single document for you to transform and return</p></td>
         </tr>
 
     
@@ -1822,7 +1822,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">this function accepts many (array of map outputs) and returns single value</td>
+            <td class="description last"><p>this function accepts many (array of map outputs) and returns single value</p></td>
         </tr>
 
     
@@ -1863,7 +1863,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3204">line 3204</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3205">line 3205</a>
     </li></ul></dd>
     
 
@@ -1890,7 +1890,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    The output of your reduceFunction
+    <p>The output of your reduceFunction</p>
 </div>
 
 
@@ -1911,10 +1911,10 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    rematerialize() - intended for use immediately after deserialization (loading)
+    <p>rematerialize() - intended for use immediately after deserialization (loading)
    This will clear out and reapply filterPipeline ops, recreating the view.
    Since where filters do not persist correctly, this method allows
-   restoring the view to state where user can re-apply those where filters.
+   restoring the view to state where user can re-apply those where filters.</p>
 </div>
 
 
@@ -1966,7 +1966,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">(Optional) allows specification of 'removeWhereFilters' option</td>
+            <td class="description last"><p>(Optional) allows specification of 'removeWhereFilters' option</p></td>
         </tr>
 
     
@@ -2007,7 +2007,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2593">line 2593</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2594">line 2594</a>
     </li></ul></dd>
     
 
@@ -2022,6 +2022,11 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 
+<h5>Fires:</h5>
+<ul>
+    <li>DynamicView.event:rebuild</li>
+</ul>
+
 
 
 
@@ -2034,7 +2039,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    This dynamic view for further chained ops.
+    <p>This dynamic view for further chained ops.</p>
 </div>
 
 
@@ -2067,7 +2072,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    removeFilter() - Remove the specified filter from the DynamicView filter pipeline
+    <p>removeFilter() - Remove the specified filter from the DynamicView filter pipeline</p>
 </div>
 
 
@@ -2122,7 +2127,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
             
 
-            <td class="description last">The unique ID of the filter to be removed.</td>
+            <td class="description last"><p>The unique ID of the filter to be removed.</p></td>
         </tr>
 
     
@@ -2163,7 +2168,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2939">line 2939</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2940">line 2940</a>
     </li></ul></dd>
     
 
@@ -2190,7 +2195,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
         
 <div class="param-desc">
-    this DynamicView object, for further chain ops.
+    <p>this DynamicView object, for further chain ops.</p>
 </div>
 
 
@@ -2223,8 +2228,8 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 <div class="description">
-    removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
-    Existing options should be retained.
+    <p>removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
+    Existing options should be retained.</p>
 </div>
 
 
@@ -2268,7 +2273,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2689">line 2689</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2690">line 2690</a>
     </li></ul></dd>
     
 
@@ -2310,13 +2315,13 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Apr 03 2016 20:20:14 GMT-0400 (EDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Apr 04 2016 20:33:47 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

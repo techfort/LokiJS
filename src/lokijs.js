@@ -795,6 +795,7 @@
      * @param {string} name - name of collection to add
      * @param {object} options - (optional) options to configure collection with.
      * @param {array} options.unique - array of property names to define unique constraints for
+     * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
@@ -1541,7 +1542,7 @@
     };
 
     /**
-     * Alias of copy
+     * Alias of copy()
      * @memberof Resultset
      */
     Resultset.prototype.branch = Resultset.prototype.copy;
@@ -2707,6 +2708,12 @@
 
     /**
      * applySort() - Used to apply a sort to the dynamic view
+     * @example
+     * dv.applySort(function(obj1, obj2) {
+     *   if (obj1.name === obj2.name) return 0;
+     *   if (obj1.name > obj2.name) return 1;
+     *   if (obj1.name < obj2.name) return -1;
+     * });
      *
      * @param {function} comparefun - a javascript compare function used for sorting
      * @returns {DynamicView} this DynamicView object, for further chain ops.
@@ -2723,6 +2730,8 @@
 
     /**
      * applySimpleSort() - Used to specify a property used for view translation.
+     * @example
+     * dv.applySimpleSort("name");
      *
      * @param {string} propname - Name of property by which to sort.
      * @param {boolean} isdesc - (Optional) If true, the sort will be in descending order.
@@ -3702,6 +3711,7 @@
     /**
      * Quickly determine number of documents in collection (or query)
      * @param {object} query - (optional) query object to count results of
+     * @returns {number} number of documents in the collection
      * @memberof Collection
      */
     Collection.prototype.count = function (query) {
@@ -3741,6 +3751,7 @@
      * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
      * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
      * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
+     * @returns {DynamicView} reference to the dynamic view added
      * @memberof Collection
      **/
 
@@ -3804,9 +3815,9 @@
     };
 
     /**
-     * generate document method - ensure object(s) have meta properties, clone it if necessary, etc.
-     * @param {object} doc - the document to be inserted (or an array of objects)
-     * @returns {object|array} document or documents (if passed an array of objects)
+     * Adds object(s) to collection, ensure object(s) have meta properties, clone it if necessary, etc.
+     * @param {object|array} doc - the document (or array of documents) to be inserted
+     * @returns {object|array} document or documents inserted
      * @memberof Collection
      */
     Collection.prototype.insert = function (doc) {
@@ -3828,7 +3839,7 @@
     };
 
     /**
-     * generate document method - ensure object has meta properties, clone it if necessary, etc.
+     * Adds a single object, ensures it has meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted
      * @returns {object} document or 'undefined' if there was a problem inserting it
      * @memberof Collection
@@ -4209,7 +4220,8 @@
 
     /**
      * Find method, api is similar to mongodb.
-     * for more complex queries use view() and storeView()
+     * for more complex queries use [chain()]{@link Collection#chain} or [where()]{@link Collection#where}.
+     * @example {@tutorial Query Examples}
      * @param {object} query - 'mongo-like' query object
      * @returns {array} Array of matching documents
      * @memberof Collection
@@ -4307,7 +4319,11 @@
     };
 
     /**
-     * Create view function - filter
+     * Query the collection by supplying a javascript filter function.
+     * @example
+     * var results = coll.where(function(obj) {
+     *   return obj.legs === 8;
+     * });
      *
      * @param {function} fun - filter function to run against all collection docs
      * @returns {array} all documents which pass your filter function

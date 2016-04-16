@@ -175,7 +175,8 @@ The core 'find' and 'where' functionality are two of the main building blocks th
 An example making better use of chaining might be the following : 
 
 ```javascript
-var results = coll.find({'Age': {'$gt':20}})
+var results = coll.chain()
+                  .find({'Age': {'$gt':20}})
                   .where(function(obj) {
                      return obj.Country.indexOf('FR') === 0;
                    })

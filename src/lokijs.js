@@ -689,7 +689,7 @@
      * @param {boolean} options.autoload - enables autoload on loki instantiation
      * @param {function} options.autoloadCallback - user callback called after database load
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
-     * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking 
+     * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking
      * @memberof Loki
      */
     Loki.prototype.configureOptions = function (options, initialConfig) {
@@ -4885,6 +4885,10 @@
     Loki.LokiOps = LokiOps;
     Loki.Collection = Collection;
     Loki.KeyValueStore = KeyValueStore;
+    Loki.persistenceAdapters = {
+      fs: LokiFsAdapter,
+      localStorage: LokiLocalStorageAdapter
+    };
     return Loki;
   }());
 

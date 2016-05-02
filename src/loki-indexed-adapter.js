@@ -63,7 +63,7 @@
      */
     LokiIndexedAdapter.prototype.checkAvailability = function()
     {
-      if (typeof window !== 'undefined' && window.indexedDB) return true;
+      if (typeof indexedDB !== 'undefined' && indexedDB) return true;
 
       return false;
     };

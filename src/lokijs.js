@@ -622,10 +622,19 @@
       };
 
       var getENV = function () {
+        if (typeof global !== 'undefined' && (global.android || global.NSObject)) {
+          //If no adapter is set use the default nativescript adapter
+          if (!options.adapter) {
+            const LokiNativescriptAdapter = require('./loki-nativescript-adapter');
+            options.adapter=new LokiNativescriptAdapter();
+          }
+          return 'NATIVESCRIPT'; //nativescript
+        }
+        
         if (typeof window === 'undefined') {
           return 'NODEJS';
         }
-
+        
         if (typeof global !== 'undefined' && global.window) {
           return 'NODEJS'; //node-webkit
         }

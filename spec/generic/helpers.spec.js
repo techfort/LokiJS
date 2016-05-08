@@ -13,6 +13,15 @@ describe('Testing comparator helpers', function () {
     expect(ops.$eq(true, false)).toEqual(false);
   });
 
+  it('$aeq works as expected', function() {
+    expect(ops.$aeq(4, '4')).toEqual(true);
+    expect(ops.$aeq(4, 4)).toEqual(true);
+    expect(ops.$aeq(3, 2)).toEqual(false);
+    expect(ops.$aeq(3, 'three')).toEqual(false);
+    expect(ops.$aeq('3', 3)).toEqual(true);
+    expect(ops.$aeq('1.23', 1.23)).toEqual(true);
+  });
+
   it('$ne works as expected', function () {
     expect(ops.$ne(true, true)).toEqual(false);
 

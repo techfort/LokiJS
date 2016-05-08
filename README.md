@@ -9,7 +9,7 @@
 
 LokiJS is a document oriented database written in javascript, published under MIT License.
 Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.
-Runs in node (including cordova/phonegap and node-webkit) and the browser.
+Runs in node (including cordova/phonegap and node-webkit),  [nativescript](http://www.nativescript.org) and the browser.
 LokiJS is ideal for the following scenarios: 
 
 1. client-side in-memory db is ideal (e.g., a session store)
@@ -17,6 +17,7 @@ LokiJS is ideal for the following scenarios:
 3. cordova/phonegap mobile apps where you can leverage the power of javascript and avoid interacting with native databases
 4. data sets loaded into a browser page and synchronised at the end of the work session
 5. node-webkit desktop apps
+6. nativescript mobile apps that mix the power and ubiquity of javascript with native performance and ui
 
 LokiJS supports indexing and views and achieves high-performance through maintaining unique and binary indexes (indices) for data.
 
@@ -32,7 +33,7 @@ Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki
 ### Main Features
 
 1. Fast performance NoSQL in-memory database, collections with unique index (1.1M ops/s) and binary-index (500k ops/s)
-2. Runs in multiple environments (browser, node)
+2. Runs in multiple environments (browser, node, nativescript)
 3. Dynamic Views for fast access of data subsets
 4. Built-in persistence adapters, and the ability to support user-defined ones
 5. Changes API
@@ -41,7 +42,7 @@ Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki
 ## Current state
 
 LokiJS is at version 1.3 [Eostre].
-As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, and hybrid mobile apps (such as phonegap/cordova).
+As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, nativescript mobile framework and hybrid mobile apps (such as phonegap/cordova).
 
 Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. 
 
@@ -53,9 +54,7 @@ For browser environments you simply need the lokijs.js file contained in src/
 
 You can use bower to install lokijs with `bower install lokijs`
 
-For node environments you can install through `npm install lokijs`.
-
-
+For node and nativescript environments you can install through `npm install lokijs`.
 
 ## Roadmap
 * exactIndex

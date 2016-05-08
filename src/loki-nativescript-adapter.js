@@ -24,16 +24,17 @@ LokiNativescriptAdapter.prototype.loadDatabase = function(dbname, callback){
     myFile.readText()
             .then(function (content) {
                 //The file is empty or missing
-                if (content==""){
+                if (content===""){
                     callback(new Error("DB file does not exist"));
                 } else {
                     callback(content);    
                 }
             }, function (error) {
                 console.log("Error opening db "+dbname+": "+ error);
-                 callback(new Error(error))
+                 callback(new Error(error));
             });
-}
+};
+
 LokiNativescriptAdapter.prototype.saveDatabase = function(dbname, serialized, callback){
     var documents = this.fs.knownFolders.documents();
     var myFile = documents.getFile(dbname);    
@@ -44,7 +45,7 @@ LokiNativescriptAdapter.prototype.saveDatabase = function(dbname, serialized, ca
                 console.log("Error saving db "+dbname+": "+ error);
             });
     
-}
+};
 
 LokiNativescriptAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
       var documents = this.fs.knownFolders.documents();

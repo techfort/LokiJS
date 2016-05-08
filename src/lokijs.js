@@ -292,6 +292,11 @@
         return a === b;
       },
 
+      // abstract/loose equality
+      $aeq: function (a, b) {
+        return a == b;
+      },
+
       $ne: function (a, b) {
         if (isNaN(b)) {
           return !isNaN(a);
@@ -433,7 +438,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
+    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -1776,6 +1781,7 @@
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
       case '$eq':
+      case '$aeq':
         if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
           return [0, -1];
         }
@@ -3930,19 +3936,17 @@
           position,
           self = this;
 
+        obj = arr[0]; // -internal- obj ref
+        position = arr[1]; // position in data array
+
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
         this.emit('pre-update', doc);
 
-        obj = arr[0];
-
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(obj);
+          self.constraints.unique[key].update(doc);
         });
-
-        // get current position in data array
-        position = arr[1];
 
         // operate the update
         this.data[position] = doc;
@@ -4030,6 +4034,7 @@
       } catch (err) {
         this.rollback();
         this.console.error(err.message);
+        this.emit('error', err);
       }
     };
 
@@ -4123,7 +4128,9 @@
     /**
      * Get by Id - faster than other methods because of the searching algorithm
      * @param {int} id - $loki id of document you want to retrieve
-     * @returns {object|null} Object reference if document was found, or null if not
+     * @param {boolean} returnPosition - if 'true' we will return [object, position]
+     * @returns {object|array|null} Object reference if document was found, null if not,
+     *     or an array if 'returnPosition' was passed.
      * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {

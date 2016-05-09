@@ -4035,6 +4035,7 @@
         this.rollback();
         this.console.error(err.message);
         this.emit('error', err);
+        throw (err); // re-throw error so user does not think it succeeded
       }
     };
 

@@ -275,6 +275,67 @@ describe('loki', function () {
 
   });
 
+  // We only support dot notation involving array when
+  // the leaf property is the array.  This verifies that functionality
+  describe('dot notation across leaf array', function() {
+    it('works', function () {
+      var dna = db.addCollection('dnacoll');
+
+      dna.insert({
+        id: 1,
+        children: [{
+          someProperty: 11
+        }]
+      });
+
+      dna.insert({
+        id: 2,
+        children: [{
+          someProperty: 22
+        }]
+      });
+
+      dna.insert({
+        id: 3,
+        children: [{
+          someProperty: 33
+        }, {
+          someProperty: 22
+        }]
+      });
+
+      dna.insert({
+        id: 4,
+        children: [{
+          someProperty: 11
+        }]
+      });
+
+      dna.insert({
+        id: 5,
+        children: [{
+          missing: null
+        }]
+      });
+
+      dna.insert({
+        id: 6,
+        children: [{
+          someProperty: null
+        }]
+      });
+
+      var results = dna.find({'children.someProperty': 33 });
+      expect(results.length).toEqual(1);
+
+      results = dna.find({'children.someProperty': 11 });
+      expect(results.length).toEqual(2);
+
+      results = dna.find({'children.someProperty': 22});
+      expect(results.length).toEqual(2);
+    });
+  });
+
   describe('calculateRange', function () {
     it('works', function () {
       var eic = db.addCollection('eic');

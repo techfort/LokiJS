@@ -222,40 +222,45 @@
 
     /**
      * dotSubScan - helper function used for dot notation queries.
+     *
+     * @param {object} root - object to traverse
+     * @param {array} paths - array of properties to drill into
+     * @param {function} fun - evaluation function to test with
+     * @param {any} value - comparative value to also pass to (compare) fun
      */
-    function dotSubScan(root, propPath, fun, value) {
-      var pathSegment = null;
-      var subIndex = 0, subLen = 0, subPath = null;
+    function dotSubScan(root, paths, fun, value) {
+      var arrayRef = null;
+      var pathIndex, subIndex;
+      var path;
 
-      for (var segmIndex = 0, segmCount = propPath.length; segmIndex < segmCount; segmIndex++) {
-        pathSegment = propPath[segmIndex];
+      for (pathIndex = 0; pathIndex < paths.length; pathIndex++) {
+        path = paths[pathIndex];
 
-        // if the dot notation is invalid for the current document, then ignore this document
-        if (root === undefined || root === null || !hasOwnProperty.call(root, pathSegment)) {
-          return false;
-        }
-
-        if (Array.isArray(root)) {
-          subLen = root.length;
+        // foreach already detected parent was array so this must be where we iterate
+        if (arrayRef) {
           // iterate all sub-array items to see if any yield hits
-          if ((segmIndex + 1) < segmCount) {
-            subPath = propPath.slice(segmIndex + 1);
-            for (subIndex = 0; subIndex < subLen; subIndex++) {
-              if (dotSubScan(root[subIndex], subPath, fun, value)) {
-                return true;
-              }
-            }
-          } else {
-            for (subIndex = 0; subIndex < subLen; subIndex++) {
-              if (fun(root[subIndex][pathSegment], value)) {
-                return true;
-              }
+          for (subIndex = 0; subIndex < arrayRef.length; subIndex++) {
+            if (fun(arrayRef[subIndex][path], value)) {
+              return true;
             }
           }
-          return false;
         }
+        // else not yet determined if subarray scan is involved
+        else {
+          // if the dot notation is invalid for the current document, then ignore this document
+          if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
+            return false;
+          }
+          root = root[path];
 
-        root = root[pathSegment];
+          if (root === undefined || root === null) {
+            return false;
+          }
+
+          if (Array.isArray(root)) {
+            arrayRef = root;
+          }
+        }
       }
 
       // made it this far so must be dot notation on non-array property

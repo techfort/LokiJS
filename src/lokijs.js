@@ -640,11 +640,11 @@
           }
           return 'NATIVESCRIPT'; //nativescript
         }
-        
+
         if (typeof window === 'undefined') {
           return 'NODEJS';
         }
-        
+
         if (typeof global !== 'undefined' && global.window) {
           return 'NODEJS'; //node-webkit
         }
@@ -3950,7 +3950,7 @@
         this.emit('pre-update', doc);
 
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(doc);
+          self.constraints.unique[key].update(obj, doc);
         });
 
         // operate the update
@@ -4757,14 +4757,19 @@
     UniqueIndex.prototype.byId = function (id) {
       return this.keyMap[this.lokiMap[id]];
     };
-    UniqueIndex.prototype.update = function (obj) {
-      if (this.lokiMap[obj.$loki] !== obj[this.field]) {
+    /**
+     * Updates a document's unique index given an updated object.
+     * @param  {Object} obj Original document object
+     * @param  {Object} doc New document object (likely the same as obj)
+     */
+    UniqueIndex.prototype.update = function (obj, doc) {
+      if (this.lokiMap[obj.$loki] !== doc[this.field]) {
         var old = this.lokiMap[obj.$loki];
-        this.set(obj);
+        this.set(doc);
         // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
         this.keyMap[old] = undefined;
       } else {
-        this.keyMap[obj[this.field]] = obj;
+        this.keyMap[obj[this.field]] = doc;
       }
     };
     UniqueIndex.prototype.remove = function (key) {

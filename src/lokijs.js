@@ -272,7 +272,7 @@
         return function (b) {
           return a.indexOf(b) !== -1;
         };
-      } else if (typeof a === 'object') {
+      } else if (typeof a === 'object' && a !== null) {
         return function (b) {
           return hasOwnProperty.call(a, b);
         };

@@ -542,7 +542,7 @@
      * with the option of passing optional parameters which are going to be processed by the callback
      * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
      * @param {string} eventName - the name of the event
-     * @param {object} data - optional object passed with the event
+     * @param {object=} data - optional object passed with the event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.emit = function (eventName, data) {
@@ -581,7 +581,7 @@
      * @constructor Loki
      * @implements LokiEventEmitter
      * @param {string} filename - name of the file to be saved to
-     * @param {object} options - (Optional) config options object
+     * @param {object=} options - (Optional) config options object
      * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
      * @param {boolean} options.verbose - enable console output (default is 'false')
      * @param {boolean} options.autosave - enables autosave
@@ -812,7 +812,7 @@
     /**
      * Adds a collection to the database.
      * @param {string} name - name of collection to add
-     * @param {object} options - (optional) options to configure collection with.
+     * @param {object=} options - (optional) options to configure collection with.
      * @param {array} options.unique - array of property names to define unique constraints for
      * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
@@ -1059,7 +1059,7 @@
      * Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
      * Does not actually destroy the db.
      *
-     * @param {function} callback - (Optional) if supplied will be registered with close event before emitting.
+     * @param {function=} callback - (Optional) if supplied will be registered with close event before emitting.
      * @memberof Loki
      */
     Loki.prototype.close = function (callback) {
@@ -1093,7 +1093,7 @@
      * collection and creates a single array for the entire database. If an array of names
      * of collections is passed then only the included collections will be tracked.
      *
-     * @param {array} optional array of collection names. No arg means all collections are processed.
+     * @param {array=} optional array of collection names. No arg means all collections are processed.
      * @returns {array} array of changes
      * @see private method createChange() in Collection
      * @memberof Loki
@@ -1258,7 +1258,7 @@
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
      * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
     Loki.prototype.loadDatabase = function (options, callback) {
@@ -1308,7 +1308,7 @@
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
-     * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
     Loki.prototype.saveDatabase = function (callback) {
@@ -1352,7 +1352,7 @@
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
      * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function} callback - (Optional) user supplied async callback / error handler
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
     Loki.prototype.deleteDatabase = function (options, callback) {
@@ -1402,7 +1402,7 @@
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
      * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function} callback - (Optional) user supplied async callback
+     * @param {function=} callback - (Optional) user supplied async callback
      */
     Loki.prototype.autosaveEnable = function (options, callback) {
       this.autosave = true;
@@ -1449,7 +1449,7 @@
      *
      * @constructor Resultset
      * @param {Collection} collection - The collection which this Resultset will query against.
-     * @param {Object} options - Object containing one or more options.
+     * @param {Object=} options - Object containing one or more options.
      * @param {string} options.queryObj - Optional mongo-style query object to initialize resultset with.
      * @param {function} options.queryFunc - Optional javascript filter function to initialize resultset with.
      * @param {bool} options.firstOnly - Optional boolean used by collection.findOne().
@@ -1569,8 +1569,8 @@
     /**
      * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
-     * @param transform {string|array} - name of collection transform or raw transform array
-     * @param parameters {object} - (Optional) object property hash of parameters, if the transform requires them.
+     * @param transform {(string|array)} - name of collection transform or raw transform array
+     * @param parameters {object=} - (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} either (this) resultset or a clone of of this resultset (depending on steps)
      * @memberof Resultset
      */
@@ -1681,7 +1681,7 @@
      *    Sorting based on the same lt/gt helper functions used for binary indices.
      *
      * @param {string} propname - name of property to sort by.
-     * @param {bool} isdesc - (Optional) If true, the property will be sorted in descending order
+     * @param {bool=} isdesc - (Optional) If true, the property will be sorted in descending order
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      * @memberof Resultset
      */
@@ -1981,7 +1981,7 @@
      * Used for querying via a mongo-style query object.
      *
      * @param {object} query - A mongo-style query object used for filtering current results.
-     * @param {boolean} firstOnly - (Optional) Used by collection.findOne()
+     * @param {boolean=} firstOnly - (Optional) Used by collection.findOne()
      * @returns {Resultset} this resultset for further chain ops.
      * @memberof Resultset
      */
@@ -2330,7 +2330,7 @@
     /**
      * Terminates the chain and returns array of filtered documents
      *
-     * @param {object} options - allows specifying 'forceClones' and 'forceCloneMethod' options.
+     * @param {object=} options - allows specifying 'forceClones' and 'forceCloneMethod' options.
      * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
      *        the collection is not configured for clone object.
      * @param {string} options.forceCloneMethod - Allows overriding the default or collection specified cloning method.
@@ -2462,7 +2462,7 @@
      * @param {Array} joinData - Data array to join to.
      * @param {(string|function)} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
      * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
-     * @param {function} mapFun - (Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @param {function=} mapFun - (Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      * @memberof Resultset
      */
@@ -2549,10 +2549,11 @@
      * @implements LokiEventEmitter
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
-     * @param {object} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
+     * @param {object=} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
      * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
      * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
      * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
+     * @see {@link Collection#addDynamicView} to construct instances of DynamicView
      */
     function DynamicView(collection, name, options) {
       this.collection = collection;
@@ -2607,7 +2608,7 @@
      *    Since where filters do not persist correctly, this method allows
      *    restoring the view to state where user can re-apply those where filters.
      *
-     * @param {Object} options - (Optional) allows specification of 'removeWhereFilters' option
+     * @param {Object=} options - (Optional) allows specification of 'removeWhereFilters' option
      * @returns {DynamicView} This dynamic view for further chained ops.
      * @memberof DynamicView
      * @fires DynamicView.rebuild
@@ -2667,8 +2668,8 @@
      *    Unlike this dynamic view, the branched resultset will not be 'live' updated,
      *    so your branched query should be immediately resolved and not held for future evaluation.
      *
-     * @param {(string|array)} transform - Optional name of collection transform, or an array of transform steps
-     * @param {object} parameters - optional parameters (if optional transform requires them)
+     * @param {(string|array=)} transform - Optional name of collection transform, or an array of transform steps
+     * @param {object=} parameters - optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      * @memberof DynamicView
      */
@@ -2754,7 +2755,7 @@
      * dv.applySimpleSort("name");
      *
      * @param {string} propname - Name of property by which to sort.
-     * @param {boolean} isdesc - (Optional) If true, the sort will be in descending order.
+     * @param {boolean=} isdesc - (Optional) If true, the sort will be in descending order.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      * @memberof DynamicView
      */
@@ -2838,7 +2839,7 @@
      * Implementation detail.
      * _indexOfFilterWithId() - Find the index of a filter in the pipeline, by that filter's ID.
      *
-     * @param {string|number} uid - The unique ID of the filter.
+     * @param {(string|number)} uid - The unique ID of the filter.
      * @returns {number}: index of the referenced filter in the pipeline; -1 if not found.
      */
     DynamicView.prototype._indexOfFilterWithId = function (uid) {
@@ -2929,7 +2930,7 @@
      * applyFind() - Adds or updates a mongo-style query option in the DynamicView filter pipeline
      *
      * @param {object} query - A mongo-style query object to apply to pipeline
-     * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
+     * @param {(string|number)=} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      * @memberof DynamicView
      */
@@ -2946,7 +2947,7 @@
      * applyWhere() - Adds or updates a javascript filter function in the DynamicView filter pipeline
      *
      * @param {function} fun - A javascript filter function to apply to pipeline
-     * @param {string|number} uid - Optional: The unique ID of this filter, to reference it in the future.
+     * @param {(string|number)=} uid - Optional: The unique ID of this filter, to reference it in the future.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      * @memberof DynamicView
      */
@@ -2962,7 +2963,7 @@
     /**
      * removeFilter() - Remove the specified filter from the DynamicView filter pipeline
      *
-     * @param {string|number} uid - The unique ID of the filter to be removed.
+     * @param {(string|number)} uid - The unique ID of the filter to be removed.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      * @memberof DynamicView
      */
@@ -3245,7 +3246,7 @@
      * @constructor Collection
      * @implements LokiEventEmitter
      * @param {string} name - collection name
-     * @param {array|object} options - array of property names to be indicized OR a configuration object
+     * @param {(array|object)=} options - (optional) array of property names to be indicized OR a configuration object
      * @param {array} options.unique - array of property names to define unique constraints for
      * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
@@ -3255,6 +3256,7 @@
      * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
      * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
+     * @see {@link Loki#addCollection} for normal creation of collections
      */
     function Collection(name, options) {
       // the name of the collection
@@ -3631,7 +3633,7 @@
     /**
      * Ensure binary index on a certain field
      * @param {string} property - name of property to create binary index on
-     * @param {boolean} force - (Optional) flag indicating whether to construct index immediately
+     * @param {boolean=} force - (Optional) flag indicating whether to construct index immediately
      * @memberof Collection
      */
     Collection.prototype.ensureIndex = function (property, force) {
@@ -3730,7 +3732,7 @@
 
     /**
      * Quickly determine number of documents in collection (or query)
-     * @param {object} query - (optional) query object to count results of
+     * @param {object=} query - (optional) query object to count results of
      * @returns {number} number of documents in the collection
      * @memberof Collection
      */
@@ -3767,7 +3769,7 @@
     /**
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
-     * @param {object} options - (optional) options to configure dynamic view with
+     * @param {object=} options - (optional) options to configure dynamic view with
      * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
      * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
      * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
@@ -3836,8 +3838,8 @@
 
     /**
      * Adds object(s) to collection, ensure object(s) have meta properties, clone it if necessary, etc.
-     * @param {object|array} doc - the document (or array of documents) to be inserted
-     * @returns {object|array} document or documents inserted
+     * @param {(object|array)} doc - the document (or array of documents) to be inserted
+     * @returns {(object|array)} document or documents inserted
      * @memberof Collection
      */
     Collection.prototype.insert = function (doc) {
@@ -4045,6 +4047,11 @@
     };
 
 
+    /**
+     * Remove all documents matching supplied filter object
+     * @param {object} query - query object to filter on
+     * @memberof Collection
+     */
     Collection.prototype.removeWhere = function (query) {
       var list;
       if (typeof query === 'function') {
@@ -4135,7 +4142,7 @@
      * Get by Id - faster than other methods because of the searching algorithm
      * @param {int} id - $loki id of document you want to retrieve
      * @param {boolean} returnPosition - if 'true' we will return [object, position]
-     * @returns {object|array|null} Object reference if document was found, null if not,
+     * @returns {(object|array|null)} Object reference if document was found, null if not,
      *     or an array if 'returnPosition' was passed.
      * @memberof Collection
      */
@@ -4200,7 +4207,7 @@
     /**
      * Find one object by index property, by property equal to value
      * @param {object} query - query object used to perform search with
-     * @returns {object|null} First matching document, or null if none
+     * @returns {(object|null)} First matching document, or null if none
      * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
@@ -4385,7 +4392,7 @@
      * @param {array} joinData - array of documents to 'join' to this collection
      * @param {string} leftJoinProp - property name in collection
      * @param {string} rightJoinProp - property name in joinData
-     * @param {function} mapFun - (Optional) map function to use
+     * @param {function=} mapFun - (Optional) map function to use
      * @returns {Resultset} Result of the mapping operation
      * @memberof Collection
      */

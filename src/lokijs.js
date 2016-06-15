@@ -303,8 +303,10 @@
       },
 
       $ne: function (a, b) {
-        if (isNaN(b)) {
-          return !isNaN(a);
+        // ecma 5 safe test for NaN
+        if (b !== b) {
+          // ecma 5 test value is not NaN
+          return (a === a);
         }
 
         return a !== b;

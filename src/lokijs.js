@@ -3092,6 +3092,11 @@
      * @param {bool} isNew - true if the document was just added to the collection.
      */
     DynamicView.prototype.evaluateDocument = function (objIndex, isNew) {
+      // if no filter applied yet, the result 'set' should remain 'everything'
+      if (!this.resultset.filterInitialized) {
+        return;
+      }
+
       var ofr = this.resultset.filteredrows;
       var oldPos = (isNew) ? (-1) : (ofr.indexOf(+objIndex));
       var oldlen = ofr.length;
@@ -3182,6 +3187,11 @@
      * removeDocument() - internal function called on collection.delete()
      */
     DynamicView.prototype.removeDocument = function (objIndex) {
+      // if no filter applied yet, the result 'set' should remain 'everything'
+      if (!this.resultset.filterInitialized) {
+        return;
+      }
+
       var ofr = this.resultset.filteredrows;
       var oldPos = ofr.indexOf(+objIndex);
       var oldlen = ofr.length;

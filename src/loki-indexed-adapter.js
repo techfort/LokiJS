@@ -172,22 +172,26 @@
      *
      * @example
      * // DELETE DATABASE
-     * idbAdapter.deleteDatabase('test'); // delete 'finance'/'test' value from catalog
+     * // delete 'finance'/'test' value from catalog
+     * idbAdapter.deleteDatabase('test', function {
+     *   // database deleted
+     * });
      *
      * @param {string} dbname - the name of the database to delete from the catalog.
+     * @param {function=} callback - (Optional) executed on database delete
      * @memberof LokiIndexedAdapter
      */
-    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname)
+    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname, callback)
     {
       var appName = this.app;
       var adapter = this;
 
-      // lazy open/create db reference so dont -need- callback in constructor
+      // lazy open/create db reference and pass callback ahead
       if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
 
-          adapter.deleteDatabase(dbname);
+          adapter.deleteDatabase(dbname, callback);
         });
 
         return;
@@ -199,6 +203,10 @@
 
         if (id !== 0) {
           adapter.catalog.deleteAppKey(id);
+        }
+
+        if (typeof (callback) === 'function') {
+          callback();
         }
       });
     };

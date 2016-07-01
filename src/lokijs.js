@@ -95,7 +95,7 @@
         }
 
         if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
-            return equal;
+          return equal;
         }
         if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
           return true;
@@ -312,7 +312,7 @@
         return a !== b;
       },
 
-      $dteq: function(a, b) {
+      $dteq: function (a, b) {
         if (ltHelper(a, b, false)) {
           return false;
         }
@@ -452,20 +452,20 @@
         cloned;
 
       switch (cloneMethod) {
-        case "parse-stringify":
-          cloned = JSON.parse(JSON.stringify(data));
-          break;
-        case "jquery-extend-deep":
-          cloned = jQuery.extend(true, {}, data);
-          break;
-        case "shallow":
-          cloned = Object.create(data.prototype || null);
-          Object.keys(data).map(function (i) {
-            cloned[i] = data[i];
-          });
-          break;
-        default:
-          break;
+      case "parse-stringify":
+        cloned = JSON.parse(JSON.stringify(data));
+        break;
+      case "jquery-extend-deep":
+        cloned = jQuery.extend(true, {}, data);
+        break;
+      case "shallow":
+        cloned = Object.create(data.prototype || null);
+        Object.keys(data).map(function (i) {
+          cloned[i] = data[i];
+        });
+        break;
+      default:
+        break;
       }
 
       //if (cloneMethod === 'parse-stringify') {
@@ -482,9 +482,9 @@
         return clone(objarray, method);
       }
 
-      i = objarray.length-1;
+      i = objarray.length - 1;
 
-      for(;i<=0;i--) {
+      for (; i <= 0; i--) {
         result.push(clone(objarray[i], method));
       }
 
@@ -805,7 +805,7 @@
       var collection = new Collection('anonym', options);
       collection.insert(docs);
 
-      if(this.verbose)
+      if (this.verbose)
         collection.console = console;
 
       return collection;
@@ -831,7 +831,7 @@
       var collection = new Collection(name, options);
       this.collections.push(collection);
 
-      if(this.verbose)
+      if (this.verbose)
         collection.console = console;
 
       return collection;
@@ -895,7 +895,7 @@
           var curcol = this.collections[i];
           for (var prop in curcol) {
             if (curcol.hasOwnProperty(prop) && tmpcol.hasOwnProperty(prop)) {
-                curcol[prop] = tmpcol[prop];
+              curcol[prop] = tmpcol[prop];
             }
           }
           this.collections.splice(i, 1);
@@ -1359,10 +1359,10 @@
      */
     Loki.prototype.deleteDatabase = function (options, callback) {
       var cFun = callback || function (err, data) {
-          if (err) {
-            throw err;
-          }
-        };
+        if (err) {
+          throw err;
+        }
+      };
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
@@ -1590,7 +1590,7 @@
 
       // either they passed in raw transform array or we looked it up, so process
       if (typeof transform !== 'object' || !Array.isArray(transform)) {
-          throw new Error("Invalid transform");
+        throw new Error("Invalid transform");
       }
 
       if (typeof parameters !== 'undefined') {
@@ -1925,9 +1925,12 @@
      */
     Resultset.prototype.findOr = function (expressionArray) {
       var fr = null,
-          fri = 0, frlen = 0,
-          docset = [], idxset = [], idx = 0,
-          origCount = this.count();
+        fri = 0,
+        frlen = 0,
+        docset = [],
+        idxset = [],
+        idx = 0,
+        origCount = this.count();
 
       // If filter is already initialized, then we query against only those items already in filter.
       // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
@@ -1998,15 +2001,15 @@
       }
 
       var queryObject = query || 'getAll',
-          p,
-          property,
-          queryObjectOp,
-          operator,
-          value,
-          key,
-          searchByIndex = false,
-          result = [],
-          index = null;
+        p,
+        property,
+        queryObjectOp,
+        operator,
+        value,
+        key,
+        searchByIndex = false,
+        result = [],
+        index = null;
 
       // if this was note invoked via findOne()
       firstOnly = firstOnly || false;
@@ -2080,8 +2083,7 @@
       if (operator === '$regex') {
         if (Array.isArray(value)) {
           value = new RegExp(value[0], value[1]);
-        }
-        else if (!(value instanceof RegExp)) {
+        } else if (!(value instanceof RegExp)) {
           value = new RegExp(value);
         }
       }
@@ -2093,10 +2095,10 @@
       // for now only enabling for non-chained query (who's set of docs matches index)
       // or chained queries where it is the first filter applied and prop is indexed
       var doIndexCheck = !usingDotNotation &&
-          (!this.searchIsChained || !this.filterInitialized);
+        (!this.searchIsChained || !this.filterInitialized);
 
       if (doIndexCheck && this.collection.binaryIndices[property] &&
-          indexedOpsList.indexOf(operator) !== -1) {
+        indexedOpsList.indexOf(operator) !== -1) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property
@@ -2381,8 +2383,7 @@
         for (i = 0; i < len; i++) {
           result.push(clone(data[fr[i]], method));
         }
-      }
-      else {
+      } else {
         for (i = 0; i < len; i++) {
           result.push(data[fr[i]]);
         }
@@ -3002,7 +3003,9 @@
     DynamicView.prototype.data = function () {
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
       if (this.sortDirty || this.resultsdirty) {
-        this.performSortPhase({suppressRebuildEvent: true});
+        this.performSortPhase({
+          suppressRebuildEvent: true
+        });
       }
       return (this.options.persistent) ? (this.resultdata) : (this.resultset.data());
     };
@@ -3394,9 +3397,9 @@
 
         var changedObjects = typeof Set === 'function' ? new Set() : [];
 
-        if(!changedObjects.add)
-          changedObjects.add = function(object) {
-            if(this.indexOf(object) === -1)
+        if (!changedObjects.add)
+          changedObjects.add = function (object) {
+            if (this.indexOf(object) === -1)
               this.push(object);
             return this;
           };
@@ -3406,17 +3409,17 @@
         });
 
         changedObjects.forEach(function (object) {
-          if(!hasOwnProperty.call(object, '$loki'))
+          if (!hasOwnProperty.call(object, '$loki'))
             return self.removeAutoUpdateObserver(object);
           try {
             self.update(object);
-          } catch(err) {}
+          } catch (err) {}
         });
       }
 
       this.observerCallback = observerCallback;
 
-      /**
+      /*
        * This method creates a clone of the current status of an object and associates operation and collection name,
        * so the parent db can aggregate and generate a changes object for the entire db
        */
@@ -3528,14 +3531,14 @@
     };
 
     Collection.prototype.addAutoUpdateObserver = function (object) {
-      if(!this.autoupdate || typeof Object.observe !== 'function')
+      if (!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
     };
 
     Collection.prototype.removeAutoUpdateObserver = function (object) {
-      if(!this.autoupdate || typeof Object.observe !== 'function')
+      if (!this.autoupdate || typeof Object.observe !== 'function')
         return;
 
       Object.unobserve(object, this.observerCallback);
@@ -3618,8 +3621,7 @@
     Collection.prototype.setTTL = function (age, interval) {
       if (age < 0) {
         clearInterval(this.ttl.daemon);
-      }
-      else {
+      } else {
         this.ttl.age = age;
         this.ttl.ttlInterval = interval;
         this.ttl.daemon = setInterval(this.ttlDaemonFuncGen(), interval);
@@ -3673,7 +3675,7 @@
         (function (p, data) {
           return function (a, b) {
             var objAp = data[a][p],
-                objBp = data[b][p];
+              objBp = data[b][p];
             if (objAp !== objBp) {
               if (ltHelper(objAp, objBp, false)) return -1;
               if (gtHelper(objAp, objBp, false)) return 1;
@@ -3688,11 +3690,11 @@
       this.dirty = true; // for autosave scenarios
     };
 
-    Collection.prototype.getSequencedIndexValues = function(property) {
+    Collection.prototype.getSequencedIndexValues = function (property) {
       var idx, idxvals = this.binaryIndices[property].values;
       var result = "";
 
-      for(idx=0; idx<idxvals.length; idx++) {
+      for (idx = 0; idx < idxvals.length; idx++) {
         result += " [" + idx + "] " + this.data[idxvals[idx]][property];
       }
 
@@ -3738,7 +3740,7 @@
     };
 
     Collection.prototype.flagBinaryIndexDirty = function (index) {
-      if(this.binaryIndices[index])
+      if (this.binaryIndices[index])
         this.binaryIndices[index].dirty = true;
     };
 
@@ -3970,7 +3972,7 @@
         // operate the update
         this.data[position] = doc;
 
-        if(obj !== doc) {
+        if (obj !== doc) {
           this.addAutoUpdateObserver(doc);
         }
 
@@ -4005,7 +4007,7 @@
       // if object you are adding already has id column it is either already in the collection
       // or the object is carrying its own 'id' property.  If it also has a meta property,
       // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
-      if (typeof(obj.$loki) !== 'undefined') {
+      if (typeof (obj.$loki) !== 'undefined') {
         throw new Error('Document is already in collection, please use update()');
       }
 
@@ -4160,10 +4162,10 @@
      */
     Collection.prototype.get = function (id, returnPosition) {
       var retpos = returnPosition || false,
-          data = this.idIndex,
-          max = data.length - 1,
-          min = 0,
-          mid = (min + max) >> 1;
+        data = this.idIndex,
+        max = data.length - 1,
+        min = 0,
+        mid = (min + max) >> 1;
 
       id = typeof id === 'number' ? id : parseInt(id, 10);
 
@@ -4210,8 +4212,7 @@
       var result = this.constraints.unique[field].get(value);
       if (!this.cloneObjects) {
         return result;
-      }
-      else {
+      } else {
         return clone(result, this.cloneMethod);
       }
     };
@@ -4233,8 +4234,7 @@
       } else {
         if (!this.cloneObjects) {
           return result;
-        }
-        else {
+        } else {
           return clone(result, this.cloneMethod);
         }
       }
@@ -4277,8 +4277,7 @@
       });
       if (!this.cloneObjects) {
         return results;
-      }
-      else {
+      } else {
         return cloneObjectArray(results, this.cloneMethod);
       }
     };
@@ -4376,8 +4375,7 @@
       });
       if (!this.cloneObjects) {
         return results;
-      }
-      else {
+      } else {
         return cloneObjectArray(results, this.cloneMethod);
       }
     };

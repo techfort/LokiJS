@@ -27,7 +27,7 @@
 html
 {
     overflow: auto;
-    background-color: #ccc;
+    background-color: #fff;
     font-size: 14px;
 }
 
@@ -36,11 +36,11 @@ body
     font-family: 'Open Sans', sans-serif;
     line-height: 1.5;
     color: #4d4e53;
-    background-color: #ccc;
+    background-color: white;
 }
 
 a, a:visited, a:active {
-    color: #c03233;
+    color: #0095dd;
     text-decoration: none;
 }
 
@@ -81,7 +81,7 @@ article dl {
 section
 {
     display: block;
-    background-color: #ccc;
+    background-color: #fff;
     padding: 12px 24px;
     border-bottom: 1px solid #ccc;
     margin-right: 30px;

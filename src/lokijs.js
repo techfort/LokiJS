@@ -229,42 +229,28 @@
      * @param {any} value - comparative value to also pass to (compare) fun
      */
     function dotSubScan(root, paths, fun, value) {
-      var arrayRef = null;
-      var pathIndex, subIndex;
-      var path;
-
-      for (pathIndex = 0; pathIndex < paths.length; pathIndex++) {
-        path = paths[pathIndex];
-
-        // foreach already detected parent was array so this must be where we iterate
-        if (arrayRef) {
-          // iterate all sub-array items to see if any yield hits
-          for (subIndex = 0; subIndex < arrayRef.length; subIndex++) {
-            if (fun(arrayRef[subIndex][path], value)) {
-              return true;
-            }
-          }
-        }
-        // else not yet determined if subarray scan is involved
-        else {
-          // if the dot notation is invalid for the current document, then ignore this document
-          if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
-            return false;
-          }
-          root = root[path];
-
-          if (root === undefined || root === null) {
-            return false;
-          }
-
-          if (Array.isArray(root)) {
-            arrayRef = root;
-          }
-        }
+      var path = paths[0];
+      if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
+        return false;
       }
 
-      // made it this far so must be dot notation on non-array property
-      return fun(root, value);
+      var valueFound = false;
+      var element = root[path];
+      if (Array.isArray(element)) {
+        var index;
+        for (index in element) {
+          valueFound = valueFound || dotSubScan(element[index], paths.slice(1, paths.length), fun, value);
+          if (valueFound === true) {
+            break;
+          }
+        }
+      } else if (typeof element === 'object') {
+        valueFound = dotSubScan(element, paths.slice(1, paths.length), fun, value);
+      } else {
+        valueFound = fun(element, value);
+      }
+
+      return valueFound;
     }
 
     function containsCheckFn(a) {

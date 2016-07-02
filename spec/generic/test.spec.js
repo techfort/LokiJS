@@ -336,6 +336,92 @@ describe('loki', function () {
     });
   });
 
+  describe('dot notation across child array', function() {
+    it('works', function () {
+      var dna = db.addCollection('dnacoll');
+
+      dna.insert({
+        id: 1,
+        children: [{
+          id: 11,
+          someArray: [{
+            someProperty: 111
+          }]
+        }]
+      });
+
+      dna.insert({
+        id: 2,
+        children: [{
+          id: 22,
+          someArray: [{
+            someProperty: 222
+          }]
+        }]
+      });
+
+      dna.insert({
+        id: 3,
+        children: [{
+          id: 33,
+          someArray: [{
+            someProperty: 333
+          }, {
+            someProperty: 222
+          }]
+        }]
+      });
+
+      dna.insert({
+        id: 4,
+        children: [{
+          id: 44,
+          someArray: [{
+            someProperty: 111
+          }]
+        }]
+      });
+
+      dna.insert({
+        id: 5,
+        children: [{
+          id: 55,
+          someArray: [{
+            missing: null
+          }]
+        }]
+      });
+
+      dna.insert({
+        id: 6,
+        children: [{
+          id: 66,
+          someArray: [{
+            someProperty: null
+          }]
+        }]
+      });
+
+      var results = dna.find({'children.someArray.someProperty': 333});
+      expect(results.length).toEqual(1);
+
+      results = dna.find({'children.someArray.someProperty': 111});
+      expect(results.length).toEqual(2);
+
+      results = dna.find({'children.someArray.someProperty': 222});
+      expect(results.length).toEqual(2);
+
+      results = dna.find({'$and': [{'id': 3}, {'children.someArray.someProperty': 222}]});
+      expect(results.length).toEqual(1);
+
+      results = dna.find({'$and': [{'id': 1}, {'children.someArray.someProperty': 222}]});
+      expect(results.length).toEqual(0);
+
+      results = dna.find({'$or': [{'id': 1}, {'children.someArray.someProperty': 222}]});
+      expect(results.length).toEqual(3);
+    });
+  });
+
   describe('calculateRange', function () {
     it('works', function () {
       var eic = db.addCollection('eic');

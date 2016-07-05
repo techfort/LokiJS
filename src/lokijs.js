@@ -3083,6 +3083,15 @@
     DynamicView.prototype.evaluateDocument = function (objIndex, isNew) {
       // if no filter applied yet, the result 'set' should remain 'everything'
       if (!this.resultset.filterInitialized) {
+        if (this.options.persistent) {
+          this.resultdata = this.resultset.data();
+        }
+        // need to re-sort to sort new document
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
+        } else {
+          this.queueRebuildEvent();
+        }
         return;
       }
 
@@ -3178,6 +3187,15 @@
     DynamicView.prototype.removeDocument = function (objIndex) {
       // if no filter applied yet, the result 'set' should remain 'everything'
       if (!this.resultset.filterInitialized) {
+        if (this.options.persistent) {
+          this.resultdata = this.resultset.data();
+        }
+        // in case changes to data altered a sort column
+        if (this.sortFunction || this.sortCriteria) {
+          this.queueSortPhase();
+        } else {
+          this.queueRebuildEvent();
+        }
         return;
       }
 

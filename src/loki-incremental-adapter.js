@@ -41,8 +41,14 @@
     };
 
     class LokiIncrementalAdapter {
-      constructor() {
+      constructor(options) {
+        let config = options || {
+          journaling: false,
+          format: 'json'
+        };
         this.mode = 'reference';
+        this.journaling = config.journaling;
+        this.format = config.format;
       }
 
       checkAvailability() {

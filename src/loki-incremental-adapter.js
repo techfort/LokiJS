@@ -5,9 +5,9 @@
 }(this, function () {
   return (function () {
 
-    let fs = require('fs');
+    const fs = require('fs');
 
-    let accessDataDir = (datadir) => {
+    const accessDataDir = (datadir) => {
       return new Promise((resolve, reject) => {
         fs.lstat(datadir, (err, stats) => {
           if (err) {
@@ -20,8 +20,8 @@
       });
     };
 
-    let saveRecord = (change, dir) => {
-      fs.writeFile(`${dir}/${change.name}/${change.obj.$loki}.json`, JSON.stringify(change.obj), {
+    const saveRecord = (coll, obj, dir) => {
+      fs.writeFile(`${dir}/${coll}/${obj.$loki}.json`, JSON.stringify(obj), {
         encoding: 'utf8'
       }, (err) => {
         if (err) {
@@ -32,17 +32,21 @@
       });
     };
 
-    let iterateFolders = (db, dir) => {
+    const iterateFolders = (db, dir) => {
       console.log(`Colls: ${db.listCollections().length}`);
+
+      console.log(`Changes: ${db.generateChangesNotification().length}`);
       db.generateChangesNotification().forEach(change => {
-        console.log(`change: ${change.operation}`);
-        saveRecord(change, dir);
+        console.log(change);
+        const [coll, operation, obj] = change;
+        console.log(`change: ${coll} ${operation}`);
+        saveRecord(cool, obj, dir);
       });
     };
 
     class LokiIncrementalAdapter {
       constructor(options) {
-        let config = options || {
+        const config = options || {
           journaling: false,
           format: 'json'
         };
@@ -60,7 +64,7 @@
         console.log('Saving with incremental adapter');
 
         console.log('Database dir is ' + dir);
-        let promise = accessDataDir(dir);
+        const promise = accessDataDir(dir);
         console.log(promise);
         promise.then(() => {
           console.log('iterating folders...');

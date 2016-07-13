@@ -20,10 +20,23 @@
       });
     };
 
+    let saveRecord = (change, dir) => {
+      fs.writeFile(`${dir}/${change.name}/${change.obj.$loki}.json`, JSON.stringify(change.obj), {
+        encoding: 'utf8'
+      }, (err) => {
+        if (err) {
+          console.log('Document save failed.');
+          throw err;
+        }
+        console.log('Document saved correctly');
+      });
+    };
+
     let iterateFolders = (db, dir) => {
       console.log(`Colls: ${db.listCollections().length}`);
-      db.listCollections().forEach(coll => {
-        console.log(`coll: ${coll.name}`);
+      db.generateChangesNotification().forEach(change => {
+        console.log(`change: ${change.operation}`);
+        saveRecord(change, dir);
       });
     };
 

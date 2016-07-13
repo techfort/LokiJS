@@ -64,7 +64,7 @@
         console.log(promise);
         promise.then(() => {
           console.log('iterating folders...');
-          iterateFolders(dbref, dir)
+          iterateFolders(dbref, dir);
         });
         promise.catch((err) => {
           console.log(err);

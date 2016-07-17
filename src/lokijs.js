@@ -232,7 +232,7 @@
     function dotSubScan(root, paths, fun, value, poffset) {
       var pathOffset = poffset || 0;
       var path = paths[pathOffset];
-      if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
+      if (root === undefined || root === null || !hasOwnProperty.call(root, path)) {
         return false;
       }
 

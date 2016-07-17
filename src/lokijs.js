@@ -227,9 +227,11 @@
      * @param {array} paths - array of properties to drill into
      * @param {function} fun - evaluation function to test with
      * @param {any} value - comparative value to also pass to (compare) fun
+     * @param {number} poffset - index of the item in 'paths' to start the sub-scan from
      */
-    function dotSubScan(root, paths, fun, value) {
-      var path = paths[0];
+    function dotSubScan(root, paths, fun, value, poffset) {
+      var pathOffset = poffset || 0;
+      var path = paths[pathOffset];
       if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
         return false;
       }
@@ -237,15 +239,14 @@
       var valueFound = false;
       var element = root[path];
       if (Array.isArray(element)) {
-        var index;
-        for (index in element) {
-          valueFound = valueFound || dotSubScan(element[index], paths.slice(1, paths.length), fun, value);
+        for (var index = 0, len = element.length; index < len; index += 1) {
+          valueFound = valueFound || dotSubScan(element[index], paths, fun, value, pathOffset + 1);
           if (valueFound === true) {
             break;
           }
         }
       } else if (typeof element === 'object') {
-        valueFound = dotSubScan(element, paths.slice(1, paths.length), fun, value);
+        valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
       } else {
         valueFound = fun(element, value);
       }

@@ -240,15 +240,15 @@
       var element = root[path];
       if (Array.isArray(element)) {
         for (var index = 0, len = element.length; index < len; index += 1) {
-          valueFound = valueFound || dotSubScan(element[index], paths, fun, value, pathOffset + 1);
+          valueFound = dotSubScan(element[index], paths, fun, value, pathOffset + 1);
           if (valueFound === true) {
             break;
           }
         }
-      } else if (typeof element === 'object') {
-        valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
-      } else {
+      } else if (typeof element !== 'object' || element === null || element instanceof Date) {
         valueFound = fun(element, value);
+      } else {
+        valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
       }
 
       return valueFound;

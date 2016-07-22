@@ -21,6 +21,7 @@
     };
 
     const saveRecord = (coll, obj, dir) => {
+      console.log(`File is ${dir}/${coll}/${obj.$loki}.json`);
       fs.writeFile(`${dir}/${coll}/${obj.$loki}.json`, JSON.stringify(obj), {
         encoding: 'utf8'
       }, (err) => {
@@ -37,10 +38,7 @@
 
       console.log(`Changes: ${db.generateChangesNotification().length}`);
       db.generateChangesNotification().forEach(change => {
-        console.log(change);
-        const [coll, operation, obj] = change;
-        console.log(`change: ${coll} ${operation}`);
-        saveRecord(cool, obj, dir);
+        saveRecord(change.name, change.obj, dir);
       });
     };
 

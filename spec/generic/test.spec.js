@@ -277,7 +277,7 @@ describe('loki', function () {
 
   // We only support dot notation involving array when
   // the leaf property is the array.  This verifies that functionality
-  describe('dot notation across leaf array', function() {
+  describe('dot notation across leaf object array', function() {
     it('works', function () {
       var dna = db.addCollection('dnacoll');
 
@@ -332,6 +332,37 @@ describe('loki', function () {
       expect(results.length).toEqual(2);
 
       results = dna.find({'children.someProperty': 22});
+      expect(results.length).toEqual(2);
+    });
+  });
+
+
+  describe('dot notation terminating at leaf array', function() {
+    it('works', function() {
+      var dna = db.addCollection('dnacoll');
+
+      dna.insert({
+        "relations" : {
+          "ids": [379]
+        }
+      });
+
+      dna.insert({
+        "relations" : {
+          "ids": [12, 379]
+        }
+      });
+      
+      dna.insert({
+        "relations" : {
+          "ids": [111]
+        }
+      });
+      
+      var results = dna.find({
+        'relations.ids' : { $contains: 379 }
+      });
+
       expect(results.length).toEqual(2);
     });
   });

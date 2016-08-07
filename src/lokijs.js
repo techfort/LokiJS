@@ -3921,7 +3921,7 @@
         return undefined;
       }
 
-      this.addAutoUpdateObserver(obj);
+      this.addAutoUpdateObserver(returnObj);
       this.emit('insert', returnObj);
       return returnObj;
     };

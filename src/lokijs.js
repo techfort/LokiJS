@@ -3889,6 +3889,8 @@
      */
     Collection.prototype.insertOne = function (doc) {
       var err = null;
+      var returnObj;
+
       if (typeof doc !== 'object') {
         err = new TypeError('Document needs to be an object');
       } else if (doc === null) {
@@ -3910,14 +3912,18 @@
         };
       }
 
+      // if cloning, give user back clone of 'cloned' object with $loki and meta
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+
+      // allow pre-insert to modify actual collection reference even if cloning
       this.emit('pre-insert', obj);
       if (!this.add(obj)) {
         return undefined;
       }
 
       this.addAutoUpdateObserver(obj);
-      this.emit('insert', obj);
-      return obj;
+      this.emit('insert', returnObj);
+      return returnObj;
     };
 
     /**

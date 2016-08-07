@@ -27,6 +27,23 @@ describe('cloning behavior', function () {
     });
   });
 
+  describe('cloning inserts are immutable', function() {
+    it('works', function() {
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true });
+      var oldObject = { name: 'mjolnir', owner: 'thor', maker: 'dwarves' };
+      var insObject = citems.insert(oldObject);
+
+      // cant' have either of these polluting our collection
+      oldObject.name = 'mewmew';
+      insObject.name = 'mewmew';
+
+      var result = citems.findOne({'owner': 'thor'});
+
+      expect(result.name).toBe("mjolnir");
+    });
+  });
+
   describe('collection find() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');

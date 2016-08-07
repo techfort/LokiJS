@@ -238,21 +238,17 @@
 
       var valueFound = false;
       var element = root[path];
-      if (Array.isArray(element)) {
-        // if we have already expanded out the dot notation, then just evaluate user function on array
-        if (pathOffset+1 >= paths.length) {
-          valueFound = fun(element, value);
-        }
-        else {
-          for (var index = 0, len = element.length; index < len; index += 1) {
-            valueFound = dotSubScan(element[index], paths, fun, value, pathOffset + 1);
-            if (valueFound === true) {
-              break;
-            }
+      if (pathOffset + 1 >= paths.length) {
+        // if we have already expanded out the dot notation,
+        // then just evaluate the test function and value on the element
+        valueFound = fun(element, value);
+      } else if (Array.isArray(element)) {
+        for (var index = 0, len = element.length; index < len; index += 1) {
+          valueFound = dotSubScan(element[index], paths, fun, value, pathOffset + 1);
+          if (valueFound === true) {
+            break;
           }
         }
-      } else if (typeof element !== 'object' || element === null || element instanceof Date) {
-        valueFound = fun(element, value);
       } else {
         valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
       }

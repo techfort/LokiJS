@@ -46,19 +46,19 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "istanbul": "^0.3.13",
-    "jasmine": "^2.2.1",
+    "istanbul": "^0.4.4",
+    "jasmine": "^2.4.1",
     "jsdoc": "^3.4.0",
-    "jshint": "^2.6.3",
-    "karma": "^0.12.31",
-    "karma-cli": "0.0.4",
-    "karma-coverage": "^0.2.7",
-    "karma-jasmine": "^0.3.5",
-    "karma-phantomjs-launcher": "^0.1.4",
-    "mocha": "^2.0.1",
-    "phantomjs": "^1.9.16",
-    "rimraf": "^2.3.2",
-    "should": "^4.3.0",
-    "uglify-js": "^2.4.17"
+    "jshint": "^2.9.2",
+    "karma": "^1.1.2",
+    "karma-cli": "^1.0.1",
+    "karma-coverage": "^1.1.1",
+    "karma-jasmine": "^1.0.2",
+    "karma-phantomjs-launcher": "^1.0.1",
+    "mocha": "^2.5.3",
+    "phantomjs": "^1.9.20",
+    "rimraf": "^2.5.4",
+    "should": "^4.6.5",
+    "uglify-js": "^2.7.0"
   }
 }

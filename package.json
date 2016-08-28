@@ -23,7 +23,7 @@
   "scripts": {
     "lint": "jshint src/**.js",
     "test:browser": "karma start karma.conf.js --single-run",
-    "test:node": "istanbul cover --dir coverage/nodejs jasmine",
+    "test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
     "pretest": "npm run lint",
     "test": "npm run test:browser && npm run test:node",
     "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",

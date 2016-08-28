@@ -906,6 +906,7 @@
       case 'autosaveHandle':
       case 'persistenceAdapter':
       case 'constraints':
+      case 'ttl':
         return null;
       default:
         return value;

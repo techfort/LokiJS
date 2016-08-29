@@ -3815,8 +3815,13 @@
         var arr = this.get(doc.$loki, true),
           obj,
           position,
+          cloneObj,
           self = this;
-
+        
+        if (this.cloneObjects) {
+          cloneObj = clone(obj, this.cloneMethod);
+        }
+        
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
@@ -3848,7 +3853,7 @@
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        this.emit('update', doc);
+        this.emit('update', doc, cloneObj);
         return doc;
       } catch (err) {
         this.rollback();

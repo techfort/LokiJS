@@ -3967,12 +3967,16 @@
       try {
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
-          obj,
+          oldInternal,   // ref to existing obj
+          newInternal, // ref to new internal obj
           position,
           self = this;
 
-        obj = arr[0]; // -internal- obj ref
+        oldInternal = arr[0]; // -internal- obj ref
         position = arr[1]; // position in data array
+
+        // if configured to clone, do so now... otherwise just use same obj reference
+        newInternal = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
 
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
@@ -3980,13 +3984,13 @@
         this.emit('pre-update', doc);
 
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(obj, doc);
+          self.constraints.unique[key].update(oldInternal, newInternal);
         });
 
         // operate the update
-        this.data[position] = doc;
+        this.data[position] = newInternal;
 
-        if (obj !== doc) {
+        if (newInternal !== doc) {
           this.addAutoUpdateObserver(doc);
         }
 
@@ -3996,11 +4000,12 @@
           this.DynamicViews[idx].evaluateDocument(position, false);
         }
 
-        this.idIndex[position] = obj.$loki;
+        this.idIndex[position] = newInternal.$loki;
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        this.emit('update', doc);
+
+        this.emit('update', doc, this.cloneObjects ? clone(oldInternal, this.cloneMethod) : null);
         return doc;
       } catch (err) {
         this.rollback();

@@ -956,7 +956,10 @@
         coll,
         copyColl,
         clen,
-        j;
+        j,
+        loader,
+        inflater,
+        collObj;
 
       this.name = dbObject.name;
 
@@ -983,12 +986,19 @@
         clen = coll.data.length;
         j = 0;
         if (options && options.hasOwnProperty(coll.name)) {
-
-          var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
+          if(options[coll.name].proto) {
+            inflater = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
+            loader = function(data) {
+              var collObj = new(options[coll.name].proto)();
+              inflater(data, collObj);
+              return collObj;
+            };
+          } else {
+            loader = options[coll.name].inflate;
+          }
 
           for (j; j < clen; j++) {
-            var collObj = new(options[coll.name].proto)();
-            loader(coll.data[j], collObj);
+            collObj = loader(coll.data[j]);
             copyColl.data[j] = collObj;
             copyColl.addAutoUpdateObserver(collObj);
           }

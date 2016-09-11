@@ -958,7 +958,6 @@
         clen,
         j,
         loader,
-        inflater,
         collObj;
 
       this.name = dbObject.name;

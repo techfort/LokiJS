@@ -971,6 +971,23 @@
 
       this.collections = [];
 
+      function makeLoader(coll) {
+        var collOptions = options[coll.name];
+        var inflater;
+
+        if(collOptions.proto) {
+          inflater = collOptions.inflate || Utils.copyProperties;
+
+          return function(data) {
+            var collObj = new(collOptions.proto)();
+            inflater(data, collObj);
+            return collObj;
+          };
+        }
+
+        return collOptions.inflate;
+      }
+
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
         copyColl = this.addCollection(coll.name);
@@ -986,16 +1003,7 @@
         clen = coll.data.length;
         j = 0;
         if (options && options.hasOwnProperty(coll.name)) {
-          if(options[coll.name].proto) {
-            inflater = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
-            loader = function(data) {
-              var collObj = new(options[coll.name].proto)();
-              inflater(data, collObj);
-              return collObj;
-            };
-          } else {
-            loader = options[coll.name].inflate;
-          }
+          loader = makeLoader(coll);
 
           for (j; j < clen; j++) {
             collObj = loader(coll.data[j]);

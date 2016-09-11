@@ -1,5 +1,5 @@
 if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
-  
+
 describe('typed', function () {
   it('works', function () {
     var db = new loki('test.json');
@@ -60,6 +60,7 @@ describe('typed', function () {
       "fs": {}
     };
 
+    // Loading only using proto:
     db.loadJSON(JSON.stringify(json), {
       users: {
         proto: User
@@ -67,7 +68,47 @@ describe('typed', function () {
     });
 
     users = db.getCollection('users');
-    //suite.assertEqual('Inflated object prototype', users.get(1) instanceof User, true);
+
     expect(users.get(1) instanceof User).toBe(true);
+    expect(users.get(1).name).toBe("joe");
+
+    // Loading using proto and inflate:
+    db.loadJSON(JSON.stringify(json), {
+      users: {
+        proto: User,
+        inflate: function(src, dest) {
+          dest.$loki = src.$loki;
+          dest.meta = src.meta;
+          dest.customInflater = true;
+        }
+      }
+    });
+
+    users = db.getCollection('users');
+
+    expect(users.get(1) instanceof User).toBe(true);
+    expect(users.get(1).name).toBe("");
+    expect(users.get(1).customInflater).toBe(true);
+
+    // Loading only using inflate:
+    db.loadJSON(JSON.stringify(json), {
+      users: {
+        inflate: function(src) {
+          var dest = {};
+
+          dest.$loki = src.$loki;
+          dest.meta = src.meta;
+          dest.onlyInflater = true;
+
+          return dest;
+        }
+      }
+    });
+
+    users = db.getCollection('users');
+
+    expect(users.get(1) instanceof User).toBe(false);
+    expect(users.get(1).name).toBe(undefined);
+    expect(users.get(1).onlyInflater).toBe(true);
   });
 });

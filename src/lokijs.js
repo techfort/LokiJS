@@ -956,7 +956,9 @@
         coll,
         copyColl,
         clen,
-        j;
+        j,
+        loader,
+        collObj;
 
       this.name = dbObject.name;
 
@@ -967,6 +969,23 @@
       }
 
       this.collections = [];
+
+      function makeLoader(coll) {
+        var collOptions = options[coll.name];
+        var inflater;
+
+        if(collOptions.proto) {
+          inflater = collOptions.inflate || Utils.copyProperties;
+
+          return function(data) {
+            var collObj = new(collOptions.proto)();
+            inflater(data, collObj);
+            return collObj;
+          };
+        }
+
+        return collOptions.inflate;
+      }
 
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
@@ -983,12 +1002,10 @@
         clen = coll.data.length;
         j = 0;
         if (options && options.hasOwnProperty(coll.name)) {
-
-          var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
+          loader = makeLoader(coll);
 
           for (j; j < clen; j++) {
-            var collObj = new(options[coll.name].proto)();
-            loader(coll.data[j], collObj);
+            collObj = loader(coll.data[j]);
             copyColl.data[j] = collObj;
             copyColl.addAutoUpdateObserver(collObj);
           }

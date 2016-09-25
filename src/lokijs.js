@@ -1169,13 +1169,22 @@
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
-      this.fs.readFile(dbname, {
-        encoding: 'utf8'
-      }, function readFileCallback(err, data) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback(data);
+      var self = this;
+
+      this.fs.stat(dbname, function (err, stats) {
+        if (!err && stats.isFile()) {
+          self.fs.readFile(dbname, {
+            encoding: 'utf8'
+          }, function readFileCallback(err, data) {
+            if (err) {
+              callback(new Error(err));
+            } else {
+              callback(data);
+            }
+          });
+        }
+        else {
+          callback(null);
         }
       });
     };

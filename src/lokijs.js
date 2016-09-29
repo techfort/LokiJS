@@ -991,7 +991,7 @@
         coll = dbObject.collections[i];
         copyColl = this.addCollection(coll.name);
 
-        copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptive === true): false;
+        copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
         copyColl.disableChangesApi = coll.disableChangesApi;

@@ -293,4 +293,156 @@ describe('binary indices', function () {
     });
   });
 
+  describe('adaptiveBinaryIndex high level operability test', function() {
+    it('works', function () {
+
+      var db = new loki('idxtest');
+      var coll = db.addCollection('users', { 
+        adaptiveBinaryIndices: true,
+        indices: ['customIdx'] 
+      });
+
+      var idx, result;
+      
+      // add 1000 records
+      for (idx=0; idx<1000; idx++) {
+        coll.insert({
+          customIdx: idx,
+          originalIdx: idx,
+          desc: "inserted doc with customIdx of " + idx
+        });
+      }
+      
+      // update 1000 records causing index to move first in ordered list to last, one at a time
+      // when finding each document we are also verifying it gave us back the correct document
+      for(idx=0; idx<1000; idx++) {
+        result = coll.findOne({customIdx: idx});
+        expect(result).not.toEqual(null);
+        expect(result.customIdx).toBe(idx);
+        result.customIdx += 1000; 
+        coll.update(result);
+      }
+      
+      // find each document again (by its new customIdx), verify it is who we thought it was, then remove it
+      for(idx=0; idx<1000; idx++) {
+        result = coll.findOne({customIdx: idx+1000});
+        expect(result).not.toEqual(null);
+        expect(result.customIdx).toBe(idx+1000);
+        coll.remove(result);
+      }
+      
+      // all documents should be gone
+      expect (coll.count()).toBe(0);
+      
+      // with empty collection , insert some records
+      var one = coll.insert({ customIdx: 100 });
+      var two = coll.insert({ customIdx: 200 });
+      var three = coll.insert({ customIdx: 300 });
+      var four = coll.insert({ customIdx: 400 });
+      var five = coll.insert({ customIdx: 500 });
+      
+      // intersperse more records before and after previous each element
+      coll.insert({customIdx:7});
+      coll.insert({customIdx:123});
+      coll.insert({customIdx:234});
+      coll.insert({customIdx:345});
+      coll.insert({customIdx:567});
+
+      // verify some sampling returns correct objects
+      expect(coll.findOne({customIdx: 300}).customIdx).toBe(300);
+      expect(coll.findOne({customIdx: 234}).customIdx).toBe(234);
+      expect(coll.findOne({customIdx: 7}).customIdx).toBe(7);
+      expect(coll.findOne({customIdx: 567}).customIdx).toBe(567);
+      
+      // remove 4 records at various positions, forcing indices to be inserted and removed
+      coll.remove(coll.findOne({customIdx: 567}));
+      coll.remove(coll.findOne({customIdx: 234}));
+      coll.remove(coll.findOne({customIdx: 7}));
+      coll.remove(coll.findOne({customIdx: 300}));
+      
+      // verify find() returns correct document or null for all previously added customIdx's
+      expect(coll.findOne({customIdx: 100}).customIdx).toBe(100);
+      expect(coll.findOne({customIdx: 200}).customIdx).toBe(200);
+      expect(coll.findOne({customIdx: 300})).toBe(null);
+      expect(coll.findOne({customIdx: 400}).customIdx).toBe(400);
+      expect(coll.findOne({customIdx: 500}).customIdx).toBe(500);
+      expect(coll.findOne({customIdx: 7})).toBe(null);
+      expect(coll.findOne({customIdx: 123}).customIdx).toBe(123);
+      expect(coll.findOne({customIdx: 234})).toBe(null);
+      expect(coll.findOne({customIdx: 345}).customIdx).toBe(345);
+      expect(coll.findOne({customIdx: 567})).toBe(null);
+    });
+  });
+
+  describe('adaptiveBinaryIndex high level random stress test', function() {
+    it('works', function () {
+
+      var db = new loki('idxtest');
+      var coll = db.addCollection('users', { 
+        adaptiveBinaryIndices: true,
+        indices: ['customIdx'] 
+      });
+
+      var idx, result, minVal=1, maxVal=1000;
+      
+      var currId, idVector = [];
+      
+      // add 1000 records
+      for (idx=0; idx<1000; idx++) {
+        currId = Math.floor(Math.random() * (maxVal - minVal) + minVal);
+
+        coll.insert({
+          customIdx: currId,
+          sequence: idx,
+          desc: "inserted doc with sequence of " + idx
+        });
+
+        idVector.push(currId);
+      }
+      
+      // update 1000 records causing index to move first in ordered list to last, one at a time
+      // when finding each document we are also verifying it gave us back the correct document
+      for(idx=0; idx<1000; idx++) {
+        currId = idVector.pop();
+        result = coll.findOne({customIdx: currId});
+        expect(result).not.toEqual(null);
+        expect(result.customIdx).toBe(currId);
+      }
+    });
+
+  });
+
+  describe('adaptiveBinaryIndex collection serializes correctly', function() {
+    it('works', function () {
+
+      var db = new loki('idxtest');
+      var coll = db.addCollection('users', { 
+        adaptiveBinaryIndices: true,
+        indices: ['customIdx'] 
+      });
+      coll.insert({ customIdx: 1 });
+      
+      var jsonString = db.serialize();
+
+      var newDatabase = new loki('idxtest');
+      newDatabase.loadJSON(jsonString);
+      
+      expect(newDatabase.getCollection('users').adaptiveBinaryIndices).toBe(true);
+      
+
+      // repeat without option set
+      db = new loki('idxtest');
+      coll = db.addCollection('users', { 
+        indices: ['customIdx'] 
+      });
+      coll.insert({ customIdx: 1 });
+
+      jsonString = db.serialize();
+      newDatabase = new loki('idxtest');
+      newDatabase.loadJSON(jsonString);
+      
+      expect(newDatabase.getCollection('users').adaptiveBinaryIndices).toBe(false);
+    });
+  });
+
 });

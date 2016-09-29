@@ -991,6 +991,7 @@
         coll = dbObject.collections[i];
         copyColl = this.addCollection(coll.name);
 
+        copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptive === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
         copyColl.disableChangesApi = coll.disableChangesApi;
@@ -4369,7 +4370,16 @@
      */
     Collection.prototype.adaptiveBinaryIndexUpdate = function(dataPosition, binaryIndexName) {
       // linear scan needed to find old position within index unless we optimize for clone scenarios later
-      var idxPos = this.binaryIndices[binaryIndexName].values.indexOf(dataPosition);
+      // within (my) node 5.6.0, the following for() loop with strict compare is -much- faster than indexOf()
+      var idxPos, 
+        index = this.binaryIndices[binaryIndexName].values,
+        len=index.length;
+      
+      for(idxPos=0; idxPos < len; idxPos++) {
+        if (index[idxPos] === dataPosition) break;
+      }
+
+      //var idxPos = this.binaryIndices[binaryIndexName].values.indexOf(dataPosition);
       this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
 
       //this.adaptiveBinaryIndexRemove(dataPosition, binaryIndexName, true);

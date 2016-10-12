@@ -190,19 +190,16 @@ describe('binary indices', function () {
       // force index build
       items.find({ name: 'mjolnir'});
 
-      // where would a new item with name of 'fff' be inserted into index?
-      var rs = items.chain();
-
-      var pos = rs.calculateRangeStart('name', 'fff');
+      var pos = items.calculateRangeStart('name', 'fff');
       expect(pos).toBe(1);
 
-      var pos = rs.calculateRangeStart('name', 'zzz');
+      var pos = items.calculateRangeStart('name', 'zzz');
       expect(pos).toBe(4);
 
-      var pos = rs.calculateRangeStart('name', 'aaa');
+      var pos = items.calculateRangeStart('name', 'aaa');
       expect(pos).toBe(0);
 
-      var pos = rs.calculateRangeStart('name', 'gungnir');
+      var pos = items.calculateRangeStart('name', 'gungnir');
       expect(pos).toBe(1);
     });
   });
@@ -211,11 +208,13 @@ describe('binary indices', function () {
     it('works', function () {
 
       // Since we use coll.get's ability to do a positional lookup of a loki id during adaptive indexing we will test it here
-      
       // let's base this off of our 'remove' test so data is more meaningful
-      
+
       var db = new loki('idxtest');
-      var items = db.addCollection('users', { indices: ['name'] });
+      var items = db.addCollection('users', {
+        adaptiveBinaryIndices: false,
+        indices: ['name'] 
+      });
       items.insert(testRecords);
 
       // force index build
@@ -239,10 +238,12 @@ describe('binary indices', function () {
   describe('adaptiveBinaryIndexUpdate works', function() {
     it('works', function () {
 
-      var db = new loki('idxtest');
-      var items = db.addCollection('users', { 
+     var db = new loki('idxtest');
+      var items = db.addCollection('users', {
+        adaptiveBinaryIndices: false, // we are doing utility function testing
         indices: ['name'] 
       });
+      
       items.insert(testRecords);
 
       // force index build
@@ -433,6 +434,7 @@ describe('binary indices', function () {
       // repeat without option set
       db = new loki('idxtest');
       coll = db.addCollection('users', { 
+        adaptiveBinaryIndices: false,
         indices: ['customIdx'] 
       });
       coll.insert({ customIdx: 1 });

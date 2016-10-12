@@ -27,6 +27,43 @@ describe('cloning behavior', function () {
     });
   });
 
+  describe('cloning inserts are immutable', function() {
+    it('works', function() {
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true });
+      var oldObject = { name: 'mjolnir', owner: 'thor', maker: 'dwarves' };
+      var insObject = citems.insert(oldObject);
+
+      // cant' have either of these polluting our collection
+      oldObject.name = 'mewmew';
+      insObject.name = 'mewmew';
+
+      var result = citems.findOne({'owner': 'thor'});
+
+      expect(result.name).toBe("mjolnir");
+    });
+  });
+
+  describe('cloning updates are immutable', function() {
+    it('works', function() {
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true });
+      var oldObject = { name: 'mjolnir', owner: 'thor', maker: 'dwarves' };
+      citems.insert(oldObject);
+      var rObject = citems.findOne({'owner': 'thor'});
+      
+      // after all that, just do this to ensure internal ref is different
+      citems.update(rObject); 
+      
+      // can't have this polluting our collection
+      rObject.name = 'mewmew';
+      
+      var result = citems.findOne({'owner': 'thor'});
+
+      expect(result.name).toBe("mjolnir");
+    });
+  });
+  
   describe('collection find() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');

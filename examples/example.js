@@ -264,7 +264,7 @@ window.runExample = function () {
         users.removeDynamicView("over30users");
 
         // Create a persistent dynamic view (second param indicates persistent)
-        var dynViewPersistent = users.addDynamicView("over20users", true);
+        var dynViewPersistent = users.addDynamicView("over20users", {persistent: true});
         dynViewPersistent.applyFind({
             'age': {
                 '$gt': 20

@@ -1,40 +1,7 @@
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
-  Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
-  Anywhere a callback is omitted, it should return results (if applicable) to console.
-
-  IndexedDb storage is provided per-domain, so we implement app/key/value database to allow separate contexts
-  for separate apps within a domain.
-
-  Examples :
-
-  // SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
-  // if appContect ('finance' in this example) is omitted, 'loki' will be used
-  var idbAdapter = new LokiIndexedAdapter('finance');
-  var db = new loki('test', { adapter: idbAdapter });
-  var coll = db.addCollection('testColl');
-  coll.insert({test: 'val'});
-  db.saveDatabase();  // could pass callback if needed for async complete
-
-  // LOAD
-  var db = new loki('test', { adapter: idbAdapter });
-  db.loadDatabase(function(result) {
-    console.log('done');
-  });
-
-  // GET DATABASE LIST
-  idbAdapter.getDatabaseList(function(result) {
-    // result is array of string names for that appcontext ('finance')
-    result.forEach(function(str) {
-      console.log(str);
-    });
-  });
-
-  // DELETE DATABASE
-  idbAdapter.deleteDatabase('test'); // delete 'finance'/'test' value from catalog
-
-  // CONSOLE USAGE : if using from console for management/diagnostic, here are a few examples :
+  Console Usage can be used for management/diagnostic, here are a few examples :
   adapter.getDatabaseList(); // with no callback passed, this method will log results to console
   adapter.saveDatabase('UserDatabase', JSON.stringify(myDb));
   adapter.loadDatabase('UserDatabase'); // will log the serialized db to console
@@ -56,13 +23,22 @@
   return (function() {
 
     /**
-     * IndexedAdapter - Loki persistence adapter class for indexedDb.
-     *     This class fulfills abstract adapter interface which can be applied to other storage methods
+     * Loki persistence adapter class for indexedDb.
+     *     This class fulfills abstract adapter interface which can be applied to other storage methods. 
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
+     *     Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
+     *     Anywhere a callback is omitted, it should return results (if applicable) to console.
+     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+     *     allow separate contexts for separate apps within a domain.
      *
-     * @param {string} appname - Application name context can be used to distinguish subdomains or just 'loki'
+     * @example
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     *
+     * @constructor LokiIndexedAdapter
+     *
+     * @param {string} appname - (Optional) Application name context can be used to distinguish subdomains, 'loki' by default
      */
-    function IndexedAdapter(appname)
+    function LokiIndexedAdapter(appname)
     {
       this.app = 'loki';
 
@@ -80,24 +56,34 @@
     }
 
     /**
-     * checkAvailability - used to check if adapter is available
+     * Used to check if adapter is available
      *
      * @returns {boolean} true if indexeddb is available, false if not.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.checkAvailability = function()
+    LokiIndexedAdapter.prototype.checkAvailability = function()
     {
-      if (typeof window !== 'undefined' && window.indexedDB) return true;
+      if (typeof indexedDB !== 'undefined' && indexedDB) return true;
 
       return false;
     };
 
     /**
-     * loadDatabase() - Retrieves a serialized db string from the catalog.
+     * Retrieves a serialized db string from the catalog.
+     *
+     * @example
+     * // LOAD
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     * var db = new loki('test', { adapter: idbAdapter });
+     *   db.loadDatabase(function(result) {
+     *   console.log('done');
+     * });
      *
      * @param {string} dbname - the name of the database to retrieve.
      * @param {function} callback - callback should accept string param containing serialized db string.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.loadDatabase = function(dbname, callback)
+    LokiIndexedAdapter.prototype.loadDatabase = function(dbname, callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -130,16 +116,25 @@
     };
 
     // alias
-    IndexedAdapter.prototype.loadKey = IndexedAdapter.prototype.loadDatabase;
+    LokiIndexedAdapter.prototype.loadKey = LokiIndexedAdapter.prototype.loadDatabase;
 
     /**
-     * saveDatabase() - Saves a serialized db to the catalog.
+     * Saves a serialized db to the catalog.
+     *
+     * @example
+     * // SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
+     * var idbAdapter = new LokiIndexedAdapter('finance');
+     * var db = new loki('test', { adapter: idbAdapter });
+     * var coll = db.addCollection('testColl');
+     * coll.insert({test: 'val'});
+     * db.saveDatabase();  // could pass callback if needed for async complete
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {string} dbstring - the serialized db string to save.
      * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.saveDatabase = function(dbname, dbstring, callback)
+    LokiIndexedAdapter.prototype.saveDatabase = function(dbname, dbstring, callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -170,24 +165,33 @@
     };
 
     // alias
-    IndexedAdapter.prototype.saveKey = IndexedAdapter.prototype.saveDatabase;
+    LokiIndexedAdapter.prototype.saveKey = LokiIndexedAdapter.prototype.saveDatabase;
 
     /**
-     * deleteDatabase() - Deletes a serialized db from the catalog.
+     * Deletes a serialized db from the catalog.
+     *
+     * @example
+     * // DELETE DATABASE
+     * // delete 'finance'/'test' value from catalog
+     * idbAdapter.deleteDatabase('test', function {
+     *   // database deleted
+     * });
      *
      * @param {string} dbname - the name of the database to delete from the catalog.
+     * @param {function=} callback - (Optional) executed on database delete
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.deleteDatabase = function(dbname)
+    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname, callback)
     {
       var appName = this.app;
       var adapter = this;
 
-      // lazy open/create db reference so dont -need- callback in constructor
+      // lazy open/create db reference and pass callback ahead
       if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
           adapter.catalog = cat;
 
-          adapter.deleteDatabase(dbname);
+          adapter.deleteDatabase(dbname, callback);
         });
 
         return;
@@ -200,18 +204,31 @@
         if (id !== 0) {
           adapter.catalog.deleteAppKey(id);
         }
+
+        if (typeof (callback) === 'function') {
+          callback();
+        }
       });
     };
 
     // alias
-    IndexedAdapter.prototype.deleteKey = IndexedAdapter.prototype.deleteDatabase;
+    LokiIndexedAdapter.prototype.deleteKey = LokiIndexedAdapter.prototype.deleteDatabase;
 
     /**
-     * getDatabaseList() - Retrieves object array of catalog entries for current app.
+     * Retrieves object array of catalog entries for current app.
+     *
+     * @example
+     * idbAdapter.getDatabaseList(function(result) {
+     *   // result is array of string names for that appcontext ('finance')
+     *   result.forEach(function(str) {
+     *     console.log(str);
+     *   });
+     * });
      *
      * @param {function} callback - should accept array of database names in the catalog for current app.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.getDatabaseList = function(callback)
+    LokiIndexedAdapter.prototype.getDatabaseList = function(callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -248,14 +265,15 @@
     };
 
     // alias
-    IndexedAdapter.prototype.getKeyList = IndexedAdapter.prototype.getDatabaseList;
+    LokiIndexedAdapter.prototype.getKeyList = LokiIndexedAdapter.prototype.getDatabaseList;
 
     /**
-     * getCatalogSummary - allows retrieval of list of all keys in catalog along with size
+     * Allows retrieval of list of all keys in catalog along with size
      *
      * @param {function} callback - (Optional) callback to accept result array.
+     * @memberof LokiIndexedAdapter
      */
-    IndexedAdapter.prototype.getCatalogSummary = function(callback)
+    LokiIndexedAdapter.prototype.getCatalogSummary = function(callback)
     {
       var appName = this.app;
       var adapter = this;
@@ -577,7 +595,7 @@
 
     };
 
-    return IndexedAdapter;
+    return LokiIndexedAdapter;
 
   }());
 }));

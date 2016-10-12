@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Tutorial: Query Examples</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Tutorial: Query Examples</h1>
+
+    <section>
+
+<header>
+    
+
+    <h2>Query Examples</h2>
+</header>
+
+<article>
+    <h3>Designing Queries</h3><p>LokiJS has evolved several mechanisms for querying the database.  It may be difficult at first to determine which method you should use for querying, so this page will attempt to describe features and limitations of the various methods.</p>
+<p>At the highest level of abstraction, let us divide the methods into these categories : </p>
+<ul>
+<li>Core Methods - simple, yet powerful method for queries applied directly to a collection.</li>
+<li>Chaining (via Resultsets) - allows for sorting, limiting, offsets, and multiple queries in sequence.</li>
+<li>Chaining Transforms - similar to method chaining above, yet defined in object structure which can be serialized.</li>
+<li>DynamicViews - allows for optimal performance and availability commonly used queries with potentially large resultsets.</li>
+</ul>
+<p>Within each of those methods, your queries generally fall into 'find' and 'where' categories.  </p>
+<h3>'Where' queries</h3><p>These queries leverage javascript functions to filter data.  This is the slowest but most versatile method for filtering documents in a collection.  Essentially we will test your filter on every document in the collection to see if it should be in the results.</p>
+<pre class="prettyprint source lang-javascript"><code>// simple anonymous filter
+var results = coll.where(function(obj) {
+  return obj.legs === 8;
+});
+
+// -or- set up named filter function
+function sleipnirFilter(obj) {
+  return obj.legs === 8;
+}
+
+// and then pass that
+results = coll.where(sleipnirFunction);</code></pre><h3>'Find' queries</h3><p>Find queries are based on subset of mongo query syntax.  This method is capable of utilizing indexes and when used with Collection Transforms or Dynamic Views, these filters can be saved into the database itself.  This is the preferred method for querying a Loki database.  Query everything (or filter as much as you can) with find queries, and use 'where' filtering if there are edge cases which find does not support (or does not support yet).</p>
+<h3>'Find' Operators</h3><p>The primary operators currently supported are : </p>
+<ul>
+<li>$eq - filter for document(s) with property of (strict) equality</li>
+<li>$dteq - filter for document(s) with date property equal to provided date value</li>
+<li>$gt - filter for document(s) with property greater than provided value</li>
+<li>$gte - filter for document(s) with property greater or equal to provided value</li>
+<li>$lt - filter for document(s) with property less than provided value</li>
+<li>$lte - filter for document(s) with property less than or equal to provided value</li>
+<li>$ne - filter for document(s) with property not equal to provided value</li>
+<li>$regex - filter for document(s) with property matching provided regular expression</li>
+<li>$in - filter for document(s) with property matching any of the provided array values.</li>
+<li>$contains - filter for document(s) with property containing the provided value</li>
+<li>$containsAny - filter for document(s) with property containing any of the provided values</li>
+<li>$containsNone - filter for documents(s) with property containing none of the provided values</li>
+<li>$and - filter for documents which meet all nested subexpressions</li>
+<li>$or - filter for documents which meet any of the nested subexpressions</li>
+</ul>
+<h3>Features which support 'find' queries</h3><p>These operators can be used to compose find filter objects which can be used within : </p>
+<ul>
+<li>Collection find()</li>
+<li>Collection findOne()</li>
+<li>(chained) Resultset find()</li>
+<li>Collection Transforms</li>
+<li>DynamicView applyFind()</li>
+</ul>
+<h3>'Find' Operator Examples :</h3><p>$eq / $ne : </p>
+<pre class="prettyprint source lang-javascript"><code>// explicit
+var results = coll.find({'Name': { '$eq' : 'Odin' }});
+
+// implicit (assumes equality operator)
+results = coll.find({'Name': 'Odin'});
+
+// not equal test
+results = coll.find({'legs': { '$ne' : 8 }});</code></pre><p>$regex:</p>
+<pre class="prettyprint source lang-javascript"><code>// pass in raw regex
+var results = coll.find({'Name': { '$regex' : /din/ }});
+
+// or pass in string pattern only
+results = coll.find({'Name': { '$regex': 'din' }});
+
+// or pass in [pattern, options] string array
+results = coll.find({'Name': { '$regex': ['din', 'i'] }});</code></pre><blockquote>
+<p><em>If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well.</em></p>
+</blockquote>
+<p>$in:</p>
+<pre class="prettyprint source lang-javascript"><code>var users = db.addCollection(&quot;users&quot;);
+users.insert({ name : 'odin' });
+users.insert({ name : 'thor' });
+users.insert({ name : 'svafrlami' });
+
+// match users with name in array set ['odin' or 'thor']
+var results = users.find({ 'name' : { '$in' : ['odin', 'thor'] } });</code></pre><p>$contains / $containsAny / $containsNone</p>
+<pre class="prettyprint source lang-javascript"><code>var users = db.addCollection(&quot;users&quot;);
+users.insert({ name : 'odin', weapons : ['gungnir', 'draupnir']});
+users.insert({ name : 'thor', weapons : ['mjolnir']});
+users.insert({ name : 'svafrlami', weapons : ['tyrfing']});
+users.insert({ name : 'arngrim', weapons : ['tyrfing']});
+
+// returns 'svafrlami' and 'arngrim' documents
+var results = users.find({ 'weapons' : { '$contains' : 'tyrfing' } });
+
+// returns 'svafrlami', 'arngrim', and 'thor' documents
+results = users.find({ 'weapons' : { '$containsAny' : ['tyrfing', 'mjolnir'] } });
+
+// returns 'svafrlami' and 'arngrim'
+results = users.find({ 'weapons' : { '$containsNone' : ['gungnir', 'mjolnir'] } });</code></pre><h3>Composing Nested Queries</h3><p>$and : </p>
+<pre class="prettyprint source lang-javascript"><code>// fetch documents matching both sub-expressions
+var results = coll.find({
+  '$and': [{ 
+      'Age' : {
+        '$gt': 30
+      }
+    },{
+      'Name' : 'Thor'
+    }]
+});</code></pre><p>$or : </p>
+<pre class="prettyprint source lang-javascript"><code>// fetch documents matching any of the sub-expressions
+var results = coll.find({
+  '$or': [{ 
+      'Age' : {
+        '$gte': '40'
+      }
+    },{
+      'Name' : 'Thor'
+    }]
+});</code></pre><h3>Programmatic query examples</h3><p>The following queries return the same results : </p>
+<pre class="prettyprint source lang-javascript"><code>// Core collection 'find' method
+var results = coll.find({'Age': {'$gte': 40}});
+
+// Resultset chaining
+results = coll.chain().find({'Age': {'$gte': 40}}).data();
+
+// Core collection 'where' method
+results = coll.where(function(obj) {
+    return obj.Age >= 40;
+});</code></pre><h3>Resultset chaining</h3><p>The core 'find' and 'where' functionality are two of the main building blocks that Resultset chaining allows you to build from.  Other methods available include : </p>
+<ul>
+<li>limit - allows limiting the results to a specific document count.</li>
+<li>offset - allows skipping the first number of documents from the results.</li>
+<li>branch - useful for splitting a query path into multiple branches.</li>
+<li>simplesort - just pass a property name and your resulset will be sorted by this.</li>
+<li>sort - allows you to provide your own comparison function to sort the resultset with.</li>
+<li>compoundsort - allows you sort based on multiple properties in ascending or descending order.</li>
+<li>update - used to run an update operation (javascript function) on all documents currently in the resultset.</li>
+<li>remove - removes all document objects which are currently in resultset from collection (as well as resultset)</li>
+<li>map - maps into a new anonymous collection, provide this with a map function</li>
+<li>mapReduce - allows you to specify both a map function and a reduce function on the current resultset data.</li>
+<li>eqJoin - Left joining two sets of data. Join keys can be defined or calculated properties</li>
+<li>transform - at the resultset level, this requires a raw transform array. When beginning a chain, a named or raw transform may be passed in to the chain method.  See 'Collection Transforms' wiki page for more details.</li>
+</ul>
+<p>An example making better use of chaining might be the following : </p>
+<pre class="prettyprint source lang-javascript"><code>var results = coll.chain()
+                  .find({'Age': {'$gt':20}})
+                  .where(function(obj) {
+                     return obj.Country.indexOf('FR') === 0;
+                   })
+                  .simplesort('Name')
+                  .offset(100)
+                  .limit(25)
+                  .data();</code></pre><h3>Resultset branching</h3><p>Resultsets and their results are not meant to be 'held' around. Those situations usually involve utilitizing Dynamic Views to keep results up-to-date.  You can however temporarily branch a resulset as often as you like, provided that you use the results right away (before any inserts/updates/deletes can occur).  Dynamic views also allows branching results which, in turn, takes its internal resultset and uses this branch to allow you to further query and transform its results without the initial penalty of the already executed filters.</p>
+<p>A simple example of collection branching might appear as follows : </p>
+<pre class="prettyprint source lang-javascript"><code>var baseResulset = coll.chain().find({'Age': {'$gte': 40}});
+var branchedResulset = baseResultset.branch();
+
+var usResults = baseResultset.find({'Country': 'US'}).data();
+var ieResults = branchedResulset.find({'Country': 'IE'}).data();</code></pre><p>The advantage being if the base resulset query was time consuming, your subsequent branches would not need to incur that common cost.  Branching is typically more useful in large collections or extremely time sensitive applications.  </p>
+<p>Retaining the resultset (even when not branching) can be done to break up a chain into several parts if you need to examine data() or document counts at various stages in the chain.</p>
+<h3>Strategies for determining which methods to use</h3><p>Wherever possible, use 'Find' queries over 'Where' queries.  'Find' queries are able to utilize indexes if they are applied and are relevant to your query.</p>
+<p>The 'Core' (Collection) querying methods (Collection.where(), Collection.find(), Collection.findOne(), Collection.by()) are the best method for learning lokijs.  For many applications this may be sufficient for your query needs.  Features not (yet?) available would be sorting, limiting, offsets and other higher level transformations.  </p>
+<p>Chaining queries is done via a call to collection.chain() which instances the Resultset class.  In doing so, we establish a 'state' for our queries.  You can string together multiple 'find', 'where', sorts, limit, offset (etc) operations to progressively filter and transform your results.  You may also establish query branching to split off your query into multiple directions as efficiently as possible.  Chaining via resultsets is still intended for instant evaluation.  If you keep a resultset around in memory, it is not guaranteed to remain up-to-date if the underlying data changes.  Only the first chained operation may use database filters, so prioritize your most expensive find() filter (which has an index applied) to be the first chained operation.</p>
+<p>Chaining via transforms allows the same functionality as method chaining to be defined in an object, functioning similar to a stored procedure.  Since it is an object representation, it can (optionally) be named and saved along with your database.  This method is also intended for instant evaluation.</p>
+<p>DynamicViews are intended to keep a 'fresh' database view readily available.  You may apply 'find' and 'where' filters, and specify sorting.  As documents are inserted, updated, or removed, you view will immediately be kept up-to-date.  This ensures optimal read performance against your view, as it is always up-to-date.  If your view requires further filtering, you may branch resultsets off of it.  The moment at which you branch off a DynamicView, you take a snapshot of the DynamicView's internal resultset at that point in time, allowing you to perform a wide variety of chaining operations for immediate evaluation.  So if you do DynamicView branching, consider the view as guaranteed freshness and the branches as quick disposable branches to be evaluated.</p>
+</article>
+
+</section>
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

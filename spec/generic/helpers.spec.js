@@ -13,6 +13,15 @@ describe('Testing comparator helpers', function () {
     expect(ops.$eq(true, false)).toEqual(false);
   });
 
+  it('$aeq works as expected', function() {
+    expect(ops.$aeq(4, '4')).toEqual(true);
+    expect(ops.$aeq(4, 4)).toEqual(true);
+    expect(ops.$aeq(3, 2)).toEqual(false);
+    expect(ops.$aeq(3, 'three')).toEqual(false);
+    expect(ops.$aeq('3', 3)).toEqual(true);
+    expect(ops.$aeq('1.23', 1.23)).toEqual(true);
+  });
+
   it('$ne works as expected', function () {
     expect(ops.$ne(true, true)).toEqual(false);
 
@@ -76,6 +85,27 @@ describe('Testing comparator helpers', function () {
     expect(ops.$gt(new Date(2015), new Date(2015))).toEqual(false);
 
     expect(ops.$gte(new Date(2015), new Date(2015))).toEqual(true);
+
+    // mixed type checking (or mixed falsy edge tests)
+    expect(ops.$gt("14", 12)).toEqual(true);
+
+    expect(ops.$gt(12, "14")).toEqual(false);
+
+    expect(ops.$gt("10", 12)).toEqual(false);
+
+    expect(ops.$gt(12, "10")).toEqual(true);
+
+    expect(ops.$gt("test", 12)).toEqual(true);
+
+    expect(ops.$gt(12, "test")).toEqual(false);
+
+    expect(ops.$gt(12, 0)).toEqual(true);
+
+    expect(ops.$gt(0, 12)).toEqual(false);
+
+    expect(ops.$gt(12, "")).toEqual(true);
+
+    expect(ops.$gt("", 12)).toEqual(false);
   });
 
   it('$lt works as expected', function () {
@@ -123,6 +153,27 @@ describe('Testing comparator helpers', function () {
     expect(ops.$lt(new Date(2015), new Date(2015))).toEqual(false);
 
     expect(ops.$lte(new Date(2015), new Date(2015))).toEqual(true);
+
+    // mixed type checking (or mixed falsy edge tests)
+    expect(ops.$lt("12", 14)).toEqual(true);
+
+    expect(ops.$lt(14, "12")).toEqual(false);
+
+    expect(ops.$lt("10", 12)).toEqual(true);
+
+    expect(ops.$lt(12, "10")).toEqual(false);
+
+    expect(ops.$lt("test", 12)).toEqual(false);
+
+    expect(ops.$lt(12, "test")).toEqual(true);
+
+    expect(ops.$lt(12, 0)).toEqual(false);
+
+    expect(ops.$lt(0, 12)).toEqual(true);
+
+    expect(ops.$lt(12, "")).toEqual(false);
+
+    expect(ops.$lt("", 12)).toEqual(true);
   });
 
 });

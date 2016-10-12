@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Tutorial: Loki Angular</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Tutorial: Loki Angular</h1>
+
+    <section>
+
+<header>
+    
+
+    <h2>Loki Angular</h2>
+</header>
+
+<article>
+    <h1>Lokiwork, the LokiJS Angular Service</h1><h2>Overview</h2><p>This service of Lokijs for Angular simplifies things to the most basic level because i found Loki difficult to work with in a mobile environment.  all you do is setup json files that specify the layout of your data then add, and update entries to the databases.</p>
+<h3>Demo</h3><p>View the Plunker demo <a href="http://plnkr.co/3H1kgFKWsr341zsWLZvp">here</a>.</p>
+<h3>Install:</h3><p><code>bower install lokijs</code></p>
+<h3>Html:</h3><pre class="prettyprint source"><code>&lt;script src=&quot;bower_components/lokijs/src/lokijs.js&quot;>&lt;/script>
+&lt;script src=&quot;bower_components/lokijs/src/loki-angular.js&quot;>&lt;/script></code></pre><h3>App:</h3><p><code>angular.module('app',['lokijs']);</code></p>
+<h3>Configure database template:</h3><p>I might call this file -&gt; <code>json_locations.js</code> Note: each one has to be called, json1, json2, json3, etc as shown in the following: </p>
+<pre class="prettyprint source"><code>app.constant(
+    'json1', 
+    {  
+           &quot;db&quot;:&quot;settings&quot;,
+           &quot;collection&quot;: &quot;globals&quot; ,
+           &quot;documents&quot; :
+            [  
+                      {
+                    &quot;name&quot;: &quot;user settings&quot;,
+                    &quot;brands&quot; : true,
+                    &quot;random&quot; : &quot;some value&quot;
+                      }
+            ]
+    }
+    );</code></pre><h3>Controller:</h3><pre class="prettyprint source"><code>app.controller('myCtrl', function($scope, Lokiwork){...});</code></pre><h3>Usage:</h3><p>Lokiwork.setCurrentDoc(dbname, collection, document_identifier);</p>
+<pre class="prettyprint source"><code>Lokiwork.setCurrentDoc('settings', 'globals', {'name': &quot;user settings&quot;});</code></pre><p>Lokiwork.getCurrentDoc();</p>
+<pre class="prettyprint source"><code>Lokiwork.getCurrentDoc();</code></pre><p>Lokiwork.updateCurrentDoc(name, value);</p>
+<pre class="prettyprint source"><code>Lokiwork.updateCurrentDoc(&quot;power&quot;, true);</code></pre><p>Lokiwork.deleteCurrentDoc();</p>
+<pre class="prettyprint source"><code>Lokiwork.deleteCurrentDoc();</code></pre><p>Lokiwork.getDoc(dbName, collName, docName);</p>
+<pre class="prettyprint source"><code>Lokiwork.getDoc(&quot;settings&quot;, &quot;globals&quot;, {name:&quot;user settings&quot;});</code></pre><p>Lokiwork.addDocument(dbName, collName, newDoc);</p>
+<pre class="prettyprint source"><code>Lokiwork.addDocument(&quot;settings&quot;, &quot;globals&quot;, doc_obj); //example below</code></pre><p>Lokiwork.updateDoc(dbname, collName, document_identifier, name, value);</p>
+<pre class="prettyprint source"><code>Lokiwork.updateDoc(&quot;settings&quot;, &quot;globals&quot;, {name:&quot;user settings&quot;}, &quot;brands&quot;, false});</code></pre><p>Lokiwork.deleteDocument(dbName, collName, document_identifier);</p>
+<pre class="prettyprint source"><code>Lokiwork.deleteDocument('settings','globals', {name:'user settings'});</code></pre><p>Lokiwork.getCollection(dbName, collName);</p>
+<pre class="prettyprint source"><code>Lokiwork.getCollection('settings', 'globals');</code></pre><p>Lokwork.addCollection(json_obj);</p>
+<pre class="prettyprint source"><code>Lokiwork.addCollection(item); // example below</code></pre><p>Lokiwork.deleteCollection(dbName, collName);</p>
+<pre class="prettyprint source"><code>Lokiwork.deleteCollection('settings', globals');</code></pre><p>Lokiwork.deleteDatabase(dbName);</p>
+<pre class="prettyprint source"><code>Lokiwork.deleteDatabase(&quot;settings&quot;);</code></pre><h4>Further examples:</h4><pre class="prettyprint source"><code>var collection = {  
+  &quot;db&quot;:&quot;settings&quot;,
+  &quot;collection&quot;: &quot;globals&quot; ,
+  &quot;documents&quot; :
+  [  
+       {
+      &quot;name&quot;: &quot;user settings&quot;,
+      &quot;brands&quot; : true,
+      &quot;face&quot; : &quot;You now it&quot;
+       }
+  ]
+};
+   Lokiwork.addCollection(collection);</code></pre><p>With addDocument, you can pass a json document in if it's small enough, otherwise assign it to a variable first.</p>
+<pre class="prettyprint source"><code>Lokiwork.addDocument(&quot;settings&quot;, &quot;globals&quot;, {name:&quot;user settings2&quot;, gay: true, brands:false})</code></pre><p>You can also use promises and/or chain them:</p>
+<pre class="prettyprint source"><code>Lokiwork.setCurrentDoc('settings', 'globals', {'name': &quot;user settings&quot;})
+    .then(function(data){               
+       Lokiwork.updateCurrentDoc(&quot;address&quot;, &quot;1801 Waters Ridge Drive&quot;);
+    });</code></pre><h3>Remember!</h3><p>A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.</p>
+<h3>Notes:</h3><ul>
+<li>If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.</li>
+<li>Since Lokijs is generating all of the database content it should be 100% compatible with native Lokijs commands not listed here but found on the office website shown below.</li>
+</ul>
+<h3>The official Lokijs page</h3><p><a href="https://github.com/techfort/LokiJS">LokiJS</a></p>
+</article>
+
+</section>
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

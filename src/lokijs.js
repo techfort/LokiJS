@@ -3770,23 +3770,27 @@
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
       var results = [];
+
+      this.emit('pre-insert', doc);
       for (var i = 0, len = doc.length; i < len; i++) {
-        obj = this.insertOne(doc[i]);
+        obj = this.insertOne(doc[i], true);
         if (!obj) {
           return undefined;
         }
         results.push(obj);
       }
+      this.emit('insert', doc);
       return results.length === 1 ? results[0] : results;
     };
 
     /**
      * Adds a single object, ensures it has meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted
+     * @param {boolean} bulkInsert - quiet pre-insert and insert event emits
      * @returns {object} document or 'undefined' if there was a problem inserting it
      * @memberof Collection
      */
-    Collection.prototype.insertOne = function (doc) {
+    Collection.prototype.insertOne = function (doc, bulkInsert) {
       var err = null;
       var returnObj;
 
@@ -3815,13 +3819,17 @@
       returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
 
       // allow pre-insert to modify actual collection reference even if cloning
-      this.emit('pre-insert', obj);
+      if (!bulkInsert) {
+        this.emit('pre-insert', obj);
+      }
       if (!this.add(obj)) {
         return undefined;
       }
 
       this.addAutoUpdateObserver(returnObj);
-      this.emit('insert', returnObj);
+      if (!bulkInsert) {
+        this.emit('insert', returnObj);
+      }
       return returnObj;
     };
 

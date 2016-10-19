@@ -1889,13 +1889,12 @@
 
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
-        // Chained queries can just do coll.chain().data() but let's
-        // be versatile and allow this also coll.chain().find().data()
+        // coll.find(), coll.findOne(), coll.chain().find().data() all path here
 
-        // If a chained search, simply leave everything as-is.
-        // Note: If no filter at this point, it will be properly
-        // created by the follow-up queries or sorts that need it.
-        // If not chained, then return the collection data array copy.
+        if (firstOnly) {
+          return (this.collection.data.length > 0)?this.collection.data[0]: null;
+        }
+
         return (this.searchIsChained) ? (this) : (this.collection.data.slice());
       }
 
@@ -4480,11 +4479,14 @@
      * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
+      query = query || {};
+
       // Instantiate Resultset and exec find op passing firstOnly = true param
       var result = new Resultset(this, {
         queryObj: query,
         firstOnly: true
       });
+
       if (Array.isArray(result) && result.length === 0) {
         return null;
       } else {

@@ -514,13 +514,21 @@
 
     /**
      * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string} eventName - the name of the event to listen to
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
      * @param {function} listener - callback function of listener to attach
      * @returns {int} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event = this.events[eventName];
+      var event;
+
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          LokiEventEmitter.prototype.on(currentEventName, listen);
+        });
+      }
+
+      event = this.events[eventName];
       if (!event) {
         event = this.events[eventName] = [];
       }
@@ -556,11 +564,17 @@
 
     /**
      * removeListener() - removes the listener at position 'index' from the event 'eventName'
-     * @param {string} eventName - the name of the event which the listener is attached to
+     * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
      * @param {function} listener - the listener callback function to remove from emitter
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          LokiEventEmitter.prototype.removeListener(currentEventName, listen);
+        });
+      }
+
       if (this.events[eventName]) {
         var listeners = this.events[eventName];
         listeners.splice(listeners.indexOf(listener), 1);

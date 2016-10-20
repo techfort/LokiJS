@@ -520,11 +520,12 @@
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event;
+      var event,
+          self;
 
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          LokiEventEmitter.prototype.on(currentEventName, listen);
+          self.on(currentEventName, listen);
         });
       }
 
@@ -569,9 +570,10 @@
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
+      var self = this;
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          LokiEventEmitter.prototype.removeListener(currentEventName, listen);
+          self.removeListener(currentEventName, listen);
         });
       }
 

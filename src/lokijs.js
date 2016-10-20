@@ -514,13 +514,22 @@
 
     /**
      * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string} eventName - the name of the event to listen to
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
      * @param {function} listener - callback function of listener to attach
      * @returns {int} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event = this.events[eventName];
+      var event,
+          self;
+
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.on(currentEventName, listen);
+        });
+      }
+
+      event = this.events[eventName];
       if (!event) {
         event = this.events[eventName] = [];
       }
@@ -556,11 +565,18 @@
 
     /**
      * removeListener() - removes the listener at position 'index' from the event 'eventName'
-     * @param {string} eventName - the name of the event which the listener is attached to
+     * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
      * @param {function} listener - the listener callback function to remove from emitter
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
+      var self = this;
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.removeListener(currentEventName, listen);
+        });
+      }
+
       if (this.events[eventName]) {
         var listeners = this.events[eventName];
         listeners.splice(listeners.indexOf(listener), 1);
@@ -920,7 +936,7 @@
      * @memberof Loki
      */
     Loki.prototype.serialize = function () {
-      return JSON.stringify(this, this.serializeReplacer, 2); 
+      return JSON.stringify(this, this.serializeReplacer, 2);
     };
     // alias of serialize
     Loki.prototype.toJson = Loki.prototype.serialize;
@@ -3538,7 +3554,7 @@
      */
     Collection.prototype.configureOptions = function (options) {
       options = options || {};
-      
+
       if (options.hasOwnProperty('adaptiveBinaryIndices')) {
         this.adaptiveBinaryIndices = options.adaptiveBinaryIndices;
 
@@ -3914,7 +3930,7 @@
         else {
           this.flagBinaryIndexesDirty();
         }
-        
+
         this.idIndex[position] = newInternal.$loki;
         //this.flagBinaryIndexesDirty();
 
@@ -3981,7 +3997,7 @@
         for (var i = 0; i < dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(addedPos, true);
         }
-        
+
         if (this.adaptiveBinaryIndices) {
           // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
           var bIndices = this.binaryIndices;
@@ -3992,7 +4008,7 @@
         else {
           this.flagBinaryIndexesDirty();
         }
-        
+
         this.commit();
         this.dirty = true; // for autosave scenarios
 
@@ -4079,7 +4095,7 @@
         else {
           this.flagBinaryIndexesDirty();
         }
-        
+
         this.data.splice(position, 1);
         this.removeAutoUpdateObserver(doc);
 
@@ -4151,32 +4167,32 @@
      *    Since multiple documents may contain the same value (which the index is sorted on),
      *    we hone in on range and then linear scan range to find exact index array position.
      * @param {int} dataPosition : coll.data array index/position
-     * @param {string} binaryIndexName : index to search for dataPosition in 
+     * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.getBinaryIndexPosition = function(dataPosition, binaryIndexName) {
       var val = this.data[dataPosition][binaryIndexName];
       var index = this.binaryIndices[binaryIndexName].values;
-      
+
       // i think calculateRange can probably be moved to collection
       // as it doesn't seem to need resultset.  need to verify
       //var rs = new Resultset(this, null, null);
       var range = this.calculateRange("$eq", binaryIndexName, val);
-      
+
       if (range[0] === 0 && range[1] === -1) {
         // uhoh didn't find range
         return null;
       }
-      
+
       var min = range[0];
       var max = range[1];
-      
+
       // narrow down the sub-segment of index values
-      // where the indexed property value exactly matches our 
+      // where the indexed property value exactly matches our
       // value and then linear scan to find exact -index- position
       for(var idx = min; idx <= max; idx++) {
         if (index[idx] === dataPosition) return idx;
       }
-      
+
       // uhoh
       return null;
     };
@@ -4184,14 +4200,14 @@
     /**
      * Adaptively insert a selected item to the index.
      * @param {int} dataPosition : coll.data array index/position
-     * @param {string} binaryIndexName : index to search for dataPosition in 
+     * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
       var index = this.binaryIndices[binaryIndexName].values;
       var val = this.data[dataPosition][binaryIndexName];
       //var rs = new Resultset(this, null, null);
       var idxPos = this.calculateRangeStart(binaryIndexName, val);
-      
+
       // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
       // doing this after adjusting dataPositions so no clash with previous item at that position.
       this.binaryIndices[binaryIndexName].values.splice(idxPos, 0, dataPosition);
@@ -4200,15 +4216,15 @@
     /**
      * Adaptively update a selected item within an index.
      * @param {int} dataPosition : coll.data array index/position
-     * @param {string} binaryIndexName : index to search for dataPosition in 
+     * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexUpdate = function(dataPosition, binaryIndexName) {
       // linear scan needed to find old position within index unless we optimize for clone scenarios later
       // within (my) node 5.6.0, the following for() loop with strict compare is -much- faster than indexOf()
-      var idxPos, 
+      var idxPos,
         index = this.binaryIndices[binaryIndexName].values,
         len=index.length;
-      
+
       for(idxPos=0; idxPos < len; idxPos++) {
         if (index[idxPos] === dataPosition) break;
       }
@@ -4219,23 +4235,23 @@
       //this.adaptiveBinaryIndexRemove(dataPosition, binaryIndexName, true);
       this.adaptiveBinaryIndexInsert(dataPosition, binaryIndexName);
     };
-    
+
     /**
      * Adaptively remove a selected item from the index.
      * @param {int} dataPosition : coll.data array index/position
-     * @param {string} binaryIndexName : index to search for dataPosition in 
+     * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
       var idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
       var index = this.binaryIndices[binaryIndexName].values;
       var len,
         idx;
-      
+
       if (idxPos === null) {
         // throw new Error('unable to determine binary index position');
         return null;
       }
-      
+
       // remove document from index
       this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
 
@@ -4244,8 +4260,8 @@
       if (removedFromIndexOnly === true) {
         return;
       }
-      
-      // since index stores data array positions, if we remove a document 
+
+      // since index stores data array positions, if we remove a document
       // we need to adjust array positions -1 for all document positions greater than removed position
       len = index.length;
       for (idx = 0; idx < len; idx++) {
@@ -4257,7 +4273,7 @@
 
     /**
      * Internal method used for index maintenance.  Given a prop (index name), and a value
-     * (which may or may not yet exist) this will find the proper location where it can be added. 
+     * (which may or may not yet exist) this will find the proper location where it can be added.
      */
     Collection.prototype.calculateRangeStart = function (prop, val) {
       var rcd = this.data;
@@ -4285,7 +4301,7 @@
       }
 
       var lbound = min;
-      
+
       if (ltHelper(rcd[index[lbound]][prop], val, false)) {
         return lbound+1;
       }
@@ -4293,7 +4309,7 @@
         return lbound;
       }
     };
-    
+
     /**
      * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
      *    this is used for collection.find() and first find filter of resultset/dynview

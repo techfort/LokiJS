@@ -3851,15 +3851,6 @@
     };
 
     /**
-     * Rebuild idIndex async with callback - useful for background syncing with a remote server
-     */
-    Collection.prototype.ensureIdAsync = function (callback) {
-      this.async(function () {
-        this.ensureId();
-      }, callback);
-    };
-
-    /**
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
      * @param {object=} options - (optional) options to configure dynamic view with
@@ -4572,18 +4563,6 @@
           this.DynamicViews[idx].rollback();
         }
       }
-    };
-
-    // async executor. This is only to enable callbacks at the end of the execution.
-    Collection.prototype.async = function (fun, callback) {
-      setTimeout(function () {
-        if (typeof fun === 'function') {
-          fun();
-          callback();
-        } else {
-          throw new TypeError('Argument passed for async execution is not a function');
-        }
-      }, 0);
     };
 
     /**

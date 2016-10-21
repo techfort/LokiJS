@@ -15,6 +15,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'node_modules/es6-promise/dist/es6-promise.auto.js',
       'src/lokijs.js',
       'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',

@@ -1,64 +1,65 @@
 {
-  "name": "lokijs",
-  "version": "1.4.1",
-  "description": "Fast document oriented javascript in-memory database",
-  "homepage": "http://lokijs.org",
-  "main": "src/lokijs.js",
-  "directories": {
-    "example": "examples"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/techfort/LokiJS.git"
-  },
-  "keywords": [
-    "javascript",
-    "document-oriented",
-    "mmdb",
-    "json",
-    "nosql",
-    "lokijs",
-    "in-memory"
-  ],
-  "scripts": {
-    "lint": "jshint src",
-    "test:browser": "karma start karma.conf.js --single-run",
-    "test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
-    "pretest": "npm run lint",
-    "test": "npm run test:browser && npm run test:node",
-    "build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
-    "build:indexedAdapter": "uglifyjs src/loki-indexed-adapter.js > build/loki-indexed-adapter.min.js",
-    "build": "npm run build:lokijs && npm run build:indexedAdapter",
-    "postbuild": "karma start karma.build.conf.js --single-run",
-    "prepublish": "npm run build",
-    "clean": "rimraf build/* coverage/* node_modules",
-    "pour:beer": "echo New npm version published, one beer for you !",
-    "jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json"
-  },
-  "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "admin@obeliskos.com"
-  }],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/techfort/LokiJS/issues"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "istanbul": "^0.4.4",
-    "jasmine": "^2.4.1",
-    "jsdoc": "^3.4.0",
-    "jshint": "^2.9.2",
-    "karma": "^1.1.2",
-    "karma-cli": "^1.0.1",
-    "karma-coverage": "^1.1.1",
-    "karma-jasmine": "^1.0.2",
-    "karma-phantomjs-launcher": "^1.0.1",
-    "mocha": "^2.5.3",
-    "phantomjs": "^1.9.20",
-    "rimraf": "^2.5.4",
-    "should": "^4.6.5",
-    "uglify-js": "^2.7.0"
-  }
+	"name": "lokijs",
+	"version": "1.4.1",
+	"description": "Fast document oriented javascript in-memory database",
+	"homepage": "http://lokijs.org",
+	"main": "src/lokijs.js",
+	"directories": {
+		"example": "examples"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/techfort/LokiJS.git"
+	},
+	"keywords": [
+		"javascript",
+		"document-oriented",
+		"mmdb",
+		"json",
+		"nosql",
+		"lokijs",
+		"in-memory"
+	],
+	"scripts": {
+		"lint": "jshint src",
+		"test:browser": "karma start karma.conf.js --single-run",
+		"test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
+		"pretest": "npm run lint",
+		"test": "npm run test:browser && npm run test:node",
+		"build:lokijs": "uglifyjs src/lokijs.js > build/lokijs.min.js",
+		"build:indexedAdapter": "uglifyjs src/loki-indexed-adapter.js > build/loki-indexed-adapter.min.js",
+		"build": "npm run build:lokijs && npm run build:indexedAdapter",
+		"postbuild": "karma start karma.build.conf.js --single-run",
+		"prepublish": "npm run build",
+		"clean": "rimraf build/* coverage/* node_modules",
+		"pour:beer": "echo New npm version published, one beer for you !",
+		"jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json"
+	},
+	"author": "Joe Minichino <joe.minichino@gmail.com>",
+	"contributors": [{
+		"name": "Dave",
+		"email": "admin@obeliskos.com"
+	}],
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/techfort/LokiJS/issues"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"es6-promise": "^4.0.5",
+		"istanbul": "^0.4.4",
+		"jasmine": "^2.4.1",
+		"jsdoc": "^3.4.0",
+		"jshint": "^2.9.2",
+		"karma": "^1.1.2",
+		"karma-cli": "^1.0.1",
+		"karma-coverage": "^1.1.1",
+		"karma-jasmine": "^1.0.2",
+		"karma-phantomjs-launcher": "^1.0.1",
+		"mocha": "^2.5.3",
+		"phantomjs": "^1.9.20",
+		"rimraf": "^2.5.4",
+		"should": "^4.6.5",
+		"uglify-js": "^2.7.0"
+	}
 }

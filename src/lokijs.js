@@ -3031,13 +3031,10 @@
       // was in resultset, shouldn't be now... delete
       if (oldPos !== -1 && newPos === -1) {
         if (oldPos < oldlen - 1) {
-          // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
-          ofr[oldPos] = ofr[oldlen - 1];
-          ofr.length = oldlen - 1;
+          ofr.splice(oldPos, 1);
 
           if (this.options.persistent) {
-            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-            this.resultdata.length = oldlen - 1;
+            this.resultdata.splice(oldPos, 1);
           }
         } else {
           ofr.length = oldlen - 1;

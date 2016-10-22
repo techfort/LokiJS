@@ -1213,47 +1213,49 @@
     /**
      * loadDatabase() - Load data from localstorage
      * @param {string} dbname - the name of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       if (localStorageAvailable()) {
-        callback(localStorage.getItem(dbname));
-      } else {
-        callback(new Error('localStorage is not available'));
+        return Promise.resolve(localStorage.getItem(dbname));
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was saved
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
       if (localStorageAvailable()) {
         localStorage.setItem(dbname, dbstring);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * deleteDatabase() - delete the database from localstorage, will throw an error if it
      * can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname) {
       if (localStorageAvailable()) {
         localStorage.removeItem(dbname);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**

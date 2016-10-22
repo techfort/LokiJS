@@ -1135,27 +1135,29 @@
     /**
      * loadDatabase() - Load data from file, will throw an error if the file does not exist
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       var self = this;
 
-      this.fs.stat(dbname, function (err, stats) {
-        if (!err && stats.isFile()) {
-          self.fs.readFile(dbname, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              callback(new Error(err));
-            } else {
-              callback(data);
-            }
-          });
-        }
-        else {
-          callback(null);
-        }
+      return new Promise(function (resolve, reject) {
+        self.fs.stat(dbname, function (err, stats) {
+          if (!err && stats.isFile()) {
+            self.fs.readFile(dbname, {
+              encoding: 'utf8'
+            }, function readFileCallback(err, data) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(data);
+              }
+            });
+          }
+          else {
+            reject();
+          }
+        });
       });
     };
 
@@ -1163,27 +1165,41 @@
      * saveDatabase() - save data to file, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was persisted
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-      this.fs.writeFile(dbname, dbstring, callback);
+    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
+      var self = this;
+
+      return new Promise(function (resolve, reject) {
+        self.fs.writeFile(dbname, dbstring, function (err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
     };
 
     /**
      * deleteDatabase() - delete the database file, will throw an error if the
      * file can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
-      this.fs.unlink(dbname, function deleteDatabaseCallback(err) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback();
-        }
+      var self = this;
+
+      return new Promise(function (resolve, reject) {
+        self.fs.unlink(dbname, function deleteDatabaseCallback(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
       });
     };
 

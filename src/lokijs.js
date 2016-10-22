@@ -937,7 +937,7 @@
         var collOptions = options[coll.name];
         var inflater;
 
-        if(collOptions.proto) {
+        if (collOptions.proto) {
           inflater = collOptions.inflate || Utils.copyProperties;
 
           return function(data) {
@@ -1048,8 +1048,9 @@
         }
       }
 
-      if (!saved)
+      if (!saved) {
         saved = Promise.resolve();
+      }
 
       return saved.then(function () {
         self.emit('close');
@@ -1282,7 +1283,7 @@
               self.loadJSONObject(dbString, options || {});
               self.emit('load', self);
             } else {
-              if(dbString instanceof Error)
+              if (dbString instanceof Error)
                 throw dbString;
 
               throw new TypeError('The persistence adapter did not load a serialized DB string or object.');

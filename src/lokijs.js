@@ -549,8 +549,6 @@
           }
 
         });
-      } else {
-        throw new Error('No event ' + eventName + ' defined');
       }
     };
 

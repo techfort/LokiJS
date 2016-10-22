@@ -1,8 +1,8 @@
 /**
- * @file lokiCryptedFileAdapter.js 
+ * @file lokiCryptedFileAdapter.js
  * @author Hans Klunder <Hans.Klunder@bigfoot.com>
  */
- 
+
  /*
  * The default Loki File adapter uses plain text JSON files. This adapter crypts the database string and wraps the result
  * in a JSON including enough info to be able to decrypt it (except for the 'secret' of course !)
@@ -16,7 +16,7 @@
 
 /**
  * require libs
- * @ignore 
+ * @ignore
 */
 var fs = require('fs');
 var cryptoLib = require('crypto');
@@ -134,7 +134,7 @@ lokiCryptedFileAdapter.prototype.setSecret = function setSecret(secret) {
 
 /**
  * loadDatabase() - Retrieves a serialized db string from the catalog.
- * 
+ *
  *  @example
   // LOAD
     var cryptedFileAdapter = require('./lokiCryptedFileAdapter');
@@ -145,15 +145,19 @@ lokiCryptedFileAdapter.prototype.setSecret = function setSecret(secret) {
 	});
  *
  * @param {string} dbname - the name of the database to retrieve.
- * @param {function} callback - callback should accept string param containing serialized db string.
+ * @returns {Promise} a Promise that resolves after the database was loaded
  */
-lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
   var secret = this.secret;
-  var cFun = callback || console.log;
-  
-  fs.readFile(dbname,'utf8',function(err,data){
-    var decrypted = err || decrypt(data, secret);
-    cFun(decrypted);
+
+  return new Promise(function (resolve, reject) {
+    fs.readFile(dbname,'utf8',function (err,data) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(decrypt(data, secret));
+      }
+    });
   });
 };
 
@@ -168,28 +172,35 @@ lokiCryptedFileAdapter.prototype.loadDatabase = function loadDatabase(dbname, ca
 	var coll = db.addCollection('testColl');
 	coll.insert({test: 'val'});
 	db.saveDatabase();  // could pass callback if needed for async complete
-	
+
 	 @example
   // if you have the krypt module installed you can use:
 	krypt --decrypt test.crypted --secret mySecret
   to view the contents of the database
-	
+
  * saveDatabase() - Saves a serialized db to the catalog.
  *
  * @param {string} dbname - the name to give the serialized database within the catalog.
  * @param {string} dbstring - the serialized db string to save.
- * @param {function} callback - (Optional) callback passed obj.success with true or false
+ * @returns {Promise} a Promise that resolves after the database was persisted
  */
-lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-  var cFun = callback || function (){};
+lokiCryptedFileAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
   var encrypted = encrypt(dbstring, this.secret);
-  if (! isError(encrypted)){
-    fs.writeFile(dbname,
-      JSON.stringify(encrypted, null, '  '),
-      'utf8',cFun);
-  }
-  else { // Error !
-    cFun(encrypted);
+
+  if (!isError(encrypted)) {
+    return new Promise(function (resolve, reject) {
+      fs.writeFile(dbname,
+        JSON.stringify(encrypted, null, '  '),
+        'utf8', function(err) {
+          if(err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+    });
+  } else { // Error !
+    return Promise.reject(encrypted);
   }
 };
 

@@ -1320,10 +1320,6 @@
       return saved.then(function () {
         self.autosaveClearFlags();
         self.emit("save");
-      }, function (err) {
-        self.autosaveClearFlags();
-
-        throw err;
       });
     };
 

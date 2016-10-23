@@ -15,6 +15,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'node_modules/es6-promise/dist/es6-promise.auto.js',
       'build/lokijs.min.js',
       'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',
@@ -41,7 +42,7 @@ module.exports = function (config) {
     // coverage reporter generates the coverage
     reporters: ['dots'],
 
-    
+
     // web server port
     port: 9876,
 

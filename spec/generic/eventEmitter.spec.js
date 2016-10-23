@@ -29,9 +29,5 @@ describe('eventEmitter', function () {
     db.removeListener('test', index);
 
     expect(db.events['test'].length).toEqual(0);
-
-    expect(function testEvent() {
-      db.emit('testEvent');
-    }).toThrow(new Error('No event testEvent defined'));
   });
 });

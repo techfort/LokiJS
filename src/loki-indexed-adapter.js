@@ -24,11 +24,11 @@
 
     /**
      * Loki persistence adapter class for indexedDb.
-     *     This class fulfills abstract adapter interface which can be applied to other storage methods. 
+     *     This class fulfills abstract adapter interface which can be applied to other storage methods.
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
      *     Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
      *     Anywhere a callback is omitted, it should return results (if applicable) to console.
-     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to
      *     allow separate contexts for separate apps within a domain.
      *
      * @example
@@ -80,38 +80,40 @@
      * });
      *
      * @param {string} dbname - the name of the database to retrieve.
-     * @param {function} callback - callback should accept string param containing serialized db string.
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiIndexedAdapter
      */
-    LokiIndexedAdapter.prototype.loadDatabase = function(dbname, callback)
+    LokiIndexedAdapter.prototype.loadDatabase = function(dbname)
     {
       var appName = this.app;
       var adapter = this;
 
       // lazy open/create db reference so dont -need- callback in constructor
       if (this.catalog === null || this.catalog.db === null) {
-        this.catalog = new LokiCatalog(function(cat) {
-          adapter.catalog = cat;
+        return new Promise(function (resolve) {
+          adapter.catalog = new LokiCatalog(function(cat) {
+            adapter.catalog = cat;
 
-          adapter.loadDatabase(dbname, callback);
+            resolve(adapter.loadDatabase(dbname));
+          });
         });
-
-        return;
       }
 
       // lookup up db string in AKV db
-      this.catalog.getAppKey(appName, dbname, function(result) {
-        if (typeof (callback) === 'function') {
-          if (result.id === 0) {
-            callback(null);
-            return;
+      return new Promise(function (resolve) {
+        this.catalog.getAppKey(appName, dbname, function(result) {
+          if (typeof (callback) === 'function') {
+            if (result.id === 0) {
+              resolve();
+              return;
+            }
+            resolve(result.val);
           }
-          callback(result.val);
-        }
-        else {
-          // support console use of api
-          console.log(result.val);
-        }
+          else {
+            // support console use of api
+            console.log(result.val);
+          }
+        });
       });
     };
 
@@ -131,20 +133,26 @@
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {string} dbstring - the serialized db string to save.
-     * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @returns {Promise} a Promise that resolves after the database was persisted
      * @memberof LokiIndexedAdapter
      */
-    LokiIndexedAdapter.prototype.saveDatabase = function(dbname, dbstring, callback)
+    LokiIndexedAdapter.prototype.saveDatabase = function(dbname, dbstring)
     {
       var appName = this.app;
       var adapter = this;
 
+      var resolve, reject;
+      var result = new Promise(function (res, rej) {
+        resolve = res;
+        reject = rej;
+      });
+
       function saveCallback(result) {
         if (result && result.success === true) {
-          callback(null);
+          resolve();
         }
         else {
-          callback(new Error("Error saving database"));
+          reject(new Error("Error saving database"));
         }
       }
 
@@ -157,11 +165,13 @@
           cat.setAppKey(appName, dbname, dbstring, saveCallback);
         });
 
-        return;
+        return result;
       }
 
       // set (add/update) entry to AKV database
       this.catalog.setAppKey(appName, dbname, dbstring, saveCallback);
+
+      return result;
     };
 
     // alias
@@ -178,36 +188,36 @@
      * });
      *
      * @param {string} dbname - the name of the database to delete from the catalog.
-     * @param {function=} callback - (Optional) executed on database delete
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiIndexedAdapter
      */
-    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname, callback)
+    LokiIndexedAdapter.prototype.deleteDatabase = function(dbname)
     {
       var appName = this.app;
       var adapter = this;
 
       // lazy open/create db reference and pass callback ahead
       if (this.catalog === null || this.catalog.db === null) {
-        this.catalog = new LokiCatalog(function(cat) {
-          adapter.catalog = cat;
+        return new Promise(function (resolve) {
+          adapter.catalog = new LokiCatalog(function(cat) {
+            adapter.catalog = cat;
 
-          adapter.deleteDatabase(dbname, callback);
+            resolve(adapter.deleteDatabase(dbname));
+          });
         });
-
-        return;
       }
 
       // catalog was already initialized, so just lookup object and delete by id
-      this.catalog.getAppKey(appName, dbname, function(result) {
-        var id = result.id;
+      return new Promise(function (resolve) {
+        this.catalog.getAppKey(appName, dbname, function(result) {
+          var id = result.id;
 
-        if (id !== 0) {
-          adapter.catalog.deleteAppKey(id);
-        }
+          if (id !== 0) {
+            adapter.catalog.deleteAppKey(id);
+          }
 
-        if (typeof (callback) === 'function') {
-          callback();
-        }
+          resolve();
+        });
       });
     };
 

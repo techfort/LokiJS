@@ -352,13 +352,13 @@ describe('loki', function () {
           "ids": [12, 379]
         }
       });
-      
+
       dna.insert({
         "relations" : {
           "ids": [111]
         }
       });
-      
+
       var results = dna.find({
         'relations.ids' : { $contains: 379 }
       });
@@ -1187,7 +1187,7 @@ describe('loki', function () {
   });
 
   describe('stepDynamicViewPersistence', function () {
-    it('works', function testCollections() {
+    it('works', function testCollections(done) {
       var db = new loki('testCollections');
       db.name = 'testCollections';
       it('DB name', function () {
@@ -1230,11 +1230,7 @@ describe('loki', function () {
       db.on('close', function () {
         throw new TestError;
       });
-      suite.assertThrows('Throw error on purpose on close', function () {
-        db.close(function () {
-          return;
-        });
-      }, TestError);
+      db.close().then(done.fail, done);
     });
   });
 });

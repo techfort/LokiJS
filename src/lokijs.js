@@ -549,8 +549,6 @@
           }
 
         });
-      } else {
-        throw new Error('No event ' + eventName + ' defined');
       }
     };
 
@@ -575,11 +573,6 @@
      * @param {object=} options - (Optional) config options object
      * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
      * @param {boolean} options.verbose - enable console output (default is 'false')
-     * @param {boolean} options.autosave - enables autosave
-     * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
-     * @param {boolean} options.autoload - enables autoload on loki instantiation
-     * @param {function} options.autoloadCallback - user callback called after database load
-     * @param {adapter} options.adapter - an instance of a loki persistence adapter
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -623,15 +616,6 @@
       };
 
       var getENV = function () {
-        // if (typeof global !== 'undefined' && (global.android || global.NSObject)) {
-        //   //If no adapter is set use the default nativescript adapter
-        //   if (!options.adapter) {
-        //     var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
-        //     options.adapter=new LokiNativescriptAdapter();
-        //   }
-        //   return 'NATIVESCRIPT'; //nativescript
-        // }
-
         if (typeof window === 'undefined') {
           return 'NODEJS';
         }
@@ -659,15 +643,6 @@
         this.ENV = getENV();
       }
 
-      // not sure if this is necessary now that i have refactored the line above
-      if (this.ENV === 'undefined') {
-        this.ENV = 'NODEJS';
-      }
-
-      //if (typeof (options) !== 'undefined') {
-      this.configureOptions(options, true);
-      //}
-
       this.on('init', this.clearChanges);
 
     }
@@ -689,20 +664,19 @@
 
 
     /**
-     * Allows reconfiguring database options
+     * configures options related to database persistence.
      *
      * @param {object} options - configuration options to apply to loki db object
-     * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
-     * @param {boolean} options.verbose - enable console output (default is 'false')
+     * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {boolean} options.autosave - enables autosave
      * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
      * @param {boolean} options.autoload - enables autoload on loki instantiation
-     * @param {function} options.autoloadCallback - user callback called after database load
-     * @param {adapter} options.adapter - an instance of a loki persistence adapter
-     * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking
+     * @param {object} options.inflate - options that are passed to loadDatabase if autoload enabled
+     * @returns {Promise} a Promise that resolves after initialization and (if enabled) autoloading the database
      * @memberof Loki
      */
-    Loki.prototype.configureOptions = function (options, initialConfig) {
+    Loki.prototype.initializePersistence = function (options) {
+      var self = this;
       var defaultPersistence = {
           'NODEJS': 'fs',
           'BROWSER': 'localStorage',
@@ -713,7 +687,7 @@
           'localStorage': LokiLocalStorageAdapter
         };
 
-      this.options = {};
+      this.options = options || {};
 
       this.persistenceMethod = null;
       // retain reference to optional persistence adapter 'instance'
@@ -721,52 +695,14 @@
       this.persistenceAdapter = null;
 
       // process the options
-      if (typeof (options) !== 'undefined') {
-        this.options = options;
-
-
-        if (this.options.hasOwnProperty('persistenceMethod')) {
-          // check if the specified persistence method is known
-          if (typeof (persistenceMethods[options.persistenceMethod]) == 'function') {
-            this.persistenceMethod = options.persistenceMethod;
-            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod]();
-          }
-          // should be throw an error here, or just fall back to defaults ??
+      if (this.options.hasOwnProperty('persistenceMethod')) {
+        // check if the specified persistence method is known
+        if (typeof (persistenceMethods[this.options.persistenceMethod]) === 'function') {
+          this.persistenceMethod = this.options.persistenceMethod;
+          this.persistenceAdapter = new persistenceMethods[this.options.persistenceMethod]();
         }
-
-        // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
-        if (this.options.hasOwnProperty('adapter')) {
-          this.persistenceMethod = 'adapter';
-          this.persistenceAdapter = options.adapter;
-          this.options.adapter = null;
-        }
-
-
-        // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-        if (options.autoload && initialConfig) {
-          // for autoload, let the constructor complete before firing callback
-          var self = this;
-          setTimeout(function () {
-            self.loadDatabase(options, options.autoloadCallback);
-          }, 1);
-        }
-
-        if (this.options.hasOwnProperty('autosaveInterval')) {
-          this.autosaveDisable();
-          this.autosaveInterval = parseInt(this.options.autosaveInterval, 10);
-        }
-
-        if (this.options.hasOwnProperty('autosave') && this.options.autosave) {
-          this.autosaveDisable();
-          this.autosave = true;
-
-          if (this.options.hasOwnProperty('autosaveCallback')) {
-            this.autosaveEnable(options, options.autosaveCallback);
-          } else {
-            this.autosaveEnable();
-          }
-        }
-      } // end of options processing
+        // should be throw an error here, or just fall back to defaults ??
+      }
 
       // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
       if (this.persistenceAdapter === null) {
@@ -776,6 +712,33 @@
         }
       }
 
+      // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+      if (this.options.hasOwnProperty('adapter')) {
+        this.persistenceMethod = 'adapter';
+        this.persistenceAdapter = this.options.adapter;
+      }
+
+      if (this.options.hasOwnProperty('autosaveInterval')) {
+        this.autosaveInterval = parseInt(this.options.autosaveInterval, 10);
+      }
+
+      this.autosaveDisable();
+
+      var loaded;
+
+      // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
+      if (this.options.autoload) {
+        loaded = this.loadDatabase(this.options.inflate);
+      }
+      else {
+        loaded = Promise.resolve();
+      }
+
+      return loaded.then(function () {
+        if (self.options.autosave) {
+          self.autosaveEnable();
+        }
+      });
     };
 
     /**
@@ -974,7 +937,7 @@
         var collOptions = options[coll.name];
         var inflater;
 
-        if(collOptions.proto) {
+        if (collOptions.proto) {
           inflater = collOptions.inflate || Utils.copyProperties;
 
           return function(data) {
@@ -1069,24 +1032,29 @@
      * Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
      * Does not actually destroy the db.
      *
-     * @param {function=} callback - (Optional) if supplied will be registered with close event before emitting.
+     * @returns {Promise} a Promise that resolves after closing the database succeeded
      * @memberof Loki
      */
-    Loki.prototype.close = function (callback) {
+    Loki.prototype.close = function () {
+      var self = this;
+      var saved;
+
       // for autosave scenarios, we will let close perform final save (if dirty)
       // For web use, you might call from window.onbeforeunload to shutdown database, saving pending changes
       if (this.autosave) {
         this.autosaveDisable();
         if (this.autosaveDirty()) {
-          this.saveDatabase(callback);
-          callback = undefined;
+          saved = this.saveDatabase();
         }
       }
 
-      if (callback) {
-        this.on('close', callback);
+      if (!saved) {
+        saved = Promise.resolve();
       }
-      this.emit('close');
+
+      return saved.then(function () {
+        self.emit('close');
+      });
     };
 
     /**-------------------------+
@@ -1166,27 +1134,29 @@
     /**
      * loadDatabase() - Load data from file, will throw an error if the file does not exist
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       var self = this;
 
-      this.fs.stat(dbname, function (err, stats) {
-        if (!err && stats.isFile()) {
-          self.fs.readFile(dbname, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              callback(new Error(err));
-            } else {
-              callback(data);
-            }
-          });
-        }
-        else {
-          callback(null);
-        }
+      return new Promise(function (resolve, reject) {
+        self.fs.stat(dbname, function (err, stats) {
+          if (!err && stats.isFile()) {
+            self.fs.readFile(dbname, {
+              encoding: 'utf8'
+            }, function readFileCallback(err, data) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(data);
+              }
+            });
+          }
+          else {
+            reject();
+          }
+        });
       });
     };
 
@@ -1194,27 +1164,41 @@
      * saveDatabase() - save data to file, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was persisted
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-      this.fs.writeFile(dbname, dbstring, callback);
+    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
+      var self = this;
+
+      return new Promise(function (resolve, reject) {
+        self.fs.writeFile(dbname, dbstring, function (err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
     };
 
     /**
      * deleteDatabase() - delete the database file, will throw an error if the
      * file can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
-      this.fs.unlink(dbname, function deleteDatabaseCallback(err) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback();
-        }
+      var self = this;
+
+      return new Promise(function (resolve, reject) {
+        self.fs.unlink(dbname, function deleteDatabaseCallback(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
       });
     };
 
@@ -1228,167 +1212,134 @@
     /**
      * loadDatabase() - Load data from localstorage
      * @param {string} dbname - the name of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       if (localStorageAvailable()) {
-        callback(localStorage.getItem(dbname));
-      } else {
-        callback(new Error('localStorage is not available'));
+        return Promise.resolve(localStorage.getItem(dbname));
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was saved
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
       if (localStorageAvailable()) {
         localStorage.setItem(dbname, dbstring);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * deleteDatabase() - delete the database from localstorage, will throw an error if it
      * can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname) {
       if (localStorageAvailable()) {
         localStorage.removeItem(dbname);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
-     * Handles loading from file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
+     * Handles loading from file system, local storage, or adapter (indexeddb).
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @param {object} options - an object containing inflation options for each collection
+     * @returns {Promise} a Promise that resolves after the database is loaded
      * @memberof Loki
      */
-    Loki.prototype.loadDatabase = function (options, callback) {
-      var cFun = callback || function (err, data) {
-          if (err) {
-            throw err;
-          }
-        },
-        self = this;
+    Loki.prototype.loadDatabase = function (options) {
+      var self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
+      }
 
-        this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
+      return this.persistenceAdapter.loadDatabase(this.filename)
+        .then(function loadDatabaseCallback(dbString) {
           if (typeof (dbString) === 'string') {
-            var parseSuccess = false;
-            try {
-              self.loadJSON(dbString, options || {});
-              parseSuccess = true;
-            } catch (err) {
-              cFun(err);
-            }
-            if (parseSuccess) {
-              cFun(null);
-              self.emit('loaded', 'database ' + self.filename + ' loaded');
-            }
+            self.loadJSON(dbString, options || {});
+            self.emit('load', self);
           } else {
             // if adapter has returned an js object (other than null or error) attempt to load from JSON object
             if (typeof (dbString) === "object" && dbString !== null && !(dbString instanceof Error)) {
               self.loadJSONObject(dbString, options || {});
-              cFun(null); // return null on success
-              self.emit('loaded', 'database ' + self.filename + ' loaded');
+              self.emit('load', self);
             } else {
-              // error from adapter (either null or instance of error), pass on to 'user' callback
-              cFun(dbString);
+              if (dbString instanceof Error)
+                throw dbString;
+
+              throw new TypeError('The persistence adapter did not load a serialized DB string or object.');
             }
           }
         });
-
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
-      }
     };
 
     /**
      * Handles saving to file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
      *
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
+     * @returns {Promise} a Promise that resolves after the database is persisted
      */
-    Loki.prototype.saveDatabase = function (callback) {
-      var cFun = callback || function (err) {
-          if (err) {
-            throw err;
-          }
-          return;
-        },
-        self = this;
+    Loki.prototype.saveDatabase = function () {
+      var self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        // check if the adapter is requesting (and supports) a 'reference' mode export
-        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
-          // filename may seem redundant but loadDatabase will need to expect this same filename
-          this.persistenceAdapter.exportDatabase(this.filename, this, function exportDatabaseCallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-        // otherwise just pass the serialized database to adapter
-        else {
-          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
       }
+
+      var saved;
+
+      // check if the adapter is requesting (and supports) a 'reference' mode export
+      if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+        // filename may seem redundant but loadDatabase will need to expect this same filename
+        saved = this.persistenceAdapter.exportDatabase(this.filename, this);
+      }
+      // otherwise just pass the serialized database to adapter
+      else {
+        saved = this.persistenceAdapter.saveDatabase(this.filename, self.serialize());
+      }
+
+      return saved.then(function () {
+        self.autosaveClearFlags();
+        self.emit("save");
+      });
     };
 
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
 
     /**
-     * Handles deleting a database from file system, local
-     *    storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
+     * Handles deleting a database from file system, local storage, or adapter (indexeddb)
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @returns {Promise} a Promise that resolves after the database is deleted
      * @memberof Loki
      */
-    Loki.prototype.deleteDatabase = function (options, callback) {
-      var cFun = callback || function (err, data) {
-        if (err) {
-          throw err;
-        }
-      };
-
+    Loki.prototype.deleteDatabase = function () {
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        this.persistenceAdapter.deleteDatabase(this.filename, function deleteDatabaseCallback(err) {
-          cFun(err);
-        });
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
       }
+
+      return this.persistenceAdapter.deleteDatabase(this.filename);
     };
 
     /**
@@ -1420,28 +1371,28 @@
     /**
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback
      */
-    Loki.prototype.autosaveEnable = function (options, callback) {
-      this.autosave = true;
-
-      var delay = 5000,
-        self = this;
-
-      if (typeof (this.autosaveInterval) !== 'undefined' && this.autosaveInterval !== null) {
-        delay = this.autosaveInterval;
+    Loki.prototype.autosaveEnable = function () {
+      if (this.autosaveHandle) {
+        return;
       }
 
-      this.autosaveHandle = setInterval(function autosaveHandleInterval() {
-        // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
-        // so next step will be to implement collection level dirty flags set on insert/update/remove
-        // along with loki level isdirty() function which iterates all collections to see if any are dirty
+      var self = this;
+      var running = true;
 
-        if (self.autosaveDirty()) {
-          self.saveDatabase(callback);
-        }
-      }, delay);
+      this.autosave = true;
+      this.autosaveHandle = function () {
+        running = false;
+        self.autosaveHandle = undefined;
+      };
+
+      (function saveDatabase() {
+        setTimeout(function () {
+          if (running) {
+            self.saveDatabase().then(saveDatabase, saveDatabase);
+          }
+        }, self.autosaveInterval);
+      })();
     };
 
     /**
@@ -1449,9 +1400,10 @@
      *
      */
     Loki.prototype.autosaveDisable = function () {
-      if (typeof (this.autosaveHandle) !== 'undefined' && this.autosaveHandle !== null) {
-        clearInterval(this.autosaveHandle);
-        this.autosaveHandle = null;
+      this.autosave = false;
+
+      if (this.autosaveHandle) {
+        this.autosaveHandle();
       }
     };
 
@@ -3851,15 +3803,6 @@
     };
 
     /**
-     * Rebuild idIndex async with callback - useful for background syncing with a remote server
-     */
-    Collection.prototype.ensureIdAsync = function (callback) {
-      this.async(function () {
-        this.ensureId();
-      }, callback);
-    };
-
-    /**
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
      * @param {object=} options - (optional) options to configure dynamic view with
@@ -4572,18 +4515,6 @@
           this.DynamicViews[idx].rollback();
         }
       }
-    };
-
-    // async executor. This is only to enable callbacks at the end of the execution.
-    Collection.prototype.async = function (fun, callback) {
-      setTimeout(function () {
-        if (typeof fun === 'function') {
-          fun();
-          callback();
-        } else {
-          throw new TypeError('Argument passed for async execution is not a function');
-        }
-      }, 0);
     };
 
     /**

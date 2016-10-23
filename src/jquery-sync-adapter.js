@@ -40,7 +40,7 @@
 
     function JquerySyncAdapter(options) {
       this.options = options;
-      
+
       if (!options) {
         throw new JquerySyncAdapterError('No options configured in JquerySyncAdapter');
       }
@@ -57,32 +57,36 @@
       }
     }
 
-    JquerySyncAdapter.prototype.saveDatabase = function (name, data, callback) {
-      this.options.ajaxLib.ajax({
-        type: this.options.save.type || 'POST',
-        url: this.options.save.url,
-        data: data,
-        success: callback,
-        failure: function () {
-          throw new JquerySyncAdapterError("Remote sync failed");
-        },
-        dataType: this.options.save.dataType || 'json'
+    JquerySyncAdapter.prototype.saveDatabase = function (name, data) {
+      return new Promise(function (resolve, reject) {
+        this.options.ajaxLib.ajax({
+          type: this.options.save.type || 'POST',
+          url: this.options.save.url,
+          data: data,
+          success: resolve,
+          failure: function () {
+            reject(new JquerySyncAdapterError("Remote sync failed"));
+          },
+          dataType: this.options.save.dataType || 'json'
+        });
       });
     };
 
-    JquerySyncAdapter.prototype.loadDatabase = function (name, callback) {
-      this.options.ajaxLib.ajax({
-        type: this.options.load.type || 'GET',
-        url: this.options.load.url,
-        data: {
-          // or whatever parameter to fetch the db from a server
-          name: name
-        },
-        success: callback,
-        failure: function () {
-          throw new JquerySyncAdapterError("Remote load failed");
-        },
-        dataType: this.options.load.dataType || 'json'
+    JquerySyncAdapter.prototype.loadDatabase = function (name) {
+      return new Promise(function (resolve, reject) {
+        this.options.ajaxLib.ajax({
+          type: this.options.load.type || 'GET',
+          url: this.options.load.url,
+          data: {
+            // or whatever parameter to fetch the db from a server
+            name: name
+          },
+          success: resolve,
+          failure: function () {
+            reject(new JquerySyncAdapterError("Remote load failed"));
+          },
+          dataType: this.options.load.dataType || 'json'
+        });
       });
     };
 

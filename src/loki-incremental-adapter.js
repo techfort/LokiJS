@@ -58,26 +58,19 @@
         return false;
       }
 
-      exportDatabase(dir, dbref, callback) {
+      exportDatabase(dir, dbref) {
         console.log('Saving with incremental adapter');
 
         console.log('Database dir is ' + dir);
-        const promise = accessDataDir(dir);
-        console.log(promise);
-        promise.then(() => {
+
+        return accessDataDir(dir).then(() => {
           console.log('iterating folders...');
           iterateFolders(dbref, dir);
         });
-        promise.catch((err) => {
-          console.log(err);
-        });
-        if (callback) {
-          callback();
-        }
       }
 
-      loadDatabase(dbname, callback) {
-        console.log(this, dbname, callback);
+      loadDatabase(dbname) {
+        console.log(this, dbname);
       }
     }
 

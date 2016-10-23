@@ -234,11 +234,11 @@ function perfFindInterlacedRemoves() {
     //var customidx = Math.floor(Math.random() * arraySize) + 1;
 
     start = process.hrtime();
-    var results = samplecoll.find({
+    var result = samplecoll.findOne({
       'customId': idx
     });
     // remove document now (outside timing routine) to force index rebuild
-    samplecoll.remove(results[0]); 
+    samplecoll.remove(result); 
     
     end = process.hrtime(start);
     totalTimes.push(end);

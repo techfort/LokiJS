@@ -514,13 +514,22 @@
 
     /**
      * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string} eventName - the name of the event to listen to
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
      * @param {function} listener - callback function of listener to attach
      * @returns {int} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event = this.events[eventName];
+      var event,
+          self;
+
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.on(currentEventName, listen);
+        });
+      }
+
+      event = this.events[eventName];
       if (!event) {
         event = this.events[eventName] = [];
       }
@@ -554,11 +563,18 @@
 
     /**
      * removeListener() - removes the listener at position 'index' from the event 'eventName'
-     * @param {string} eventName - the name of the event which the listener is attached to
+     * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
      * @param {function} listener - the listener callback function to remove from emitter
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
+      var self = this;
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.removeListener(currentEventName, listen);
+        });
+      }
+
       if (this.events[eventName]) {
         var listeners = this.events[eventName];
         listeners.splice(listeners.indexOf(listener), 1);
@@ -1730,199 +1746,6 @@
     };
 
     /**
-     * Internal method used for index maintenance.  Given a prop (index name), and a value
-     * (which may or may not yet exist) this will find the proper location where it can be added.
-     */
-    Resultset.prototype.calculateRangeStart = function (prop, val) {
-      var rcd = this.collection.data;
-      var index = this.collection.binaryIndices[prop].values;
-      var min = 0;
-      var max = index.length - 1;
-      var mid = 0;
-
-      if (index.length === 0) {
-        return 0;
-      }
-
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
-
-      // hone in on start position of value
-      while (min < max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
-          min = mid + 1;
-        } else {
-          max = mid;
-        }
-      }
-
-      var lbound = min;
-
-      if (ltHelper(rcd[index[lbound]][prop], val, false)) {
-        return lbound+1;
-      }
-      else {
-        return lbound;
-      }
-    };
-
-    /**
-     * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
-     *    this is used for collection.find() and first find filter of resultset/dynview
-     *    slightly different than get() binary search in that get() hones in on 1 value,
-     *    but we have to hone in on many (range)
-     * @param {string} op - operation, such as $eq
-     * @param {string} prop - name of property to calculate range for
-     * @param {object} val - value to use for range calculation.
-     * @returns {array} [start, end] index array positions
-     */
-    Resultset.prototype.calculateRange = function (op, prop, val) {
-      var rcd = this.collection.data;
-      var index = this.collection.binaryIndices[prop].values;
-      var min = 0;
-      var max = index.length - 1;
-      var mid = 0;
-
-      // when no documents are in collection, return empty range condition
-      if (rcd.length === 0) {
-        return [0, -1];
-      }
-
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
-
-      // if value falls outside of our range return [0, -1] to designate no results
-      switch (op) {
-      case '$eq':
-      case '$aeq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$dteq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$gt':
-        if (gtHelper(val, maxVal, true)) {
-          return [0, -1];
-        }
-        break;
-      case '$gte':
-        if (gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$lt':
-        if (ltHelper(val, minVal, true)) {
-          return [0, -1];
-        }
-        if (ltHelper(maxVal, val, false)) {
-          return [0, rcd.length - 1];
-        }
-        break;
-      case '$lte':
-        if (ltHelper(val, minVal, false)) {
-          return [0, -1];
-        }
-        if (ltHelper(maxVal, val, true)) {
-          return [0, rcd.length - 1];
-        }
-        break;
-      }
-
-      // hone in on start position of value
-      while (min < max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
-          min = mid + 1;
-        } else {
-          max = mid;
-        }
-      }
-
-      var lbound = min;
-
-      // do not reset min, as the upper bound cannot be prior to the found low bound
-      max = index.length - 1;
-
-      // hone in on end position of value
-      while (min < max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(val, rcd[index[mid]][prop], false)) {
-          max = mid;
-        } else {
-          min = mid + 1;
-        }
-      }
-
-      var ubound = max;
-
-      var lval = rcd[index[lbound]][prop];
-      var uval = rcd[index[ubound]][prop];
-
-      switch (op) {
-      case '$eq':
-        if (lval !== val) {
-          return [0, -1];
-        }
-        if (uval !== val) {
-          ubound--;
-        }
-
-        return [lbound, ubound];
-      case '$dteq':
-        if (lval > val || lval < val) {
-          return [0, -1];
-        }
-        if (uval > val || uval < val) {
-          ubound--;
-        }
-
-        return [lbound, ubound];
-
-
-      case '$gt':
-        if (ltHelper(uval, val, true)) {
-          return [0, -1];
-        }
-
-        return [ubound, rcd.length - 1];
-
-      case '$gte':
-        if (ltHelper(lval, val, false)) {
-          return [0, -1];
-        }
-
-        return [lbound, rcd.length - 1];
-
-      case '$lt':
-        if (lbound === 0 && ltHelper(lval, val, false)) {
-          return [0, 0];
-        }
-        return [0, lbound - 1];
-
-      case '$lte':
-        if (uval !== val) {
-          ubound--;
-        }
-
-        if (ubound === 0 && ltHelper(uval, val, false)) {
-          return [0, 0];
-        }
-        return [0, ubound];
-
-      default:
-        return [0, rcd.length - 1];
-      }
-    };
-
-    /**
      * findOr() - oversee the operation of OR'ed query expressions.
      *    OR'ed expression evaluation runs each expression individually against the full collection,
      *    and finally does a set OR on each expression's results.
@@ -2034,13 +1857,12 @@
 
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
-        // Chained queries can just do coll.chain().data() but let's
-        // be versatile and allow this also coll.chain().find().data()
+        // coll.find(), coll.findOne(), coll.chain().find().data() all path here
 
-        // If a chained search, simply leave everything as-is.
-        // Note: If no filter at this point, it will be properly
-        // created by the follow-up queries or sorts that need it.
-        // If not chained, then return the collection data array copy.
+        if (firstOnly) {
+          return (this.collection.data.length > 0)?this.collection.data[0]: null;
+        }
+
         return (this.searchIsChained) ? (this) : (this.collection.data.slice());
       }
 
@@ -2111,7 +1933,9 @@
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property
         // ensureIndex() will only rebuild if flagged as dirty since we are not passing force=true param
-        this.collection.ensureIndex(property);
+        if (this.collection.adaptiveBinaryIndices !== true) {
+          this.collection.ensureIndex(property);
+        }
 
         searchByIndex = true;
         index = this.collection.binaryIndices[property];
@@ -2174,7 +1998,7 @@
           }
         } else {
           // searching by binary index via calculateRange() utility method
-          var seg = this.calculateRange(operator, property, value);
+          var seg = this.collection.calculateRange(operator, property, value);
 
           // not chained so this 'find' was designated in Resultset constructor
           // so return object itself
@@ -2244,7 +2068,7 @@
           }
         } else {
           // search by index
-          var segm = this.calculateRange(operator, property, value);
+          var segm = this.collection.calculateRange(operator, property, value);
 
           for (i = segm[0]; i <= segm[1]; i++) {
             result.push(index.values[i]);
@@ -3159,13 +2983,10 @@
       // was in resultset, shouldn't be now... delete
       if (oldPos !== -1 && newPos === -1) {
         if (oldPos < oldlen - 1) {
-          // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
-          ofr[oldPos] = ofr[oldlen - 1];
-          ofr.length = oldlen - 1;
+          ofr.splice(oldPos, 1);
 
           if (this.options.persistent) {
-            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-            this.resultdata.length = oldlen - 1;
+            this.resultdata.splice(oldPos, 1);
           }
         } else {
           ofr.length = oldlen - 1;
@@ -3291,7 +3112,7 @@
      * @param {array} options.unique - array of property names to define unique constraints for
      * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
-     * @param {boolean} options.adaptiveBinaryIndices - indices will be actively rebuilt rather than lazily (default: false - for now)
+     * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily (default: true)
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
@@ -3357,7 +3178,7 @@
 
       // if set to true we will optimally keep indices 'fresh' during insert/update/remove ops (never dirty/never needs rebuild)
       // if you frequently intersperse insert/update/remove ops between find ops this will likely be significantly faster option.
-      this.adaptiveBinaryIndices = options.hasOwnProperty('adaptiveBinaryIndices') ? options.adaptiveBinaryIndices : false;
+      this.adaptiveBinaryIndices = options.hasOwnProperty('adaptiveBinaryIndices') ? options.adaptiveBinaryIndices : true;
 
       // is collection transactional
       this.transactional = options.hasOwnProperty('transactional') ? options.transactional : false;
@@ -3676,6 +3497,24 @@
     };
 
     /**
+     * Will allow reconfiguring certain collection options.
+     * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily
+     * @memberof Collection
+     */
+    Collection.prototype.configureOptions = function (options) {
+      options = options || {};
+
+      if (options.hasOwnProperty('adaptiveBinaryIndices')) {
+        this.adaptiveBinaryIndices = options.adaptiveBinaryIndices;
+
+        // if switching to adaptive binary indices, make sure none are 'dirty'
+        if (this.adaptiveBinaryIndices) {
+          this.ensureAllIndexes();
+        }
+      }
+    };
+
+    /**
      * Ensure binary index on a certain field
      * @param {string} property - name of property to create binary index on
      * @param {boolean=} force - (Optional) flag indicating whether to construct index immediately
@@ -3886,23 +3725,27 @@
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
       var results = [];
+
+      this.emit('pre-insert', doc);
       for (var i = 0, len = doc.length; i < len; i++) {
-        obj = this.insertOne(doc[i]);
+        obj = this.insertOne(doc[i], true);
         if (!obj) {
           return undefined;
         }
         results.push(obj);
       }
+      this.emit('insert', doc);
       return results.length === 1 ? results[0] : results;
     };
 
     /**
      * Adds a single object, ensures it has meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted
+     * @param {boolean} bulkInsert - quiet pre-insert and insert event emits
      * @returns {object} document or 'undefined' if there was a problem inserting it
      * @memberof Collection
      */
-    Collection.prototype.insertOne = function (doc) {
+    Collection.prototype.insertOne = function (doc, bulkInsert) {
       var err = null;
       var returnObj;
 
@@ -3931,13 +3774,17 @@
       returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
 
       // allow pre-insert to modify actual collection reference even if cloning
-      this.emit('pre-insert', obj);
+      if (!bulkInsert) {
+        this.emit('pre-insert', obj);
+      }
       if (!this.add(obj)) {
         return undefined;
       }
 
       this.addAutoUpdateObserver(returnObj);
-      this.emit('insert', returnObj);
+      if (!bulkInsert) {
+        this.emit('insert', returnObj);
+      }
       return returnObj;
     };
 
@@ -4268,8 +4115,8 @@
 
       // i think calculateRange can probably be moved to collection
       // as it doesn't seem to need resultset.  need to verify
-      var rs = new Resultset(this, null, null);
-      var range = rs.calculateRange("$eq", binaryIndexName, val);
+      //var rs = new Resultset(this, null, null);
+      var range = this.calculateRange("$eq", binaryIndexName, val);
 
       if (range[0] === 0 && range[1] === -1) {
         // uhoh didn't find range
@@ -4298,8 +4145,8 @@
     Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
       var index = this.binaryIndices[binaryIndexName].values;
       var val = this.data[dataPosition][binaryIndexName];
-      var rs = new Resultset(this, null, null);
-      var idxPos = rs.calculateRangeStart(binaryIndexName, val);
+      //var rs = new Resultset(this, null, null);
+      var idxPos = this.calculateRangeStart(binaryIndexName, val);
 
       // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
       // doing this after adjusting dataPositions so no clash with previous item at that position.
@@ -4365,6 +4212,199 @@
     };
 
     /**
+     * Internal method used for index maintenance.  Given a prop (index name), and a value
+     * (which may or may not yet exist) this will find the proper location where it can be added.
+     */
+    Collection.prototype.calculateRangeStart = function (prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      if (index.length === 0) {
+        return 0;
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // hone in on start position of value
+      while (min < max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+          min = mid + 1;
+        } else {
+          max = mid;
+        }
+      }
+
+      var lbound = min;
+
+      if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        return lbound+1;
+      }
+      else {
+        return lbound;
+      }
+    };
+
+    /**
+     * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
+     *    this is used for collection.find() and first find filter of resultset/dynview
+     *    slightly different than get() binary search in that get() hones in on 1 value,
+     *    but we have to hone in on many (range)
+     * @param {string} op - operation, such as $eq
+     * @param {string} prop - name of property to calculate range for
+     * @param {object} val - value to use for range calculation.
+     * @returns {array} [start, end] index array positions
+     */
+    Collection.prototype.calculateRange = function (op, prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      // when no documents are in collection, return empty range condition
+      if (rcd.length === 0) {
+        return [0, -1];
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // if value falls outside of our range return [0, -1] to designate no results
+      switch (op) {
+      case '$eq':
+      case '$aeq':
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$dteq':
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$gt':
+        if (gtHelper(val, maxVal, true)) {
+          return [0, -1];
+        }
+        break;
+      case '$gte':
+        if (gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$lt':
+        if (ltHelper(val, minVal, true)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val, false)) {
+          return [0, rcd.length - 1];
+        }
+        break;
+      case '$lte':
+        if (ltHelper(val, minVal, false)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val, true)) {
+          return [0, rcd.length - 1];
+        }
+        break;
+      }
+
+      // hone in on start position of value
+      while (min < max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+          min = mid + 1;
+        } else {
+          max = mid;
+        }
+      }
+
+      var lbound = min;
+
+      // do not reset min, as the upper bound cannot be prior to the found low bound
+      max = index.length - 1;
+
+      // hone in on end position of value
+      while (min < max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+          max = mid;
+        } else {
+          min = mid + 1;
+        }
+      }
+
+      var ubound = max;
+
+      var lval = rcd[index[lbound]][prop];
+      var uval = rcd[index[ubound]][prop];
+
+      switch (op) {
+      case '$eq':
+        if (lval !== val) {
+          return [0, -1];
+        }
+        if (uval !== val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+      case '$dteq':
+        if (lval > val || lval < val) {
+          return [0, -1];
+        }
+        if (uval > val || uval < val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+
+
+      case '$gt':
+        if (ltHelper(uval, val, true)) {
+          return [0, -1];
+        }
+
+        return [ubound, rcd.length - 1];
+
+      case '$gte':
+        if (ltHelper(lval, val, false)) {
+          return [0, -1];
+        }
+
+        return [lbound, rcd.length - 1];
+
+      case '$lt':
+        if (lbound === 0 && ltHelper(lval, val, false)) {
+          return [0, 0];
+        }
+        return [0, lbound - 1];
+
+      case '$lte':
+        if (uval !== val) {
+          ubound--;
+        }
+
+        if (ubound === 0 && ltHelper(uval, val, false)) {
+          return [0, 0];
+        }
+        return [0, ubound];
+
+      default:
+        return [0, rcd.length - 1];
+      }
+    };
+
+    /**
      * Retrieve doc by Unique index
      * @param {string} field - name of uniquely indexed property to use when doing lookup
      * @param {value} value - unique value to search for
@@ -4395,11 +4435,14 @@
      * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
+      query = query || {};
+
       // Instantiate Resultset and exec find op passing firstOnly = true param
       var result = new Resultset(this, {
         queryObj: query,
         firstOnly: true
       });
+
       if (Array.isArray(result) && result.length === 0) {
         return null;
       } else {

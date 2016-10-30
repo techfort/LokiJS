@@ -520,13 +520,14 @@
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event,
-          self;
+      var event;
+      var self = this;
 
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          self.on(currentEventName, listen);
+          self.on(currentEventName, listener);
         });
+        return listener;
       }
 
       event = this.events[eventName];

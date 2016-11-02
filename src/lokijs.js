@@ -565,6 +565,16 @@
     };
 
     /**
+     * Alias of LokiEventEmitter.prototype.on
+     * addListener(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
+     * @param {function} listener - callback function of listener to attach
+     * @returns {int} the index of the callback in the array of listeners for a particular event
+     * @memberof LokiEventEmitter
+     */
+    LokiEventEmitter.prototype.addListener = LokiEventEmitter.prototype.on;
+
+    /**
      * removeListener() - removes the listener at position 'index' from the event 'eventName'
      * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
      * @param {function} listener - the listener callback function to remove from emitter

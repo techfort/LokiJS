@@ -956,51 +956,202 @@
      * @returns {string} Stringified representation of the loki database.
      * @memberof Loki
      */
-    Loki.prototype.serialize = function () {
-      switch(this.options.serializationMethod) {
+    Loki.prototype.serialize = function (options) {
+      options = options || {};
+
+      if (!options.hasOwnProperty("serializationMethod")) {
+        options.serializationMethod = this.options.serializationMethod;
+      }
+
+      switch(options.serializationMethod) {
         case "normal": return JSON.stringify(this, this.serializeReplacer); 
         case "pretty": return JSON.stringify(this, this.serializeReplacer, 2); 
-        case "destructured": return this.serializeDestructured();
+        case "destructured": return this.serializeDestructured(); // use default options
         default: return JSON.stringify(this, this.serializeReplacer); 
       }
-      
     };
 
     // alias of serialize
     Loki.prototype.toJson = Loki.prototype.serialize;
 
     /**
-     * Destructured JSON serialization routine to minimize memory overhead.
-     * Logic might find more usefulness for streaming data purposes where overhead can be even less.
+     * Destructured JSON serialization routine to allow alternate serialization methods.
      *
-     * @returns {string} A custom, delimited aggregation of independent serializations.
+     * @param {object} options - (optional) output format options for use externally to loki
+     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
+     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string} options.delimiter - (optional) override default delimiter
+     *
+     * @returns {string|array} A custom, restructured aggregation of independent serializations.
+     * @memberof Loki
      */
-    Loki.prototype.serializeDestructured = function() {
-      var delim = this.options.destructureDelimiter;
-      var collCount = this.collections.length;
-      var idx, docidx, doccount;
-      var dstlines = [];
+    Loki.prototype.serializeDestructured = function(options) {
+      var idx, sidx, result, resultlen;
+      var reconstruct = [];
+      var dbcopy;
+
+      options = options || {};
       
-      var cdb = new Loki(this.filename);
-      cdb.loadJSONObject(this);
-      
-      for(idx=0; idx < collCount; idx++) {
-        cdb.collections[idx].data = [];
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
       }
       
-      dstlines.push(cdb.serialize());
-      cdb = null;
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
       
-      for(idx=0; idx < collCount; idx++) {
-        doccount = this.collections[idx].data.length;
-        for(docidx=0; docidx<doccount; docidx++) {
-          dstlines.push(JSON.stringify(this.collections[idx].data[docidx]));
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      // 'partitioned' along with 'partition' of 0 or greater is a request for single collection serialization
+      if (options.partitioned === true && options.hasOwnProperty("partition") && options.partition >= 0) {
+        return this.serializeCollection({ 
+          delimited: options.delimited, 
+          delimiter: options.delimiter,
+          collectionIndex: options.partition
+        });
+      }
+
+      // not just an individual collection, so we will need to serialize db container via shallow copy
+      dbcopy = new Loki(this.filename);
+      dbcopy.loadJSONObject(this);
+
+      for(idx=0; idx < dbcopy.collections.length; idx++) {
+        dbcopy.collections[idx].data = [];
+      }
+
+      // if we -only- wanted the db container portion, return it now
+      if (options.partitioned === true && options.partition === -1) {
+        // since we are deconstructing, override serializationMethod to normal for here
+        return dbcopy.serialize({
+          serializationMethod: "normal"
+        });
+      }
+
+      // at this point we must be deconstructing the entire database
+      // start by pushing db serialization into first array element
+      reconstruct.push(dbcopy.serialize({
+          serializationMethod: "normal"
+      }));
+      
+      dbcopy = null;
+
+      // push collection data into subsequent elements
+      for(idx=0; idx < this.collections.length; idx++) {
+        result = this.serializeCollection({ 
+          delimited: options.delimited,
+          delimiter: options.delimiter,
+          collectionIndex: idx
+        });
+
+        // NDA : Non-Delimited Array : one iterable concatenated array with empty string collection partitions
+        if (options.partitioned === false && options.delimited === false) {
+          if (!Array.isArray(result)) {
+            throw new Error("a nondelimited, non partitioned collection serialization did not return an expected array");
+          }
+
+          // Array.concat would probably duplicate memory overhead for copying strings.
+          // Instead copy each individually, and clear old value after each copy.
+          // Hopefully this will allow g.c. to reduce memory pressure, if needed.
+          resultlen = result.length;
+
+          for (sidx=0; sidx < resultlen; sidx++) {
+            reconstruct.push(result[sidx]);
+            result[sidx] = null;
+          }
+          
+          reconstruct.push("");
         }
-        dstlines.push("");
+        else {
+          reconstruct.push(result);
+        }
       }
-      dstlines.push("");
+
+      // Reconstruct / present results according to four combinations : D, DA, NDA, NDAA
+      if (options.partitioned) {
+        // DA : Delimited Array of strings [0] db [1] collection [n] collection { partitioned: true, delimited: true }
+        // useful for simple future adaptations of existing persistence adapters to save collections separately
+        if (options.delimited) {
+          return reconstruct;
+        }
+        // NDAA : Non-Delimited Array with subArrays. db at [0] and collection subarrays at [n] { partitioned: true, delimited : false }
+        // This format might be the most versatile for 'rolling your own' partitioned sync or save.
+        // Memory overhead can be reduced by specifying a specific partition, but at this code path they did not, so its all.
+        else {
+          return reconstruct;
+        }
+      }
+      else {
+        // D : one big Delimited string { partitioned: false, delimited : true }
+        // This is the method Loki will use internally if 'destructured'.
+        // Little memory overhead improvements but does not require multiple asynchronous adapter call scheduling
+        if (options.delimited) {
+          // indicate no more collections
+          reconstruct.push("");
+
+          return reconstruct.join(options.delimiter);
+        }
+        // NDA : Non-Delimited Array : one iterable array with empty string collection partitions { partitioned: false, delimited: false }
+        // This format might be best candidate for custom synchronous syncs or saves
+        else {
+          // indicate no more collections
+          reconstruct.push("");
+
+          return reconstruct;
+        }
+      }
+
+      reconstruct.push("");
       
-      return dstlines.join(delim);
+      return reconstruct.join(delim);
+    };
+
+    /**
+     *
+     * @param {object} options - used to determine output of method
+     * @param {int} options.delimited - whether to return single delimited string or an array
+     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {int} options.collectionIndex -  specify which collection to serialize data for
+     *
+     * @returns {string|array} A custom, restructured aggregation of independent serializations for a single collection.
+     * @memberof Loki
+     */
+    Loki.prototype.serializeCollection = function(options) {
+      var doccount,
+        docidx,
+        resultlines = [];
+
+      options = options || {};
+      
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("collectionIndex")) {
+        throw new Error("serializeCollection called without 'collectionIndex' option");
+      }
+
+      doccount = this.collections[options.collectionIndex].data.length;
+
+      resultlines = [];
+
+      for(docidx=0; docidx<doccount; docidx++) {
+        resultlines.push(JSON.stringify(this.collections[options.collectionIndex].data[docidx]));
+      }
+
+      // D and DA 
+      if (options.delimited) {
+         // indicate no more documents in collection (via empty delimited string)
+        resultlines.push("");
+
+        return resultlines.join(options.delimiter);
+      }
+      else {
+        // NDAA and NDA
+        return resultlines;
+      }
     };
 
     /**

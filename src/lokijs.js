@@ -1472,7 +1472,15 @@
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-      this.fs.writeFile(dbname, dbstring, callback);
+      var self = this;
+      var tmpdbname = dbname + '~';
+      this.fs.writeFile(tmpdbname, dbstring, function writeFileCallback(err) {
+        if (err) {
+          callback(new Error(err));
+        } else {
+          self.fs.rename(tmpdbname,dbname,callback);
+        }
+      });
     };
 
     /**

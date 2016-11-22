@@ -4154,15 +4154,16 @@
           position,
           self = this;
 
+        if (!arr) {
+          throw new Error('Trying to update a document not in collection.');
+        }
+
         oldInternal = arr[0]; // -internal- obj ref
         position = arr[1]; // position in data array
 
         // if configured to clone, do so now... otherwise just use same obj reference
         newInternal = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
 
-        if (!arr) {
-          throw new Error('Trying to update a document not in collection.');
-        }
         this.emit('pre-update', doc);
 
         Object.keys(this.constraints.unique).forEach(function (key) {

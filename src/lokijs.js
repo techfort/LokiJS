@@ -992,15 +992,15 @@
       var dbcopy;
 
       options = options || {};
-      
+
       if (!options.hasOwnProperty("partitioned")) {
         options.partitioned = false;
       }
-      
+
       if (!options.hasOwnProperty("delimited")) {
         options.delimited = true;
       }
-      
+
       if (!options.hasOwnProperty("delimiter")) {
         options.delimiter = this.options.destructureDelimiter;
       }
@@ -1035,7 +1035,7 @@
       reconstruct.push(dbcopy.serialize({
           serializationMethod: "normal"
       }));
-      
+
       dbcopy = null;
 
       // push collection data into subsequent elements
@@ -1061,7 +1061,7 @@
             reconstruct.push(result[sidx]);
             result[sidx] = null;
           }
-          
+
           reconstruct.push("");
         }
         else {
@@ -1104,11 +1104,12 @@
       }
 
       reconstruct.push("");
-      
+
       return reconstruct.join(delim);
     };
 
     /**
+     * Utility method to serialize a collection in a 'destructured' format
      *
      * @param {object} options - used to determine output of method
      * @param {int} options.delimited - whether to return single delimited string or an array
@@ -1124,7 +1125,7 @@
         resultlines = [];
 
       options = options || {};
-      
+
       if (!options.hasOwnProperty("delimited")) {
         options.delimited = true;
       }
@@ -1157,40 +1158,153 @@
     /**
      * Destructured JSON deserialization routine to minimize memory overhead.
      *
-     * @returns {object} An object representation of the deserialized database
+     * @param {string|array} destructuredSource - destructured json or array to deserialize from
+     * @param {object} options - (optional) output format options for use externally to loki
+     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
+     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string} options.delimiter - (optional) override default delimiter
+     *
+     * @returns {object|array} An object representation of the deserialized database, not yet applied to 'this' db or document array
      */
-    Loki.prototype.deserializeDestructured = function(destructuredJson) {
-      var delim = this.options.destructureDelimiter;
-      var dstlines = destructuredJson.split(delim);
-      var len=dstlines.length;
-      var collIndex=0, collCount, lineIndex=1, done=false;
+    Loki.prototype.deserializeDestructured = function(destructuredSource, options) {
+      var workarray=[];
+      var len, cdb;
+      var idx, collIndex=0, collCount, lineIndex=1, done=false;
       var currLine, currObject;
 
-      if (len === 0) {
-        return null;
+      options = options || {};
+
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
       }
-      
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      // Partitioned
+      // DA : Delimited Array of strings [0] db [1] collection [n] collection { partitioned: true, delimited: true }
+      // NDAA : Non-Delimited Array with subArrays. db at [0] and collection subarrays at [n] { partitioned: true, delimited : false }
+      // -or- single partition
+      if (options.partitioned) {
+        // handle single partition
+        if (options.hasOwnProperty('partition')) {
+          // db only
+          if (options.partition === -1) {
+            cdb = JSON.parse(destructuredSource[0]);
+
+            return cdb;
+          }
+
+          // single collection, return doc array
+          return this.deserializeCollection(destructuredSource[options.partition+1], options);
+        }
+
+        // Otherwise we are restoring an entire partitioned db
+        cdb = JSON.parse(destructuredSource[0]);
+        collCount = cdb.collections.length;
+        for(collIndex=0; collIndex<collCount; collIndex++) {
+          // attach each collection docarray to container collection data, add 1 to collection array index since db is at 0
+          cdb.collections[collIndex].data = this.deserializeCollection(destructuredSource[collIndex+1], options);
+        }
+
+        return cdb;
+      }
+
+      // Non-Partitioned
+      // D : one big Delimited string { partitioned: false, delimited : true }
+      // NDA : Non-Delimited Array : one iterable array with empty string collection partitions { partitioned: false, delimited: false }
+
+      // D
+      if (options.delimited) {
+        workarray = destructuredSource.split(options.delimiter);
+        destructuredSource = null; // lower memory pressure
+        len = workarray.length;
+
+        if (len === 0) {
+          return null;
+        }
+      }
+      // NDA
+      else {
+        workarray = destructuredSource;
+      }
+
       // first line is database and collection shells
-      var cdb = JSON.parse(dstlines[0]);
+      cdb = JSON.parse(workarray[0]);
       collCount = cdb.collections.length;
+      workarray[0] = null;
 
       while (!done) {
-        currLine = dstlines[lineIndex++];
+        currLine = workarray[lineIndex];
 
         // empty string indicates either end of collection or end of file
-        if (currLine === "") {
+        if (workarray[lineIndex] === "") {
           // if no more collections to load into, we are done
           if (++collIndex > collCount) {
             done = true;
           }
         }
         else {
-          currObject = JSON.parse(currLine);
+          currObject = JSON.parse(workarray[lineIndex]);
           cdb.collections[collIndex].data.push(currObject);
         }
+
+        // lower memory pressure and advance iterator
+        workarray[lineIndex++] = null;
+      }
+
+      return cdb;
+    };
+
+    /**
+     * Deserializes a destructured collection.
+     *
+     * @param {object} options - used to determine output of method
+     * @param {int} options.delimited - whether to return single delimited string or an array
+     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {int} options.collectionIndex -  specify which collection to serialize data for
+     *
+     * @returns {array} an array of documents to attach to collection.data.
+     * @memberof Loki
+     */
+    Loki.prototype.deserializeCollection = function(destructuredSource, options) {
+      var workarray=[];
+      var idx, len;
+      
+      options = options || {};
+
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
+      }
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      if (options.delimited) {
+        workarray = destructuredSource.split(options.delimiter);
+        workarray.pop();
+      }
+      else {
+        workarray = destructuredSource;
+      }
+
+      len = workarray.length;
+      for (idx=0; idx < len; idx++) {
+        workarray[idx] = JSON.parse(workarray[idx]);
       }
       
-      return cdb;
+      return workarray;
     };
 
     /**

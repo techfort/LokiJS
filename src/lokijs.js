@@ -2375,7 +2375,8 @@
       // "shortcut" for collection data
       var t = this.collection.data;
       // filter data length
-      var i = 0;
+      var i = 0,
+        len = 0;
 
       // Query executed differently depending on :
       //    - whether it is chained or not
@@ -2442,7 +2443,6 @@
               result.push(t[index.values[i]]);
             }
           } else {
-            var len;
             for (i = 0, len = seg.length; i < len; i++) {
               result.push(t[index.values[seg[i]]]);
             }
@@ -2510,7 +2510,6 @@
               result.push(index.values[i]);
             }
           } else {
-            var len;
             for (i = 0, len = segm.length; i < len; i++) {
               result.push(index.values[segm[i]]);
             }

@@ -2442,7 +2442,8 @@
               result.push(t[index.values[i]]);
             }
           } else {
-            for (var i = 0, len = seg.length; i < len; i++) {
+            var len;
+            for (i = 0, len = seg.length; i < len; i++) {
               result.push(t[index.values[seg[i]]]);
             }
           }
@@ -2509,7 +2510,8 @@
               result.push(index.values[i]);
             }
           } else {
-            for (var i = 0, len = segm.length; i < len; i++) {
+            var len;
+            for (i = 0, len = segm.length; i < len; i++) {
               result.push(index.values[segm[i]]);
             }
           }
@@ -4774,7 +4776,7 @@
             for (var i = seg[0]; i <= seg[1]; i++) {
                 if (idxset[i] === undefined) {
                     idxset[i] = true;
-                    segResult.push(i)
+                    segResult.push(i);
                 }
             }
         }

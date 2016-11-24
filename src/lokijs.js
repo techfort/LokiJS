@@ -434,7 +434,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
+    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -964,10 +964,10 @@
       }
 
       switch(options.serializationMethod) {
-        case "normal": return JSON.stringify(this, this.serializeReplacer); 
-        case "pretty": return JSON.stringify(this, this.serializeReplacer, 2); 
+        case "normal": return JSON.stringify(this, this.serializeReplacer);
+        case "pretty": return JSON.stringify(this, this.serializeReplacer, 2);
         case "destructured": return this.serializeDestructured(); // use default options
-        default: return JSON.stringify(this, this.serializeReplacer); 
+        default: return JSON.stringify(this, this.serializeReplacer);
       }
     };
 
@@ -1007,8 +1007,8 @@
 
       // 'partitioned' along with 'partition' of 0 or greater is a request for single collection serialization
       if (options.partitioned === true && options.hasOwnProperty("partition") && options.partition >= 0) {
-        return this.serializeCollection({ 
-          delimited: options.delimited, 
+        return this.serializeCollection({
+          delimited: options.delimited,
           delimiter: options.delimiter,
           collectionIndex: options.partition
         });
@@ -1040,7 +1040,7 @@
 
       // push collection data into subsequent elements
       for(idx=0; idx < this.collections.length; idx++) {
-        result = this.serializeCollection({ 
+        result = this.serializeCollection({
           delimited: options.delimited,
           delimiter: options.delimiter,
           collectionIndex: idx
@@ -1142,7 +1142,7 @@
         resultlines.push(JSON.stringify(this.collections[options.collectionIndex].data[docidx]));
       }
 
-      // D and DA 
+      // D and DA
       if (options.delimited) {
          // indicate no more documents in collection (via empty delimited string)
         resultlines.push("");
@@ -1276,7 +1276,7 @@
     Loki.prototype.deserializeCollection = function(destructuredSource, options) {
       var workarray=[];
       var idx, len;
-      
+
       options = options || {};
 
       if (!options.hasOwnProperty("partitioned")) {
@@ -1303,7 +1303,7 @@
       for (idx=0; idx < len; idx++) {
         workarray[idx] = JSON.parse(workarray[idx]);
       }
-      
+
       return workarray;
     };
 
@@ -2437,8 +2437,14 @@
             return [];
           }
 
-          for (i = seg[0]; i <= seg[1]; i++) {
-            result.push(t[index.values[i]]);
+          if (operator !== '$in') {
+            for (i = seg[0]; i <= seg[1]; i++) {
+              result.push(t[index.values[i]]);
+            }
+          } else {
+            for (var i = 0, len = seg.length; i < len; i++) {
+              result.push(t[index.values[seg[i]]]);
+            }
           }
         }
 
@@ -2498,8 +2504,14 @@
           // search by index
           var segm = this.collection.calculateRange(operator, property, value);
 
-          for (i = segm[0]; i <= segm[1]; i++) {
-            result.push(index.values[i]);
+          if (operator !== '$in') {
+            for (i = segm[0]; i <= segm[1]; i++) {
+              result.push(index.values[i]);
+            }
+          } else {
+            for (var i = 0, len = segm.length; i < len; i++) {
+              result.push(index.values[segm[i]]);
+            }
           }
         }
 
@@ -4752,6 +4764,21 @@
           return [0, rcd.length - 1];
         }
         break;
+      case '$in':
+        var idxset = [],
+          segResult = [];
+        // query each value '$eq' operator and merge the seqment results.
+        for (var j = 0, len = val.length; j < len; j++) {
+            var seg = this.calculateRange('$eq', prop, val[j]);
+
+            for (var i = seg[0]; i <= seg[1]; i++) {
+                if (idxset[i] === undefined) {
+                    idxset[i] = true;
+                    segResult.push(i)
+                }
+            }
+        }
+        return segResult;
       }
 
       // hone in on start position of value

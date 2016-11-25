@@ -1,34 +1,38 @@
-// This script is meant to diagnose and stress the ability of loki to 
-// internally serialize large databases.  I have found that within most
-// javascript engines there seems to be memory contraints and inefficiencies  
-// involved with using JSON.stringify.
+// This script can be used to stress the ability of loki to save large databases.  
+// I have found that within most javascript engines there seems to be memory 
+// contraints and inefficiencies involved with using JSON.stringify.
 //
-// This example creates (by default) 130,000 randomly generated objects
-// (each document being about 1.4k each)
-// which, when serialized will evaluate to roughly a 100MB string.
+// One way to limit memory overhead is to serialize smaller objects rather than
+// one large (single) JSON.stringify of the whole database.  Loki has added
+// functionality to stream output of the database rather than saving a whole
+// database as a single string. 
 //
-// If you increase numObjects too high you will run out of memory
-// when serializing for save.  In that case you might need to run 
-// with a command line similar to (for about a 2GB mem allocation):
-// node --max-old-space-size=2000 stress
-//
-// Browser environments have no such customization and appear to be 
-// roughly limited to a roughly 2GB memory allocation.
-//
-// This script will be used as a reference for alternative serialization methods
-// which have a much lower overhead than the above 100M/1.4GB ratio.
+// This stress can be used to analyse memory overhead for saving a loki database.
+// Both stress.js and destress.js need to be configured to use the same serialization 
+// method and adapter.  By default, this is configured to use the 
+// loki-fs-structured-adapter which will stream output and input.
 
 var loki = require('../src/lokijs.js');
+var lfsa = require('../src/loki-fs-structured-adapter.js');
+var adapter = new lfsa();
 
-var numObjects = 300000;
+// WARNING : large-ish 380M database will be created with default 700,000 value
+var numObjects = 700000;
 
+// use serializationMethod 
 var serializationMethod = "normal";
 //var serializationMethod = "pretty";
 //var serializationMethod = "destructured";
 
+// Currently using persistence adapter which implements its own
+// serialization method.  To fallback to loki fs adapter, remove
+// adapter option and enable serializationMethod both here and
+// in destress.js to match.
+
 var db = new loki('sandbox.db', {
           verbose: true,
-          serializationMethod: serializationMethod
+          adapter: adapter
+          //serializationMethod: serializationMethod
 });
 var items = db.addCollection('items');
 
@@ -39,44 +43,39 @@ function genRandomVal() {
   return Math.random().toString(36).substr(2, 100);
 }
 
-function step1InsertObjects() {
+function stepInsertObjects() {
 	var idx;
-    
-    for(idx=0; idx<numObjects; idx++) {
-		items.insert({ 
-        	start : (new Date()).getTime(),
-        	first : genRandomVal(), 
-            owner: genRandomVal(), 
-            maker: genRandomVal(),
-            orders: [
-            	genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal()
-            ],
-            attribs: {
-            	a: genRandomVal(),
-                b: genRandomVal(),
-                c: genRandomVal(),
-                d: {
-                	d1: genRandomVal(),
-                	d2: genRandomVal(),
-                	d3: genRandomVal()
-                }
-            }
-        });
-	}
-    text = "";
-    console.log('inserted ' + numObjects + ' documents');
+
+  for(idx=0; idx<numObjects; idx++) {
+    items.insert({ 
+      start : (new Date()).getTime(),
+      first : genRandomVal(), 
+      owner: genRandomVal(), 
+      maker: genRandomVal(),
+      orders: [
+        genRandomVal(),
+        genRandomVal(),
+        genRandomVal(),
+        genRandomVal(),
+        genRandomVal()
+      ],
+      attribs: {
+        a: genRandomVal(),
+        b: genRandomVal(),
+        c: genRandomVal(),
+        d: {
+          d1: genRandomVal(),
+          d2: genRandomVal(),
+          d3: genRandomVal()
+        }
+      }
+    });
+  }
+  text = "";
+  console.log('inserted ' + numObjects + ' documents');
 }
 
-function step2CalcSerializeSize() {
-//	var serializedLength = db.serialize().length;
-//	console.log('size of original database length : ' + serializedLength);
-}
-
-function step3SaveDatabase() {
+function stepSaveDatabase() {
 	db.saveDatabase(function(err) {
 		if (err === null) {
 	    	console.log('finished saving database');
@@ -95,21 +94,15 @@ function step4ReloadDatabase() {
 	});
 }
 
-function dbLoaded() {
-    console.log('loaded database from indexed db');
-	var itemsColl = db.getCollection('items');
-    console.log('number of docs in items collection: ' + itemsColl.count());
-	serializedLength = db.serialize().length;
-	console.log('size of reloaded database length : ' + serializedLength);
+function logMemoryUsage(msg) {
+  console.log(msg);
+  console.log(process.memoryUsage());
 }
 
-// set up async pauses between steps to keep browser from 
-// stopping long running random object generation step
-step1InsertObjects();
+logMemoryUsage("before document inserts : ");
+stepInsertObjects();
 
-console.log(process.memoryUsage());
+logMemoryUsage("after document inserts : ");
+stepSaveDatabase();
 
-step2CalcSerializeSize();
-step3SaveDatabase();
-
-console.log(process.memoryUsage());
+logMemoryUsage("after database save : ");

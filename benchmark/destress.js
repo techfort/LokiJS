@@ -1,57 +1,30 @@
-// This script is meant to diagnose and stress the ability of loki to 
-// internally deserialize large databases.  I have found that within most
-// javascript engines there seems to be memory contraints and inefficiencies  
-// involved with using JSON.stringify.
+// This script can be used to stress the ability of loki to load large databases.  
+// I have found that within most javascript engines there seems to be memory 
+// contraints and inefficiencies involved with using JSON.stringify.
 //
-// This example loads (by default) aournd 130000 randomly generated 
-// objects which, when serialized will evaluate to roughly a 100MB string.
-// Internal memory usage, however spiked to a little under 2GB on my 
-// node 5.6.0 installation. 
+// One way to limit memory overhead is to serialize smaller objects rather than
+// one large (single) JSON.stringify of the whole database.  Loki has added
+// functionality to stream output of the database rather than saving a whole
+// database as a single string. 
 //
-// If you increase the numObject variable to a level that exceeds the 
-// deault heap size you may encounter an out of error or stack error
-// node --max-old-space-size=2000 stress
-//
-// Browser environments have no such customization and appear to be 
-// roughly limited to a similar 50Meg or so database size for the moment.
-// This would correlate with a rougly 2GB memory allocation.
-//
-// This script will be used as a reference for alternative serialization methods
-// which have a much lower overhead than the above 60M/2GB ratio.
+// This destress can be used to analyse memory overhead for loading a database
+// created by the stress.js script. Both stress.js and destress.js need to be
+// configured to use the same serialization method and adapter.  By default,
+// this is configured to use the loki-fs-structured-adapter which will 
+// stream output and input.
 
 var loki = require('../src/lokijs.js');
+var lfsa = require('../src/loki-fs-structured-adapter.js');
+var adapter = new lfsa();
 
 //var serializationMethod = "normal";
-var serializationMethod = "destructured";
 
-var db = new loki('sandbox.db', {
-          verbose: true,
-          serializationMethod: serializationMethod
-});
-var items = db.addCollection('items');
-
-function step2CalcSerializeSize() {
-	var serializedLength = db.serialize().length;
-	console.log('size of original database length : ' + serializedLength);
-}
-
-function step3SaveDatabase() {
-	db.saveDatabase(function(err) {
-		if (err === null) {
-	    	console.log('finished saving database');
-	    }
-	    else {
-	    	console.log('error encountered saving database : ' + err);
-	    }
-	});
-}
-
-function step4ReloadDatabase() {
+function reloadDatabase() {
 	db = new loki('sandbox.db', {
 		verbose: true,
 		autoload: true,
 		autoloadCallback: dbLoaded,
-    serializationMethod: serializationMethod
+    adapter:adapter
 	});
 }
 
@@ -62,13 +35,8 @@ function dbLoaded() {
   console.log("After loading database : ");
   console.log(process.memoryUsage());
   console.log('number of docs in items collection: ' + itemsColl.count());
-
-  step2CalcSerializeSize();
-
-  console.log("After calling db.serialize on newly loaded database : ");
-  console.log(process.memoryUsage());
 }
 
 console.log("Before loading database : ");
 console.log(process.memoryUsage());
-step4ReloadDatabase();
+reloadDatabase();

@@ -1387,6 +1387,7 @@
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
+        copyColl.dirty = false;
 
         // load each element individually
         clen = coll.data.length;

@@ -16,27 +16,80 @@
 var loki = require('../src/lokijs.js');
 var lfsa = require('../src/loki-fs-structured-adapter.js');
 var adapter = new lfsa();
+var db;
+var start, end;
 
 //var serializationMethod = "normal";
 
 function reloadDatabase() {
-	db = new loki('sandbox.db', {
-		verbose: true,
-		autoload: true,
-		autoloadCallback: dbLoaded,
+  start = process.hrtime();
+
+  // ## USE ONE method or another and make sure to match in stress.js
+
+  // default loki fs adapter serialization
+	//db = new loki('sandbox.db', {
+  //  verbose: true,
+  //  autoload: true,
+  //  autoloadCallback: dbLoaded
+  //});
+
+  // loki fs structured adapter
+  db = new loki('sandbox.db', {
+    verbose: true,
+    autoload: true,
+    autoloadCallback: dbLoaded,
     adapter:adapter
-	});
+  });
+}
+
+function formatBytes(bytes,decimals) {
+   if(bytes == 0) return '0 Byte';
+   var k = 1000; // or 1024 for binary
+   var dm = decimals + 1 || 3;
+   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+   var i = Math.floor(Math.log(bytes) / Math.log(k));
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function logMemoryUsage(msg) {
+  var pmu = process.memoryUsage();
+  console.log(msg + " > rss : " + formatBytes(pmu.rss) + " heapTotal : " + formatBytes(pmu.heapTotal) + " heapUsed : " + formatBytes(pmu.heapUsed));
 }
 
 function dbLoaded() {
-  console.log('loaded database from indexed db');
-	var itemsColl = db.getCollection('items');
+  end = process.hrtime(start);
+  console.info("database loaded... time : %ds %dms", end[0], end[1]/1000000);
+	var doccount =0, cidx;
+  db.collections.forEach(function(coll) {
+    doccount += coll.data.length;
+  })
 
-  console.log("After loading database : ");
-  console.log(process.memoryUsage());
-  console.log('number of docs in items collection: ' + itemsColl.count());
+  logMemoryUsage("After loading database : ");
+  console.log('number of docs in items collection(s) : ' + doccount);
+  
+  // if you want to verify that only dirty collections are saved (and thus faster), uncomment line below
+  //dirtyCollAndSaveDatabase();
 }
 
-console.log("Before loading database : ");
-console.log(process.memoryUsage());
+function dirtyCollAndSaveDatabase() {
+  var start, end;
+
+  start = process.hrtime();
+
+  // dirty up a collection and save to see if just that collection (along with db) gets written
+  db.collections[0].insert({ a: 1, b : 2});
+	db.saveDatabase(function(err) {
+		if (err === null) {
+      console.log('finished saving database');
+      logMemoryUsage("after database save : ");
+      end = process.hrtime(start);
+      console.info("database save time : %ds %dms", end[0], end[1]/1000000);
+    }
+    else {
+      console.log('error encountered saving database : ' + err);
+    }
+	});
+}
+
+logMemoryUsage("Before loading database : ");
 reloadDatabase();

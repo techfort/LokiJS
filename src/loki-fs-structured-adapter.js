@@ -63,11 +63,11 @@
         options.partition = -1;
       }
 
+      // if partition is -1 we will return database container with no data
       if (options.partition === -1) {
-        // instantiate a new loki database by using constructor of dbref passed in to exportDatabase
-        dbcopy = new this.dbref.constructor(this.dbref.filename);
-        dbcopy.loadJSONObject(this.dbref);
-
+        // instantiate lightweight clone and remove its collection data
+        dbcopy = this.dbref.copy();
+        
         for(idx=0; idx < dbcopy.collections.length; idx++) {
           dbcopy.collections[idx].data = [];
         }

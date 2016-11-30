@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: LokiLocalStorageAdapter</title>
+    <title>JSDoc: Class: LokiMemoryAdapter</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: LokiLocalStorageAdapter</h1>
+    <h1 class="page-title">Class: LokiMemoryAdapter</h1>
 
     
 
@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2>LokiLocalStorageAdapter</h2>
+        <h2>LokiMemoryAdapter</h2>
         
     
 </header>
@@ -40,14 +40,14 @@
 
     
 
-    <h4 class="name" id="LokiLocalStorageAdapter"><span class="type-signature"></span>new LokiLocalStorageAdapter<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LokiMemoryAdapter"><span class="type-signature"></span>new LokiMemoryAdapter<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    <p>A loki persistence adapter which persists to web browser's local storage object</p>
+    <p>In in-memory persistence adapter for an in-memory database.<br>This simple 'key/value' adapter is intended for unit testing and diagnostics.</p>
 </div>
 
 
@@ -91,7 +91,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1859">line 1859</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1592">line 1592</a>
     </li></ul></dd>
     
 
@@ -140,161 +140,6 @@
 
     
 
-    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>deleteDatabase() - delete the database from localstorage, will throw an error if it
-can't be deleted</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbname</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the filename of the database to delete</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the callback to handle the result</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1902">line 1902</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
     <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
 
     
@@ -302,7 +147,8 @@ can't be deleted</p>
 
 
 <div class="description">
-    <p>loadDatabase() - Load data from localstorage</p>
+    <p>Loads a serialized database from its in-memory store.
+(Loki persistence adapter interface function)</p>
 </div>
 
 
@@ -354,7 +200,7 @@ can't be deleted</p>
 
             
 
-            <td class="description last"><p>the name of the database to load</p></td>
+            <td class="description last"><p>name of the database (filename/keyname)</p></td>
         </tr>
 
     
@@ -377,7 +223,7 @@ can't be deleted</p>
 
             
 
-            <td class="description last"><p>the callback to handle the result</p></td>
+            <td class="description last"><p>adapter callback to return load result to caller</p></td>
         </tr>
 
     
@@ -418,7 +264,7 @@ can't be deleted</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1871">line 1871</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1610">line 1610</a>
     </li></ul></dd>
     
 
@@ -456,8 +302,8 @@ can't be deleted</p>
 
 
 <div class="description">
-    <p>saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
-might want to expand this to avoid dataloss on partial save</p>
+    <p>Saves a serialized database to its in-memory store.
+(Loki persistence adapter interface function)</p>
 </div>
 
 
@@ -509,7 +355,7 @@ might want to expand this to avoid dataloss on partial save</p>
 
             
 
-            <td class="description last"><p>the filename of the database to load</p></td>
+            <td class="description last"><p>name of the database (filename/keyname)</p></td>
         </tr>
 
     
@@ -532,7 +378,7 @@ might want to expand this to avoid dataloss on partial save</p>
 
             
 
-            <td class="description last"><p>the callback to handle the result</p></td>
+            <td class="description last"><p>adapter callback to return load result to caller</p></td>
         </tr>
 
     
@@ -573,7 +419,7 @@ might want to expand this to avoid dataloss on partial save</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1886">line 1886</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1627">line 1627</a>
     </li></ul></dd>
     
 

@@ -47,8 +47,8 @@
     /**
      * Generator for constructing lines for file streaming output of db container or collection.
      *
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
+     * @param {object=} options - output format options for use externally to loki
+     * @param {int=} options.partition - can be used to only output an individual collection or db (-1)
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations.
      * @memberof LokiFsStructuredAdapter
@@ -133,7 +133,7 @@
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {int} collectionIndex - the ordinal position of the collection to load.
-     * @param {function} callback - (Optional) callback to pass to next invocation or to call when done
+     * @param {function} callback - callback to pass to next invocation or to call when done
      * @memberof LokiFsStructuredAdapter
      */
     LokiFsStructuredAdapter.prototype.loadNextCollection = function(dbname, collectionIndex, callback) {
@@ -173,8 +173,8 @@
      * @memberof LokiFsStructuredAdapter
      */
     LokiFsStructuredAdapter.prototype.getPartition = function*() {
-      var idx, len=this.dirtyPartitions.length;
-      var clen = this.dbref.collections.length;
+      var idx,
+        clen = this.dbref.collections.length;
 
       // since database container (partition -1) doesn't have dirty flag at db level, always save
       yield -1;
@@ -191,8 +191,8 @@
      * Loki reference adapter interface function.  Saves structured json via loki database object reference.
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
-     * @param {string} dbref - the loki database object reference to save.
-     * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @param {object} dbref - the loki database object reference to save.
+     * @param {function} callback - callback passed obj.success with true or false
      * @memberof LokiFsStructuredAdapter
      */
     LokiFsStructuredAdapter.prototype.exportDatabase = function(dbname, dbref, callback)
@@ -210,6 +210,9 @@
       
     };
 
+    /**
+     * Utility method for queueing one save at a time
+     */
     LokiFsStructuredAdapter.prototype.saveNextPartition = function(dbname, pi, callback) {
       var li;
       var filename;

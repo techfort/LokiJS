@@ -255,27 +255,30 @@
      * @param {array} paths - array of properties to drill into
      * @param {function} fun - evaluation function to test with
      * @param {any} value - comparative value to also pass to (compare) fun
+     * @param {number} poffset - index of the item in 'paths' to start the sub-scan from
      */
-    function dotSubScan(root, paths, fun, value) {
-      var path = paths[0];
-      if (typeof root === 'undefined' || root === null || !root.hasOwnProperty(path)) {
+    function dotSubScan(root, paths, fun, value, poffset) {
+      var pathOffset = poffset || 0;
+      var path = paths[pathOffset];
+      if (root === undefined || root === null || !hasOwnProperty.call(root, path)) {
         return false;
       }
 
       var valueFound = false;
       var element = root[path];
-      if (Array.isArray(element)) {
-        var index;
-        for (index in element) {
-          valueFound = valueFound || dotSubScan(element[index], paths.slice(1, paths.length), fun, value);
+      if (pathOffset + 1 >= paths.length) {
+        // if we have already expanded out the dot notation,
+        // then just evaluate the test function and value on the element
+        valueFound = fun(element, value);
+      } else if (Array.isArray(element)) {
+        for (var index = 0, len = element.length; index &lt; len; index += 1) {
+          valueFound = dotSubScan(element[index], paths, fun, value, pathOffset + 1);
           if (valueFound === true) {
             break;
           }
         }
-      } else if (typeof element === 'object') {
-        valueFound = dotSubScan(element, paths.slice(1, paths.length), fun, value);
       } else {
-        valueFound = fun(element, value);
+        valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
       }
 
       return valueFound;
@@ -459,7 +462,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte'];
+    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -482,9 +485,6 @@
         break;
       }
 
-      //if (cloneMethod === 'parse-stringify') {
-      //  cloned = JSON.parse(JSON.stringify(data));
-      //}
       return cloned;
     }
 
@@ -539,13 +539,23 @@
 
     /**
      * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string} eventName - the name of the event to listen to
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
      * @param {function} listener - callback function of listener to attach
      * @returns {int} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event = this.events[eventName];
+      var event;
+      var self = this;
+
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.on(currentEventName, listener);
+        });
+        return listener;
+      }
+
+      event = this.events[eventName];
       if (!event) {
         event = this.events[eventName] = [];
       }
@@ -580,12 +590,29 @@
     };
 
     /**
+     * Alias of LokiEventEmitter.prototype.on
+     * addListener(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
+     * @param {function} listener - callback function of listener to attach
+     * @returns {int} the index of the callback in the array of listeners for a particular event
+     * @memberof LokiEventEmitter
+     */
+    LokiEventEmitter.prototype.addListener = LokiEventEmitter.prototype.on;
+
+    /**
      * removeListener() - removes the listener at position 'index' from the event 'eventName'
-     * @param {string} eventName - the name of the event which the listener is attached to
+     * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
      * @param {function} listener - the listener callback function to remove from emitter
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
+      var self = this;
+      if (Array.isArray(eventName)) {
+        eventName.forEach(function(currentEventName) {
+          self.removeListener(currentEventName, listen);
+        });
+      }
+
       if (this.events[eventName]) {
         var listeners = this.events[eventName];
         listeners.splice(listeners.indexOf(listener), 1);
@@ -605,6 +632,8 @@
      * @param {boolean} options.autoload - enables autoload on loki instantiation
      * @param {function} options.autoloadCallback - user callback called after database load
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
+     * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
+     * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -699,6 +728,7 @@
 
     // db class is an EventEmitter
     Loki.prototype = new LokiEventEmitter();
+    Loki.prototype.constructor = Loki;
 
     // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
     // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
@@ -724,6 +754,8 @@
      * @param {boolean} options.autoload - enables autoload on loki instantiation
      * @param {function} options.autoloadCallback - user callback called after database load
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
+     * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
+     * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
      * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking
      * @memberof Loki
      */
@@ -748,7 +780,6 @@
       // process the options
       if (typeof (options) !== 'undefined') {
         this.options = options;
-
 
         if (this.options.hasOwnProperty('persistenceMethod')) {
           // check if the specified persistence method is known
@@ -793,6 +824,16 @@
         }
       } // end of options processing
 
+      // ensure defaults exists for options which were not set
+      if (!this.options.hasOwnProperty('serializationMethod')) {
+        this.options.serializationMethod = 'normal';
+      }
+
+      // ensure passed or default option exists
+      if (!this.options.hasOwnProperty('destructureDelimiter')) {
+        this.options.destructureDelimiter = '$&lt;\n';
+      }
+
       // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
       if (this.persistenceAdapter === null) {
         this.persistenceMethod = defaultPersistence[this.ENV];
@@ -801,6 +842,37 @@
         }
       }
 
+    };
+
+    /**
+     * Copies 'this' database into a new Loki instance. Object references are shared to make lightweight.
+     *
+     * @param {object} options - apply or override collection level settings
+     * @param {bool} options.removeNonSerializable - nulls properties not safe for serialization.
+     * @memberof Loki
+     */
+    Loki.prototype.copy = function(options) {
+      var databaseCopy = new Loki(this.filename);
+      var clen, idx;
+
+      options = options || {};
+
+      // currently inverting and letting loadJSONObject do most of the work
+      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true });
+
+      // since our JSON serializeReplacer is not invoked for reference database adapters, this will let us mimic
+      if(options.hasOwnProperty("removeNonSerializable") &amp;&amp; options.removeNonSerializable === true) {
+        databaseCopy.autosaveHandle = null;
+        databaseCopy.persistenceAdapter = null;
+
+        clen = databaseCopy.collections.length;
+        for (idx=0; idx&lt;clen; idx++) {
+          databaseCopy.collections[idx].constraints = null;
+          databaseCopy.collections[idx].ttl = null;
+        }
+      }
+      
+      return databaseCopy;
     };
 
     /**
@@ -931,6 +1003,7 @@
       case 'autosaveHandle':
       case 'persistenceAdapter':
       case 'constraints':
+      case 'ttl':
         return null;
       default:
         return value;
@@ -943,11 +1016,363 @@
      * @returns {string} Stringified representation of the loki database.
      * @memberof Loki
      */
-    Loki.prototype.serialize = function () {
-      return JSON.stringify(this, this.serializeReplacer);
+    Loki.prototype.serialize = function (options) {
+      options = options || {};
+
+      if (!options.hasOwnProperty("serializationMethod")) {
+        options.serializationMethod = this.options.serializationMethod;
+      }
+
+      switch(options.serializationMethod) {
+        case "normal": return JSON.stringify(this, this.serializeReplacer);
+        case "pretty": return JSON.stringify(this, this.serializeReplacer, 2);
+        case "destructured": return this.serializeDestructured(); // use default options
+        default: return JSON.stringify(this, this.serializeReplacer);
+      }
     };
+
     // alias of serialize
     Loki.prototype.toJson = Loki.prototype.serialize;
+
+    /**
+     * Destructured JSON serialization routine to allow alternate serialization methods.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * your own structured persistence or data exchange.
+     *
+     * @param {object=} options - output format options for use externally to loki
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to only output an individual collection or db (-1)
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
+     *
+     * @returns {string|array} A custom, restructured aggregation of independent serializations.
+     * @memberof Loki
+     */
+    Loki.prototype.serializeDestructured = function(options) {
+      var idx, sidx, result, resultlen;
+      var reconstruct = [];
+      var dbcopy;
+
+      options = options || {};
+
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
+      }
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      // 'partitioned' along with 'partition' of 0 or greater is a request for single collection serialization
+      if (options.partitioned === true &amp;&amp; options.hasOwnProperty("partition") &amp;&amp; options.partition >= 0) {
+        return this.serializeCollection({
+          delimited: options.delimited,
+          delimiter: options.delimiter,
+          collectionIndex: options.partition
+        });
+      }
+
+      // not just an individual collection, so we will need to serialize db container via shallow copy
+      dbcopy = new Loki(this.filename);
+      dbcopy.loadJSONObject(this);
+
+      for(idx=0; idx &lt; dbcopy.collections.length; idx++) {
+        dbcopy.collections[idx].data = [];
+      }
+
+      // if we -only- wanted the db container portion, return it now
+      if (options.partitioned === true &amp;&amp; options.partition === -1) {
+        // since we are deconstructing, override serializationMethod to normal for here
+        return dbcopy.serialize({
+          serializationMethod: "normal"
+        });
+      }
+
+      // at this point we must be deconstructing the entire database
+      // start by pushing db serialization into first array element
+      reconstruct.push(dbcopy.serialize({
+          serializationMethod: "normal"
+      }));
+
+      dbcopy = null;
+
+      // push collection data into subsequent elements
+      for(idx=0; idx &lt; this.collections.length; idx++) {
+        result = this.serializeCollection({
+          delimited: options.delimited,
+          delimiter: options.delimiter,
+          collectionIndex: idx
+        });
+
+        // NDA : Non-Delimited Array : one iterable concatenated array with empty string collection partitions
+        if (options.partitioned === false &amp;&amp; options.delimited === false) {
+          if (!Array.isArray(result)) {
+            throw new Error("a nondelimited, non partitioned collection serialization did not return an expected array");
+          }
+
+          // Array.concat would probably duplicate memory overhead for copying strings.
+          // Instead copy each individually, and clear old value after each copy.
+          // Hopefully this will allow g.c. to reduce memory pressure, if needed.
+          resultlen = result.length;
+
+          for (sidx=0; sidx &lt; resultlen; sidx++) {
+            reconstruct.push(result[sidx]);
+            result[sidx] = null;
+          }
+
+          reconstruct.push("");
+        }
+        else {
+          reconstruct.push(result);
+        }
+      }
+
+      // Reconstruct / present results according to four combinations : D, DA, NDA, NDAA
+      if (options.partitioned) {
+        // DA : Delimited Array of strings [0] db [1] collection [n] collection { partitioned: true, delimited: true }
+        // useful for simple future adaptations of existing persistence adapters to save collections separately
+        if (options.delimited) {
+          return reconstruct;
+        }
+        // NDAA : Non-Delimited Array with subArrays. db at [0] and collection subarrays at [n] { partitioned: true, delimited : false }
+        // This format might be the most versatile for 'rolling your own' partitioned sync or save.
+        // Memory overhead can be reduced by specifying a specific partition, but at this code path they did not, so its all.
+        else {
+          return reconstruct;
+        }
+      }
+      else {
+        // D : one big Delimited string { partitioned: false, delimited : true }
+        // This is the method Loki will use internally if 'destructured'.
+        // Little memory overhead improvements but does not require multiple asynchronous adapter call scheduling
+        if (options.delimited) {
+          // indicate no more collections
+          reconstruct.push("");
+
+          return reconstruct.join(options.delimiter);
+        }
+        // NDA : Non-Delimited Array : one iterable array with empty string collection partitions { partitioned: false, delimited: false }
+        // This format might be best candidate for custom synchronous syncs or saves
+        else {
+          // indicate no more collections
+          reconstruct.push("");
+
+          return reconstruct;
+        }
+      }
+
+      reconstruct.push("");
+
+      return reconstruct.join(delim);
+    };
+
+    /**
+     * Utility method to serialize a collection in a 'destructured' format
+     *
+     * @param {object} options - used to determine output of method
+     * @param {int=} options.delimited - whether to return single delimited string or an array
+     * @param {string=} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {int} options.collectionIndex -  specify which collection to serialize data for
+     *
+     * @returns {string|array} A custom, restructured aggregation of independent serializations for a single collection.
+     * @memberof Loki
+     */
+    Loki.prototype.serializeCollection = function(options) {
+      var doccount,
+        docidx,
+        resultlines = [];
+
+      options = options || {};
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("collectionIndex")) {
+        throw new Error("serializeCollection called without 'collectionIndex' option");
+      }
+
+      doccount = this.collections[options.collectionIndex].data.length;
+
+      resultlines = [];
+
+      for(docidx=0; docidx&lt;doccount; docidx++) {
+        resultlines.push(JSON.stringify(this.collections[options.collectionIndex].data[docidx]));
+      }
+
+      // D and DA
+      if (options.delimited) {
+         // indicate no more documents in collection (via empty delimited string)
+        resultlines.push("");
+
+        return resultlines.join(options.delimiter);
+      }
+      else {
+        // NDAA and NDA
+        return resultlines;
+      }
+    };
+
+    /**
+     * Destructured JSON deserialization routine to minimize memory overhead.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * your own structured persistence or data exchange.
+     *
+     * @param {string|array} destructuredSource - destructured json or array to deserialize from
+     * @param {object=} options - source format options
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to deserialize only a single partition
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
+     *
+     * @returns {object|array} An object representation of the deserialized database, not yet applied to 'this' db or document array
+     * @memberof Loki
+     */
+    Loki.prototype.deserializeDestructured = function(destructuredSource, options) {
+      var workarray=[];
+      var len, cdb;
+      var idx, collIndex=0, collCount, lineIndex=1, done=false;
+      var currLine, currObject;
+
+      options = options || {};
+
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
+      }
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      // Partitioned
+      // DA : Delimited Array of strings [0] db [1] collection [n] collection { partitioned: true, delimited: true }
+      // NDAA : Non-Delimited Array with subArrays. db at [0] and collection subarrays at [n] { partitioned: true, delimited : false }
+      // -or- single partition
+      if (options.partitioned) {
+        // handle single partition
+        if (options.hasOwnProperty('partition')) {
+          // db only
+          if (options.partition === -1) {
+            cdb = JSON.parse(destructuredSource[0]);
+
+            return cdb;
+          }
+
+          // single collection, return doc array
+          return this.deserializeCollection(destructuredSource[options.partition+1], options);
+        }
+
+        // Otherwise we are restoring an entire partitioned db
+        cdb = JSON.parse(destructuredSource[0]);
+        collCount = cdb.collections.length;
+        for(collIndex=0; collIndex&lt;collCount; collIndex++) {
+          // attach each collection docarray to container collection data, add 1 to collection array index since db is at 0
+          cdb.collections[collIndex].data = this.deserializeCollection(destructuredSource[collIndex+1], options);
+        }
+
+        return cdb;
+      }
+
+      // Non-Partitioned
+      // D : one big Delimited string { partitioned: false, delimited : true }
+      // NDA : Non-Delimited Array : one iterable array with empty string collection partitions { partitioned: false, delimited: false }
+
+      // D
+      if (options.delimited) {
+        workarray = destructuredSource.split(options.delimiter);
+        destructuredSource = null; // lower memory pressure
+        len = workarray.length;
+
+        if (len === 0) {
+          return null;
+        }
+      }
+      // NDA
+      else {
+        workarray = destructuredSource;
+      }
+
+      // first line is database and collection shells
+      cdb = JSON.parse(workarray[0]);
+      collCount = cdb.collections.length;
+      workarray[0] = null;
+
+      while (!done) {
+        currLine = workarray[lineIndex];
+
+        // empty string indicates either end of collection or end of file
+        if (workarray[lineIndex] === "") {
+          // if no more collections to load into, we are done
+          if (++collIndex > collCount) {
+            done = true;
+          }
+        }
+        else {
+          currObject = JSON.parse(workarray[lineIndex]);
+          cdb.collections[collIndex].data.push(currObject);
+        }
+
+        // lower memory pressure and advance iterator
+        workarray[lineIndex++] = null;
+      }
+
+      return cdb;
+    };
+
+    /**
+     * Deserializes a destructured collection.
+     *
+     * @param {string|array} destructuredSource - destructured representation of collection to inflate
+     * @param {object} options - used to describe format of destructuredSource input
+     * @param {int} options.delimited - whether source is delimited string or an array
+     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     *
+     * @returns {array} an array of documents to attach to collection.data.
+     * @memberof Loki
+     */
+    Loki.prototype.deserializeCollection = function(destructuredSource, options) {
+      var workarray=[];
+      var idx, len;
+
+      options = options || {};
+
+      if (!options.hasOwnProperty("partitioned")) {
+        options.partitioned = false;
+      }
+
+      if (!options.hasOwnProperty("delimited")) {
+        options.delimited = true;
+      }
+
+      if (!options.hasOwnProperty("delimiter")) {
+        options.delimiter = this.options.destructureDelimiter;
+      }
+
+      if (options.delimited) {
+        workarray = destructuredSource.split(options.delimiter);
+        workarray.pop();
+      }
+      else {
+        workarray = destructuredSource;
+      }
+
+      len = workarray.length;
+      for (idx=0; idx &lt; len; idx++) {
+        workarray[idx] = JSON.parse(workarray[idx]);
+      }
+
+      return workarray;
+    };
 
     /**
      * Inflates a loki database from a serialized JSON string
@@ -961,7 +1386,13 @@
       if (serializedDb.length === 0) {
         dbObject = {};
       } else {
-        dbObject = JSON.parse(serializedDb);
+        // using option defined in instantiated db not what was in serialized db
+        switch (this.options.serializationMethod) {
+          case "normal":
+          case "pretty": dbObject = JSON.parse(serializedDb); break;
+          case "destructured": dbObject = this.deserializeDestructured(serializedDb); break;
+          default:  dbObject = JSON.parse(serializedDb); break;
+        }
       }
 
       this.loadJSONObject(dbObject, options);
@@ -972,6 +1403,7 @@
      *
      * @param {object} dbObject - a serialized loki database string
      * @param {object} options - apply or override collection level settings
+     * @param {bool?} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -980,7 +1412,9 @@
         coll,
         copyColl,
         clen,
-        j;
+        j,
+        loader,
+        collObj;
 
       this.name = dbObject.name;
 
@@ -992,10 +1426,28 @@
 
       this.collections = [];
 
+      function makeLoader(coll) {
+        var collOptions = options[coll.name];
+        var inflater;
+
+        if(collOptions.proto) {
+          inflater = collOptions.inflate || Utils.copyProperties;
+
+          return function(data) {
+            var collObj = new(collOptions.proto)();
+            inflater(data, collObj);
+            return collObj;
+          };
+        }
+
+        return collOptions.inflate;
+      }
+
       for (i; i &lt; len; i += 1) {
         coll = dbObject.collections[i];
         copyColl = this.addCollection(coll.name);
 
+        copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
         copyColl.disableChangesApi = coll.disableChangesApi;
@@ -1003,16 +1455,21 @@
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
 
+        if (options &amp;&amp; options.retainDirtyFlags === true) {
+          copyColl.dirty = coll.dirty;
+        }
+        else {
+          copyColl.dirty = false;
+        }
+
         // load each element individually
         clen = coll.data.length;
         j = 0;
         if (options &amp;&amp; options.hasOwnProperty(coll.name)) {
-
-          var loader = options[coll.name].inflate ? options[coll.name].inflate : Utils.copyProperties;
+          loader = makeLoader(coll);
 
           for (j; j &lt; clen; j++) {
-            var collObj = new(options[coll.name].proto)();
-            loader(coll.data[j], collObj);
+            collObj = loader(coll.data[j]);
             copyColl.data[j] = collObj;
             copyColl.addAutoUpdateObserver(collObj);
           }
@@ -1154,12 +1611,206 @@
     | PERSISTENCE       |
     -------------------*/
 
-
     /** there are two build in persistence adapters for internal use
      * fs             for use in Nodejs type environments
      * localStorage   for use in browser environment
      * defined as helper classes here so its easy and clean to use
      */
+
+    /**
+     * In in-memory persistence adapter for an in-memory database.  
+     * This simple 'key/value' adapter is intended for unit testing and diagnostics.
+     *
+     * @constructor LokiMemoryAdapter
+     */
+    function LokiMemoryAdapter() {
+      this.hashStore = {};
+    }
+
+    /**
+     * Loads a serialized database from its in-memory store.
+     * (Loki persistence adapter interface function)
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {function} callback - adapter callback to return load result to caller
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.loadDatabase = function (dbname, callback) {
+      if (this.hashStore.hasOwnProperty(dbname)) {
+        callback(this.hashStore[dbname].value);
+      }
+      else {
+        callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+      }
+    };
+
+    /**
+     * Saves a serialized database to its in-memory store.
+     * (Loki persistence adapter interface function)
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {function} callback - adapter callback to return load result to caller
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring, callback) {
+      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+
+      this.hashStore[dbname] = {
+        savecount: saveCount+1,
+        lastsave: new Date(),
+        value: dbstring 
+      };
+
+      callback();
+    };
+
+    /**
+     * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
+     * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
+     * only dirty collections will be saved.
+     *
+     * @param {object} adapter - reference to a 'non-reference' mode loki adapter instance.
+     * @constructor LokiPartitioningAdapter
+     */
+    function LokiPartitioningAdapter(adapter) {
+      this.mode = "reference";
+      this.adapter = null;
+
+      if (adapter) {
+        // reference mode adapters generally examine the structure of an entire loki database so our 'parts' would not work
+        if (adapter.mode === "reference") {
+          throw new Error("LokiPartitioningAdapter cannot be instantiated with a reference mode adapter");
+        }
+        else {
+          this.adapter = adapter;
+        }
+      }
+      else {
+        throw new Error("LokiPartitioningAdapter requires a (non-reference mode) adapter on construction");
+      }
+    }
+
+    /**
+     * Loads a database which was partitioned into several key/value saves.
+     * (Loki persistence adapter interface function)
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {function} callback - adapter callback to return load result to caller
+     * @memberof LokiPartitioningAdapter
+     */
+    LokiPartitioningAdapter.prototype.loadDatabase = function (dbname, callback) {
+      var self=this;
+
+      // load the db container (without data)
+      this.adapter.loadDatabase(dbname, function(result) {
+        if (typeof result !== "string") {
+          callback(new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()"));
+        }
+
+        // I will want to use loki destructuring helper methods so i will inflate into typed instance
+        var db = JSON.parse(result);
+        var dbref = new Loki(dbname);
+        dbref.loadJSONObject(db);
+        db = null;
+
+        var clen = dbref.collections.length;
+
+        if (dbref.collections.length === 0) {
+          callback(dbref);
+          return;
+        }
+
+        self.loadNextPartition(dbname, dbref, 0, function() {
+          callback(dbref);
+        });
+      });
+    };
+
+    /**
+     * Used to sequentially load each collection partition, one at a time.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} db - reference to internally database instance we are reconstructing.
+     * @param {int} partition - ordinal collection position to load next
+     * @param {function} callback - adapter callback to return load result to caller
+     */
+    LokiPartitioningAdapter.prototype.loadNextPartition = function(dbname, db, partition, callback) {
+      var keyname = dbname + "." + partition;
+      var self=this;
+
+      this.adapter.loadDatabase(keyname, function(result) {
+        var data = db.deserializeCollection(result, { delimited: true, collectionIndex: partition });
+        db.collections[partition].data = data;
+
+        if (++partition &lt; db.collections.length) {
+          self.loadNextPartition(dbname, db, partition, callback);
+        }
+        else {
+          callback();
+        }
+      });
+    };
+
+    /**
+     * Saves a database by partioning into separate key/value saves.
+     * (Loki 'reference mode' persistence adapter interface function)
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} dbref - reference to database which we will partition and save.
+     * @param {function} callback - adapter callback to return load result to caller
+     *
+     * @memberof LokiPartitioningAdapter     
+     */
+    LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref, callback) {
+      var self=this;
+      var idx, clen = dbref.collections.length;
+      var dirtyPartitions = [-1];
+
+      // queue up dirty partitions to be saved
+      for(idx=0; idx&lt;clen; idx++) {
+        if (dbref.collections[idx].dirty) {
+          dirtyPartitions.push(idx);
+        }
+      }
+
+      this.saveNextPartition(dbname, dbref, dirtyPartitions, function(err) {
+        callback(err);
+      });
+    };
+
+    /**
+     * Helper method used internally to save each dirty collection, one at a time.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} dbref - reference to internally database instance we are reconstructing.
+     * @param {array} dirtyPartitions - array of partition numbers which need to be saved
+     * @param {function} callback - adapter callback to return load result to caller
+     */
+    LokiPartitioningAdapter.prototype.saveNextPartition = function(dbname, dbref, dirtyPartitions, callback) {
+      var self=this;
+      var partition = dirtyPartitions.shift();
+      var keyname = dbname + ((partition===-1)?"":("." + partition));
+
+      var result = dbref.serializeDestructured({
+        partitioned : true,
+        delimited: true,
+        partition: partition
+      });
+
+      this.adapter.saveDatabase(keyname, result, function(err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        
+        if (dirtyPartitions.length === 0) {
+          callback(null);
+        }
+        else {
+          self.saveNextPartition(dbname, dbref, dirtyPartitions, callback);
+        }
+      });
+    };
 
     /**
      * A loki persistence adapter which persists using node fs module
@@ -1176,13 +1827,22 @@
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
-      this.fs.readFile(dbname, {
-        encoding: 'utf8'
-      }, function readFileCallback(err, data) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback(data);
+      var self = this;
+
+      this.fs.stat(dbname, function (err, stats) {
+        if (!err &amp;&amp; stats.isFile()) {
+          self.fs.readFile(dbname, {
+            encoding: 'utf8'
+          }, function readFileCallback(err, data) {
+            if (err) {
+              callback(new Error(err));
+            } else {
+              callback(data);
+            }
+          });
+        }
+        else {
+          callback(null);
         }
       });
     };
@@ -1195,7 +1855,15 @@
      * @memberof LokiFsAdapter
      */
     LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-      this.fs.writeFile(dbname, dbstring, callback);
+      var self = this;
+      var tmpdbname = dbname + '~';
+      this.fs.writeFile(tmpdbname, dbstring, function writeFileCallback(err) {
+        if (err) {
+          callback(new Error(err));
+        } else {
+          self.fs.rename(tmpdbname,dbname,callback);
+        }
+      });
     };
 
     /**
@@ -1341,7 +2009,7 @@
         // check if the adapter is requesting (and supports) a 'reference' mode export
         if (this.persistenceAdapter.mode === "reference" &amp;&amp; typeof this.persistenceAdapter.exportDatabase === "function") {
           // filename may seem redundant but loadDatabase will need to expect this same filename
-          this.persistenceAdapter.exportDatabase(this.filename, this, function exportDatabaseCallback(err) {
+          this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
             self.autosaveClearFlags();
             cFun(err);
           });
@@ -1775,160 +2443,6 @@
     };
 
     /**
-     * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
-     *    this is used for collection.find() and first find filter of resultset/dynview
-     *    slightly different than get() binary search in that get() hones in on 1 value,
-     *    but we have to hone in on many (range)
-     * @param {string} op - operation, such as $eq
-     * @param {string} prop - name of property to calculate range for
-     * @param {object} val - value to use for range calculation.
-     * @returns {array} [start, end] index array positions
-     */
-    Resultset.prototype.calculateRange = function (op, prop, val) {
-      var rcd = this.collection.data;
-      var index = this.collection.binaryIndices[prop].values;
-      var min = 0;
-      var max = index.length - 1;
-      var mid = 0;
-
-      // when no documents are in collection, return empty range condition
-      if (rcd.length === 0) {
-        return [0, -1];
-      }
-
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
-
-      // if value falls outside of our range return [0, -1] to designate no results
-      switch (op) {
-      case '$eq':
-      case '$aeq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$dteq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$gt':
-        if (gtHelper(val, maxVal, true)) {
-          return [0, -1];
-        }
-        break;
-      case '$gte':
-        if (gtHelper(val, maxVal, false)) {
-          return [0, -1];
-        }
-        break;
-      case '$lt':
-        if (ltHelper(val, minVal, true)) {
-          return [0, -1];
-        }
-        if (ltHelper(maxVal, val, false)) {
-          return [0, rcd.length - 1];
-        }
-        break;
-      case '$lte':
-        if (ltHelper(val, minVal, false)) {
-          return [0, -1];
-        }
-        if (ltHelper(maxVal, val, true)) {
-          return [0, rcd.length - 1];
-        }
-        break;
-      }
-
-      // hone in on start position of value
-      while (min &lt; max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
-          min = mid + 1;
-        } else {
-          max = mid;
-        }
-      }
-
-      var lbound = min;
-
-      // do not reset min, as the upper bound cannot be prior to the found low bound
-      max = index.length - 1;
-
-      // hone in on end position of value
-      while (min &lt; max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(val, rcd[index[mid]][prop], false)) {
-          max = mid;
-        } else {
-          min = mid + 1;
-        }
-      }
-
-      var ubound = max;
-
-      var lval = rcd[index[lbound]][prop];
-      var uval = rcd[index[ubound]][prop];
-
-      switch (op) {
-      case '$eq':
-        if (lval !== val) {
-          return [0, -1];
-        }
-        if (uval !== val) {
-          ubound--;
-        }
-
-        return [lbound, ubound];
-      case '$dteq':
-        if (lval > val || lval &lt; val) {
-          return [0, -1];
-        }
-        if (uval > val || uval &lt; val) {
-          ubound--;
-        }
-
-        return [lbound, ubound];
-
-
-      case '$gt':
-        if (ltHelper(uval, val, true)) {
-          return [0, -1];
-        }
-
-        return [ubound, rcd.length - 1];
-
-      case '$gte':
-        if (ltHelper(lval, val, false)) {
-          return [0, -1];
-        }
-
-        return [lbound, rcd.length - 1];
-
-      case '$lt':
-        if (lbound === 0 &amp;&amp; ltHelper(lval, val, false)) {
-          return [0, 0];
-        }
-        return [0, lbound - 1];
-
-      case '$lte':
-        if (uval !== val) {
-          ubound--;
-        }
-
-        if (ubound === 0 &amp;&amp; ltHelper(uval, val, false)) {
-          return [0, 0];
-        }
-        return [0, ubound];
-
-      default:
-        return [0, rcd.length - 1];
-      }
-    };
-
-    /**
      * findOr() - oversee the operation of OR'ed query expressions.
      *    OR'ed expression evaluation runs each expression individually against the full collection,
      *    and finally does a set OR on each expression's results.
@@ -2040,13 +2554,12 @@
 
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
-        // Chained queries can just do coll.chain().data() but let's
-        // be versatile and allow this also coll.chain().find().data()
+        // coll.find(), coll.findOne(), coll.chain().find().data() all path here
 
-        // If a chained search, simply leave everything as-is.
-        // Note: If no filter at this point, it will be properly
-        // created by the follow-up queries or sorts that need it.
-        // If not chained, then return the collection data array copy.
+        if (firstOnly) {
+          return (this.collection.data.length > 0)?this.collection.data[0]: null;
+        }
+
         return (this.searchIsChained) ? (this) : (this.collection.data.slice());
       }
 
@@ -2117,7 +2630,9 @@
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property
         // ensureIndex() will only rebuild if flagged as dirty since we are not passing force=true param
-        this.collection.ensureIndex(property);
+        if (this.collection.adaptiveBinaryIndices !== true) {
+          this.collection.ensureIndex(property);
+        }
 
         searchByIndex = true;
         index = this.collection.binaryIndices[property];
@@ -2129,7 +2644,8 @@
       // "shortcut" for collection data
       var t = this.collection.data;
       // filter data length
-      var i = 0;
+      var i = 0,
+        len = 0;
 
       // Query executed differently depending on :
       //    - whether it is chained or not
@@ -2180,7 +2696,7 @@
           }
         } else {
           // searching by binary index via calculateRange() utility method
-          var seg = this.calculateRange(operator, property, value);
+          var seg = this.collection.calculateRange(operator, property, value);
 
           // not chained so this 'find' was designated in Resultset constructor
           // so return object itself
@@ -2191,8 +2707,14 @@
             return [];
           }
 
-          for (i = seg[0]; i &lt;= seg[1]; i++) {
-            result.push(t[index.values[i]]);
+          if (operator !== '$in') {
+            for (i = seg[0]; i &lt;= seg[1]; i++) {
+              result.push(t[index.values[i]]);
+            }
+          } else {
+            for (i = 0, len = seg.length; i &lt; len; i++) {
+              result.push(t[index.values[seg[i]]]);
+            }
           }
         }
 
@@ -2250,10 +2772,16 @@
           }
         } else {
           // search by index
-          var segm = this.calculateRange(operator, property, value);
+          var segm = this.collection.calculateRange(operator, property, value);
 
-          for (i = segm[0]; i &lt;= segm[1]; i++) {
-            result.push(index.values[i]);
+          if (operator !== '$in') {
+            for (i = segm[0]; i &lt;= segm[1]; i++) {
+              result.push(index.values[i]);
+            }
+          } else {
+            for (i = 0, len = segm.length; i &lt; len; i++) {
+              result.push(index.values[segm[i]]);
+            }
           }
         }
 
@@ -3165,13 +3693,10 @@
       // was in resultset, shouldn't be now... delete
       if (oldPos !== -1 &amp;&amp; newPos === -1) {
         if (oldPos &lt; oldlen - 1) {
-          // http://dvolvr.davidwaterston.com/2013/06/09/restating-the-obvious-the-fastest-way-to-truncate-an-array-in-javascript/comment-page-1/
-          ofr[oldPos] = ofr[oldlen - 1];
-          ofr.length = oldlen - 1;
+          ofr.splice(oldPos, 1);
 
           if (this.options.persistent) {
-            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-            this.resultdata.length = oldlen - 1;
+            this.resultdata.splice(oldPos, 1);
           }
         } else {
           ofr.length = oldlen - 1;
@@ -3297,6 +3822,7 @@
      * @param {array} options.unique - array of property names to define unique constraints for
      * @param {array} options.exact - array of property names to define exact constraints for
      * @param {array} options.indices - array property names to define binary indexes for
+     * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily (default: true)
      * @param {boolean} options.asyncListeners - default is false
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
@@ -3359,6 +3885,10 @@
           self.constraints.exact[prop] = new ExactIndex(prop);
         });
       }
+
+      // if set to true we will optimally keep indices 'fresh' during insert/update/remove ops (never dirty/never needs rebuild)
+      // if you frequently intersperse insert/update/remove ops between find ops this will likely be significantly faster option.
+      this.adaptiveBinaryIndices = options.hasOwnProperty('adaptiveBinaryIndices') ? options.adaptiveBinaryIndices : true;
 
       // is collection transactional
       this.transactional = options.hasOwnProperty('transactional') ? options.transactional : false;
@@ -3677,6 +4207,24 @@
     };
 
     /**
+     * Will allow reconfiguring certain collection options.
+     * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily
+     * @memberof Collection
+     */
+    Collection.prototype.configureOptions = function (options) {
+      options = options || {};
+
+      if (options.hasOwnProperty('adaptiveBinaryIndices')) {
+        this.adaptiveBinaryIndices = options.adaptiveBinaryIndices;
+
+        // if switching to adaptive binary indices, make sure none are 'dirty'
+        if (this.adaptiveBinaryIndices) {
+          this.ensureAllIndexes();
+        }
+      }
+    };
+
+    /**
      * Ensure binary index on a certain field
      * @param {string} property - name of property to create binary index on
      * @param {boolean=} force - (Optional) flag indicating whether to construct index immediately
@@ -3896,24 +4444,30 @@
       // holder to the clone of the object inserted if collections is set to clone objects
       var obj;
       var results = [];
+
+      this.emit('pre-insert', doc);
       for (var i = 0, len = doc.length; i &lt; len; i++) {
-        obj = this.insertOne(doc[i]);
+        obj = this.insertOne(doc[i], true);
         if (!obj) {
           return undefined;
         }
         results.push(obj);
       }
+      this.emit('insert', doc);
       return results.length === 1 ? results[0] : results;
     };
 
     /**
      * Adds a single object, ensures it has meta properties, clone it if necessary, etc.
      * @param {object} doc - the document to be inserted
+     * @param {boolean} bulkInsert - quiet pre-insert and insert event emits
      * @returns {object} document or 'undefined' if there was a problem inserting it
      * @memberof Collection
      */
-    Collection.prototype.insertOne = function (doc) {
+    Collection.prototype.insertOne = function (doc, bulkInsert) {
       var err = null;
+      var returnObj;
+
       if (typeof doc !== 'object') {
         err = new TypeError('Document needs to be an object');
       } else if (doc === null) {
@@ -3935,14 +4489,22 @@
         };
       }
 
-      this.emit('pre-insert', obj);
+      // if cloning, give user back clone of 'cloned' object with $loki and meta
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+
+      // allow pre-insert to modify actual collection reference even if cloning
+      if (!bulkInsert) {
+        this.emit('pre-insert', obj);
+      }
       if (!this.add(obj)) {
         return undefined;
       }
 
-      this.addAutoUpdateObserver(obj);
-      this.emit('insert', obj);
-      return obj;
+      this.addAutoUpdateObserver(returnObj);
+      if (!bulkInsert) {
+        this.emit('insert', returnObj);
+      }
+      return returnObj;
     };
 
     /**
@@ -3967,8 +4529,6 @@
      * @memberof Collection
      */
     Collection.prototype.update = function (doc) {
-      this.flagBinaryIndexesDirty();
-
       if (Array.isArray(doc)) {
         var k = 0,
           len = doc.length;
@@ -3985,26 +4545,31 @@
       try {
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
-          obj,
+          oldInternal,   // ref to existing obj
+          newInternal, // ref to new internal obj
           position,
           self = this;
-
-        obj = arr[0]; // -internal- obj ref
-        position = arr[1]; // position in data array
 
         if (!arr) {
           throw new Error('Trying to update a document not in collection.');
         }
+
+        oldInternal = arr[0]; // -internal- obj ref
+        position = arr[1]; // position in data array
+
+        // if configured to clone, do so now... otherwise just use same obj reference
+        newInternal = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
+
         this.emit('pre-update', doc);
 
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(obj, doc);
+          self.constraints.unique[key].update(oldInternal, newInternal);
         });
 
         // operate the update
-        this.data[position] = doc;
+        this.data[position] = newInternal;
 
-        if (obj !== doc) {
+        if (newInternal !== doc) {
           this.addAutoUpdateObserver(doc);
         }
 
@@ -4014,11 +4579,25 @@
           this.DynamicViews[idx].evaluateDocument(position, false);
         }
 
-        this.idIndex[position] = obj.$loki;
+        var key;
+        if (this.adaptiveBinaryIndices) {
+          // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
+          var bIndices = this.binaryIndices;
+          for (key in bIndices) {
+            this.adaptiveBinaryIndexUpdate(position, key);
+          }
+        }
+        else {
+          this.flagBinaryIndexesDirty();
+        }
+
+        this.idIndex[position] = newInternal.$loki;
+        //this.flagBinaryIndexesDirty();
 
         this.commit();
         this.dirty = true; // for autosave scenarios
-        this.emit('update', doc);
+
+        this.emit('update', doc, this.cloneObjects ? clone(oldInternal, this.cloneMethod) : null);
         return doc;
       } catch (err) {
         this.rollback();
@@ -4042,8 +4621,6 @@
       if (typeof (obj.$loki) !== 'undefined') {
         throw new Error('Document is already in collection, please use update()');
       }
-
-      this.flagBinaryIndexesDirty();
 
       /*
        * try adding object to collection
@@ -4072,12 +4649,24 @@
         // add the object
         this.data.push(obj);
 
+        var addedPos = this.data.length - 1;
+
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-        var addedPos = this.data.length - 1;
         var dvlen = this.DynamicViews.length;
         for (var i = 0; i &lt; dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(addedPos, true);
+        }
+
+        if (this.adaptiveBinaryIndices) {
+          // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
+          var bIndices = this.binaryIndices;
+          for (key in bIndices) {
+            this.adaptiveBinaryIndexInsert(addedPos, key);
+          }
+        }
+        else {
+          this.flagBinaryIndexesDirty();
         }
 
         this.commit();
@@ -4091,7 +4680,6 @@
         throw (err); // re-throw error so user does not think it succeeded
       }
     };
-
 
     /**
      * Remove all documents matching supplied filter object
@@ -4140,8 +4728,6 @@
         throw new Error('Object is not a document stored in the collection');
       }
 
-      this.flagBinaryIndexesDirty();
-
       try {
         this.startTransaction();
         var arr = this.get(doc.$loki, true),
@@ -4157,6 +4743,17 @@
         // submit it for all registered DynamicViews to remove
         for (var idx = 0; idx &lt; this.DynamicViews.length; idx++) {
           this.DynamicViews[idx].removeDocument(position);
+        }
+
+        if (this.adaptiveBinaryIndices) {
+          // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
+          var key, bIndices = this.binaryIndices;
+          for (key in bIndices) {
+            this.adaptiveBinaryIndexRemove(position, key);
+          }
+        }
+        else {
+          this.flagBinaryIndexesDirty();
         }
 
         this.data.splice(position, 1);
@@ -4226,6 +4823,323 @@
     };
 
     /**
+     * Perform binary range lookup for the data[dataPosition][binaryIndexName] property value
+     *    Since multiple documents may contain the same value (which the index is sorted on),
+     *    we hone in on range and then linear scan range to find exact index array position.
+     * @param {int} dataPosition : coll.data array index/position
+     * @param {string} binaryIndexName : index to search for dataPosition in
+     */
+    Collection.prototype.getBinaryIndexPosition = function(dataPosition, binaryIndexName) {
+      var val = this.data[dataPosition][binaryIndexName];
+      var index = this.binaryIndices[binaryIndexName].values;
+
+      // i think calculateRange can probably be moved to collection
+      // as it doesn't seem to need resultset.  need to verify
+      //var rs = new Resultset(this, null, null);
+      var range = this.calculateRange("$eq", binaryIndexName, val);
+
+      if (range[0] === 0 &amp;&amp; range[1] === -1) {
+        // uhoh didn't find range
+        return null;
+      }
+
+      var min = range[0];
+      var max = range[1];
+
+      // narrow down the sub-segment of index values
+      // where the indexed property value exactly matches our
+      // value and then linear scan to find exact -index- position
+      for(var idx = min; idx &lt;= max; idx++) {
+        if (index[idx] === dataPosition) return idx;
+      }
+
+      // uhoh
+      return null;
+    };
+
+    /**
+     * Adaptively insert a selected item to the index.
+     * @param {int} dataPosition : coll.data array index/position
+     * @param {string} binaryIndexName : index to search for dataPosition in
+     */
+    Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
+      var index = this.binaryIndices[binaryIndexName].values;
+      var val = this.data[dataPosition][binaryIndexName];
+      //var rs = new Resultset(this, null, null);
+      var idxPos = this.calculateRangeStart(binaryIndexName, val);
+
+      // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
+      // doing this after adjusting dataPositions so no clash with previous item at that position.
+      this.binaryIndices[binaryIndexName].values.splice(idxPos, 0, dataPosition);
+    };
+
+    /**
+     * Adaptively update a selected item within an index.
+     * @param {int} dataPosition : coll.data array index/position
+     * @param {string} binaryIndexName : index to search for dataPosition in
+     */
+    Collection.prototype.adaptiveBinaryIndexUpdate = function(dataPosition, binaryIndexName) {
+      // linear scan needed to find old position within index unless we optimize for clone scenarios later
+      // within (my) node 5.6.0, the following for() loop with strict compare is -much- faster than indexOf()
+      var idxPos,
+        index = this.binaryIndices[binaryIndexName].values,
+        len=index.length;
+
+      for(idxPos=0; idxPos &lt; len; idxPos++) {
+        if (index[idxPos] === dataPosition) break;
+      }
+
+      //var idxPos = this.binaryIndices[binaryIndexName].values.indexOf(dataPosition);
+      this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
+
+      //this.adaptiveBinaryIndexRemove(dataPosition, binaryIndexName, true);
+      this.adaptiveBinaryIndexInsert(dataPosition, binaryIndexName);
+    };
+
+    /**
+     * Adaptively remove a selected item from the index.
+     * @param {int} dataPosition : coll.data array index/position
+     * @param {string} binaryIndexName : index to search for dataPosition in
+     */
+    Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
+      var idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
+      var index = this.binaryIndices[binaryIndexName].values;
+      var len,
+        idx;
+
+      if (idxPos === null) {
+        // throw new Error('unable to determine binary index position');
+        return null;
+      }
+
+      // remove document from index
+      this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
+
+      // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
+      // in which case data positions stay the same.
+      if (removedFromIndexOnly === true) {
+        return;
+      }
+
+      // since index stores data array positions, if we remove a document
+      // we need to adjust array positions -1 for all document positions greater than removed position
+      len = index.length;
+      for (idx = 0; idx &lt; len; idx++) {
+        if (index[idx] > dataPosition) {
+          index[idx]--;
+        }
+      }
+    };
+
+    /**
+     * Internal method used for index maintenance.  Given a prop (index name), and a value
+     * (which may or may not yet exist) this will find the proper location where it can be added.
+     */
+    Collection.prototype.calculateRangeStart = function (prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      if (index.length === 0) {
+        return 0;
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // hone in on start position of value
+      while (min &lt; max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+          min = mid + 1;
+        } else {
+          max = mid;
+        }
+      }
+
+      var lbound = min;
+
+      if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        return lbound+1;
+      }
+      else {
+        return lbound;
+      }
+    };
+
+    /**
+     * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
+     *    this is used for collection.find() and first find filter of resultset/dynview
+     *    slightly different than get() binary search in that get() hones in on 1 value,
+     *    but we have to hone in on many (range)
+     * @param {string} op - operation, such as $eq
+     * @param {string} prop - name of property to calculate range for
+     * @param {object} val - value to use for range calculation.
+     * @returns {array} [start, end] index array positions
+     */
+    Collection.prototype.calculateRange = function (op, prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      // when no documents are in collection, return empty range condition
+      if (rcd.length === 0) {
+        return [0, -1];
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // if value falls outside of our range return [0, -1] to designate no results
+      switch (op) {
+      case '$eq':
+      case '$aeq':
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$dteq':
+        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$gt':
+        if (gtHelper(val, maxVal, true)) {
+          return [0, -1];
+        }
+        break;
+      case '$gte':
+        if (gtHelper(val, maxVal, false)) {
+          return [0, -1];
+        }
+        break;
+      case '$lt':
+        if (ltHelper(val, minVal, true)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val, false)) {
+          return [0, rcd.length - 1];
+        }
+        break;
+      case '$lte':
+        if (ltHelper(val, minVal, false)) {
+          return [0, -1];
+        }
+        if (ltHelper(maxVal, val, true)) {
+          return [0, rcd.length - 1];
+        }
+        break;
+      case '$in':
+        var idxset = [],
+          segResult = [];
+        // query each value '$eq' operator and merge the seqment results.
+        for (var j = 0, len = val.length; j &lt; len; j++) {
+            var seg = this.calculateRange('$eq', prop, val[j]);
+
+            for (var i = seg[0]; i &lt;= seg[1]; i++) {
+                if (idxset[i] === undefined) {
+                    idxset[i] = true;
+                    segResult.push(i);
+                }
+            }
+        }
+        return segResult;
+      }
+
+      // hone in on start position of value
+      while (min &lt; max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+          min = mid + 1;
+        } else {
+          max = mid;
+        }
+      }
+
+      var lbound = min;
+
+      // do not reset min, as the upper bound cannot be prior to the found low bound
+      max = index.length - 1;
+
+      // hone in on end position of value
+      while (min &lt; max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+          max = mid;
+        } else {
+          min = mid + 1;
+        }
+      }
+
+      var ubound = max;
+
+      var lval = rcd[index[lbound]][prop];
+      var uval = rcd[index[ubound]][prop];
+
+      switch (op) {
+      case '$eq':
+        if (lval !== val) {
+          return [0, -1];
+        }
+        if (uval !== val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+      case '$dteq':
+        if (lval > val || lval &lt; val) {
+          return [0, -1];
+        }
+        if (uval > val || uval &lt; val) {
+          ubound--;
+        }
+
+        return [lbound, ubound];
+
+
+      case '$gt':
+        if (ltHelper(uval, val, true)) {
+          return [0, -1];
+        }
+
+        return [ubound, rcd.length - 1];
+
+      case '$gte':
+        if (ltHelper(lval, val, false)) {
+          return [0, -1];
+        }
+
+        return [lbound, rcd.length - 1];
+
+      case '$lt':
+        if (lbound === 0 &amp;&amp; ltHelper(lval, val, false)) {
+          return [0, 0];
+        }
+        return [0, lbound - 1];
+
+      case '$lte':
+        if (uval !== val) {
+          ubound--;
+        }
+
+        if (ubound === 0 &amp;&amp; ltHelper(uval, val, false)) {
+          return [0, 0];
+        }
+        return [0, ubound];
+
+      default:
+        return [0, rcd.length - 1];
+      }
+    };
+
+    /**
      * Retrieve doc by Unique index
      * @param {string} field - name of uniquely indexed property to use when doing lookup
      * @param {value} value - unique value to search for
@@ -4256,11 +5170,14 @@
      * @memberof Collection
      */
     Collection.prototype.findOne = function (query) {
+      query = query || {};
+
       // Instantiate Resultset and exec find op passing firstOnly = true param
       var result = new Resultset(this, {
         queryObj: query,
         firstOnly: true
       });
+
       if (Array.isArray(result) &amp;&amp; result.length === 0) {
         return null;
       } else {
@@ -4961,6 +5878,10 @@
     Loki.LokiOps = LokiOps;
     Loki.Collection = Collection;
     Loki.KeyValueStore = KeyValueStore;
+    Loki.LokiMemoryAdapter = LokiMemoryAdapter;
+    Loki.LokiPartitioningAdapter = LokiPartitioningAdapter;
+    Loki.LokiLocalStorageAdapter = LokiLocalStorageAdapter;
+    Loki.LokiFsAdapter = LokiFsAdapter;
     Loki.persistenceAdapters = {
       fs: LokiFsAdapter,
       localStorage: LokiLocalStorageAdapter
@@ -4979,13 +5900,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:42 GMT+0100 (IST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Nov 29 2016 19:17:57 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

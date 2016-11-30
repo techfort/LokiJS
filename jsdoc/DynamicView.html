@@ -318,7 +318,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2526">line 2526</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3054">line 3054</a>
     </li></ul></dd>
     
 
@@ -352,10 +352,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydv = mycollection.addDynamicView('test');  // default is non-persistent
-mydv.applyFind({ 'doors' : 4 });
-mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
-var results = mydv.data();</code></pre>
+    <pre class="prettyprint"><code>var mydv = mycollection.addDynamicView('test');  // default is non-persistentmydv.applyFind({ 'doors' : 4 });mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });var results = mydv.data();</code></pre>
 
 
 
@@ -483,7 +480,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2894">line 2894</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3422">line 3422</a>
     </li></ul></dd>
     
 
@@ -682,7 +679,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2926">line 2926</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3454">line 3454</a>
     </li></ul></dd>
     
 
@@ -878,7 +875,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2751">line 2751</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3279">line 3279</a>
     </li></ul></dd>
     
 
@@ -1036,7 +1033,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2732">line 2732</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3260">line 3260</a>
     </li></ul></dd>
     
 
@@ -1085,11 +1082,7 @@ var results = mydv.data();</code></pre>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>dv.applySort(function(obj1, obj2) {
-  if (obj1.name === obj2.name) return 0;
-  if (obj1.name > obj2.name) return 1;
-  if (obj1.name &lt; obj2.name) return -1;
-});</code></pre>
+    <pre class="prettyprint"><code>dv.applySort(function(obj1, obj2) {  if (obj1.name === obj2.name) return 0;  if (obj1.name > obj2.name) return 1;  if (obj1.name &lt; obj2.name) return -1;});</code></pre>
 
 
 
@@ -1198,7 +1191,7 @@ var results = mydv.data();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2776">line 2776</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3304">line 3304</a>
     </li></ul></dd>
     
 
@@ -1247,12 +1240,7 @@ var results = mydv.data();</code></pre>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>// to sort by age and then name (both ascending)
-dv.applySortCriteria(['age', 'name']);
-// to sort by age (ascending) and then by name (descending)
-dv.applySortCriteria(['age', ['name', true]);
-// to sort by age (descending) and then by name (descending)
-dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
+    <pre class="prettyprint"><code>// to sort by age and then name (both ascending)dv.applySortCriteria(['age', 'name']);// to sort by age (ascending) and then by name (descending)dv.applySortCriteria(['age', ['name', true]);// to sort by age (descending) and then by name (descending)dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 
@@ -1407,7 +1395,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2943">line 2943</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3471">line 3471</a>
     </li></ul></dd>
     
 
@@ -1608,7 +1596,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2665">line 2665</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3193">line 3193</a>
     </li></ul></dd>
     
 
@@ -1712,7 +1700,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2976">line 2976</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3504">line 3504</a>
     </li></ul></dd>
     
 
@@ -1816,7 +1804,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2989">line 2989</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3517">line 3517</a>
     </li></ul></dd>
     
 
@@ -1992,7 +1980,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3254">line 3254</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3779">line 3779</a>
     </li></ul></dd>
     
 
@@ -2148,7 +2136,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2605">line 2605</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3133">line 3133</a>
     </li></ul></dd>
     
 
@@ -2309,7 +2297,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2959">line 2959</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3487">line 3487</a>
     </li></ul></dd>
     
 
@@ -2414,7 +2402,7 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2701">line 2701</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3229">line 3229</a>
     </li></ul></dd>
     
 
@@ -2456,13 +2444,13 @@ dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Nov 29 2016 19:17:57 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

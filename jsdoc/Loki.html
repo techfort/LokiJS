@@ -326,6 +326,52 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>serializationMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>['normal', 'pretty', 'destructured']</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>destructureDelimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>string delimiter used for destructured serialization</p></td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -377,7 +423,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line567">line 567</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line594">line 594</a>
     </li></ul></dd>
     
 
@@ -802,7 +848,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line816">line 816</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line888">line 888</a>
     </li></ul></dd>
     
 
@@ -979,7 +1025,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line790">line 790</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line862">line 862</a>
     </li></ul></dd>
     
 
@@ -1088,7 +1134,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1117">line 1117</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1574">line 1574</a>
     </li></ul></dd>
     
 
@@ -1232,7 +1278,7 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1053">line 1053</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1510">line 1510</a>
     </li></ul></dd>
     
 
@@ -1506,6 +1552,52 @@ Does not actually destroy the db.</p>
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>serializationMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>['normal', 'pretty', 'destructured']</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>destructureDelimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>string delimiter used for destructured serialization</p></td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -1573,7 +1665,187 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line702">line 702</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line734">line 734</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="copy"><span class="type-signature"></span>copy<span class="signature">(options)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Copies 'this' database into a new Loki instance. Object references are shared to make lightweight.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>apply or override collection level settings</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>removeNonSerializable</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>nulls properties not safe for serialization.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line826">line 826</a>
     </li></ul></dd>
     
 
@@ -1750,7 +2022,7 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1346">line 1346</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2014">line 2014</a>
     </li></ul></dd>
     
 
@@ -1773,6 +2045,622 @@ Does not actually destroy the db.</p>
 
 
 
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="deserializeCollection"><span class="type-signature"></span>deserializeCollection<span class="signature">(destructuredSource, options)</span><span class="type-signature"> &rarr; {array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Deserializes a destructured collection.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>destructuredSource</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>destructured representation of collection to inflate</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>used to describe format of destructuredSource input</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delimited</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>whether source is delimited string or an array</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(optional) if delimited, this is delimiter to use</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1315">line 1315</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>an array of documents to attach to collection.data.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="deserializeDestructured"><span class="type-signature"></span>deserializeDestructured<span class="signature">(destructuredSource, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {object|array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Destructured JSON deserialization routine to minimize memory overhead.
+Internally, Loki supports destructuring via loki &quot;serializationMethod' option and 
+the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+your own structured persistence or data exchange.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>destructuredSource</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">array</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>destructured json or array to deserialize from</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>source format options</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>partitioned</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>(default: false) whether db and each collection are separate</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>partition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>can be used to deserialize only a single partition</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimited</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>(default: true) whether subitems are delimited or subarrays</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>override default delimiter</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1209">line 1209</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An object representation of the deserialized database, not yet applied to 'this' db or document array</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">object</span>
+|
+
+<span class="param-type">array</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1895,7 +2783,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1089">line 1089</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1546">line 1546</a>
     </li></ul></dd>
     
 
@@ -2055,7 +2943,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line839">line 839</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line911">line 911</a>
     </li></ul></dd>
     
 
@@ -2253,7 +3141,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1252">line 1252</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1920">line 1920</a>
     </li></ul></dd>
     
 
@@ -2407,7 +3295,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line931">line 931</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1356">line 1356</a>
     </li></ul></dd>
     
 
@@ -2520,7 +3408,68 @@ of collections is passed then only the included collections will be tracked.</p>
 
             
 
-            <td class="description last"><p>apply or override collection level settings</p></td>
+            <td class="description last"><p>apply or override collection level settings</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>retainDirtyFlags</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>whether collection dirty flags will be preserved</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2561,7 +3510,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line949">line 949</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1381">line 1381</a>
     </li></ul></dd>
     
 
@@ -2692,7 +3641,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line874">line 874</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line946">line 946</a>
     </li></ul></dd>
     
 
@@ -2837,7 +3786,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1302">line 1302</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1970">line 1970</a>
     </li></ul></dd>
     
 
@@ -2919,7 +3868,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line918">line 918</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line991">line 991</a>
     </li></ul></dd>
     
 
@@ -3023,7 +3972,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1109">line 1109</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1566">line 1566</a>
     </li></ul></dd>
     
 
@@ -3072,6 +4021,618 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
         
+            
+
+    
+
+    <h4 class="name" id="serializeCollection"><span class="type-signature"></span>serializeCollection<span class="signature">(options)</span><span class="type-signature"> &rarr; {string|array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Utility method to serialize a collection in a 'destructured' format</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>used to determine output of method</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delimited</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>whether to return single delimited string or an array</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>(optional) if delimited, this is delimiter to use</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>collectionIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>specify which collection to serialize data for</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1157">line 1157</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A custom, restructured aggregation of independent serializations for a single collection.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+|
+
+<span class="param-type">array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="serializeDestructured"><span class="type-signature"></span>serializeDestructured<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {string|array}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Destructured JSON serialization routine to allow alternate serialization methods.
+Internally, Loki supports destructuring via loki &quot;serializationMethod' option and 
+the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+your own structured persistence or data exchange.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>output format options for use externally to loki</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>partitioned</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>(default: false) whether db and each collection are separate</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>partition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>can be used to only output an individual collection or db (-1)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimited</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>(default: true) whether subitems are delimited or subarrays</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delimiter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>override default delimiter</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1024">line 1024</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A custom, restructured aggregation of independent serializations.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+|
+
+<span class="param-type">array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
     
 
     
@@ -3087,13 +4648,13 @@ of collections is passed then only the included collections will be tracked.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Nov 29 2016 19:17:57 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

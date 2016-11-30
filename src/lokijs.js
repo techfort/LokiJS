@@ -1008,12 +1008,15 @@
 
     /**
      * Destructured JSON serialization routine to allow alternate serialization methods.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * your own structured persistence or data exchange.
      *
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
-     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
-     * @param {string} options.delimiter - (optional) override default delimiter
+     * @param {object=} options - output format options for use externally to loki
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to only output an individual collection or db (-1)
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations.
      * @memberof Loki
@@ -1144,8 +1147,8 @@
      * Utility method to serialize a collection in a 'destructured' format
      *
      * @param {object} options - used to determine output of method
-     * @param {int} options.delimited - whether to return single delimited string or an array
-     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {int=} options.delimited - whether to return single delimited string or an array
+     * @param {string=} options.delimiter - (optional) if delimited, this is delimiter to use
      * @param {int} options.collectionIndex -  specify which collection to serialize data for
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations for a single collection.
@@ -1189,15 +1192,19 @@
 
     /**
      * Destructured JSON deserialization routine to minimize memory overhead.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * your own structured persistence or data exchange.
      *
      * @param {string|array} destructuredSource - destructured json or array to deserialize from
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
-     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
-     * @param {string} options.delimiter - (optional) override default delimiter
+     * @param {object=} options - source format options
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to deserialize only a single partition
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
      *
      * @returns {object|array} An object representation of the deserialized database, not yet applied to 'this' db or document array
+     * @memberof Loki
      */
     Loki.prototype.deserializeDestructured = function(destructuredSource, options) {
       var workarray=[];
@@ -1297,10 +1304,10 @@
     /**
      * Deserializes a destructured collection.
      *
-     * @param {object} options - used to determine output of method
-     * @param {int} options.delimited - whether to return single delimited string or an array
+     * @param {string|array} destructuredSource - destructured representation of collection to inflate
+     * @param {object} options - used to describe format of destructuredSource input
+     * @param {int} options.delimited - whether source is delimited string or an array
      * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
-     * @param {int} options.collectionIndex -  specify which collection to serialize data for
      *
      * @returns {array} an array of documents to attach to collection.data.
      * @memberof Loki
@@ -1368,6 +1375,7 @@
      *
      * @param {object} dbObject - a serialized loki database string
      * @param {object} options - apply or override collection level settings
+     * @param {bool?} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -1582,7 +1590,8 @@
      */
 
     /**
-     * In in-memory persistence adapter for an in-memory database.  (Intended for testing purposes)
+     * In in-memory persistence adapter for an in-memory database.  
+     * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
      * @constructor LokiMemoryAdapter
      */
@@ -1592,6 +1601,7 @@
 
     /**
      * Loads a serialized database from its in-memory store.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @param {function} callback - adapter callback to return load result to caller
@@ -1608,6 +1618,7 @@
 
     /**
      * Saves a serialized database to its in-memory store.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @param {function} callback - adapter callback to return load result to caller
@@ -1630,7 +1641,7 @@
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
      * only dirty collections will be saved.
      *
-     * @param {object} adapter - reference at a non-reference mode loki adapter instance.
+     * @param {object} adapter - reference to a 'non-reference' mode loki adapter instance.
      * @constructor LokiPartitioningAdapter
      */
     function LokiPartitioningAdapter(adapter) {
@@ -1653,10 +1664,11 @@
 
     /**
      * Loads a database which was partitioned into several key/value saves.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @param {function} callback - adapter callback to return load result to caller
-     * @memberof LokiMemoryAdapter
+     * @memberof LokiPartitioningAdapter
      */
     LokiPartitioningAdapter.prototype.loadDatabase = function (dbname, callback) {
       var self=this;
@@ -1713,11 +1725,13 @@
 
     /**
      * Saves a database by partioning into separate key/value saves.
+     * (Loki 'reference mode' persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {object} db - reference to internally database instance we are reconstructing.
-     * @param {int} partition - ordinal collection position to load next
+     * @param {object} dbref - reference to database which we will partition and save.
      * @param {function} callback - adapter callback to return load result to caller
+     *
+     * @memberof LokiPartitioningAdapter     
      */
     LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref, callback) {
       var self=this;

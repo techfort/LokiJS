@@ -4380,26 +4380,30 @@
     };
 
     /**
-     * find and update: pass a filtering function to select elements to be updated
-     * and apply the updatefunctino to those elements iteratively
-     * @param {function} filterFunction - filter function whose results will execute update
+     * Applies a 'mongo-like' find query object and passes all results to an update function.
+     * For filter function querying you should migrate to [updateWhere()]{@link Collection#updateWhere}.
+     *
+     * @param {object|function} filterObject - 'mongo-like' query object (or deprecated filterFunction mode)
      * @param {function} updateFunction - update function to run against filtered documents
      * @memberof Collection
      */
-    Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
-      var results = this.where(filterFunction),
-        i = 0,
-        obj;
-      try {
-        for (i; i < results.length; i++) {
-          obj = updateFunction(results[i]);
-          this.update(obj);
-        }
-
-      } catch (err) {
-        this.rollback();
-        this.console.error(err.message);
+    Collection.prototype.findAndUpdate = function (filterObject, updateFunction) {
+      if (typeof (filterObject) === "function") {
+        this.updateWhere(filterObject, updateFunction);
       }
+      else {
+        this.chain().find(filterObject).update(updateFunction);
+      }
+    };
+
+    /**
+     * Applies a 'mongo-like' find query object removes all documents which match that filter.
+     *
+     * @param {object} filterObject - 'mongo-like' query object
+     * @memberof Collection
+     */
+    Collection.prototype.findAndRemove = function(filterObject) {
+      this.chain().find(filterObject).remove();
     };
 
     /**
@@ -4654,20 +4658,42 @@
     };
 
     /**
-     * Remove all documents matching supplied filter object
-     * @param {object} query - query object to filter on
+     * Applies a filter function and passes all results to an update function.
+     *
+     * @param {function} filterFunction - filter function whose results will execute update
+     * @param {function} updateFunction - update function to run against filtered documents
+     * @memberof Collection
+     */
+    Collection.prototype.updateWhere = function(filterFunction, updateFunction) {
+      var results = this.where(filterFunction),
+        i = 0,
+        obj;
+      try {
+        for (i; i < results.length; i++) {
+          obj = updateFunction(results[i]);
+          this.update(obj);
+        }
+
+      } catch (err) {
+        this.rollback();
+        this.console.error(err.message);
+      }
+    };
+
+    /**
+     * Remove all documents matching supplied filter function.
+     * For 'mongo-like' querying you should migrate to [findAndRemove()]{@link Collection#findAndRemove}.
+     * @param {function|object} query - query object to filter on
      * @memberof Collection
      */
     Collection.prototype.removeWhere = function (query) {
       var list;
       if (typeof query === 'function') {
         list = this.data.filter(query);
+        this.remove(list);
       } else {
-        list = new Resultset(this, {
-          queryObj: query
-        });
+        this.chain().find(query).remove();
       }
-      this.remove(list);
     };
 
     Collection.prototype.removeDataOnly = function () {

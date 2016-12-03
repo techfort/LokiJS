@@ -1050,7 +1050,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5495">line 5495</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5521">line 5521</a>
     </li></ul></dd>
     
 
@@ -1226,7 +1226,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5121">line 5121</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5147">line 5147</a>
     </li></ul></dd>
     
 
@@ -1403,7 +1403,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5173">line 5173</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5199">line 5199</a>
     </li></ul></dd>
     
 
@@ -1507,7 +1507,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4486">line 4486</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4490">line 4490</a>
     </li></ul></dd>
     
 
@@ -1662,7 +1662,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5374">line 5374</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5400">line 5400</a>
     </li></ul></dd>
     
 
@@ -2368,7 +2368,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5330">line 5330</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5356">line 5356</a>
     </li></ul></dd>
     
 
@@ -2468,7 +2468,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5398">line 5398</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5424">line 5424</a>
     </li></ul></dd>
     
 
@@ -2546,7 +2546,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5482">line 5482</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5508">line 5508</a>
     </li></ul></dd>
     
 
@@ -2678,7 +2678,7 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5191">line 5191</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5217">line 5217</a>
     </li></ul></dd>
     
 
@@ -2736,15 +2736,14 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
 
     
 
-    <h4 class="name" id="findAndUpdate"><span class="type-signature"></span>findAndUpdate<span class="signature">(filterFunction, updateFunction)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="findAndRemove"><span class="type-signature"></span>findAndRemove<span class="signature">(filterObject)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    <p>find and update: pass a filtering function to select elements to be updated
-and apply the updatefunctino to those elements iteratively</p>
+    <p>Applies a 'mongo-like' find query object removes all documents which match that filter.</p>
 </div>
 
 
@@ -2780,12 +2779,147 @@ and apply the updatefunctino to those elements iteratively</p>
 
         <tr>
             
-                <td class="name"><code>filterFunction</code></td>
+                <td class="name"><code>filterObject</code></td>
             
 
             <td class="type">
             
                 
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>'mongo-like' query object</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4405">line 4405</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="findAndUpdate"><span class="type-signature"></span>findAndUpdate<span class="signature">(filterObject, updateFunction)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Applies a 'mongo-like' find query object and passes all results to an update function.
+For filter function querying you should migrate to <a href="Collection.html#updateWhere">updateWhere()</a>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filterObject</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+|
+
 <span class="param-type">function</span>
 
 
@@ -2796,7 +2930,7 @@ and apply the updatefunctino to those elements iteratively</p>
 
             
 
-            <td class="description last"><p>filter function whose results will execute update</p></td>
+            <td class="description last"><p>'mongo-like' query object (or deprecated filterFunction mode)</p></td>
         </tr>
 
     
@@ -2860,7 +2994,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4389">line 4389</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4390">line 4390</a>
     </li></ul></dd>
     
 
@@ -2991,7 +3125,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5144">line 5144</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5170">line 5170</a>
     </li></ul></dd>
     
 
@@ -3170,7 +3304,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4764">line 4764</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4790">line 4790</a>
     </li></ul></dd>
     
 
@@ -3434,7 +3568,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5346">line 5346</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5372">line 5372</a>
     </li></ul></dd>
     
 
@@ -3568,7 +3702,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4411">line 4411</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4415">line 4415</a>
     </li></ul></dd>
     
 
@@ -3747,7 +3881,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4439">line 4439</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4443">line 4443</a>
     </li></ul></dd>
     
 
@@ -3923,7 +4057,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5312">line 5312</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5338">line 5338</a>
     </li></ul></dd>
     
 
@@ -4023,7 +4157,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5412">line 5412</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5438">line 5438</a>
     </li></ul></dd>
     
 
@@ -4101,7 +4235,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5426">line 5426</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5452">line 5452</a>
     </li></ul></dd>
     
 
@@ -4228,7 +4362,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5541">line 5541</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5567">line 5567</a>
     </li></ul></dd>
     
 
@@ -4306,7 +4440,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5419">line 5419</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5445">line 5445</a>
     </li></ul></dd>
     
 
@@ -4384,7 +4518,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5454">line 5454</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5480">line 5480</a>
     </li></ul></dd>
     
 
@@ -4511,7 +4645,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5512">line 5512</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5538">line 5538</a>
     </li></ul></dd>
     
 
@@ -4642,7 +4776,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4682">line 4682</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4708">line 4708</a>
     </li></ul></dd>
     
 
@@ -4942,7 +5076,8 @@ and apply the updatefunctino to those elements iteratively</p>
 
 
 <div class="description">
-    <p>Remove all documents matching supplied filter object</p>
+    <p>Remove all documents matching supplied filter function.
+For 'mongo-like' querying you should migrate to <a href="Collection.html#findAndRemove">findAndRemove()</a>.</p>
 </div>
 
 
@@ -4984,6 +5119,9 @@ and apply the updatefunctino to those elements iteratively</p>
             <td class="type">
             
                 
+<span class="param-type">function</span>
+|
+
 <span class="param-type">object</span>
 
 
@@ -5035,7 +5173,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4661">line 4661</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4689">line 4689</a>
     </li></ul></dd>
     
 
@@ -5271,7 +5409,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5361">line 5361</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5387">line 5387</a>
     </li></ul></dd>
     
 
@@ -5402,7 +5540,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5504">line 5504</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5530">line 5530</a>
     </li></ul></dd>
     
 
@@ -5533,7 +5671,161 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4503">line 4503</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4507">line 4507</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="updateWhere"><span class="type-signature"></span>updateWhere<span class="signature">(filterFunction, updateFunction)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Applies a filter function and passes all results to an update function.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filterFunction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>filter function whose results will execute update</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>updateFunction</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>update function to run against filtered documents</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4667">line 4667</a>
     </li></ul></dd>
     
 
@@ -5664,7 +5956,7 @@ and apply the updatefunctino to those elements iteratively</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5293">line 5293</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5319">line 5319</a>
     </li></ul></dd>
     
 
@@ -5733,13 +6025,13 @@ and apply the updatefunctino to those elements iteratively</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiFsStructuredAdapter.html">LokiFsStructuredAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Nov 29 2016 19:17:57 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sat Dec 03 2016 17:48:00 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

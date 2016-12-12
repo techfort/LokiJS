@@ -1782,6 +1782,11 @@
         if (isLastPage) {
           data.pop();
           dlen = data.length;
+          // empty collections are just a delimiter meaning two blank items
+          if (data[dlen-1] === "" && dlen === 1) {
+            data.pop();
+            dlen = data.length;
+          }
         }
 
         // convert stringified array elements to object instances and push to collection data
@@ -1925,14 +1930,20 @@
         }
       };
 
-      while (true) {
-        // serialize object
-        serializedObject = JSON.stringify(coll.data[this.pageIterator.docIndex]);
-        pageBuilder += serializedObject;
-        pageLen += serializedObject.length;
+      if (coll.data.length === 0) {
+        doneWithPartition = true;
+      }
 
-        // if no more documents in collection to add, we are done with partition
-        if (++this.pageIterator.docIndex >= cdlen) doneWithPartition = true;
+      while (true) {
+        if (!doneWithPartition) {
+          // serialize object
+          serializedObject = JSON.stringify(coll.data[this.pageIterator.docIndex]);
+          pageBuilder += serializedObject;
+          pageLen += serializedObject.length;
+
+          // if no more documents in collection to add, we are done with partition
+          if (++this.pageIterator.docIndex >= cdlen) doneWithPartition = true;
+        }
         // if our current page is bigger than defined pageSize, we are done with page
         if (pageLen >= this.options.pageSize) doneWithPage = true;
 

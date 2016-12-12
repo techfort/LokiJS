@@ -370,6 +370,25 @@ describe('testing adapter functionality', function () {
     expect(db2.collections[1].data.length).toEqual(1);
     expect(db2.getCollection("items").findOne({ name : 'tyrfing'}).maker).toEqual("elves");
     expect(db2.getCollection("another").findOne({ a: 1}).b).toEqual(3);
+    
+    // verify empty collection saves with paging
+    db.addCollection("extracoll");
+    db.saveDatabase();
+    expect(mem.hashStore["sandbox.db"].savecount).toEqual(4);
+    expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
+    expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
+    expect(mem.hashStore["sandbox.db.1.0"].savecount).toEqual(2);
+    expect(mem.hashStore["sandbox.db.2.0"].savecount).toEqual(1);
+
+    // now verify loading empty collection works with paging codepath
+    db2 = new loki('sandbox.db', { adapter: adapter});
+    db2.loadDatabase();
+
+    expect(db2.collections.length).toEqual(3);
+    expect(db2.collections[0].data.length).toEqual(4);
+    expect(db2.collections[1].data.length).toEqual(1);
+    expect(db2.collections[2].data.length).toEqual(0);
+    
   });
 
   it('verify reference adapters get db reference which is copy and serializable-safe', function() {

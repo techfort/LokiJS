@@ -215,6 +215,24 @@
     LokiIndexedAdapter.prototype.deleteKey = LokiIndexedAdapter.prototype.deleteDatabase;
 
     /**
+     * Removes all database partitions and pages with the base filename passed in.
+     * This utility method does not (yet) guarantee async deletions will be completed before returning
+     *
+     * @param {string} dbname - the base filename which container, partitions, or pages are derived
+     * @memberof LokiIndexedAdapter
+     */
+    LokiIndexedAdapter.prototype.deleteDatabasePartitions = function(dbname) {
+      var self=this;
+      this.getDatabaseList(function(result) {
+        result.forEach(function(str) {
+          if (str.startsWith(dbname)) {
+            self.deleteDatabase(str);
+          }
+        });
+      });
+    };
+
+    /**
      * Retrieves object array of catalog entries for current app.
      *
      * @example

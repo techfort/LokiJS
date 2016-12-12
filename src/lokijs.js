@@ -1650,6 +1650,7 @@
      * @param {object=} options - configuration options for partitioning and paging
      * @param {bool} options.paging - (default: false) set to true to enable paging collection data.
      * @param {int} options.pageSize - (default : 25MB) you can use this to limit size of strings passed to inner adapter.
+     * @param {string} options.delimiter - allows you to override the default delimeter
      * @constructor LokiPartitioningAdapter
      */
     function LokiPartitioningAdapter(adapter, options) {

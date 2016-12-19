@@ -1190,7 +1190,9 @@ describe('loki', function () {
 
   describe('stepDynamicViewPersistence', function () {
     it('works', function testCollections() {
-      var db = new loki('testCollections');
+      // mock persistence by using memory adapter
+      var mem = new loki.LokiMemoryAdapter();
+      var db = new loki('testCollections', {adapter:mem});
       db.name = 'testCollections';
       it('DB name', function () {
         expect(db.getName()).toEqual('testCollections');

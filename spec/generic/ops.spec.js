@@ -110,4 +110,91 @@ describe("Individual operator tests", function() {
     expect(ops.$ne(0, NaN)).toEqual(true);
   });
 
+  it('$between op works as expected', function() {
+    expect(ops.$between(75, [5, 100])).toEqual(true);
+    expect(ops.$between(75, [75, 100])).toEqual(true);
+    expect(ops.$between(75, [5, 75])).toEqual(true);
+    expect(ops.$between(75, [5, 74])).toEqual(false);
+    expect(ops.$between(75, [76, 100])).toEqual(false);
+    expect(ops.$between(null, [5, 100])).toEqual(false);
+  });
+
+  it('$between find works as expected', function() {
+    // test unindexed code path    
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+    coll.insert({ name : 'mjolnir', count: 73 });
+    coll.insert({ name : 'gungnir', count: 5 });
+    coll.insert({ name : 'tyrfing', count: 15 });
+    coll.insert({ name : 'draupnir', count: 132 });
+
+    // simple inner between
+    var results = coll.chain().find({count: {$between: [10, 80]}}).simplesort('count').data();
+    expect(results.length).toEqual(2);
+    expect(results[0].count).toEqual(15);
+    expect(results[1].count).toEqual(73);
+
+    // range exceeds bounds
+    results = coll.find({count: {$between: [100, 200]}});
+    expect(results.length).toEqual(1);
+    expect(results[0].count).toEqual(132);
+
+    // no matches in range
+    expect(coll.find({count: {$between: [133, 200]}}).length).toEqual(0);
+    expect(coll.find({count: {$between: [1, 4]}}).length).toEqual(0);
+
+    // multiple low and high bounds
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+    coll.insert({ name : 'first', count: 5});
+    coll.insert({ name : 'mjolnir', count: 15 });
+    coll.insert({ name : 'gungnir', count: 15 });
+    coll.insert({ name : 'tyrfing', count: 75 });
+    coll.insert({ name : 'draupnir', count: 75 });
+    coll.insert({ name : 'last', count: 100});
+
+    results = coll.chain().find({count: {$between: [15, 75]}}).simplesort('count').data();
+    expect(results.length).toEqual(4);
+    expect(results[0].count).toEqual(15);
+    expect(results[1].count).toEqual(15);
+    expect(results[2].count).toEqual(75);
+    expect(results[3].count).toEqual(75);
+
+    // now test indexed code path    
+    var db = new loki('db', {indices: ['count']});
+    var coll = db.addCollection('coll');
+    coll.insert({ name : 'mjolnir', count: 73 });
+    coll.insert({ name : 'gungnir', count: 5 });
+    coll.insert({ name : 'tyrfing', count: 15 });
+    coll.insert({ name : 'draupnir', count: 132 });
+
+    results = coll.chain().find({count: {$between: [10, 80]}}).simplesort('count').data();
+    expect(results.length).toEqual(2);
+    expect(results[0].count).toEqual(15);
+    expect(results[1].count).toEqual(73);
+
+    results = coll.find({count: {$between: [100, 200]}});
+    expect(results.length).toEqual(1);
+    expect(results[0].count).toEqual(132);
+
+    expect(coll.find({count: {$between: [133, 200]}}).length).toEqual(0);
+    expect(coll.find({count: {$between: [1, 4]}}).length).toEqual(0);
+
+    var db = new loki('db');
+    var coll = db.addCollection('coll', {indices: ['count']});
+    coll.insert({ name : 'first', count: 5});
+    coll.insert({ name : 'mjolnir', count: 15 });
+    coll.insert({ name : 'gungnir', count: 15 });
+    coll.insert({ name : 'tyrfing', count: 75 });
+    coll.insert({ name : 'draupnir', count: 75 });
+    coll.insert({ name : 'last', count: 100});
+
+    results = coll.chain().find({count: {$between: [15, 75]}}).simplesort('count').data();
+    expect(results.length).toEqual(4);
+    expect(results[0].count).toEqual(15);
+    expect(results[1].count).toEqual(15);
+    expect(results[2].count).toEqual(75);
+    expect(results[3].count).toEqual(75);
+  });
+
 });

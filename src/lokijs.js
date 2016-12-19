@@ -324,6 +324,12 @@
         return ltHelper(a, b, true);
       },
 
+      // ex : coll.find({'orderCount': {$between: [10, 50]}});
+      $between: function (a, vals) {
+        if (a === undefined || a === null) return false;
+        return (gtHelper(a, vals[0], true) && ltHelper(a, vals[1], true));
+      },
+
       $in: function (a, b) {
         return b.indexOf(a) !== -1;
       },
@@ -434,7 +440,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in'];
+    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in', '$between'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -5147,6 +5153,45 @@
     };
 
     /**
+     * Internal method used for indexed $between.  Given a prop (index name), and a value
+     * (which may or may not yet exist) this will find the final position of that upper range value.
+     */
+    Collection.prototype.calculateRangeEnd = function (prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      if (index.length === 0) {
+        return 0;
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // hone in on start position of value
+      while (min < max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+          max = mid;
+        } else {
+          min = mid + 1;
+        }
+      }
+
+      var ubound = max;
+
+      if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        return ubound-1;
+      }
+      else {
+        return ubound;
+      }
+    };
+
+    /**
      * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
      *    this is used for collection.find() and first find filter of resultset/dynview
      *    slightly different than get() binary search in that get() hones in on 1 value,
@@ -5167,7 +5212,7 @@
       if (rcd.length === 0) {
         return [0, -1];
       }
-
+      
       var minVal = rcd[index[min]][prop];
       var maxVal = rcd[index[max]][prop];
 
@@ -5210,6 +5255,8 @@
           return [0, rcd.length - 1];
         }
         break;
+      case '$between':
+        return ([this.calculateRangeStart(prop, val[0]), this.calculateRangeEnd(prop, val[1])]);
       case '$in':
         var idxset = [],
           segResult = [];

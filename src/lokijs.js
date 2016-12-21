@@ -1432,6 +1432,7 @@
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
+        copyColl.changes = coll.changes;
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;

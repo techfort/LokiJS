@@ -450,3 +450,41 @@ describe('testing adapter functionality', function () {
   });  
 });
 
+describe('testing changesAPI', function() {
+  it('verify pending changes persist across save/load cycle', function() {
+    var mem = new loki.LokiMemoryAdapter();
+    var db = new loki('sandbox.db', { adapter: mem });
+
+    // Add a collection to the database
+    var items = db.addCollection('items', { disableChangesApi: false });
+
+    // Add some documents to the collection
+    items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    // Find and update an existing document
+    var tyrfing = items.findOne({'name': 'tyrfing'});
+    tyrfing.owner = 'arngrim';
+    items.update(tyrfing);
+
+    // memory adapter is synchronous so i will not bother with callbacks
+    db.saveDatabase();
+
+    var db2 = new loki('sandbox.db', { adapter: mem });
+    db2.loadDatabase({});
+
+    var result = JSON.parse(db2.serializeChanges());
+    expect(result.length).toEqual(5);
+
+    expect(result[0].name).toEqual("items");
+    expect(result[0].operation).toEqual("I");
+    expect(result[0].obj.name).toEqual("mjolnir");
+
+    expect(result[4].name).toEqual("items");
+    expect(result[4].operation).toEqual("U");
+    expect(result[4].obj.name).toEqual("tyrfing");
+  });
+});
+

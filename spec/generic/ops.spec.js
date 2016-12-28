@@ -110,6 +110,28 @@ describe("Individual operator tests", function() {
     expect(ops.$ne(0, NaN)).toEqual(true);
   });
 
+  it('misc eq ops works as expected', function() {
+    expect(ops.$aeq(1,11)).toEqual(false);
+    expect(ops.$aeq(1, '1')).toEqual(true);
+    expect(ops.$aeq(undefined, null)).toEqual(true);
+
+    var dt1 = new Date();
+    var dt2 = new Date();
+    dt2.setTime(dt1.getTime());
+    var dt3 = new Date();
+    dt3.setTime(dt1.getTime() - 10000);
+
+    expect(ops.$dteq(dt1, dt2)).toEqual(true);
+    expect(ops.$dteq(dt1, dt3)).toEqual(false);
+  });
+
+  it('$in op works as expected', function() {
+    expect(ops.$in(4, [1, 2, 3, 4])).toEqual(true);
+    expect(ops.$in(7, [1, 2, 3, 4])).toEqual(false);
+    expect(ops.$in("el", "hello")).toEqual(true);
+    expect(ops.$in("le", "hello")).toEqual(false);
+  });
+
   it('$between op works as expected', function() {
     expect(ops.$between(75, [5, 100])).toEqual(true);
     expect(ops.$between(75, [75, 100])).toEqual(true);

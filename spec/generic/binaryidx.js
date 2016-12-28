@@ -10,6 +10,24 @@ describe('binary indices', function () {
     ];
   });
 
+  describe('collection.clear affects binary indices correctly', function() {
+    it('works', function () {
+      var db = new loki('idxtest');
+      var t2 = JSON.parse(JSON.stringify(testRecords));
+      
+      var items = db.addCollection('users', { indices: ['name'] });
+      items.insert(testRecords);
+      expect(items.binaryIndices.name.values.length).toBe(4);
+      items.clear();
+      expect(items.binaryIndices.hasOwnProperty('name')).toEqual(true);
+      expect(items.binaryIndices.name.values.length).toBe(0);
+      items.insert(t2);
+      expect(items.binaryIndices.name.values.length).toBe(4);
+      items.clear({ removeIndices: true });
+      expect(items.binaryIndices.hasOwnProperty('name')).toEqual(false);
+    });
+  });
+
   describe('index maintained across inserts', function() {
     it('works', function () {
 

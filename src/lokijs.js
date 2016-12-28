@@ -4670,18 +4670,54 @@
 
     /**
      * Empties the collection.
+     * @param {object=} options - configure clear behavior
+     * @param {bool=} options.removeIndices - (default: false)
      * @memberof Collection
      */
-    Collection.prototype.clear = function () {
+    Collection.prototype.clear = function (options) {
+      var self = this;
+
+      options = options || {};
+
       this.data = [];
       this.idIndex = [];
-      this.binaryIndices = {};
       this.cachedIndex = null;
       this.cachedBinaryIndex = null;
       this.cachedData = null;
       this.maxId = 0;
       this.DynamicViews = [];
       this.dirty = true;
+
+      // if removing indices entirely
+      if (options.removeIndices === true) {
+        this.binaryIndices = {};
+
+        this.constraints = {
+          unique: {},
+          exact: {}
+        };
+        this.uniqueNames = [];
+      }
+      // clear indices but leave definitions in place
+      else {
+        // clear binary indices
+        var keys = Object.keys(this.binaryIndices);
+        keys.forEach(function(biname) {
+          self.binaryIndices[biname].dirty = false;
+          self.binaryIndices[biname].values = [];
+        });
+
+        // clear entire unique indices definition
+        this.constraints = {
+          unique: {},
+          exact: {}
+        };
+
+        // add definitions back
+        this.uniqueNames.forEach(function(uiname) {
+          self.ensureUniqueIndex(uiname);
+        });
+      }
     };
 
     /**

@@ -443,6 +443,10 @@
     var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in', '$between'];
 
     function clone(data, method) {
+      if (data === null || data === undefined) {
+        return null;
+      }
+
       var cloneMethod = method || 'parse-stringify',
         cloned;
 
@@ -1641,6 +1645,23 @@
       };
 
       callback();
+    };
+
+    /**
+     * Deletes a database from its in-memory store.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {function} callback - function to call when done
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.deleteDatabase = function(dbname, callback) {
+      if (this.hashStore.hasOwnProperty(dbname)) {
+        delete this.hashStore.dbname;
+      }
+      
+      if (typeof callback === "function") {
+        callback();
+      }
     };
 
     /**
@@ -3409,13 +3430,17 @@
     /**
      * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
      *     Existing options should be retained.
+     * @param {object=} options - configure removeFilter behavior
+     * @param {boolean=} options.queueSortPhase - (default: false) if true we will async rebuild view (maybe set default to true in future?)
      * @memberof DynamicView
      */
-    DynamicView.prototype.removeFilters = function () {
+    DynamicView.prototype.removeFilters = function (options) {
+      options = options || {};
+
       this.rebuildPending = false;
       this.resultset.reset();
       this.resultdata = [];
-      this.resultsdirty = false;
+      this.resultsdirty = true;
 
       this.cachedresultset = null;
 
@@ -3427,6 +3452,10 @@
       this.sortFunction = null;
       this.sortCriteria = null;
       this.sortDirty = false;
+
+      if (options.queueSortPhase === true) {
+        this.queueSortPhase();
+      }
     };
 
     /**
@@ -3687,9 +3716,13 @@
      * @memberof DynamicView
      */
     DynamicView.prototype.count = function () {
-      if (this.options.persistent) {
-        return this.resultdata.length;
+      // in order to be accurate we will pay the minimum cost (and not alter dv state management)
+      // recurring resultset data resolutions should know internally its already up to date.
+      // for persistent data this will not update resultdata nor fire rebuild event.
+      if (this.resultsdirty) {
+        this.resultdata = this.resultset.data();
       }
+
       return this.resultset.count();
     };
 

@@ -125,6 +125,20 @@ describe("Individual operator tests", function() {
     expect(ops.$dteq(dt1, dt3)).toEqual(false);
   });
 
+  it('$type op works as expected', function() {
+    expect(ops.$type('test', 'string')).toEqual(true);
+    expect(ops.$type(4, 'number')).toEqual(true);
+    expect(ops.$type({a:1}, 'object')).toEqual(true);
+    expect(ops.$type(new Date(), 'date')).toEqual(true);
+    expect(ops.$type([1,2], 'array')).toEqual(true);
+    
+    expect(ops.$type('test', 'number')).toEqual(false);
+    expect(ops.$type(4, 'string')).toEqual(false);
+    expect(ops.$type({a:1}, 'date')).toEqual(false);
+    expect(ops.$type(new Date(), 'object')).toEqual(false);
+    expect(ops.$type([1,2], 'number')).toEqual(false);
+  });
+
   it('$in op works as expected', function() {
     expect(ops.$in(4, [1, 2, 3, 4])).toEqual(true);
     expect(ops.$in(7, [1, 2, 3, 4])).toEqual(false);
@@ -217,6 +231,21 @@ describe("Individual operator tests", function() {
     expect(results[1].count).toEqual(15);
     expect(results[2].count).toEqual(75);
     expect(results[3].count).toEqual(75);
+  });
+
+  it('indexed $in find works as expected', function() {
+    // test unindexed code path    
+    var db = new loki('db');
+    var coll = db.addCollection('coll', { indices: ['count'] });
+    coll.insert({ name : 'mjolnir', count: 73 });
+    coll.insert({ name : 'gungnir', count: 5 });
+    coll.insert({ name : 'tyrfing', count: 15 });
+    coll.insert({ name : 'draupnir', count: 132 });
+
+    var results = coll.chain().find({count: {$in: [15, 73]}}).simplesort('count').data();
+    expect(results.length).toEqual(2);
+    expect(results[0].count).toEqual(15);
+    expect(results[1].count).toEqual(73);
   });
 
 });

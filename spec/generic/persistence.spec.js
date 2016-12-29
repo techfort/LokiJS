@@ -250,6 +250,35 @@ describe('testing adapter functionality', function () {
     
   });
 
+  it('verify loki deleteDatabase works', function () {
+    var memAdapter = new loki.LokiMemoryAdapter();
+    var ddb = new loki("test.db", { adapter: memAdapter });
+
+    var coll = ddb.addCollection("testcoll");
+    coll.insert({
+      name : "test1",
+      val: 100
+    });
+    coll.insert({
+      name : "test2",
+      val: 101
+    });
+    coll.insert({
+      name : "test3",
+      val: 102
+    });
+    
+    ddb.saveDatabase(function(err) {
+      expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(true);
+      expect(memAdapter.hashStore["test.db"].savecount).toEqual(1);
+      
+      ddb.deleteDatabase(function(err) {
+        expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(false);
+      });
+    });
+
+  });
+
   it('verify partioning adapter works', function() {
     var mem = new loki.LokiMemoryAdapter();
     var adapter = new loki.LokiPartitioningAdapter(mem);

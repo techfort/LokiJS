@@ -84,4 +84,17 @@ describe('collection', function () {
     expect(result[0].b).toEqual(5);
     expect(result[1].b).toEqual(8);
   });
+
+  // coll.mode(property) should return single value of property which occurs most in collection
+  // if more than one value 'ties' it will just pick one
+  it('mode works', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll');
+    coll.insert([{ a:3, b:3 }, { a:6, b:7 }, { a:1, b:2 }, { a:7, b:8 }, { a:6, b: 4}]);
+
+    // seems mode returns string so loose equality
+    var result = coll.mode('a') == 6;
+
+    expect(result).toEqual(true);
+  });
 });

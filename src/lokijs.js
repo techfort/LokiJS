@@ -4683,9 +4683,6 @@
         };
       }
 
-      // if cloning, give user back clone of 'cloned' object with $loki and meta
-      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
-
       // allow pre-insert to modify actual collection reference even if cloning
       if (!bulkInsert) {
         this.emit('pre-insert', obj);
@@ -4693,6 +4690,9 @@
       if (!this.add(obj)) {
         return undefined;
       }
+
+      // if cloning, give user back clone of 'cloned' object with $loki and meta
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
 
       this.addAutoUpdateObserver(returnObj);
       if (!bulkInsert) {

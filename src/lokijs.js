@@ -2508,6 +2508,39 @@
     };
 
     /**
+     * Instances a new anonymous collection with the documents contained in the current resultset.
+     *
+     * @param {object} collectionOptions - Options to pass to new anonymous collection construction.
+     * @returns {Collection} A reference to an anonymous collection initialized with resultset data().
+     * @memberof Resultset
+     */
+    Resultset.prototype.instance = function(collectionOptions) {
+      var docs = this.data();
+      var idx,
+        doc;
+
+      collectionOptions = collectionOptions || {};
+
+      var instanceCollection = new Collection(collectionOptions);
+
+      for(idx=0; idx<docs.length; idx++) {
+        if (this.collection.cloneObjects) {
+          doc = docs[idx];
+        }
+        else {
+          doc = clone(docs[idx], this.collection.cloneMethod);
+        }
+
+        delete doc.$loki;
+        delete doc.meta;
+
+        instanceCollection.insert(doc);
+      }
+
+      return instanceCollection;
+    };
+
+    /**
      * User supplied compare function is provided two documents to compare. (chainable)
      * @example
      *    rslt.sort(function(obj1, obj2) {
@@ -2550,7 +2583,19 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.prepareFullDocIndex();
+        // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
+        if (this.collection.binaryIndices.hasOwnProperty(propname)) {
+          // make sure index is up-to-date
+          this.collection.ensureIndex(propname);
+          // copy index values into filteredrows
+          this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
+          // we are done, return this (resultset) for further chain ops
+          return this;
+        }
+        // otherwise initialize array for sort below
+        else {
+          this.filteredrows = this.collection.prepareFullDocIndex();
+        }
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -2902,25 +2947,26 @@
 
 
       // Otherwise this is a chained query
+      // Chained queries now preserve results ordering at expense on slightly reduced unindexed performance
 
       var filter, rowIdx = 0;
 
       // If the filteredrows[] is already initialized, use it
       if (this.filterInitialized) {
         filter = this.filteredrows;
-        i = filter.length;
+        len = filter.length;
 
         // currently supporting dot notation for non-indexed conditions only
         if (usingDotNotation) {
           property = property.split('.');
-          while (i--) {
+          for(i=0; i<len; i++) {
             rowIdx = filter[i];
             if (dotSubScan(t[rowIdx], property, fun, value)) {
               result.push(rowIdx);
             }
           }
         } else {
-          while (i--) {
+          for(i=0; i<len; i++) {
             rowIdx = filter[i];
             if (fun(t[rowIdx][property], value)) {
               result.push(rowIdx);
@@ -2932,17 +2978,17 @@
       else {
         // if not searching by index
         if (!searchByIndex) {
-          i = t.length;
+          len = t.length;
 
           if (usingDotNotation) {
             property = property.split('.');
-            while (i--) {
+            for(i=0; i<len; i++) {
               if (dotSubScan(t[i], property, fun, value)) {
                 result.push(i);
               }
             }
           } else {
-            while (i--) {
+            for(i=0; i<len; i++) {
               if (fun(t[i][property], value)) {
                 result.push(i);
               }
@@ -4432,6 +4478,11 @@
 
       if (this.binaryIndices[property] && !force) {
         if (!this.binaryIndices[property].dirty) return;
+      }
+
+      // if the index is already defined and we are using adaptiveBinaryIndices and we are not forcing a rebuild, return.
+      if (this.adaptiveBinaryIndices === true && this.binaryIndices.hasOwnProperty(property) && !force) {
+        return;
       }
 
       var index = {

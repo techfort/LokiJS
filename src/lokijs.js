@@ -782,6 +782,37 @@
     };
 
     /**
+     * Copies 'this' database into a new Loki instance. Object references are shared to make lightweight.
+     *
+     * @param {object} options - apply or override collection level settings
+     * @param {bool} options.removeNonSerializable - nulls properties not safe for serialization.
+     * @memberof Loki
+     */
+    Loki.prototype.copy = function(options) {
+      var databaseCopy = new Loki(this.filename);
+      var clen, idx;
+
+      options = options || {};
+
+      // currently inverting and letting loadJSONObject do most of the work
+      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true });
+
+      // since our JSON serializeReplacer is not invoked for reference database adapters, this will let us mimic
+      if(options.hasOwnProperty("removeNonSerializable") && options.removeNonSerializable === true) {
+        databaseCopy.autosaveHandle = null;
+        databaseCopy.persistenceAdapter = null;
+
+        clen = databaseCopy.collections.length;
+        for (idx=0; idx<clen; idx++) {
+          databaseCopy.collections[idx].constraints = null;
+          databaseCopy.collections[idx].ttl = null;
+        }
+      }
+
+      return databaseCopy;
+    };
+
+    /**
      * Shorthand method for quickly creating and populating an anonymous collection.
      *    This collection is not referenced internally so upon losing scope it will be garbage collected.
      *
@@ -1352,7 +1383,13 @@
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
-        copyColl.dirty = false;
+
+        if (options && options.retainDirtyFlags === true) {
+          copyColl.dirty = coll.dirty;
+        }
+        else {
+          copyColl.dirty = false;
+        }
 
         // load each element individually
         clen = coll.data.length;
@@ -1508,12 +1545,189 @@
     | PERSISTENCE       |
     -------------------*/
 
-
     /** there are two build in persistence adapters for internal use
      * fs             for use in Nodejs type environments
      * localStorage   for use in browser environment
      * defined as helper classes here so its easy and clean to use
      */
+
+    /**
+     * In in-memory persistence adapter for an in-memory database.  (Intended for testing purposes)
+     *
+     * @constructor LokiMemoryAdapter
+     */
+    function LokiMemoryAdapter() {
+      this.hashStore = {};
+    }
+
+    /**
+     * Loads a serialized database from its in-memory store.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @returns {Promise} a Promise that resolves after the database was loaded
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.loadDatabase = function (dbname) {
+      if (this.hashStore.hasOwnProperty(dbname)) {
+        return Promise.resolve(this.hashStore[dbname].value);
+      }
+      else {
+        return Promise.reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+      }
+    };
+
+    /**
+     * Saves a serialized database to its in-memory store.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @returns {Promise} a Promise that resolves after the database was persisted
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring) {
+      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+
+      this.hashStore[dbname] = {
+        savecount: saveCount+1,
+        lastsave: new Date(),
+        value: dbstring
+      };
+
+      return Promise.resolve();
+    };
+
+    /**
+     * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
+     * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
+     * only dirty collections will be saved.
+     *
+     * @param {object} adapter - reference at a non-reference mode loki adapter instance.
+     * @constructor LokiPartitioningAdapter
+     */
+    function LokiPartitioningAdapter(adapter) {
+      this.mode = "reference";
+      this.adapter = null;
+
+      if (adapter) {
+        // reference mode adapters generally examine the structure of an entire loki database so our 'parts' would not work
+        if (adapter.mode === "reference") {
+          throw new Error("LokiPartitioningAdapter cannot be instantiated with a reference mode adapter");
+        }
+        else {
+          this.adapter = adapter;
+        }
+      }
+      else {
+        throw new Error("LokiPartitioningAdapter requires a (non-reference mode) adapter on construction");
+      }
+    }
+
+    /**
+     * Loads a database which was partitioned into several key/value saves.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @returns {Promise} a Promise that resolves after the database was loaded
+     * @memberof LokiMemoryAdapter
+     */
+    LokiPartitioningAdapter.prototype.loadDatabase = function (dbname) {
+      var self=this;
+
+      // load the db container (without data)
+      return this.adapter.loadDatabase(dbname).then(function(result) {
+        if (typeof result !== "string") {
+          throw new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()");
+        }
+
+        // I will want to use loki destructuring helper methods so i will inflate into typed instance
+        var db = JSON.parse(result);
+        var dbref = new Loki(dbname);
+        dbref.loadJSONObject(db);
+        db = null;
+
+        var clen = dbref.collections.length;
+
+        if (dbref.collections.length === 0) {
+          return dbref;
+        }
+
+        return self.loadNextPartition(dbname, dbref, 0).then(function() {
+          return dbref;
+        });
+      });
+    };
+
+    /**
+     * Used to sequentially load each collection partition, one at a time.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} db - reference to internally database instance we are reconstructing.
+     * @param {int} partition - ordinal collection position to load next
+     * @returns {Promise} a Promise that resolves after the next partition is loaded
+     */
+    LokiPartitioningAdapter.prototype.loadNextPartition = function(dbname, db, partition) {
+      var keyname = dbname + "." + partition;
+      var self=this;
+
+      return this.adapter.loadDatabase(keyname).then(function(result) {
+        var data = db.deserializeCollection(result, { delimited: true, collectionIndex: partition });
+        db.collections[partition].data = data;
+
+        if (++partition < db.collections.length) {
+          return self.loadNextPartition(dbname, db, partition);
+        }
+      });
+    };
+
+    /**
+     * Saves a database by partioning into separate key/value saves.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} db - reference to internally database instance we are reconstructing.
+     * @param {int} partition - ordinal collection position to load next
+     * @returns {Promise} a Promise that resolves after the database was deleted
+     */
+    LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref) {
+      var self=this;
+      var idx, clen = dbref.collections.length;
+      var dirtyPartitions = [-1];
+
+      // queue up dirty partitions to be saved
+      for(idx=0; idx<clen; idx++) {
+        if (dbref.collections[idx].dirty) {
+          dirtyPartitions.push(idx);
+        }
+      }
+
+      return this.saveNextPartition(dbname, dbref, dirtyPartitions);
+    };
+
+    /**
+     * Helper method used internally to save each dirty collection, one at a time.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @param {object} dbref - reference to internally database instance we are reconstructing.
+     * @param {array} dirtyPartitions - array of partition numbers which need to be saved
+     * @returns {Promise} a Promise that resolves after the next partition is saved
+     */
+    LokiPartitioningAdapter.prototype.saveNextPartition = function(dbname, dbref, dirtyPartitions) {
+      var self=this;
+      var partition = dirtyPartitions.shift();
+      var keyname = dbname + ((partition===-1)?"":("." + partition));
+
+      var result = dbref.serializeDestructured({
+        partitioned : true,
+        delimited: true,
+        partition: partition
+      });
+
+      return this.adapter.saveDatabase(keyname, result).then(function() {
+        if (dirtyPartitions.length === 0) {
+          callback(null);
+        }
+        else {
+          self.saveNextPartition(dbname, dbref, dirtyPartitions, callback);
+        }
+      });
+    };
 
     /**
      * A loki persistence adapter which persists using node fs module
@@ -1710,7 +1924,7 @@
       // check if the adapter is requesting (and supports) a 'reference' mode export
       if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // filename may seem redundant but loadDatabase will need to expect this same filename
-        saved = this.persistenceAdapter.exportDatabase(this.filename, this);
+        saved = this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}));
       }
       // otherwise just pass the serialized database to adapter
       else {
@@ -5543,6 +5757,10 @@
     Loki.LokiOps = LokiOps;
     Loki.Collection = Collection;
     Loki.KeyValueStore = KeyValueStore;
+    Loki.LokiMemoryAdapter = LokiMemoryAdapter;
+    Loki.LokiPartitioningAdapter = LokiPartitioningAdapter;
+    Loki.LokiLocalStorageAdapter = LokiLocalStorageAdapter;
+    Loki.LokiFsAdapter = LokiFsAdapter;
     Loki.persistenceAdapters = {
       fs: LokiFsAdapter,
       localStorage: LokiLocalStorageAdapter

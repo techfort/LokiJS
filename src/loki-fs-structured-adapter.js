@@ -63,10 +63,10 @@
         options.partition = -1;
       }
 
+      // if partition is -1 we will return database container with no data
       if (options.partition === -1) {
-        // instantiate a new loki database by using constructor of dbref passed in to exportDatabase
-        dbcopy = new this.dbref.constructor(this.dbref.filename);
-        dbcopy.loadJSONObject(this.dbref);
+        // instantiate lightweight clone and remove its collection data
+        dbcopy = this.dbref.copy();
 
         for(idx=0; idx < dbcopy.collections.length; idx++) {
           dbcopy.collections[idx].data = [];
@@ -199,7 +199,7 @@
      *
      * @param {string} dbname - the name to give the serialized database within the catalog.
      * @param {string} dbref - the loki database object reference to save.
-     * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @returns {Promise} a Promise that resolves after the database was exported
      * @memberof LokiFsStructuredAdapter
      */
     LokiFsStructuredAdapter.prototype.exportDatabase = function(dbname, dbref)

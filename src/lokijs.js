@@ -1445,13 +1445,20 @@
      */
     LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
       var self = this;
+      var tmpdbname = dbname + '~';
 
       return new Promise(function (resolve, reject) {
-        self.fs.writeFile(dbname, dbstring, function (err) {
+        self.fs.writeFile(tmpdbname, dbstring, function (err) {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            self.fs.rename(tmpdbname, dbname, function (err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
           }
         });
       });

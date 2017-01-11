@@ -4,5 +4,10 @@ demos/desktop_app/log
 demos/desktop_app/demo.json
 coverage/
 testCollections
+testCollections~
 LokiContinuum.db
+sandbox.db
+sandbox.db.0
+sandbox.db.1
+sandbox.db.2
 .[iI]dea

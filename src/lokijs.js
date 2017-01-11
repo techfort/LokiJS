@@ -676,6 +676,7 @@
 
     // db class is an EventEmitter
     Loki.prototype = new LokiEventEmitter();
+    Loki.prototype.constructor = Loki;
 
     // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
     // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
@@ -1351,6 +1352,7 @@
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
+        copyColl.dirty = false;
 
         // load each element individually
         clen = coll.data.length;

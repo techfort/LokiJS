@@ -1,36 +1,49 @@
-// This script is meant to diagnose and stress the ability of loki to 
-// internally serialize large databases.  I have found that within most
-// javascript engines there seems to be memory contraints and inefficiencies  
-// involved with using JSON.stringify.
+// This script can be used to stress the ability of loki to save large databases.
+// I have found that within most javascript engines there seems to be memory
+// contraints and inefficiencies involved with using JSON.stringify.
 //
-// This example creates (by default) 130,000 randomly generated objects
-// (each document being about 1.4k each)
-// which, when serialized will evaluate to roughly a 100MB string.
+// One way to limit memory overhead is to serialize smaller objects rather than
+// one large (single) JSON.stringify of the whole database.  Loki has added
+// functionality to stream output of the database rather than saving a whole
+// database as a single string.
 //
-// If you increase numObjects too high you will run out of memory
-// when serializing for save.  In that case you might need to run 
-// with a command line similar to (for about a 2GB mem allocation):
-// node --max-old-space-size=2000 stress
-//
-// Browser environments have no such customization and appear to be 
-// roughly limited to a roughly 2GB memory allocation.
-//
-// This script will be used as a reference for alternative serialization methods
-// which have a much lower overhead than the above 100M/1.4GB ratio.
+// This stress can be used to analyse memory overhead for saving a loki database.
+// Both stress.js and destress.js need to be configured to use the same serialization
+// method and adapter.  By default, this is configured to use the
+// loki-fs-structured-adapter which will stream output and input.
 
 var loki = require('../src/lokijs.js');
+var lfsa = require('../src/loki-fs-structured-adapter.js');
+var adapter = new lfsa();
 
-var numObjects = 300000;
+// number of collections to create and populate
+var numCollections = 2;
 
-var serializationMethod = "normal";
-//var serializationMethod = "pretty";
-//var serializationMethod = "destructured";
+// number of documents to populate -each- collection with
 
+// For default loki adapter you will probably max out at around (350,000/numCollections) of our test documents before exceeding memory space
+//var numObjects = 150000;
+
+// For loki fs structured adapter you will probably max out at around (750,000/numCollections) of our test documents before exceeding memory space
+var numObjects = 350000;
+
+// #
+// # USE ONE method or another and make sure to match in destress.js
+// #
+
+// Using : default loki fs adapter serialization
+/*
+var db = new loki('sandbox.db', {
+          verbose: true
+          //serializationMethod: "normal"
+});
+*/
+
+// Using : loki fs structured adapter
 var db = new loki('sandbox.db', {
           verbose: true,
-          serializationMethod: serializationMethod
+          adapter: adapter
 });
-var items = db.addCollection('items');
 
 // generate random 100 character string
 // using a more memory (overhead) efficient algorithm found at :
@@ -39,51 +52,54 @@ function genRandomVal() {
   return Math.random().toString(36).substr(2, 100);
 }
 
-function step1InsertObjects() {
-	var idx;
-    
+function stepInsertObjects() {
+	var cidx, idx;
+
+  for (cidx=0; cidx < numCollections; cidx++) {
+    var items = db.addCollection('items' + cidx);
+
     for(idx=0; idx<numObjects; idx++) {
-		items.insert({ 
-        	start : (new Date()).getTime(),
-        	first : genRandomVal(), 
-            owner: genRandomVal(), 
-            maker: genRandomVal(),
-            orders: [
-            	genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal()
-            ],
-            attribs: {
-            	a: genRandomVal(),
-                b: genRandomVal(),
-                c: genRandomVal(),
-                d: {
-                	d1: genRandomVal(),
-                	d2: genRandomVal(),
-                	d3: genRandomVal()
-                }
-            }
-        });
-	}
-    text = "";
-    console.log('inserted ' + numObjects + ' documents');
+      items.insert({
+        start : (new Date()).getTime(),
+        first : genRandomVal(),
+        owner: genRandomVal(),
+        maker: genRandomVal(),
+        orders: [
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal()
+        ],
+        attribs: {
+          a: genRandomVal(),
+          b: genRandomVal(),
+          c: genRandomVal(),
+          d: {
+            d1: genRandomVal(),
+            d2: genRandomVal(),
+            d3: genRandomVal()
+          }
+        }
+      });
+    }
+  }
+  text = "";
+  console.log('inserted ' + numObjects + ' documents');
 }
 
-function step2CalcSerializeSize() {
-//	var serializedLength = db.serialize().length;
-//	console.log('size of original database length : ' + serializedLength);
-}
+function stepSaveDatabase() {
+  var start, end;
 
-function step3SaveDatabase() {
-	db.saveDatabase(function(err) {
-		if (err === null) {
-	    	console.log('finished saving database');
-	    }
-	    else {
-	    	console.log('error encountered saving database : ' + err);
-	    }
+  start = process.hrtime();
+
+	db.saveDatabase().then(function() {
+    console.log('finished saving database');
+    logMemoryUsage("after database save : ");
+    end = process.hrtime(start);
+    console.info("database save time : %ds %dms", end[0], end[1]/1000000);
+	}, function(err) {
+    console.log('error encountered saving database : ' + err);
 	});
 }
 
@@ -95,21 +111,22 @@ function step4ReloadDatabase() {
 	});
 }
 
-function dbLoaded() {
-    console.log('loaded database from indexed db');
-	var itemsColl = db.getCollection('items');
-    console.log('number of docs in items collection: ' + itemsColl.count());
-	serializedLength = db.serialize().length;
-	console.log('size of reloaded database length : ' + serializedLength);
+function formatBytes(bytes,decimals) {
+   if(bytes == 0) return '0 Byte';
+   var k = 1000; // or 1024 for binary
+   var dm = decimals + 1 || 3;
+   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+   var i = Math.floor(Math.log(bytes) / Math.log(k));
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// set up async pauses between steps to keep browser from 
-// stopping long running random object generation step
-step1InsertObjects();
+function logMemoryUsage(msg) {
+  var pmu = process.memoryUsage();
+  console.log(msg + " > rss : " + formatBytes(pmu.rss) + " heapTotal : " + formatBytes(pmu.heapTotal) + " heapUsed : " + formatBytes(pmu.heapUsed));
+}
 
-console.log(process.memoryUsage());
+logMemoryUsage("before document inserts : ");
+stepInsertObjects();
 
-step2CalcSerializeSize();
-step3SaveDatabase();
-
-console.log(process.memoryUsage());
+logMemoryUsage("after document inserts : ");
+stepSaveDatabase();

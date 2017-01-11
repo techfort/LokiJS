@@ -457,9 +457,6 @@
         break;
       }
 
-      //if (cloneMethod === 'parse-stringify') {
-      //  cloned = JSON.parse(JSON.stringify(data));
-      //}
       return cloned;
     }
 
@@ -616,7 +613,10 @@
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
 
-      this.options = {};
+      this.options = {
+        serializationMethod: options && options.hasOwnProperty('serializationMethod') ? options.serializationMethod : 'normal',
+        destructureDelimiter: options && options.hasOwnProperty('destructureDelimiter') ? options.destructureDelimiter : '$<\n'
+      };
 
       // currently keeping persistenceMethod and persistenceAdapter as loki level properties that
       // will not or cannot be deserialized.  You are required to configure persistence every time
@@ -699,6 +699,8 @@
      * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
      * @param {boolean} options.autoload - enables autoload on loki instantiation
      * @param {object} options.inflate - options that are passed to loadDatabase if autoload enabled
+     * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
+     * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
      * @returns {Promise} a Promise that resolves after initialization and (if enabled) autoloading the database
      * @memberof Loki
      */
@@ -729,6 +731,16 @@
           this.persistenceAdapter = new persistenceMethods[this.options.persistenceMethod]();
         }
         // should be throw an error here, or just fall back to defaults ??
+      }
+
+      // ensure defaults exists for options which were not set
+      if (!this.options.hasOwnProperty('serializationMethod')) {
+        this.options.serializationMethod = 'normal';
+      }
+
+      // ensure passed or default option exists
+      if (!this.options.hasOwnProperty('destructureDelimiter')) {
+        this.options.destructureDelimiter = '$<\n';
       }
 
       // if by now there is no adapter specified by user nor derived from persistenceMethod: use sensible defaults
@@ -910,10 +922,90 @@
      * @memberof Loki
      */
     Loki.prototype.serialize = function () {
-      return JSON.stringify(this, this.serializeReplacer, 2);
+      switch(this.options.serializationMethod) {
+        case "normal": return JSON.stringify(this, this.serializeReplacer);
+        case "pretty": return JSON.stringify(this, this.serializeReplacer, 2);
+        case "destructured": return this.serializeDestructured();
+        default: return JSON.stringify(this, this.serializeReplacer);
+      }
+
     };
+
     // alias of serialize
     Loki.prototype.toJson = Loki.prototype.serialize;
+
+    /**
+     * Destructured JSON serialization routine to minimize memory overhead.
+     * Logic might find more usefulness for streaming data purposes where overhead can be even less.
+     *
+     * @returns {string} A custom, delimited aggregation of independent serializations.
+     */
+    Loki.prototype.serializeDestructured = function() {
+      var delim = this.options.destructureDelimiter;
+      var collCount = this.collections.length;
+      var idx, docidx, doccount;
+      var dstlines = [];
+
+      var cdb = new Loki(this.filename);
+      cdb.loadJSONObject(this);
+
+      for(idx=0; idx < collCount; idx++) {
+        cdb.collections[idx].data = [];
+      }
+
+      dstlines.push(cdb.serialize());
+      cdb = null;
+
+      for(idx=0; idx < collCount; idx++) {
+        doccount = this.collections[idx].data.length;
+        for(docidx=0; docidx<doccount; docidx++) {
+          dstlines.push(JSON.stringify(this.collections[idx].data[docidx]));
+        }
+        dstlines.push("");
+      }
+      dstlines.push("");
+
+      return dstlines.join(delim);
+    };
+
+    /**
+     * Destructured JSON deserialization routine to minimize memory overhead.
+     *
+     * @returns {object} An object representation of the deserialized database
+     */
+    Loki.prototype.deserializeDestructured = function(destructuredJson) {
+      var delim = this.options.destructureDelimiter;
+      var dstlines = destructuredJson.split(delim);
+      var len=dstlines.length;
+      var collIndex=0, collCount, lineIndex=1, done=false;
+      var currLine, currObject;
+
+      if (len === 0) {
+        return null;
+      }
+
+      // first line is database and collection shells
+      var cdb = JSON.parse(dstlines[0]);
+      collCount = cdb.collections.length;
+
+      while (!done) {
+        currLine = dstlines[lineIndex++];
+
+        // empty string indicates either end of collection or end of file
+        if (currLine === "") {
+          // if no more collections to load into, we are done
+          if (++collIndex > collCount) {
+            done = true;
+          }
+        }
+        else {
+          currObject = JSON.parse(currLine);
+          cdb.collections[collIndex].data.push(currObject);
+        }
+      }
+
+      return cdb;
+    };
 
     /**
      * Inflates a loki database from a serialized JSON string
@@ -927,7 +1019,13 @@
       if (serializedDb.length === 0) {
         dbObject = {};
       } else {
-        dbObject = JSON.parse(serializedDb);
+        // using option defined in instantiated db not what was in serialized db
+        switch (this.options.serializationMethod) {
+          case "normal":
+          case "pretty": dbObject = JSON.parse(serializedDb); break;
+          case "destructured": dbObject = this.deserializeDestructured(serializedDb); break;
+          default:  dbObject = JSON.parse(serializedDb); break;
+        }
       }
 
       this.loadJSONObject(dbObject, options);

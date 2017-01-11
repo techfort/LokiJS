@@ -21,8 +21,12 @@
 
 var loki = require('../src/lokijs.js');
 
+//var serializationMethod = "normal";
+var serializationMethod = "destructured";
+
 var db = new loki('sandbox.db', {
-          verbose: true 
+          verbose: true,
+          serializationMethod: serializationMethod
 });
 var items = db.addCollection('items');
 
@@ -46,7 +50,8 @@ function step4ReloadDatabase() {
 	db = new loki('sandbox.db', {
 		verbose: true,
 		autoload: true,
-		autoloadCallback: dbLoaded
+		autoloadCallback: dbLoaded,
+    serializationMethod: serializationMethod
 	});
 }
 

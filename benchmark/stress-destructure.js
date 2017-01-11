@@ -20,15 +20,10 @@
 
 var loki = require('../src/lokijs.js');
 
-var numObjects = 300000;
-
-var serializationMethod = "normal";
-//var serializationMethod = "pretty";
-//var serializationMethod = "destructured";
+var numObjects = 130000;
 
 var db = new loki('sandbox.db', {
-          verbose: true,
-          serializationMethod: serializationMethod
+          verbose: true 
 });
 var items = db.addCollection('items');
 
@@ -76,15 +71,48 @@ function step2CalcSerializeSize() {
 //	console.log('size of original database length : ' + serializedLength);
 }
 
+function destructure() {
+  var delim = "$<\n"; // move to database option
+  var collCount = db.collections.length;
+  var idx, docidx, doccount;
+  var dstlines = [];
+  
+  // destructured format will serialize database along with collections without any data
+  // as the first delimited string
+  
+  // make copy so that we do not alter original database
+  // delete all data/object references from collection copy.
+  var cdb = new loki(db.name);
+  cdb.loadJSONObject(db);
+  for(idx=0; idx < collCount; idx++) {
+    cdb.collections[idx].data = [];
+  }
+  
+  dstlines.push(cdb.serialize());
+
+  // for each collection 
+  for(idx=0; idx < collCount; idx++) {
+    doccount = db.collections[idx].data.length;
+    for(docidx=0; docidx<doccount; docidx++) {
+      dstlines.push(JSON.stringify(db.collections[idx].data[docidx]));
+    }
+    dstlines.push("");
+  }
+  
+  return dstlines.join(delim);
+}
+
 function step3SaveDatabase() {
-	db.saveDatabase(function(err) {
-		if (err === null) {
-	    	console.log('finished saving database');
-	    }
-	    else {
-	    	console.log('error encountered saving database : ' + err);
-	    }
-	});
+  var result = destructure();
+  console.log("destructured json length : " + result.length);
+//	db.saveDatabase(function(err) {
+//		if (err === null) {
+//	    	console.log('finished saving database');
+//	    }
+//	    else {
+//	    	console.log('error encountered saving database : ' + err);
+//	    }
+//	});
 }
 
 function step4ReloadDatabase() {
@@ -111,5 +139,6 @@ console.log(process.memoryUsage());
 
 step2CalcSerializeSize();
 step3SaveDatabase();
+//step4ReloadDatabase();
 
 console.log(process.memoryUsage());

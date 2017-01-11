@@ -37,7 +37,7 @@ var db = new loki(&quot;test.db&quot;);</code></pre><p>If you expect your databa
 <pre class="prettyprint source lang-javascript"><code>var loki = require('../src/lokijs.js');
 var lfsa = require('../src/loki-fs-structured-adapter.js');
 
-var db = new loki('sandbox.db', { adapter : lfsa});</code></pre><h1>Web QuickStart</h1><p>If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5gb so that won't last long but here is how to quickly get started experimenting with lokijs :</p>
+var db = new loki('sandbox.db', { adapter : lfsa});</code></pre><h1>Web QuickStart</h1><p>If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5MB so that won't last long but here is how to quickly get started experimenting with lokijs :</p>
 <pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;test.db&quot;);</code></pre><p>If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  More information follows on this adapter but here is how to get started quickly with this adapter :</p>
 <pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
 &lt;script src=&quot;../../src/loki-indexed-adapter.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var idbAdapter = new LokiIndexedAdapter();

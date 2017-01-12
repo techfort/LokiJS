@@ -165,6 +165,24 @@ describe('cloning behavior', function () {
     });
   });
 
+  describe('collection by() cloning works with no data', function() {
+    it('works', function () {
+      var cdb = new loki('cloningEnabled');
+      var citems = db.addCollection('items', {
+        clone: true,
+        unique: ['name']
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      
+      // we dont have any items so this should return null
+      var result = citems.by('name', 'gungnir');
+      expect(result).toEqual(null);
+      result = citems.by('name', 'mjolnir');
+      expect(result.owner).toEqual('thor');
+    });
+  });
+
   describe('resultset data cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');

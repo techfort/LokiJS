@@ -443,6 +443,10 @@
     var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in', '$between'];
 
     function clone(data, method) {
+      if (data === null || data === undefined) {
+        return null;
+      }
+
       var cloneMethod = method || 'parse-stringify',
         cloned;
 
@@ -1610,6 +1614,21 @@
     };
 
     /**
+     * Deletes a database from its in-memory store.
+     *
+     * @param {string} dbname - name of the database (filename/keyname)
+     * @returns {Promise} a Promise that resolves after the database was deleted
+     * @memberof LokiMemoryAdapter
+     */
+    LokiMemoryAdapter.prototype.deleteDatabase = function(dbname) {
+      if (this.hashStore.hasOwnProperty(dbname)) {
+        delete this.hashStore.dbname;
+      }
+
+      return Promise.resolve();
+    };
+
+    /**
      * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
      * only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
@@ -2405,6 +2424,39 @@
     };
 
     /**
+     * Instances a new anonymous collection with the documents contained in the current resultset.
+     *
+     * @param {object} collectionOptions - Options to pass to new anonymous collection construction.
+     * @returns {Collection} A reference to an anonymous collection initialized with resultset data().
+     * @memberof Resultset
+     */
+    Resultset.prototype.instance = function(collectionOptions) {
+      var docs = this.data();
+      var idx,
+        doc;
+
+      collectionOptions = collectionOptions || {};
+
+      var instanceCollection = new Collection(collectionOptions);
+
+      for(idx=0; idx<docs.length; idx++) {
+        if (this.collection.cloneObjects) {
+          doc = docs[idx];
+        }
+        else {
+          doc = clone(docs[idx], this.collection.cloneMethod);
+        }
+
+        delete doc.$loki;
+        delete doc.meta;
+
+        instanceCollection.insert(doc);
+      }
+
+      return instanceCollection;
+    };
+
+    /**
      * User supplied compare function is provided two documents to compare. (chainable)
      * @example
      *    rslt.sort(function(obj1, obj2) {
@@ -2447,7 +2499,19 @@
     Resultset.prototype.simplesort = function (propname, isdesc) {
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
-        this.filteredrows = this.collection.prepareFullDocIndex();
+        // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
+        if (this.collection.binaryIndices.hasOwnProperty(propname)) {
+          // make sure index is up-to-date
+          this.collection.ensureIndex(propname);
+          // copy index values into filteredrows
+          this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
+          // we are done, return this (resultset) for further chain ops
+          return this;
+        }
+        // otherwise initialize array for sort below
+        else {
+          this.filteredrows = this.collection.prepareFullDocIndex();
+        }
       }
 
       if (typeof (isdesc) === 'undefined') {
@@ -2799,25 +2863,26 @@
 
 
       // Otherwise this is a chained query
+      // Chained queries now preserve results ordering at expense on slightly reduced unindexed performance
 
       var filter, rowIdx = 0;
 
       // If the filteredrows[] is already initialized, use it
       if (this.filterInitialized) {
         filter = this.filteredrows;
-        i = filter.length;
+        len = filter.length;
 
         // currently supporting dot notation for non-indexed conditions only
         if (usingDotNotation) {
           property = property.split('.');
-          while (i--) {
+          for(i=0; i<len; i++) {
             rowIdx = filter[i];
             if (dotSubScan(t[rowIdx], property, fun, value)) {
               result.push(rowIdx);
             }
           }
         } else {
-          while (i--) {
+          for(i=0; i<len; i++) {
             rowIdx = filter[i];
             if (fun(t[rowIdx][property], value)) {
               result.push(rowIdx);
@@ -2829,17 +2894,17 @@
       else {
         // if not searching by index
         if (!searchByIndex) {
-          i = t.length;
+          len = t.length;
 
           if (usingDotNotation) {
             property = property.split('.');
-            while (i--) {
+            for(i=0; i<len; i++) {
               if (dotSubScan(t[i], property, fun, value)) {
                 result.push(i);
               }
             }
           } else {
-            while (i--) {
+            for(i=0; i<len; i++) {
               if (fun(t[i][property], value)) {
                 result.push(i);
               }
@@ -3327,13 +3392,17 @@
     /**
      * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
      *     Existing options should be retained.
+     * @param {object=} options - configure removeFilter behavior
+     * @param {boolean=} options.queueSortPhase - (default: false) if true we will async rebuild view (maybe set default to true in future?)
      * @memberof DynamicView
      */
-    DynamicView.prototype.removeFilters = function () {
+    DynamicView.prototype.removeFilters = function (options) {
+      options = options || {};
+
       this.rebuildPending = false;
       this.resultset.reset();
       this.resultdata = [];
-      this.resultsdirty = false;
+      this.resultsdirty = true;
 
       this.cachedresultset = null;
 
@@ -3345,6 +3414,10 @@
       this.sortFunction = null;
       this.sortCriteria = null;
       this.sortDirty = false;
+
+      if (options.queueSortPhase === true) {
+        this.queueSortPhase();
+      }
     };
 
     /**
@@ -3605,9 +3678,13 @@
      * @memberof DynamicView
      */
     DynamicView.prototype.count = function () {
-      if (this.options.persistent) {
-        return this.resultdata.length;
+      // in order to be accurate we will pay the minimum cost (and not alter dv state management)
+      // recurring resultset data resolutions should know internally its already up to date.
+      // for persistent data this will not update resultdata nor fire rebuild event.
+      if (this.resultsdirty) {
+        this.resultdata = this.resultset.data();
       }
+
       return this.resultset.count();
     };
 
@@ -4319,6 +4396,11 @@
         if (!this.binaryIndices[property].dirty) return;
       }
 
+      // if the index is already defined and we are using adaptiveBinaryIndices and we are not forcing a rebuild, return.
+      if (this.adaptiveBinaryIndices === true && this.binaryIndices.hasOwnProperty(property) && !force) {
+        return;
+      }
+
       var index = {
         'name': property,
         'dirty': true,
@@ -4559,9 +4641,6 @@
         };
       }
 
-      // if cloning, give user back clone of 'cloned' object with $loki and meta
-      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
-
       // allow pre-insert to modify actual collection reference even if cloning
       if (!bulkInsert) {
         this.emit('pre-insert', obj);
@@ -4569,6 +4648,9 @@
       if (!this.add(obj)) {
         return undefined;
       }
+
+      // if cloning, give user back clone of 'cloned' object with $loki and meta
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
 
       this.addAutoUpdateObserver(returnObj);
       if (!bulkInsert) {
@@ -4579,18 +4661,54 @@
 
     /**
      * Empties the collection.
+     * @param {object=} options - configure clear behavior
+     * @param {bool=} options.removeIndices - (default: false)
      * @memberof Collection
      */
-    Collection.prototype.clear = function () {
+    Collection.prototype.clear = function (options) {
+      var self = this;
+
+      options = options || {};
+
       this.data = [];
       this.idIndex = [];
-      this.binaryIndices = {};
       this.cachedIndex = null;
       this.cachedBinaryIndex = null;
       this.cachedData = null;
       this.maxId = 0;
       this.DynamicViews = [];
       this.dirty = true;
+
+      // if removing indices entirely
+      if (options.removeIndices === true) {
+        this.binaryIndices = {};
+
+        this.constraints = {
+          unique: {},
+          exact: {}
+        };
+        this.uniqueNames = [];
+      }
+      // clear indices but leave definitions in place
+      else {
+        // clear binary indices
+        var keys = Object.keys(this.binaryIndices);
+        keys.forEach(function(biname) {
+          self.binaryIndices[biname].dirty = false;
+          self.binaryIndices[biname].values = [];
+        });
+
+        // clear entire unique indices definition
+        this.constraints = {
+          unique: {},
+          exact: {}
+        };
+
+        // add definitions back
+        this.uniqueNames.forEach(function(uiname) {
+          self.ensureUniqueIndex(uiname);
+        });
+      }
     };
 
     /**

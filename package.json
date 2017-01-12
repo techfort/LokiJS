@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "description": "Fast document oriented javascript in-memory database",
   "homepage": "http://lokijs.org",
   "main": "src/lokijs.js",
@@ -46,6 +46,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "es6-promise": "^4.0.5",
     "istanbul": "^0.4.4",
     "jasmine": "^2.4.1",
     "jsdoc": "^3.4.0",

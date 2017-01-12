@@ -1622,7 +1622,7 @@
      */
     LokiMemoryAdapter.prototype.deleteDatabase = function(dbname) {
       if (this.hashStore.hasOwnProperty(dbname)) {
-        delete this.hashStore.dbname;
+        delete this.hashStore[dbname];
       }
 
       return Promise.resolve();

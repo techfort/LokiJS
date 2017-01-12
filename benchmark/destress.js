@@ -20,18 +20,29 @@ var db;
 var start, end;
 
 //var serializationMethod = "normal";
+// #
+// # Choose -one- method of serialization and make sure to match in destress.js
+// #
+
+//var mode = "fs-normal";
+//var mode = "fs-structured";
+//var mode = "fs-partitioned";
+var mode = "fs-structured-partitioned";
+
+var adapter;
+
+switch (mode) {
+  case "fs-normal": 
+  case "fs-structured": adapter = new loki.LokiFsAdapter(); break;
+  case "fs-partitioned": adapter = new loki.LokiPartitioningAdapter(new loki.LokiFsAdapter()); break;
+  case "fs-structured-partitioned" : adapter = new lfsa(); break;
+  default:adapter = new loki.LokiFsAdapter(); break;
+};
+
+console.log(mode);
 
 function reloadDatabase() {
   start = process.hrtime();
-
-  // ## USE ONE method or another and make sure to match in stress.js
-
-  // default loki fs adapter serialization
-	//db = new loki('sandbox.db', {
-  //  verbose: true,
-  //  autoload: true,
-  //  autoloadCallback: dbLoaded
-  //});
 
   // loki fs structured adapter
   db = new loki('sandbox.db', {

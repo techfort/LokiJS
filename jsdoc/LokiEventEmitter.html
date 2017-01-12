@@ -93,7 +93,7 @@ listeners that have been added to the event through the on(event, callback) meth
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line489">line 489</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line495">line 495</a>
     </li></ul></dd>
     
 
@@ -134,6 +134,69 @@ listeners that have been added to the event through the on(event, callback) meth
 
     
         <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="addListener"><span class="type-signature"></span>addListener<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>Alias of LokiEventEmitter.prototype.on
+addListener(eventName, listener) - adds a listener to the queue of callbacks associated to an event</p>
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line578">line 578</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
 
         
             
@@ -231,7 +294,7 @@ Default is false, which means events are synchronous</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line510">line 510</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line516">line 516</a>
     </li></ul></dd>
     
 
@@ -341,7 +404,7 @@ Default is false, which means events are synchronous</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line502">line 502</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line508">line 508</a>
     </li></ul></dd>
     
 
@@ -513,7 +576,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line536">line 536</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line552">line 552</a>
     </li></ul></dd>
     
 
@@ -594,6 +657,9 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
             
                 
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Array.&lt;string></span>
 
 
             
@@ -603,7 +669,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last"><p>the name of the event to listen to</p></td>
+            <td class="description last"><p>the name(s) of the event(s) to listen to</p></td>
         </tr>
 
     
@@ -667,7 +733,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line519">line 519</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line525">line 525</a>
     </li></ul></dd>
     
 
@@ -770,6 +836,9 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
             
                 
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Array.&lt;string></span>
 
 
             
@@ -779,7 +848,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 
             
 
-            <td class="description last"><p>the name of the event which the listener is attached to</p></td>
+            <td class="description last"><p>the name(s) of the event(s) which the listener is attached to</p></td>
         </tr>
 
     
@@ -843,7 +912,7 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line560">line 560</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line586">line 586</a>
     </li></ul></dd>
     
 
@@ -885,13 +954,13 @@ provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener 
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiFsStructuredAdapter.html">LokiFsStructuredAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Dec 18 2016 19:39:52 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

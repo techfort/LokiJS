@@ -1,55 +1,77 @@
-// This script can be used to stress the ability of loki to save large databases.
-// I have found that within most javascript engines there seems to be memory
+'use strict';
+// This script can be used to stress the ability of loki to save large databases.  
+// I have found that within most javascript engines there seems to be memory 
 // contraints and inefficiencies involved with using JSON.stringify.
 //
 // One way to limit memory overhead is to serialize smaller objects rather than
-// one large (single) JSON.stringify of the whole database.  Loki has added
-// functionality to stream output of the database rather than saving a whole
-// database as a single string.
+// one large (single) JSON.stringify of the whole database.  
+//
+// The LokiFsStructuredAdapter streams the database in an out as a series
+// of smaller, individual serializations.  It also partitions database into 
+//
+// The native node fs adapter is hands down the most memory efficient and 
+// fastest adapter if you are using node.js.  It accomplishes this by 
+// using io streams to save and load the database to disk rather than saving 
+// the whole database as a single string. 
 //
 // This stress can be used to analyse memory overhead for saving a loki database.
 // Both stress.js and destress.js need to be configured to use the same serialization
 // method and adapter.  By default, this is configured to use the
 // loki-fs-structured-adapter which will stream output and input.
 
+// On my first review i saw no significant benefit to "destructured" format if you
+// are going to save in single file, but subsequent benchmarks show that saves
+// are actually faster.  I wasn't expecting this and if i had to guess at why I would
+// guess that by not doing one huge JSON.stringify, but instead doing many smaller 
+// ones, that this is faster than whatever string manipulation they do in a single 
+// deep object scan.  Since this serialization is done within db.saveDatabase()
+// it showed up on my disk io benchmark portion of this stress test.
+
+// The closer you get to running out of heap space, the less memory is left over 
+// for io bufferring so saves are slower.  A few hundred megs of free heap space
+// will keep db save io speeds from exponentially rising.
+
+var crypto = require("crypto"); // for random string generation
 var loki = require('../src/lokijs.js');
 var lfsa = require('../src/loki-fs-structured-adapter.js');
-var adapter = new lfsa();
 
 // number of collections to create and populate
 var numCollections = 2;
 
 // number of documents to populate -each- collection with
-
-// For default loki adapter you will probably max out at around (350,000/numCollections) of our test documents before exceeding memory space
-//var numObjects = 150000;
-
-// For loki fs structured adapter you will probably max out at around (750,000/numCollections) of our test documents before exceeding memory space
-var numObjects = 350000;
+// if using 2 collections, will probably max @ 75000, structured adapter @ 310000
+var numObjects = 150000;  
 
 // #
-// # USE ONE method or another and make sure to match in destress.js
+// # Choose -one- method of serialization and make sure to match in destress.js
 // #
 
-// Using : default loki fs adapter serialization
-/*
-var db = new loki('sandbox.db', {
-          verbose: true
-          //serializationMethod: "normal"
-});
-*/
+//var mode = "fs-normal";
+//var mode = "fs-structured";
+//var mode = "fs-partitioned";
+var mode = "fs-structured-partitioned";
 
-// Using : loki fs structured adapter
-var db = new loki('sandbox.db', {
-          verbose: true,
-          adapter: adapter
+var adapter;
+
+switch (mode) {
+  case "fs-normal": 
+  case "fs-structured": adapter = new loki.LokiFsAdapter(); break;
+  case "fs-partitioned": adapter = new loki.LokiPartitioningAdapter(new loki.LokiFsAdapter()); break;
+  case "fs-structured-partitioned" : adapter = new lfsa(); break;
+  default:adapter = new loki.LokiFsAdapter(); break;
+};
+
+console.log(mode);
+
+var db = new loki('sandbox.db', { 
+  adapter : adapter, 
+  serializationMethod: (mode === "fs-structured")?"destructured":"normal" 
 });
 
-// generate random 100 character string
-// using a more memory (overhead) efficient algorithm found at :
-// http://stackoverflow.com/a/8084248
+// using less 'leaky' way to generate random strings
+// node specific
 function genRandomVal() {
-  return Math.random().toString(36).substr(2, 100);
+  return crypto.randomBytes(50).toString('hex');
 }
 
 function stepInsertObjects() {
@@ -83,9 +105,9 @@ function stepInsertObjects() {
         }
       });
     }
+
+    console.log('inserted ' + numObjects + ' documents');
   }
-  text = "";
-  console.log('inserted ' + numObjects + ' documents');
 }
 
 function stepSaveDatabase() {

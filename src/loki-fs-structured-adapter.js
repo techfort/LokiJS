@@ -47,8 +47,8 @@
     /**
      * Generator for constructing lines for file streaming output of db container or collection.
      *
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
+     * @param {object=} options - output format options for use externally to loki
+     * @param {int=} options.partition - can be used to only output an individual collection or db (-1)
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations.
      * @memberof LokiFsStructuredAdapter
@@ -180,8 +180,8 @@
      * @memberof LokiFsStructuredAdapter
      */
     LokiFsStructuredAdapter.prototype.getPartition = function*() {
-      var idx, len=this.dirtyPartitions.length;
-      var clen = this.dbref.collections.length;
+      var idx,
+        clen = this.dbref.collections.length;
 
       // since database container (partition -1) doesn't have dirty flag at db level, always save
       yield -1;
@@ -214,6 +214,9 @@
       return this.saveNextPartition(dbname, pi);
     };
 
+    /**
+     * Utility method for queueing one save at a time
+     */
     LokiFsStructuredAdapter.prototype.saveNextPartition = function(dbname, pi) {
       var li;
       var filename;

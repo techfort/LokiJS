@@ -324,6 +324,12 @@
         return ltHelper(a, b, true);
       },
 
+      // ex : coll.find({'orderCount': {$between: [10, 50]}});
+      $between: function (a, vals) {
+        if (a === undefined || a === null) return false;
+        return (gtHelper(a, vals[0], true) && ltHelper(a, vals[1], true));
+      },
+
       $in: function (a, b) {
         return b.indexOf(a) !== -1;
       },
@@ -434,7 +440,7 @@
     };
 
     // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in'];
+    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in', '$between'];
 
     function clone(data, method) {
       var cloneMethod = method || 'parse-stringify',
@@ -973,12 +979,15 @@
 
     /**
      * Destructured JSON serialization routine to allow alternate serialization methods.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
+     * your own structured persistence or data exchange.
      *
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
-     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
-     * @param {string} options.delimiter - (optional) override default delimiter
+     * @param {object=} options - output format options for use externally to loki
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to only output an individual collection or db (-1)
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations.
      * @memberof Loki
@@ -1109,8 +1118,8 @@
      * Utility method to serialize a collection in a 'destructured' format
      *
      * @param {object} options - used to determine output of method
-     * @param {int} options.delimited - whether to return single delimited string or an array
-     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {int=} options.delimited - whether to return single delimited string or an array
+     * @param {string=} options.delimiter - (optional) if delimited, this is delimiter to use
      * @param {int} options.collectionIndex -  specify which collection to serialize data for
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations for a single collection.
@@ -1154,15 +1163,19 @@
 
     /**
      * Destructured JSON deserialization routine to minimize memory overhead.
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
+     * your own structured persistence or data exchange.
      *
      * @param {string|array} destructuredSource - destructured json or array to deserialize from
-     * @param {object} options - (optional) output format options for use externally to loki
-     * @param {bool} options.partitioned - (default: false) whether db and each collection are separate
-     * @param {int} options.partition - (optional) can be used to only output an individual collection or db (-1)
-     * @param {bool} options.delimited - (default: true) whether subitems are delimited or subarrays
-     * @param {string} options.delimiter - (optional) override default delimiter
+     * @param {object=} options - source format options
+     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {int=} options.partition - can be used to deserialize only a single partition
+     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {string=} options.delimiter - override default delimiter
      *
      * @returns {object|array} An object representation of the deserialized database, not yet applied to 'this' db or document array
+     * @memberof Loki
      */
     Loki.prototype.deserializeDestructured = function(destructuredSource, options) {
       var workarray=[];
@@ -1262,10 +1275,10 @@
     /**
      * Deserializes a destructured collection.
      *
-     * @param {object} options - used to determine output of method
-     * @param {int} options.delimited - whether to return single delimited string or an array
+     * @param {string|array} destructuredSource - destructured representation of collection to inflate
+     * @param {object} options - used to describe format of destructuredSource input
+     * @param {int} options.delimited - whether source is delimited string or an array
      * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
-     * @param {int} options.collectionIndex -  specify which collection to serialize data for
      *
      * @returns {array} an array of documents to attach to collection.data.
      * @memberof Loki
@@ -1333,6 +1346,7 @@
      *
      * @param {object} dbObject - a serialized loki database string
      * @param {object} options - apply or override collection level settings
+     * @param {bool?} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -1383,6 +1397,7 @@
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
+        copyColl.changes = coll.changes;
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;
@@ -1477,11 +1492,7 @@
         }
       }
 
-      if (!saved) {
-        saved = Promise.resolve();
-      }
-
-      return saved.then(function () {
+      return Promise.resolve(saved).then(function () {
         self.emit('close');
       });
     };
@@ -1552,7 +1563,8 @@
      */
 
     /**
-     * In in-memory persistence adapter for an in-memory database.  (Intended for testing purposes)
+     * In in-memory persistence adapter for an in-memory database.
+     * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
      * @constructor LokiMemoryAdapter
      */
@@ -1562,6 +1574,7 @@
 
     /**
      * Loads a serialized database from its in-memory store.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @returns {Promise} a Promise that resolves after the database was loaded
@@ -1578,6 +1591,7 @@
 
     /**
      * Saves a serialized database to its in-memory store.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @returns {Promise} a Promise that resolves after the database was persisted
@@ -1598,17 +1612,30 @@
     /**
      * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
-     * only dirty collections will be saved.
+     * only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
+     * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter).
+     * A dirty collection that spans three pages will save all three pages again
+     * Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a
+     * single indexeddb row.  If a single document update causes the collection to be flagged as dirty, all
+     * of that collection's pages will be written on next save.
      *
-     * @param {object} adapter - reference at a non-reference mode loki adapter instance.
+     * @param {object} adapter - reference to a 'non-reference' mode loki adapter instance.
+     * @param {object=} options - configuration options for partitioning and paging
+     * @param {bool} options.paging - (default: false) set to true to enable paging collection data.
+     * @param {int} options.pageSize - (default : 25MB) you can use this to limit size of strings passed to inner adapter.
+     * @param {string} options.delimiter - allows you to override the default delimeter
      * @constructor LokiPartitioningAdapter
      */
-    function LokiPartitioningAdapter(adapter) {
+    function LokiPartitioningAdapter(adapter, options) {
       this.mode = "reference";
       this.adapter = null;
+      this.options = options || {};
+      this.dbref = null;
+      this.dbname = "";
+      this.pageIterator = {};
 
+      // verify user passed an appropriate adapter
       if (adapter) {
-        // reference mode adapters generally examine the structure of an entire loki database so our 'parts' would not work
         if (adapter.mode === "reference") {
           throw new Error("LokiPartitioningAdapter cannot be instantiated with a reference mode adapter");
         }
@@ -1619,10 +1646,25 @@
       else {
         throw new Error("LokiPartitioningAdapter requires a (non-reference mode) adapter on construction");
       }
+
+      // set collection paging defaults
+      if (!this.options.hasOwnProperty("paging")) {
+        this.options.paging = false;
+      }
+
+      // default to page size of 25 megs (can be up to your largest serialized object size larger than this)
+      if (!this.options.hasOwnProperty("pageSize")) {
+        this.options.pageSize = 25*1024*1024;
+      }
+
+      if (!this.options.hasOwnProperty("delimiter")) {
+        this.options.delimiter = '$<\n';
+      }
     }
 
     /**
      * Loads a database which was partitioned into several key/value saves.
+     * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @returns {Promise} a Promise that resolves after the database was loaded
@@ -1630,6 +1672,8 @@
      */
     LokiPartitioningAdapter.prototype.loadDatabase = function (dbname) {
       var self=this;
+      this.dbname = dbname;
+      this.dbref = new Loki(dbname);
 
       // load the db container (without data)
       return this.adapter.loadDatabase(dbname).then(function(result) {
@@ -1639,18 +1683,22 @@
 
         // I will want to use loki destructuring helper methods so i will inflate into typed instance
         var db = JSON.parse(result);
-        var dbref = new Loki(dbname);
-        dbref.loadJSONObject(db);
+        self.dbref.loadJSONObject(db);
         db = null;
 
-        var clen = dbref.collections.length;
+        var clen = self.dbref.collections.length;
 
-        if (dbref.collections.length === 0) {
-          return dbref;
+        if (self.dbref.collections.length === 0) {
+          return self.dbref;
         }
 
-        return self.loadNextPartition(dbname, dbref, 0).then(function() {
-          return dbref;
+        self.pageIterator = {
+          collection: 0,
+          pageIndex: 0
+        };
+
+        return self.loadNextPartition(0).then(function() {
+          return self.dbref;
         });
       });
     };
@@ -1658,75 +1706,202 @@
     /**
      * Used to sequentially load each collection partition, one at a time.
      *
-     * @param {string} dbname - name of the database (filename/keyname)
-     * @param {object} db - reference to internally database instance we are reconstructing.
      * @param {int} partition - ordinal collection position to load next
      * @returns {Promise} a Promise that resolves after the next partition is loaded
      */
-    LokiPartitioningAdapter.prototype.loadNextPartition = function(dbname, db, partition) {
-      var keyname = dbname + "." + partition;
+    LokiPartitioningAdapter.prototype.loadNextPartition = function(partition) {
+      var keyname = this.dbname + "." + partition;
       var self=this;
 
-      return this.adapter.loadDatabase(keyname).then(function(result) {
-        var data = db.deserializeCollection(result, { delimited: true, collectionIndex: partition });
-        db.collections[partition].data = data;
+      if (this.options.paging === true) {
+        this.pageIterator.pageIndex = 0;
+        return this.loadNextPage();
+      }
 
-        if (++partition < db.collections.length) {
-          return self.loadNextPartition(dbname, db, partition);
+      return this.adapter.loadDatabase(keyname).then(function(result) {
+        var data = self.dbref.deserializeCollection(result, { delimited: true, collectionIndex: partition });
+        self.dbref.collections[partition].data = data;
+
+        if (++partition < self.dbref.collections.length) {
+          return self.loadNextPartition(partition);
+        }
+      });
+    };
+
+    /**
+     * Used to sequentially load the next page of collection partition, one at a time.
+     *
+     * @returns {Promise} a Promise that resolves after the next page is loaded
+     */
+    LokiPartitioningAdapter.prototype.loadNextPage = function() {
+      // calculate name for next saved page in sequence
+      var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
+      var self=this;
+
+      // load whatever page is next in sequence
+      return this.adapter.loadDatabase(keyname).then(function(result) {
+        var data = result.split(self.options.delimiter);
+        result = ""; // free up memory now that we have split it into array
+        var dlen = data.length;
+        var idx;
+
+        // detect if last page by presence of final empty string element and remove it if so
+        var isLastPage = (data[dlen-1] === "");
+        if (isLastPage) {
+          data.pop();
+          dlen = data.length;
+          // empty collections are just a delimiter meaning two blank items
+          if (data[dlen-1] === "" && dlen === 1) {
+            data.pop();
+            dlen = data.length;
+          }
+        }
+
+        // convert stringified array elements to object instances and push to collection data
+        for(idx=0; idx < dlen; idx++) {
+          self.dbref.collections[self.pageIterator.collection].data.push(JSON.parse(data[idx]));
+          data[idx] = null;
+        }
+        data = [];
+
+        // if last page, we are done with this partition
+        if (isLastPage) {
+          // if there are more partitions, kick off next partition load
+          if (++self.pageIterator.collection < self.dbref.collections.length) {
+            return self.loadNextPartition(self.pageIterator.collection);
+          }
+        }
+        else {
+          self.pageIterator.pageIndex++;
+          return self.loadNextPage();
         }
       });
     };
 
     /**
      * Saves a database by partioning into separate key/value saves.
+     * (Loki 'reference mode' persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {object} db - reference to internally database instance we are reconstructing.
-     * @param {int} partition - ordinal collection position to load next
+     * @param {object} dbref - reference to database which we will partition and save.
      * @returns {Promise} a Promise that resolves after the database was deleted
+     *
+     * @memberof LokiPartitioningAdapter
      */
     LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref) {
       var self=this;
       var idx, clen = dbref.collections.length;
-      var dirtyPartitions = [-1];
+
+      this.dbref = dbref;
+      this.dbname = dbname;
 
       // queue up dirty partitions to be saved
+      this.dirtyPartitions = [-1];
       for(idx=0; idx<clen; idx++) {
         if (dbref.collections[idx].dirty) {
-          dirtyPartitions.push(idx);
+          this.dirtyPartitions.push(idx);
         }
       }
 
-      return this.saveNextPartition(dbname, dbref, dirtyPartitions);
+      return this.saveNextPartition();
     };
 
     /**
      * Helper method used internally to save each dirty collection, one at a time.
      *
-     * @param {string} dbname - name of the database (filename/keyname)
-     * @param {object} dbref - reference to internally database instance we are reconstructing.
-     * @param {array} dirtyPartitions - array of partition numbers which need to be saved
      * @returns {Promise} a Promise that resolves after the next partition is saved
      */
-    LokiPartitioningAdapter.prototype.saveNextPartition = function(dbname, dbref, dirtyPartitions) {
+    LokiPartitioningAdapter.prototype.saveNextPartition = function() {
       var self=this;
-      var partition = dirtyPartitions.shift();
-      var keyname = dbname + ((partition===-1)?"":("." + partition));
+      var partition = this.dirtyPartitions.shift();
+      var keyname = this.dbname + ((partition===-1)?"":("." + partition));
 
-      var result = dbref.serializeDestructured({
+      // if we are doing paging and this is collection partition
+      if (this.options.paging && partition !== -1) {
+        this.pageIterator = {
+          collection: partition,
+          docIndex: 0,
+          pageIndex: 0
+        };
+
+        // since saveNextPage recursively calls itself until done, our callback means this whole paged partition is finished
+        return this.saveNextPage().then(function() {
+          if (self.dirtyPartitions.length !== 0) {
+            return self.saveNextPartition();
+          }
+        });
+      }
+
+      // otherwise this is 'non-paged' partioning...
+      var result = this.dbref.serializeDestructured({
         partitioned : true,
         delimited: true,
         partition: partition
       });
 
       return this.adapter.saveDatabase(keyname, result).then(function() {
-        if (dirtyPartitions.length === 0) {
-          callback(null);
-        }
-        else {
-          self.saveNextPartition(dbname, dbref, dirtyPartitions, callback);
+        if (self.dirtyPartitions.length !== 0) {
+          return self.saveNextPartition();
         }
       });
+    };
+
+    /**
+     * Helper method used internally to generate and save the next page of the current (dirty) partition.
+     *
+     * @returns {Promise} a Promise that resolves after the next partition is saved
+     */
+    LokiPartitioningAdapter.prototype.saveNextPage = function() {
+      var self=this;
+      var coll = this.dbref.collections[this.pageIterator.collection];
+      var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
+      var pageLen=0,
+        cdlen = coll.data.length,
+        delimlen = this.options.delimiter.length;
+      var serializedObject = "",
+        pageBuilder = "";
+      var doneWithPartition=false,
+        doneWithPage=false;
+
+      var pageSaveCallback = function() {
+        pageBuilder = "";
+
+        // update meta properties then continue process by invoking callback
+        if (!doneWithPartition) {
+          self.pageIterator.pageIndex++;
+          return self.saveNextPage();
+        }
+      };
+
+      if (coll.data.length === 0) {
+        doneWithPartition = true;
+      }
+
+      while (true) {
+        if (!doneWithPartition) {
+          // serialize object
+          serializedObject = JSON.stringify(coll.data[this.pageIterator.docIndex]);
+          pageBuilder += serializedObject;
+          pageLen += serializedObject.length;
+
+          // if no more documents in collection to add, we are done with partition
+          if (++this.pageIterator.docIndex >= cdlen) doneWithPartition = true;
+        }
+        // if our current page is bigger than defined pageSize, we are done with page
+        if (pageLen >= this.options.pageSize) doneWithPage = true;
+
+        // if not done with current page, need delimiter before next item
+        // if done with partition we also want a delmiter to indicate 'end of pages' final empty row
+        if (!doneWithPage || doneWithPartition) {
+          pageBuilder += this.options.delimiter;
+          pageLen += delimlen;
+        }
+
+        // if we are done with page save it and pass off to next recursive call or callback
+        if (doneWithPartition || doneWithPage) {
+          return this.adapter.saveDatabase(keyname, pageBuilder).then(pageSaveCallback);
+        }
+      }
     };
 
     /**
@@ -1801,7 +1976,7 @@
      * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+    LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname) {
       var self = this;
 
       return new Promise(function (resolve, reject) {
@@ -1885,7 +2060,7 @@
         return Promise.reject(new Error('persistenceAdapter not configured'));
       }
 
-      return this.persistenceAdapter.loadDatabase(this.filename)
+      return Promise.resolve(this.persistenceAdapter.loadDatabase(this.filename))
         .then(function loadDatabaseCallback(dbString) {
           if (typeof (dbString) === 'string') {
             self.loadJSON(dbString, options || {});
@@ -1931,7 +2106,7 @@
         saved = this.persistenceAdapter.saveDatabase(this.filename, self.serialize());
       }
 
-      return saved.then(function () {
+      return Promise.resolve(saved).then(function () {
         self.autosaveClearFlags();
         self.emit("save");
       });
@@ -1952,7 +2127,7 @@
         return Promise.reject(new Error('persistenceAdapter not configured'));
       }
 
-      return this.persistenceAdapter.deleteDatabase(this.filename);
+      return Promise.resolve(this.persistenceAdapter.deleteDatabase(this.filename));
     };
 
     /**
@@ -4299,26 +4474,30 @@
     };
 
     /**
-     * find and update: pass a filtering function to select elements to be updated
-     * and apply the updatefunctino to those elements iteratively
-     * @param {function} filterFunction - filter function whose results will execute update
+     * Applies a 'mongo-like' find query object and passes all results to an update function.
+     * For filter function querying you should migrate to [updateWhere()]{@link Collection#updateWhere}.
+     *
+     * @param {object|function} filterObject - 'mongo-like' query object (or deprecated filterFunction mode)
      * @param {function} updateFunction - update function to run against filtered documents
      * @memberof Collection
      */
-    Collection.prototype.findAndUpdate = function (filterFunction, updateFunction) {
-      var results = this.where(filterFunction),
-        i = 0,
-        obj;
-      try {
-        for (i; i < results.length; i++) {
-          obj = updateFunction(results[i]);
-          this.update(obj);
-        }
-
-      } catch (err) {
-        this.rollback();
-        this.console.error(err.message);
+    Collection.prototype.findAndUpdate = function (filterObject, updateFunction) {
+      if (typeof (filterObject) === "function") {
+        this.updateWhere(filterObject, updateFunction);
       }
+      else {
+        this.chain().find(filterObject).update(updateFunction);
+      }
+    };
+
+    /**
+     * Applies a 'mongo-like' find query object removes all documents which match that filter.
+     *
+     * @param {object} filterObject - 'mongo-like' query object
+     * @memberof Collection
+     */
+    Collection.prototype.findAndRemove = function(filterObject) {
+      this.chain().find(filterObject).remove();
     };
 
     /**
@@ -4573,20 +4752,42 @@
     };
 
     /**
-     * Remove all documents matching supplied filter object
-     * @param {object} query - query object to filter on
+     * Applies a filter function and passes all results to an update function.
+     *
+     * @param {function} filterFunction - filter function whose results will execute update
+     * @param {function} updateFunction - update function to run against filtered documents
+     * @memberof Collection
+     */
+    Collection.prototype.updateWhere = function(filterFunction, updateFunction) {
+      var results = this.where(filterFunction),
+        i = 0,
+        obj;
+      try {
+        for (i; i < results.length; i++) {
+          obj = updateFunction(results[i]);
+          this.update(obj);
+        }
+
+      } catch (err) {
+        this.rollback();
+        this.console.error(err.message);
+      }
+    };
+
+    /**
+     * Remove all documents matching supplied filter function.
+     * For 'mongo-like' querying you should migrate to [findAndRemove()]{@link Collection#findAndRemove}.
+     * @param {function|object} query - query object to filter on
      * @memberof Collection
      */
     Collection.prototype.removeWhere = function (query) {
       var list;
       if (typeof query === 'function') {
         list = this.data.filter(query);
+        this.remove(list);
       } else {
-        list = new Resultset(this, {
-          queryObj: query
-        });
+        this.chain().find(query).remove();
       }
-      this.remove(list);
     };
 
     Collection.prototype.removeDataOnly = function () {
@@ -4862,6 +5063,45 @@
     };
 
     /**
+     * Internal method used for indexed $between.  Given a prop (index name), and a value
+     * (which may or may not yet exist) this will find the final position of that upper range value.
+     */
+    Collection.prototype.calculateRangeEnd = function (prop, val) {
+      var rcd = this.data;
+      var index = this.binaryIndices[prop].values;
+      var min = 0;
+      var max = index.length - 1;
+      var mid = 0;
+
+      if (index.length === 0) {
+        return 0;
+      }
+
+      var minVal = rcd[index[min]][prop];
+      var maxVal = rcd[index[max]][prop];
+
+      // hone in on start position of value
+      while (min < max) {
+        mid = (min + max) >> 1;
+
+        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+          max = mid;
+        } else {
+          min = mid + 1;
+        }
+      }
+
+      var ubound = max;
+
+      if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        return ubound-1;
+      }
+      else {
+        return ubound;
+      }
+    };
+
+    /**
      * calculateRange() - Binary Search utility method to find range/segment of values matching criteria.
      *    this is used for collection.find() and first find filter of resultset/dynview
      *    slightly different than get() binary search in that get() hones in on 1 value,
@@ -4925,6 +5165,8 @@
           return [0, rcd.length - 1];
         }
         break;
+      case '$between':
+        return ([this.calculateRangeStart(prop, val[0]), this.calculateRangeEnd(prop, val[1])]);
       case '$in':
         var idxset = [],
           segResult = [];

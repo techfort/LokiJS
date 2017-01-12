@@ -29,7 +29,7 @@ results = coll.where(sleipnirFunction);
 ```
 
 ### 'Find' queries
-Find queries are based on subset of mongo query syntax.  This method is capable of utilizing indexes and when used with Collection Transforms or Dynamic Views, these filters can be saved into the database itself.  This is the preferred method for querying a Loki database.  Query everything (or filter as much as you can) with find queries, and use 'where' filtering if there are edge cases which find does not support (or does not support yet).
+Find queries are based on subset of mongo query syntax and are capable of utilizing indexes to speed up queries.  When used with Collection Transforms or Dynamic Views, these filters can be saved into the database itself.  This is the preferred method for querying a Loki database.  Query everything (or filter as much as you can) with find queries, and use 'where' filtering if there are edge cases which find does not support (or does not support yet).
 
 ### 'Find' Operators
 The primary operators currently supported are : 
@@ -40,6 +40,7 @@ The primary operators currently supported are :
 * $gte - filter for document(s) with property greater or equal to provided value
 * $lt - filter for document(s) with property less than provided value
 * $lte - filter for document(s) with property less than or equal to provided value
+* $between - filter for documents(s) with property between provided vals
 * $ne - filter for document(s) with property not equal to provided value
 * $regex - filter for document(s) with property matching provided regular expression
 * $in - filter for document(s) with property matching any of the provided array values.
@@ -70,7 +71,6 @@ results = coll.find({'Name': 'Odin'});
 // not equal test
 results = coll.find({'legs': { '$ne' : 8 }});
 ```
-
 $regex:
 ```javascript
 // pass in raw regex
@@ -93,6 +93,11 @@ users.insert({ name : 'svafrlami' });
 
 // match users with name in array set ['odin' or 'thor']
 var results = users.find({ 'name' : { '$in' : ['odin', 'thor'] } });
+```
+$between
+```javascript
+// match users with count value between 50 and 75
+var results = users.find({ count : { '$between': [50, 75] });
 ```
 
 $contains / $containsAny / $containsNone

@@ -646,6 +646,10 @@
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
 
+      // flags used to throttle saves
+      this.saveQueued = false;
+      this.saveRequested = false;
+
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
 
@@ -986,6 +990,8 @@
       case 'persistenceAdapter':
       case 'constraints':
       case 'ttl':
+      case 'saveQueued':
+      case 'saveRequested':
         return null;
       default:
         return value;
@@ -2174,34 +2180,62 @@
      * @memberof Loki
      */
     Loki.prototype.saveDatabase = function (callback) {
-      var cFun = callback || function (err) {
+      if (this.saveQueued) {
+        this.saveRequested = true;
+        return;
+      }
+
+      this.saveQueued = true;
+      var self = this;
+
+      setTimeout(function() {
+        var cFun = callback || function (err) {
           if (err) {
             throw err;
           }
           return;
-        },
-        self = this;
+        }
 
-      // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        // check if the adapter is requesting (and supports) a 'reference' mode export
-        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
-          // filename may seem redundant but loadDatabase will need to expect this same filename
-          this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
+        // the persistenceAdapter should be present if all is ok, but check to be sure.
+        if (self.persistenceAdapter !== null) {
+          // check if the adapter is requesting (and supports) a 'reference' mode export
+          if (self.persistenceAdapter.mode === "reference" && typeof self.persistenceAdapter.exportDatabase === "function") {
+            // filename may seem redundant but loadDatabase will need to expect this same filename
+            self.persistenceAdapter.exportDatabase(self.filename, self.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
+              self.autosaveClearFlags();
+              self.saveQueued = false;
+
+              if(self.saveRequested) {
+                self.saveRequested = false;
+                self.saveDatabase(callback);
+              } else {
+                cFun(err);
+              }
+            });
+          }
+          // otherwise just pass the serialized database to adapter
+          else {
+            self.persistenceAdapter.saveDatabase(self.filename, self.serialize(), function saveDatabasecallback(err) {
+              self.autosaveClearFlags();
+              self.saveQueued = false;
+              if(self.saveRequested) {
+                self.saveRequested = false;
+                self.saveDatabase(callback);
+              } else {
+                cFun(err);
+              }
+            });
+          }
+        } else {
+          self.saveQueued = false;
+          if(self.saveRequested) {
+            self.saveRequested = false;
+            self.saveDatabase(callback);
+          } else {
+            cFun(new Error('persistenceAdapter not configured'));
+          }
         }
-        // otherwise just pass the serialized database to adapter
-        else {
-          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
-      }
+      }, 1);
     };
 
     // alias

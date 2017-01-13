@@ -1,13 +1,12 @@
 ## Collection transforms
 
-**_The basic premise behind transforms is to allow converting a Resultset 'chain' process into an object definition of that process.  This data definition can then be optionally named and saved along with the collections, within a  database._**
+**_The basic idea behind transforms is to allow converting a Resultset 'chain' process into an object definition of that process.  This data definition can then be optionally named and saved along with the collections, within a  database._**
 
 This might be useful for :  
 * Writing tools which operate on loki databases
-* Allowing user interface to compose queries
-* You might use it for code composition and cleanliness (modify your transform to affect all uses of it).
-* Might be used to transform your data for extraction purposes (to reformat and send to another database) 
-* You can extend most constructs to whatever purpose you might want to mold this feature into
+* Creating 'stored procedure-like' named queries
+* Transforming your data for extraction purposes
+* Can be extended upon with custom meta
 
 A transform is a (ordered) array of 'step' objects to be executed on collection chain.  These steps may include the following types : 
 * 'find'
@@ -81,7 +80,7 @@ or
 userCollection.chain("OwnerFilter", params).data();
 ```
 
-Where filter functions cannot be saved into a database but (if you still need them), utilizing transforms along with parameterization can allow for cleanly structuring and executing saved transforms.  An example might be : 
+**Where filter functions cannot be saved into a database** but (if you still need them), utilizing transforms along with parameterization can allow for cleanly structuring and executing saved transforms.  An example might be : 
 ```javascript
 var tx = [
   {
@@ -200,12 +199,10 @@ The important distinction is that branching (and thus your transform results) re
 
 ## Adding meta for custom solutions
 
-One use for transforms might be to have user driven solutions where you might have the user interface constructing, managing, and executing these transforms.  Another might be that you just create many individual database files to be analyzed from your own program interfaces.  In such situations you might need to add your own metadata to further describe transforms, steps, or parameters.
-
-If you intend to automate transforms in such a data driven way, you may add your encode your own meta data within the transforms and steps so that you can access them later.
+One use for transforms might be to have user driven solutions where you have the user interface constructing, managing, and executing these transforms.  In such situations you might want to add your own metadata to the transforms to further describe the transform, steps, or parameters.
 
 - Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a 'meta' type with properties containing information about author, description, or required parameter description meta data.  
 - Each of the steps may also include additional properties above what we have defined as required, so you might have step descriptions, last changed dates, etc embedded within steps.
 
 ## Summary
-Loki transforms establish (with little additional footprint) a process for automating data transformations on your data.  This is not a required functionality and is not intended to replace method chaining but it presents an option for 'growing into' loki, possibly providing cleaner code organization, logic bootstrapping, and extending its capabilities to various dynamic uses.
+Loki transforms establish (with little additional footprint) a process for automating data transformations on your data.  This is not a required functionality and is not intended to replace method chaining, but it allows you to abstract and organize repetitive querying for cleanliness or dynamic purposes.

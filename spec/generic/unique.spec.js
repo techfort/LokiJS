@@ -79,4 +79,40 @@ describe('Constraints', function () {
     });
     expect(Object.keys(coll4.constraints.unique.username.keyMap).length).toEqual(1);
   });
+
+  it('coll.clear should affect unique indices correctly', function() {
+    var db = new loki();
+    var coll = db.addCollection('users', { unique: ['username'] });
+    
+    coll.insert({ username: 'joe', name: 'Joe' });
+    coll.insert({ username: 'jack', name: 'Jack' });
+    coll.insert({ username: 'jake', name: 'Jake' });
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
+    expect(coll.uniqueNames.length).toEqual(1);
+    coll.clear();
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(0);
+    coll.insert({ username: 'joe', name: 'Joe' });
+    coll.insert({ username: 'jack', name: 'Jack' });
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(2);
+    coll.insert({ username: 'jake', name: 'Jake' });
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
+    expect(coll.uniqueNames.length).toEqual(1);
+
+    var db = new loki();
+    var coll = db.addCollection('users', { unique: ['username'] });
+    
+    coll.insert({ username: 'joe', name: 'Joe' });
+    coll.insert({ username: 'jack', name: 'Jack' });
+    coll.insert({ username: 'jake', name: 'Jake' });
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
+    expect(coll.uniqueNames.length).toEqual(1);
+    coll.clear({ removeIndices: true });
+    expect(coll.constraints.unique.hasOwnProperty('username')).toEqual(false);
+    expect(coll.uniqueNames.length).toEqual(0);
+    coll.insert({ username: 'joe', name: 'Joe' });
+    coll.insert({ username: 'jack', name: 'Jack' });
+    coll.insert({ username: 'jake', name: 'Jake' });
+    expect(coll.constraints.unique.hasOwnProperty('username')).toEqual(false);
+    expect(coll.uniqueNames.length).toEqual(0);
+  });
 });

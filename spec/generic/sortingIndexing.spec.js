@@ -54,6 +54,48 @@ describe('sorting and indexing', function () {
     });
   });
 
+  describe('resultset sort works correctly', function() {
+    it('works', function() {
+      var db = new loki('test.db');
+      var coll = db.addCollection('coll');
+      
+      coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
+
+      var sortfun = function(obj1, obj2) {
+        if (obj1.a === obj2.a) return 0;
+        if (obj1.a > obj2.a) return 1;
+        if (obj1.a < obj2.a) return -1;
+      };
+
+      var result = coll.chain().sort(sortfun).data();
+      expect(result.length).toEqual(3);
+      expect(result[0].a).toEqual(1);
+      expect(result[1].a).toEqual(2);
+      expect(result[2].a).toEqual(5);
+    });
+  });
+  
+  describe('resultset compoundsort works correctly', function() {
+    it('works', function() {
+      var db = new loki('test.db');
+      var coll = db.addCollection('coll');
+      
+      coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
+
+      var result = coll.chain().compoundsort(['b', 'c']).data();
+      expect(result.length).toEqual(3);
+      expect(result[0].a).toEqual(5);
+      expect(result[1].a).toEqual(1);
+      expect(result[2].a).toEqual(2);
+
+      result = coll.chain().compoundsort(['b', ['c', true]]).data();
+      expect(result.length).toEqual(3);
+      expect(result[0].a).toEqual(5);
+      expect(result[1].a).toEqual(2);
+      expect(result[2].a).toEqual(1);      
+    });
+  });
+
   describe('collection indexing', function() {
     it('works', function() {
       var now = new Date().getTime();

@@ -931,6 +931,64 @@ describe('loki', function () {
     })
   });
 
+  describe('resultset unfiltered simplesort works', function() {
+    it('works', function() {
+      var ssdb = new loki('sandbox.db');
+
+      // Add a collection to the database
+      var items = ssdb.addCollection('items', { indices: ['name'] });
+
+      // Add some documents to the collection
+      items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      items.insert({ name : 'tyrfing', owner: 'svafrlami', maker: 'dwarves' });
+      items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+      
+      // simplesort without filters on prop with index should work
+      var results = items.chain().simplesort('name').data();
+      expect(results.length).toEqual(4);
+      expect(results[0].name).toEqual('draupnir');
+      expect(results[1].name).toEqual('gungnir');
+      expect(results[2].name).toEqual('mjolnir');
+      expect(results[3].name).toEqual('tyrfing');
+      
+      // simplesort without filters on prop without index should work
+      results = items.chain().simplesort('owner').data();
+      expect(results.length).toEqual(4);
+      expect(results[0].owner).toEqual('odin');
+      expect(results[1].owner).toEqual('odin');
+      expect(results[2].owner).toEqual('svafrlami');
+      expect(results[3].owner).toEqual('thor');
+    });
+  });
+
+  describe('resultset instance works', function() {
+    it('works', function() {
+      var idb = new loki('sandbox.db');
+
+      // Add a collection to the database
+      var items = idb.addCollection('items', { indices: ['owner'] });
+
+      // Add some documents to the collection
+      items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+      items.insert({ name : 'tyrfing', owner: 'svafrlami', maker: 'dwarves' });
+      items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+      // combine indexed enabled sort with instancing
+      var instanceCollection = items.chain().simplesort('owner').limit(2).instance();
+      expect(instanceCollection.data.length).toEqual(2);
+      expect(instanceCollection.data[0].owner).toEqual('odin');
+      expect(instanceCollection.data[1].owner).toEqual('odin');
+      
+      // combine unindexed find with instancing
+      instanceCollection = items.chain().find({maker: 'elves'}).instance();
+      expect(instanceCollection.data.length).toEqual(2);
+      expect(instanceCollection.data[0].maker).toEqual('elves');
+      expect(instanceCollection.data[1].maker).toEqual('elves');      
+    });
+  });
+
   describe('chained removes', function() {
     it('works', function() {
       var rsc = db.addCollection('rsc');
@@ -1190,7 +1248,9 @@ describe('loki', function () {
 
   describe('stepDynamicViewPersistence', function () {
     it('works', function testCollections(done) {
-      var db = new loki('testCollections');
+      // mock persistence by using memory adapter
+      var mem = new loki.LokiMemoryAdapter();
+      var db = new loki('testCollections', {adapter:mem});
       db.name = 'testCollections';
       it('DB name', function () {
         expect(db.getName()).toEqual('testCollections');

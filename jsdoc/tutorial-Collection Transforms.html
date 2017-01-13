@@ -28,14 +28,13 @@
 </header>
 
 <article>
-    <h2>Collection transforms</h2><p><strong><em>The basic premise behind transforms is to allow converting a Resultset 'chain' process into an object definition of that process.  This data definition can then be optionally named and saved along with the collections, within a  database.</em></strong></p>
+    <h2>Collection transforms</h2><p><strong><em>The basic idea behind transforms is to allow converting a Resultset 'chain' process into an object definition of that process.  This data definition can then be optionally named and saved along with the collections, within a  database.</em></strong></p>
 <p>This might be useful for :  </p>
 <ul>
 <li>Writing tools which operate on loki databases</li>
-<li>Allowing user interface to compose queries</li>
-<li>You might use it for code composition and cleanliness (modify your transform to affect all uses of it).</li>
-<li>Might be used to transform your data for extraction purposes (to reformat and send to another database) </li>
-<li>You can extend most constructs to whatever purpose you might want to mold this feature into</li>
+<li>Creating 'stored procedure-like' named queries</li>
+<li>Transforming your data for extraction purposes</li>
+<li>Can be extended upon with custom meta</li>
 </ul>
 <p>A transform is a (ordered) array of 'step' objects to be executed on collection chain.  These steps may include the following types : </p>
 <ul>
@@ -78,7 +77,7 @@
 };
 
 userCollection.chain(tx, params).data();</code></pre><p>or</p>
-<pre class="prettyprint source lang-javascript"><code>userCollection.chain(&quot;OwnerFilter&quot;, params).data();</code></pre><p>Where filter functions cannot be saved into a database but (if you still need them), utilizing transforms along with parameterization can allow for cleanly structuring and executing saved transforms.  An example might be : </p>
+<pre class="prettyprint source lang-javascript"><code>userCollection.chain(&quot;OwnerFilter&quot;, params).data();</code></pre><p><strong>Where filter functions cannot be saved into a database</strong> but (if you still need them), utilizing transforms along with parameterization can allow for cleanly structuring and executing saved transforms.  An example might be : </p>
 <pre class="prettyprint source lang-javascript"><code>var tx = [
   {
     type: 'where',
@@ -171,13 +170,12 @@ coll.addTransform('viewPaging', tx);
 // add some records
 
 var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();</code></pre><p>The important distinction is that branching (and thus your transform results) reflect only the view at the point in time at which you branch.  These transforms are extracts and not used internally to the view.</p>
-<h2>Adding meta for custom solutions</h2><p>One use for transforms might be to have user driven solutions where you might have the user interface constructing, managing, and executing these transforms.  Another might be that you just create many individual database files to be analyzed from your own program interfaces.  In such situations you might need to add your own metadata to further describe transforms, steps, or parameters.</p>
-<p>If you intend to automate transforms in such a data driven way, you may add your encode your own meta data within the transforms and steps so that you can access them later.</p>
+<h2>Adding meta for custom solutions</h2><p>One use for transforms might be to have user driven solutions where you have the user interface constructing, managing, and executing these transforms.  In such situations you might want to add your own metadata to the transforms to further describe the transform, steps, or parameters.</p>
 <ul>
 <li>Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a 'meta' type with properties containing information about author, description, or required parameter description meta data.  </li>
 <li>Each of the steps may also include additional properties above what we have defined as required, so you might have step descriptions, last changed dates, etc embedded within steps.</li>
 </ul>
-<h2>Summary</h2><p>Loki transforms establish (with little additional footprint) a process for automating data transformations on your data.  This is not a required functionality and is not intended to replace method chaining but it presents an option for 'growing into' loki, possibly providing cleaner code organization, logic bootstrapping, and extending its capabilities to various dynamic uses.</p>
+<h2>Summary</h2><p>Loki transforms establish (with little additional footprint) a process for automating data transformations on your data.  This is not a required functionality and is not intended to replace method chaining, but it allows you to abstract and organize repetitive querying for cleanliness or dynamic purposes.</p>
 </article>
 
 </section>
@@ -185,13 +183,13 @@ var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Collection.html">Collection</a></li><li><a href="DynamicView.html">DynamicView</a></li><li><a href="Loki.html">Loki</a></li><li><a href="LokiEventEmitter.html">LokiEventEmitter</a></li><li><a href="LokiFsAdapter.html">LokiFsAdapter</a></li><li><a href="LokiFsStructuredAdapter.html">LokiFsStructuredAdapter</a></li><li><a href="LokiIndexedAdapter.html">LokiIndexedAdapter</a></li><li><a href="LokiLocalStorageAdapter.html">LokiLocalStorageAdapter</a></li><li><a href="LokiMemoryAdapter.html">LokiMemoryAdapter</a></li><li><a href="LokiPartitioningAdapter.html">LokiPartitioningAdapter</a></li><li><a href="Resultset.html">Resultset</a></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-Autoupdating Collections.html">Autoupdating Collections</a></li><li><a href="tutorial-Changes API.html">Changes API</a></li><li><a href="tutorial-Collection Transforms.html">Collection Transforms</a></li><li><a href="tutorial-Indexing and Query performance.html">Indexing and Query performance</a></li><li><a href="tutorial-Loki Angular.html">Loki Angular</a></li><li><a href="tutorial-Persistence Adapters.html">Persistence Adapters</a></li><li><a href="tutorial-Query Examples.html">Query Examples</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Jul 05 2016 11:31:43 GMT+0100 (IST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

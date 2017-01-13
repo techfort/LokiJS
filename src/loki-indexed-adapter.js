@@ -26,8 +26,6 @@
      * Loki persistence adapter class for indexedDb.
      *     This class fulfills abstract adapter interface which can be applied to other storage methods.
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
-     *     Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
-     *     Anywhere a callback is omitted, it should return results (if applicable) to console.
      *     IndexedDb storage is provided per-domain, so we implement app/key/value database to
      *     allow separate contexts for separate apps within a domain.
      *
@@ -102,17 +100,11 @@
       // lookup up db string in AKV db
       return new Promise(function (resolve) {
         this.catalog.getAppKey(appName, dbname, function(result) {
-          if (typeof (callback) === 'function') {
-            if (result.id === 0) {
-              resolve();
-              return;
-            }
-            resolve(result.val);
+          if (result.id === 0) {
+            resolve();
+            return;
           }
-          else {
-            // support console use of api
-            console.log(result.val);
-          }
+          resolve(result.val);
         });
       });
     };
@@ -223,6 +215,24 @@
 
     // alias
     LokiIndexedAdapter.prototype.deleteKey = LokiIndexedAdapter.prototype.deleteDatabase;
+
+    /**
+     * Removes all database partitions and pages with the base filename passed in.
+     * This utility method does not (yet) guarantee async deletions will be completed before returning
+     *
+     * @param {string} dbname - the base filename which container, partitions, or pages are derived
+     * @memberof LokiIndexedAdapter
+     */
+    LokiIndexedAdapter.prototype.deleteDatabasePartitions = function(dbname) {
+      var self=this;
+      this.getDatabaseList(function(result) {
+        result.forEach(function(str) {
+          if (str.startsWith(dbname)) {
+            self.deleteDatabase(str);
+          }
+        });
+      });
+    };
 
     /**
      * Retrieves object array of catalog entries for current app.

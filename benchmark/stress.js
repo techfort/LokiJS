@@ -1,89 +1,127 @@
-// This script is meant to diagnose and stress the ability of loki to 
-// internally serialize large databases.  I have found that within most
-// javascript engines there seems to be memory contraints and inefficiencies  
-// involved with using JSON.stringify.
+'use strict';
+// This script can be used to stress the ability of loki to save large databases.  
+// I have found that within most javascript engines there seems to be memory 
+// contraints and inefficiencies involved with using JSON.stringify.
 //
-// This example creates (by default) 30000 randomly generated objects
-// which, when serialized will evaluate to roughly a 60MB string.
-// Internal memory usage, however spiked to a little under 2GB on my 
-// node 5.6.0 installation. 
+// One way to limit memory overhead is to serialize smaller objects rather than
+// one large (single) JSON.stringify of the whole database.  
 //
-// In order to run this, you will probably need 4GB of RAM and launch 
-// with a command line similar to (for about a 2GB mem allocation):
-// node --max-old-space-size=2000 stress
+// The LokiFsStructuredAdapter streams the database in an out as a series
+// of smaller, individual serializations.  It also partitions database into 
 //
-// Browser environments have no such customization and appear to be 
-// roughly limited to a similar 50Meg or so database size for the moment.
-// This would correlate with a rougly 2GB memory allocation.
+// The native node fs adapter is hands down the most memory efficient and 
+// fastest adapter if you are using node.js.  It accomplishes this by 
+// using io streams to save and load the database to disk rather than saving 
+// the whole database as a single string. 
 //
-// This script will be used as a reference for alternative serialization methods
-// which have a much lower overhead than the above 60M/2GB ratio.
+// This stress can be used to analyse memory overhead for saving a loki database.
+// Both stress.js and destress.js need to be configured to use the same serialization
+// method and adapter.  By default, this is configured to use the
+// loki-fs-structured-adapter which will stream output and input.
 
+// On my first review i saw no significant benefit to "destructured" format if you
+// are going to save in single file, but subsequent benchmarks show that saves
+// are actually faster.  I wasn't expecting this and if i had to guess at why I would
+// guess that by not doing one huge JSON.stringify, but instead doing many smaller 
+// ones, that this is faster than whatever string manipulation they do in a single 
+// deep object scan.  Since this serialization is done within db.saveDatabase()
+// it showed up on my disk io benchmark portion of this stress test.
+
+// The closer you get to running out of heap space, the less memory is left over 
+// for io bufferring so saves are slower.  A few hundred megs of free heap space
+// will keep db save io speeds from exponentially rising.
+
+var crypto = require("crypto"); // for random string generation
 var loki = require('../src/lokijs.js');
+var lfsa = require('../src/loki-fs-structured-adapter.js');
 
-var numObjects = 30000;
+// number of collections to create and populate
+var numCollections = 2;
 
-var db = new loki('sandbox.db', {
-          verbose: true 
+// number of documents to populate -each- collection with
+// if using 2 collections, will probably max @ 75000, structured adapter @ 310000
+var numObjects = 150000;  
+
+// #
+// # Choose -one- method of serialization and make sure to match in destress.js
+// #
+
+//var mode = "fs-normal";
+//var mode = "fs-structured";
+//var mode = "fs-partitioned";
+var mode = "fs-structured-partitioned";
+
+var adapter;
+
+switch (mode) {
+  case "fs-normal": 
+  case "fs-structured": adapter = new loki.LokiFsAdapter(); break;
+  case "fs-partitioned": adapter = new loki.LokiPartitioningAdapter(new loki.LokiFsAdapter()); break;
+  case "fs-structured-partitioned" : adapter = new lfsa(); break;
+  default:adapter = new loki.LokiFsAdapter(); break;
+};
+
+console.log(mode);
+
+var db = new loki('sandbox.db', { 
+  adapter : adapter, 
+  serializationMethod: (mode === "fs-structured")?"destructured":"normal" 
 });
-var items = db.addCollection('items');
 
-// generate random 100 character string
+// using less 'leaky' way to generate random strings
+// node specific
 function genRandomVal() {
-  var text = "";
-  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-  for (var i = 0; i < 100; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-  return text;
+  return crypto.randomBytes(50).toString('hex');
 }
 
-function step1InsertObjects() {
-	var idx;
-    
+function stepInsertObjects() {
+	var cidx, idx;
+
+  for (cidx=0; cidx < numCollections; cidx++) {
+    var items = db.addCollection('items' + cidx);
+
     for(idx=0; idx<numObjects; idx++) {
-		items.insert({ 
-        	start : (new Date()).getTime(),
-        	first : genRandomVal(), 
-            owner: genRandomVal(), 
-            maker: genRandomVal(),
-            orders: [
-            	genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal(),
-                genRandomVal()
-            ],
-            attribs: {
-            	a: genRandomVal(),
-                b: genRandomVal(),
-                c: genRandomVal(),
-                d: {
-                	d1: genRandomVal(),
-                	d2: genRandomVal(),
-                	d3: genRandomVal()
-                }
-            }
-        });
-	}
-    
+      items.insert({
+        start : (new Date()).getTime(),
+        first : genRandomVal(),
+        owner: genRandomVal(),
+        maker: genRandomVal(),
+        orders: [
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal(),
+          genRandomVal()
+        ],
+        attribs: {
+          a: genRandomVal(),
+          b: genRandomVal(),
+          c: genRandomVal(),
+          d: {
+            d1: genRandomVal(),
+            d2: genRandomVal(),
+            d3: genRandomVal()
+          }
+        }
+      });
+    }
+
     console.log('inserted ' + numObjects + ' documents');
+  }
 }
 
-function step2CalcSerializeSize() {
-	var serializedLength = db.serialize().length;
-	console.log('size of original database length : ' + serializedLength);
-}
+function stepSaveDatabase() {
+  var start, end;
 
-function step3SaveDatabase() {
-	db.saveDatabase(function(err) {
-		if (err === null) {
-	    	console.log('finished saving database');
-	    }
-	    else {
-	    	console.log('error encountered saving database : ' + err);
-	    }
+  start = process.hrtime();
+
+	db.saveDatabase().then(function() {
+    console.log('finished saving database');
+    logMemoryUsage("after database save : ");
+    end = process.hrtime(start);
+    console.info("database save time : %ds %dms", end[0], end[1]/1000000);
+	}, function(err) {
+    console.log('error encountered saving database : ' + err);
 	});
 }
 
@@ -95,17 +133,22 @@ function step4ReloadDatabase() {
 	});
 }
 
-function dbLoaded() {
-    console.log('loaded database from indexed db');
-	var itemsColl = db.getCollection('items');
-    console.log('number of docs in items collection: ' + itemsColl.count());
-	serializedLength = db.serialize().length;
-	console.log('size of reloaded database length : ' + serializedLength);
+function formatBytes(bytes,decimals) {
+   if(bytes == 0) return '0 Byte';
+   var k = 1000; // or 1024 for binary
+   var dm = decimals + 1 || 3;
+   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+   var i = Math.floor(Math.log(bytes) / Math.log(k));
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// set up async pauses between steps to keep browser from 
-// stopping long running random object generation step
-step1InsertObjects();
-step2CalcSerializeSize();
-//step3SaveDatabase();
-//step4ReloadDatabase();
+function logMemoryUsage(msg) {
+  var pmu = process.memoryUsage();
+  console.log(msg + " > rss : " + formatBytes(pmu.rss) + " heapTotal : " + formatBytes(pmu.heapTotal) + " heapUsed : " + formatBytes(pmu.heapUsed));
+}
+
+logMemoryUsage("before document inserts : ");
+stepInsertObjects();
+
+logMemoryUsage("after document inserts : ");
+stepSaveDatabase();

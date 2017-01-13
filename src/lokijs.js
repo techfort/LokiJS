@@ -2194,7 +2194,7 @@
             throw err;
           }
           return;
-        }
+        };
 
         // the persistenceAdapter should be present if all is ok, but check to be sure.
         if (self.persistenceAdapter !== null) {

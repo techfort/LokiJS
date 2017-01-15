@@ -631,6 +631,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
+      this.saveThrottled = false;
 
       this.options = {};
 
@@ -649,6 +650,8 @@
       // flags used to throttle saves
       this.saveQueued = false;
       this.saveRequested = false;
+      this.pendingRequests = [];
+      this.pendingSaveRequestedCallbacks = [];
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -807,6 +810,10 @@
           } else {
             this.autosaveEnable();
           }
+        }
+
+        if (this.options.hasOwnProperty('saveThrottled') && this.options.saveThrottled) {
+          this.saveThrottled = this.options.saveThrottled;
         }
       } // end of options processing
 
@@ -992,6 +999,9 @@
       case 'ttl':
       case 'saveQueued':
       case 'saveRequested':
+      case 'saveThrottled':
+      case 'pendingRequests':
+      case 'pendingSaveRequestedCallbacks':
         return null;
       default:
         return value;
@@ -2179,63 +2189,81 @@
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
-    Loki.prototype.saveDatabase = function (callback) {
-      if (this.saveQueued) {
-        this.saveRequested = true;
-        return;
-      }
-
-      this.saveQueued = true;
-      var self = this;
-
-      setTimeout(function() {
-        var cFun = callback || function (err) {
+    Loki.prototype.saveDatabaseInternal = function (callback) {
+      var cFun = callback || function (err) {
           if (err) {
             throw err;
           }
           return;
-        };
+        },
+        self = this;
 
-        // the persistenceAdapter should be present if all is ok, but check to be sure.
-        if (self.persistenceAdapter !== null) {
-          // check if the adapter is requesting (and supports) a 'reference' mode export
-          if (self.persistenceAdapter.mode === "reference" && typeof self.persistenceAdapter.exportDatabase === "function") {
-            // filename may seem redundant but loadDatabase will need to expect this same filename
-            self.persistenceAdapter.exportDatabase(self.filename, self.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
-              self.autosaveClearFlags();
-              self.saveQueued = false;
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      if (this.persistenceAdapter !== null) {
+        // check if the adapter is requesting (and supports) a 'reference' mode export
+        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+          // filename may seem redundant but loadDatabase will need to expect this same filename
+          this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
+        // otherwise just pass the serialized database to adapter
+        else {
+          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
+            self.autosaveClearFlags();
+            cFun(err);
+          });
+        }
+      } else {
+        cFun(new Error('persistenceAdapter not configured'));
+      }
+    };
 
-              if(self.saveRequested) {
-                self.saveRequested = false;
-                self.saveDatabase(callback);
-              } else {
-                cFun(err);
-              }
-            });
-          }
-          // otherwise just pass the serialized database to adapter
-          else {
-            self.persistenceAdapter.saveDatabase(self.filename, self.serialize(), function saveDatabasecallback(err) {
-              self.autosaveClearFlags();
-              self.saveQueued = false;
-              if(self.saveRequested) {
-                self.saveRequested = false;
-                self.saveDatabase(callback);
-              } else {
-                cFun(err);
-              }
-            });
-          }
-        } else {
+    Loki.prototype.saveDatabase = function (callback) {
+      if (!this.saveThrottled) {
+        this.saveDatabaseInternal(callback);
+        return;
+      }
+
+      if (this.saveQueued) {
+        this.saveRequested = true;
+        if (callback) {
+          this.pendingSaveRequestedCallbacks.push(callback);
+        }
+        return;
+      }
+
+      this.pendingRequests = this.pendingSaveRequestedCallbacks;
+
+      if (callback && this.pendingSaveRequestedCallbacks.length > 0) {
+        this.pendingRequests.push(callback);
+      }
+      this.pendingSaveRequestedCallbacks = [];
+      this.saveQueued = true;
+      var self = this;
+
+      var cb = function() {
+        self.saveDatabaseInternal(function(err) {
           self.saveQueued = false;
           if(self.saveRequested) {
             self.saveRequested = false;
+            self.pendingRequests.forEach(function(pcb) {
+              pcb(err);
+            });
+            self.pendingRequests = [];
             self.saveDatabase(callback);
           } else {
-            cFun(new Error('persistenceAdapter not configured'));
+            self.pendingRequests.forEach(function(pcb) {
+              console.log(pcb);
+              pcb(err);
+            });
+            self.pendingRequests = [];
           }
-        }
-      }, 1);
+        });
+      };
+
+      setTimeout(cb, 1);
     };
 
     // alias

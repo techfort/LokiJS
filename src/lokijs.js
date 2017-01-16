@@ -2236,7 +2236,12 @@
 
       this.pendingRequests = this.pendingSaveRequestedCallbacks;
 
-      if (callback && this.pendingSaveRequestedCallbacks.length > 0) {
+      // Store the callback only if it is not undefined and we had requests
+      // coming while we were saving the database. The second condition (after &&)
+      // makes sure we don't include the callback for the call we make internally 
+      // when we detect there were requests while saving the DB. Otherwise the caller
+      // gets (calls to saveDatabase + 1) callbacks.
+      if (callback && this.pendingSaveRequestedCallbacks.length === 0) {
         this.pendingRequests.push(callback);
       }
       this.pendingSaveRequestedCallbacks = [];
@@ -2255,7 +2260,6 @@
             self.saveDatabase(callback);
           } else {
             self.pendingRequests.forEach(function(pcb) {
-              console.log(pcb);
               pcb(err);
             });
             self.pendingRequests = [];

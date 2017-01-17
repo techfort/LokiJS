@@ -616,6 +616,8 @@
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
+     * @param {boolean} options.saveThrottled - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+                                                and guaranteeing proper serialization of the calls. Default value is false.
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -812,7 +814,7 @@
           }
         }
 
-        if (this.options.hasOwnProperty('saveThrottled') && this.options.saveThrottled) {
+        if (this.options.hasOwnProperty('saveThrottled')) {
           this.saveThrottled = this.options.saveThrottled;
         }
       } // end of options processing
@@ -997,12 +999,12 @@
       case 'persistenceAdapter':
       case 'constraints':
       case 'ttl':
+        return null;
       case 'saveQueued':
       case 'saveRequested':
-      case 'saveThrottled':
       case 'pendingRequests':
       case 'pendingSaveRequestedCallbacks':
-        return null;
+        return undefined;        
       default:
         return value;
       }
@@ -1420,6 +1422,11 @@
       this.databaseVersion = 1.0;
       if (dbObject.hasOwnProperty('databaseVersion')) {
         this.databaseVersion = dbObject.databaseVersion;
+      }
+
+      // restore save throttled boolean only if not defined in options
+      if (dbObject.hasOwnProperty('saveThrottled') && !options.hasOwnProperty('saveThrottled')) {
+        this.saveThrottled = dbObject.saveThrottled;
       }
 
       this.collections = [];
@@ -2181,14 +2188,6 @@
       }
     };
 
-    /**
-     * Handles saving to file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
-     *
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
-     * @memberof Loki
-     */
     Loki.prototype.saveDatabaseInternal = function (callback) {
       var cFun = callback || function (err) {
           if (err) {
@@ -2220,6 +2219,14 @@
       }
     };
 
+    /**
+     * Handles saving to file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
+     */
     Loki.prototype.saveDatabase = function (callback) {
       if (!this.saveThrottled) {
         this.saveDatabaseInternal(callback);

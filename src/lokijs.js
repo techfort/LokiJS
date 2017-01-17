@@ -1425,7 +1425,7 @@
       }
 
       // restore save throttled boolean only if not defined in options
-      if (dbObject.hasOwnProperty('saveThrottled') && !options.hasOwnProperty('saveThrottled')) {
+      if (dbObject.hasOwnProperty('saveThrottled') && options && !options.hasOwnProperty('saveThrottled')) {
         this.saveThrottled = dbObject.saveThrottled;
       }
 

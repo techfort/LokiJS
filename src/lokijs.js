@@ -2228,14 +2228,11 @@
      * @memberof Loki
      */
     Loki.prototype.saveDatabase = function (callback) {
-      console.log('1');
       if (!this.saveThrottled) {
-        console.log('2');
         this.saveDatabaseInternal(callback);
         return;
       }
 
-      console.log('3: ' + this.saveQueued);
       if (this.saveQueued) {
         this.saveRequested = true;
         if (callback) {
@@ -2244,7 +2241,6 @@
         return;
       }
 
-      console.log('4: ' + this.pendingSaveRequestedCallbacks.length);
       this.pendingRequests = this.pendingSaveRequestedCallbacks;
 
       // Store the callback only if it is not undefined and we had requests
@@ -2254,22 +2250,16 @@
       // gets (calls to saveDatabase + 1) callbacks.
       if (callback && this.pendingSaveRequestedCallbacks.length === 0) {
         this.pendingRequests.push(callback);
-        console.log('4.1: ' + this.pendingRequests.length);
       }
       this.pendingSaveRequestedCallbacks = [];
       this.saveQueued = true;
-      console.log('4.2: ' + this.saveQueued);
       var self = this;
 
       var cb = function() {
         self.saveDatabaseInternal(function(err) {
-          console.log('5: ' + self.pendingSaveRequestedCallbacks.length);
-          console.log('6: ' + self.pendingRequests.length);
-          console.log('7: ' + self.saveRequested);
 
           self.saveQueued = false;
           if(self.saveRequested) {
-            console.log('8');
             self.saveRequested = false;
             self.pendingRequests.forEach(function(pcb) {
               // Queue the callbacks so we first finish this method execution
@@ -2281,7 +2271,6 @@
             self.pendingRequests = [];
             self.saveDatabase(callback);
           } else {
-            console.log('9: ' + self.pendingRequests.length);            
             self.pendingRequests.forEach(function(pcb) {
               // Queue the callbacks so we first finish this method execution
               // and invoke self.pendingRequests = [] before invoke the callbacks

@@ -616,7 +616,7 @@
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
-     * @param {boolean} options.saveThrottled - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
                                                 and guaranteeing proper serialization of the calls. Default value is false.
      */
     function Loki(filename, options) {
@@ -633,7 +633,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
-      this.saveThrottled = false;
+      this.throttledSaves = false;
 
       this.options = {};
 
@@ -650,10 +650,10 @@
       this.persistenceAdapter = null;
 
       // flags used to throttle saves
-      this.saveQueued = false;
-      this.saveRequested = false;
-      this.pendingRequests = [];
-      this.pendingSaveRequestedCallbacks = [];
+      this.throttledSavePending = false;
+      this.throttledSaveRequested = false;
+      this.throttledTierOneCallbacks = [];
+      this.throttleTierTwoCallbacks = [];
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -814,8 +814,8 @@
           }
         }
 
-        if (this.options.hasOwnProperty('saveThrottled')) {
-          this.saveThrottled = this.options.saveThrottled;
+        if (this.options.hasOwnProperty('throttledSaves')) {
+          this.throttledSaves = this.options.throttledSaves;
         }
       } // end of options processing
 
@@ -1000,10 +1000,10 @@
       case 'constraints':
       case 'ttl':
         return null;
-      case 'saveQueued':
-      case 'saveRequested':
-      case 'pendingRequests':
-      case 'pendingSaveRequestedCallbacks':
+      case 'throttledSavePending':
+      case 'throttledSaveRequested':
+      case 'throttledTierOneCallbacks':
+      case 'throttleTierTwoCallbacks':
         return undefined;        
       default:
         return value;
@@ -1425,8 +1425,8 @@
       }
 
       // restore save throttled boolean only if not defined in options
-      if (dbObject.hasOwnProperty('saveThrottled') && options && !options.hasOwnProperty('saveThrottled')) {
-        this.saveThrottled = dbObject.saveThrottled;
+      if (dbObject.hasOwnProperty('throttledSaves') && options && !options.hasOwnProperty('throttledSaves')) {
+        this.throttledSaves = dbObject.throttledSaves;
       }
 
       this.collections = [];
@@ -2228,62 +2228,54 @@
      * @memberof Loki
      */
     Loki.prototype.saveDatabase = function (callback) {
-      if (!this.saveThrottled) {
+      if (!this.throttledSaves) {
         this.saveDatabaseInternal(callback);
         return;
       }
 
-      if (this.saveQueued) {
-        this.saveRequested = true;
+      if (this.throttledSavePending) {
+        this.throttledSaveRequested = true;
         if (callback) {
-          this.pendingSaveRequestedCallbacks.push(callback);
+          this.throttleTierTwoCallbacks.push(callback);
         }
         return;
       }
 
-      this.pendingRequests = this.pendingSaveRequestedCallbacks;
+      this.throttledTierOneCallbacks = this.throttleTierTwoCallbacks;
 
-      // Store the callback only if it is not undefined and we had requests
-      // coming while we were saving the database. The second condition (after &&)
-      // makes sure we don't include the callback for the call we make internally 
-      // when we detect there were requests while saving the DB. Otherwise the caller
-      // gets (calls to saveDatabase + 1) callbacks.
-      if (callback && this.pendingSaveRequestedCallbacks.length === 0) {
-        this.pendingRequests.push(callback);
+      if (callback) {
+        this.throttledTierOneCallbacks.push(callback);
       }
-      this.pendingSaveRequestedCallbacks = [];
-      this.saveQueued = true;
+      this.throttleTierTwoCallbacks = [];
+      this.throttledSavePending = true;
       var self = this;
 
-      var cb = function() {
+      setTimeout(function() {
         self.saveDatabaseInternal(function(err) {
-
-          self.saveQueued = false;
-          if(self.saveRequested) {
-            self.saveRequested = false;
-            self.pendingRequests.forEach(function(pcb) {
+          self.throttledSavePending = false;
+          if(self.throttledSaveRequested) {
+            self.throttledSaveRequested = false;
+            self.throttledTierOneCallbacks.forEach(function(pcb) {
               // Queue the callbacks so we first finish this method execution
-              // and invoke self.pendingRequests = [] before invoke the callbacks
+              // and invoke self.throttledTierOneCallbacks = [] before invoke the callbacks
               setTimeout(function() {
                 pcb(err);
               }, 1);
             });
-            self.pendingRequests = [];
-            self.saveDatabase(callback);
+            self.throttledTierOneCallbacks = [];
+            self.saveDatabase();
           } else {
-            self.pendingRequests.forEach(function(pcb) {
+            self.throttledTierOneCallbacks.forEach(function(pcb) {
               // Queue the callbacks so we first finish this method execution
-              // and invoke self.pendingRequests = [] before invoke the callbacks
+              // and invoke self.throttledTierOneCallbacks = [] before invoke the callbacks
               setTimeout(function() {
                 pcb(err);
               }, 1);
             });
-            self.pendingRequests = [];
+            self.throttledTierOneCallbacks = [];
           }
         });
-      };
-
-      setTimeout(cb, 1);
+      }, 1);
     };
 
     // alias

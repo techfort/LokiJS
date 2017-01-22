@@ -651,9 +651,7 @@
 
       // flags used to throttle saves
       this.throttledSavePending = false;
-      this.throttledSaveRequested = false;
-      this.throttledTierOneCallbacks = [];
-      this.throttleTierTwoCallbacks = [];
+      this.throttledCallbacks = [];
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -1001,9 +999,7 @@
       case 'ttl':
         return null;
       case 'throttledSavePending':
-      case 'throttledSaveRequested':
-      case 'throttledTierOneCallbacks':
-      case 'throttleTierTwoCallbacks':
+      case 'throttledCallbacks':
         return undefined;        
       default:
         return value;
@@ -2234,48 +2230,32 @@
       }
 
       if (this.throttledSavePending) {
-        this.throttledSaveRequested = true;
-        if (callback) {
-          this.throttleTierTwoCallbacks.push(callback);
-        }
+        this.throttledCallbacks.push(callback);
         return;
       }
 
-      this.throttledTierOneCallbacks = this.throttleTierTwoCallbacks;
-
-      if (callback) {
-        this.throttledTierOneCallbacks.push(callback);
-      }
-      this.throttleTierTwoCallbacks = [];
+      var localCallbacks = this.throttledCallbacks;
+      this.throttledCallbacks = [];
+      localCallbacks.unshift(callback);
       this.throttledSavePending = true;
-      var self = this;
 
-      setTimeout(function() {
-        self.saveDatabaseInternal(function(err) {
-          self.throttledSavePending = false;
-          if(self.throttledSaveRequested) {
-            self.throttledSaveRequested = false;
-            self.throttledTierOneCallbacks.forEach(function(pcb) {
-              // Queue the callbacks so we first finish this method execution
-              // and invoke self.throttledTierOneCallbacks = [] before invoke the callbacks
-              setTimeout(function() {
-                pcb(err);
-              }, 1);
-            });
-            self.throttledTierOneCallbacks = [];
-            self.saveDatabase();
-          } else {
-            self.throttledTierOneCallbacks.forEach(function(pcb) {
-              // Queue the callbacks so we first finish this method execution
-              // and invoke self.throttledTierOneCallbacks = [] before invoke the callbacks
-              setTimeout(function() {
-                pcb(err);
-              }, 1);
-            });
-            self.throttledTierOneCallbacks = [];
+      var self = this;
+      this.saveDatabaseInternal(function(err) {
+        self.throttledSavePending = false;
+        localCallbacks.forEach(function(pcb) {
+          if (typeof pcb === 'function') {
+            // Queue the callbacks so we first finish this method execution
+            setTimeout(function() {
+              pcb(err);
+            }, 1);
           }
         });
-      }, 1);
+
+        // since this is called async, future requests may have come in, if so.. kick off next save
+        if (self.throttledCallbacks.length > 0) {
+          self.saveDatabase();
+        }
+      });
     };
 
     // alias

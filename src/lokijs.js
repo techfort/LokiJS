@@ -616,6 +616,8 @@
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
+     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+                                                and guaranteeing proper serialization of the calls. Default value is false.
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -631,6 +633,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
+      this.throttledSaves = false;
 
       this.options = {};
 
@@ -645,6 +648,10 @@
 
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
+
+      // flags used to throttle saves
+      this.throttledSavePending = false;
+      this.throttledCallbacks = [];
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -803,6 +810,10 @@
           } else {
             this.autosaveEnable();
           }
+        }
+
+        if (this.options.hasOwnProperty('throttledSaves')) {
+          this.throttledSaves = this.options.throttledSaves;
         }
       } // end of options processing
 
@@ -987,6 +998,9 @@
       case 'constraints':
       case 'ttl':
         return null;
+      case 'throttledSavePending':
+      case 'throttledCallbacks':
+        return undefined;        
       default:
         return value;
       }
@@ -1404,6 +1418,11 @@
       this.databaseVersion = 1.0;
       if (dbObject.hasOwnProperty('databaseVersion')) {
         this.databaseVersion = dbObject.databaseVersion;
+      }
+
+      // restore save throttled boolean only if not defined in options
+      if (dbObject.hasOwnProperty('throttledSaves') && options && !options.hasOwnProperty('throttledSaves')) {
+        this.throttledSaves = dbObject.throttledSaves;
       }
 
       this.collections = [];
@@ -2165,15 +2184,7 @@
       }
     };
 
-    /**
-     * Handles saving to file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
-     *
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
-     * @memberof Loki
-     */
-    Loki.prototype.saveDatabase = function (callback) {
+    Loki.prototype.saveDatabaseInternal = function (callback) {
       var cFun = callback || function (err) {
           if (err) {
             throw err;
@@ -2202,6 +2213,49 @@
       } else {
         cFun(new Error('persistenceAdapter not configured'));
       }
+    };
+
+    /**
+     * Handles saving to file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
+     */
+    Loki.prototype.saveDatabase = function (callback) {
+      if (!this.throttledSaves) {
+        this.saveDatabaseInternal(callback);
+        return;
+      }
+
+      if (this.throttledSavePending) {
+        this.throttledCallbacks.push(callback);
+        return;
+      }
+
+      var localCallbacks = this.throttledCallbacks;
+      this.throttledCallbacks = [];
+      localCallbacks.unshift(callback);
+      this.throttledSavePending = true;
+
+      var self = this;
+      this.saveDatabaseInternal(function(err) {
+        self.throttledSavePending = false;
+        localCallbacks.forEach(function(pcb) {
+          if (typeof pcb === 'function') {
+            // Queue the callbacks so we first finish this method execution
+            setTimeout(function() {
+              pcb(err);
+            }, 1);
+          }
+        });
+
+        // since this is called async, future requests may have come in, if so.. kick off next save
+        if (self.throttledCallbacks.length > 0) {
+          self.saveDatabase();
+        }
+      });
     };
 
     // alias

@@ -1623,10 +1623,22 @@
      * In in-memory persistence adapter for an in-memory database.  
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
+     * @param {object=} options - memory adapter options
+     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously
+     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks
      * @constructor LokiMemoryAdapter
      */
-    function LokiMemoryAdapter() {
+    function LokiMemoryAdapter(options) {
       this.hashStore = {};
+      this.options = options || {};
+
+      if (!this.options.hasOwnProperty('asyncResponses')) {
+        this.options.asyncResponses = false;
+      }
+
+      if (!this.options.hasOwnProperty('asyncTimeout')) {
+        this.options.asyncTimeout = 50; // 50 ms default
+      }
     }
 
     /**
@@ -1638,11 +1650,25 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.loadDatabase = function (dbname, callback) {
-      if (this.hashStore.hasOwnProperty(dbname)) {
-        callback(this.hashStore[dbname].value);
+      var self=this;
+
+      if (this.options.asyncResponses) {
+        setTimeout(function() {
+          if (self.hashStore.hasOwnProperty(dbname)) {
+            callback(self.hashStore[dbname].value);
+          }
+          else {
+            callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+          }
+        }, this.options.asyncTimeout);
       }
       else {
-        callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        if (this.hashStore.hasOwnProperty(dbname)) {
+          callback(this.hashStore[dbname].value);
+        }
+        else {
+          callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        }
       }
     };
 
@@ -1655,15 +1681,33 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring, callback) {
-      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+      var self=this;
+      var saveCount;
 
-      this.hashStore[dbname] = {
-        savecount: saveCount+1,
-        lastsave: new Date(),
-        value: dbstring 
-      };
+      if (this.options.asyncResponses) {
+        setTimeout(function() {
+          saveCount = (self.hashStore.hasOwnProperty(dbname)?self.hashStore[dbname].savecount:0);
 
-      callback();
+          self.hashStore[dbname] = {
+            savecount: saveCount+1,
+            lastsave: new Date(),
+            value: dbstring 
+          };
+
+          callback();
+        }, this.options.asyncTimeout);
+      }
+      else {
+        saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+
+        this.hashStore[dbname] = {
+          savecount: saveCount+1,
+          lastsave: new Date(),
+          value: dbstring 
+        };
+
+        callback();
+      }
     };
 
     /**

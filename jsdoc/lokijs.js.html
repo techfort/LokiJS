@@ -644,6 +644,8 @@
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
+     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+                                                and guaranteeing proper serialization of the calls. Default value is false.
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -659,6 +661,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
+      this.throttledSaves = false;
 
       this.options = {};
 
@@ -673,6 +676,10 @@
 
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
+
+      // flags used to throttle saves
+      this.throttledSavePending = false;
+      this.throttledCallbacks = [];
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options &amp;&amp; options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -831,6 +838,10 @@
           } else {
             this.autosaveEnable();
           }
+        }
+
+        if (this.options.hasOwnProperty('throttledSaves')) {
+          this.throttledSaves = this.options.throttledSaves;
         }
       } // end of options processing
 
@@ -1015,6 +1026,9 @@
       case 'constraints':
       case 'ttl':
         return null;
+      case 'throttledSavePending':
+      case 'throttledCallbacks':
+        return undefined;        
       default:
         return value;
       }
@@ -1434,6 +1448,11 @@
         this.databaseVersion = dbObject.databaseVersion;
       }
 
+      // restore save throttled boolean only if not defined in options
+      if (dbObject.hasOwnProperty('throttledSaves') &amp;&amp; options &amp;&amp; !options.hasOwnProperty('throttledSaves')) {
+        this.throttledSaves = dbObject.throttledSaves;
+      }
+
       this.collections = [];
 
       function makeLoader(coll) {
@@ -1632,10 +1651,22 @@
      * In in-memory persistence adapter for an in-memory database.  
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
+     * @param {object=} options - memory adapter options
+     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously
+     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks
      * @constructor LokiMemoryAdapter
      */
-    function LokiMemoryAdapter() {
+    function LokiMemoryAdapter(options) {
       this.hashStore = {};
+      this.options = options || {};
+
+      if (!this.options.hasOwnProperty('asyncResponses')) {
+        this.options.asyncResponses = false;
+      }
+
+      if (!this.options.hasOwnProperty('asyncTimeout')) {
+        this.options.asyncTimeout = 50; // 50 ms default
+      }
     }
 
     /**
@@ -1647,11 +1678,25 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.loadDatabase = function (dbname, callback) {
-      if (this.hashStore.hasOwnProperty(dbname)) {
-        callback(this.hashStore[dbname].value);
+      var self=this;
+
+      if (this.options.asyncResponses) {
+        setTimeout(function() {
+          if (self.hashStore.hasOwnProperty(dbname)) {
+            callback(self.hashStore[dbname].value);
+          }
+          else {
+            callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+          }
+        }, this.options.asyncTimeout);
       }
       else {
-        callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        if (this.hashStore.hasOwnProperty(dbname)) {
+          callback(this.hashStore[dbname].value);
+        }
+        else {
+          callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        }
       }
     };
 
@@ -1664,15 +1709,33 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring, callback) {
-      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+      var self=this;
+      var saveCount;
 
-      this.hashStore[dbname] = {
-        savecount: saveCount+1,
-        lastsave: new Date(),
-        value: dbstring 
-      };
+      if (this.options.asyncResponses) {
+        setTimeout(function() {
+          saveCount = (self.hashStore.hasOwnProperty(dbname)?self.hashStore[dbname].savecount:0);
 
-      callback();
+          self.hashStore[dbname] = {
+            savecount: saveCount+1,
+            lastsave: new Date(),
+            value: dbstring 
+          };
+
+          callback();
+        }, this.options.asyncTimeout);
+      }
+      else {
+        saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+
+        this.hashStore[dbname] = {
+          savecount: saveCount+1,
+          lastsave: new Date(),
+          value: dbstring 
+        };
+
+        callback();
+      }
     };
 
     /**
@@ -1684,7 +1747,7 @@
      */
     LokiMemoryAdapter.prototype.deleteDatabase = function(dbname, callback) {
       if (this.hashStore.hasOwnProperty(dbname)) {
-        delete this.hashStore.dbname;
+        delete this.hashStore[dbname];
       }
       
       if (typeof callback === "function") {
@@ -2193,15 +2256,7 @@
       }
     };
 
-    /**
-     * Handles saving to file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
-     *
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
-     * @memberof Loki
-     */
-    Loki.prototype.saveDatabase = function (callback) {
+    Loki.prototype.saveDatabaseInternal = function (callback) {
       var cFun = callback || function (err) {
           if (err) {
             throw err;
@@ -2230,6 +2285,49 @@
       } else {
         cFun(new Error('persistenceAdapter not configured'));
       }
+    };
+
+    /**
+     * Handles saving to file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
+     */
+    Loki.prototype.saveDatabase = function (callback) {
+      if (!this.throttledSaves) {
+        this.saveDatabaseInternal(callback);
+        return;
+      }
+
+      if (this.throttledSavePending) {
+        this.throttledCallbacks.push(callback);
+        return;
+      }
+
+      var localCallbacks = this.throttledCallbacks;
+      this.throttledCallbacks = [];
+      localCallbacks.unshift(callback);
+      this.throttledSavePending = true;
+
+      var self = this;
+      this.saveDatabaseInternal(function(err) {
+        self.throttledSavePending = false;
+        localCallbacks.forEach(function(pcb) {
+          if (typeof pcb === 'function') {
+            // Queue the callbacks so we first finish this method execution
+            setTimeout(function() {
+              pcb(err);
+            }, 1);
+          }
+        });
+
+        // since this is called async, future requests may have come in, if so.. kick off next save
+        if (self.throttledCallbacks.length > 0) {
+          self.saveDatabase();
+        }
+      });
     };
 
     // alias
@@ -6278,7 +6376,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 30 2017 05:46:38 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

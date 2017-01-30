@@ -37,7 +37,7 @@ var db = new loki(&quot;test.db&quot;);</code></pre><p>If you expect your databa
 <pre class="prettyprint source lang-javascript"><code>var loki = require('../src/lokijs.js');
 var lfsa = require('../src/loki-fs-structured-adapter.js');
 
-var db = new loki('sandbox.db', { adapter : lfsa});</code></pre><h1>Web QuickStart</h1><p>If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5MB so that won't last long but here is how to quickly get started experimenting with lokijs :</p>
+var db = new loki('sandbox.db', { adapter : lfsa});</code></pre><h1>Web QuickStart</h1><p>If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5mb so that won't last long but here is how to quickly get started experimenting with lokijs :</p>
 <pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;test.db&quot;);</code></pre><p>If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  More information follows on this adapter but here is how to get started quickly with this adapter :</p>
 <pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
 &lt;script src=&quot;../../src/loki-indexed-adapter.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var idbAdapter = new LokiIndexedAdapter();
@@ -70,7 +70,7 @@ let db = new loki('loki.json',{
         autosaveInterval: 10000, // 10 seconds
         adapter: idbAdapter
       });</code></pre><h3>Autosave with autoload example</h3><pre class="prettyprint source lang-javascript"><code>    var idbAdapter = new lokiIndexedAdapter('loki');
-    var db = new loki('test', 
+    var db = new loki('test.db', 
       {
         autoload: true,
         autoloadCallback : loadHandler,
@@ -86,7 +86,8 @@ let db = new loki('loki.json',{
         coll = db.addCollection('entries');
       }
     }</code></pre><p><a href="https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/447edca33d1274dd9a64767d23df56e9/raw/740d3bedc1ed76d3718acd207b6913281a11ed78/autoloadCallback">Try in Loki Sandbox</a>.</p>
-<h1>Creating your own Loki Persistence Adapters</h1><p>Lokijs currently supports two types of database adapters : 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.</p>
+<h1>High-Frequency save throttling</h1><p>If you manually save a lot or if your autosave timer is so low that there is a risk of overlap, you will want to enable a new loki option 'throttledSaves'. When that option is true, during the time between a adapter save and an adapter response, if new save requests come in, we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent save will callback all ten queued/tiered callbacks when -it- completes.  Once this feature is tested and verified to work with all existing code already in production, this feature will be made the default... until then enable this feature as described below : </p>
+<pre class="prettyprint source lang-javascript"><code>    var db = new loki('test.db', { throttledSaves: true });</code></pre><h1>Creating your own Loki Persistence Adapters</h1><p>Lokijs currently supports two types of database adapters : 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.</p>
 <h1>Creating your own 'Basic' persistence adapter</h1><pre class="prettyprint source lang-javascript"><code>MyCustomAdapter.prototype.loadDatabase = function(dbname, callback) {
   // using dbname, load the database from wherever your adapter expects it
   var serializedDb = localStorage[dbname];
@@ -162,6 +163,9 @@ var db = new loki('sandbox.db', { adapter: pa });</code></pre><p>You can also pa
 var pa = new loki.LokiPartitioningAdapter(idbAdapter, { paging: true, pageSize:35*1024*1024 });</code></pre><h1>LokiMemoryAdapter</h1><p>This 'basic' persistence adapter is only intended for experimenting and testing since it retains its key/value store in memory and will be lost when session is done.  This enables us to verify the partitioning adapter works and can be used to mock persistence for unit testing. </p>
 <p>You might access this memory adapter (which is included in the main source file) similarly to the following :</p>
 <pre class="prettyprint source lang-javascript"><code>var mem = new loki.LokiMemoryAdapter();
+var db = new loki('sandbox.db', {adapter: mem});</code></pre><p>If you wish to simulate asynchronous 'basic' adapter you can pass options to its constructor : </p>
+<pre class="prettyprint source lang-javascript"><code>// simulate 50ms async delay for loads and saves. this will yield thread until then
+var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
 var db = new loki('sandbox.db', {adapter: mem});</code></pre><blockquote>
 <p>In order to see LokiPartitioningAdapter used in conjunction with LokiMemoryAdapter you can view this <a href="https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/15c1aa87da16cd89b328eb84bbcdf8fa/raw/d91ac3fee212dc5aa96cb05f479d825faa17c1c8/PartitionedMemoryAdapterTest">Loki Sandbox gist</a> in your browser.  </p>
 </blockquote>
@@ -254,7 +258,7 @@ var db = new loki('test', { adapter: idbAdapter });</code></pre><p>Note the 'fin
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 30 2017 05:46:39 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -392,7 +392,7 @@
             
 
             <td class="description last"><p>if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
-                                                and guaranteeing proper serialization of the calls. Default value is false.</p></td>
+                                                and guaranteeing proper serialization of the calls. Default value is true.</p></td>
         </tr>
 
     
@@ -2046,7 +2046,7 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2318">line 2318</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2438">line 2438</a>
     </li></ul></dd>
     
 
@@ -3029,7 +3029,8 @@ of collections is passed then only the included collections will be tracked.</p>
 <div class="description">
     <p>Handles loading from file system, local storage, or adapter (indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
-   persistence method to use, or environment detection (if configuration was not provided).</p>
+   persistence method to use, or environment detection (if configuration was not provided).
+   To avoid contention with any throttledSaves, we will drain the save queue first.</p>
 </div>
 
 
@@ -3091,7 +3092,102 @@ of collections is passed then only the included collections will be tracked.</p>
 
             
 
-            <td class="description last"><p>not currently used (remove or allow overrides?)</p></td>
+            <td class="description last"><p>if throttling saves and loads, this controls how we drain save queue before loading</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWait</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: true) wait recursively until no saves are queued</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWaitLimit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: false) limit our recursive waiting to a duration</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWaitLimitDelay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: 2000) cutoff in ms to stop recursively re-draining</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3165,7 +3261,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2189">line 2189</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2309">line 2309</a>
     </li></ul></dd>
     
 
@@ -3810,7 +3906,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2270">line 2270</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2390">line 2390</a>
     </li></ul></dd>
     
 
@@ -4657,6 +4753,275 @@ your own structured persistence or data exchange.</p>
 
 
         
+            
+
+    
+
+    <h4 class="name" id="throttledSaveDrain"><span class="type-signature"></span>throttledSaveDrain<span class="signature">(callback, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Wait for throttledSaves to complete and invoke your callback when drained or duration is met.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>callback to fire when save queue is drained, it is passed a sucess parameter value</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>configuration options</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWait</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: true) if after queue is drained, another save was kicked off, wait for it</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWaitLimit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: false) limit our recursive waiting to a duration</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>recursiveWaitLimitDelay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(default: 2000) cutoff in ms to stop recursively re-draining</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2190">line 2190</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
     
 
     
@@ -4678,7 +5043,7 @@ your own structured persistence or data exchange.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 30 2017 05:46:39 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Feb 05 2017 12:40:44 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

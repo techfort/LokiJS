@@ -617,7 +617,7 @@
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
      * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
-                                                and guaranteeing proper serialization of the calls. Default value is false.
+                                                and guaranteeing proper serialization of the calls. Default value is true.
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -633,7 +633,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
-      this.throttledSaves = false;
+      this.throttledSaves = true;
 
       this.options = {};
 
@@ -1624,8 +1624,8 @@
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
      * @param {object=} options - memory adapter options
-     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously
-     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks
+     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously (default: false)
+     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks (default: 50)
      * @constructor LokiMemoryAdapter
      */
     function LokiMemoryAdapter(options) {
@@ -2178,15 +2178,80 @@
     };
 
     /**
-     * Handles loading from file system, local storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
+     * Wait for throttledSaves to complete and invoke your callback when drained or duration is met.
+     *
+     * @param {function} callback - callback to fire when save queue is drained, it is passed a sucess parameter value
+     * @param {object=} options - configuration options
+     * @param {boolean} options.recursiveWait - (default: true) if after queue is drained, another save was kicked off, wait for it
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @memberof Loki
+     */
+    Loki.prototype.throttledSaveDrain = function(callback, options) {
+      var self = this;
+      var now = (new Date()).getTime();
+
+      if (!this.throttledSaves) {
+        callback(true);
+      }
+
+      options = options || {};
+      if (!options.hasOwnProperty('recursiveWait')) {
+        options.recursiveWait = true;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimit')) {
+        options.recursiveWaitLimit = false;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimitDuration')) {
+        options.recursiveWaitLimitDuration = 2000;
+      }
+      if (!options.hasOwnProperty('started')) {
+        options.started = (new Date()).getTime();
+      }
+
+      // if save is pending
+      if (this.throttledSaves && this.throttledSavePending) {
+        // if we want to wait until we are in a state where there are no pending saves at all
+        if (options.recursiveWait) {
+          // queue the following meta callback for when it completes
+          this.throttledCallbacks.push(function() {
+            // if there is now another save pending...
+            if (self.throttledSavePending) {
+              // if we wish to wait only so long and we have exceeded limit of our waiting, callback with false success value
+              if (options.recursiveWaitLimit && (now - options.started > options.recursiveWaitLimitDuration)) {
+                callback(false);
+                return;
+              }
+              // it must be ok to wait on next queue drain
+              self.throttledSaveDrain(callback, options);
+              return;
+            }
+            // no pending saves so callback with true success
+            else {
+              callback(true);
+              return;
+            }
+          });
+        }
+        // just notify when current queue is depleted
+        else {
+          this.throttledCallbacks.push(callback);
+          return;
+        }
+      }
+      // no save pending, just callback
+      else {
+        callback(true);
+      }
+    };
+
+    /**
+     * Internal load logic, decoupled from throttling/contention logic
      *
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function=} callback - (Optional) user supplied async callback / error handler
-     * @memberof Loki
      */
-    Loki.prototype.loadDatabase = function (options, callback) {
+    Loki.prototype.loadDatabaseInternal = function (options, callback) {
       var cFun = callback || function (err, data) {
           if (err) {
             throw err;
@@ -2228,6 +2293,61 @@
       }
     };
 
+    /**
+     * Handles loading from file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *    To avoid contention with any throttledSaves, we will drain the save queue first.
+     *
+     * @param {object} options - if throttling saves and loads, this controls how we drain save queue before loading
+     * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued 
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @memberof Loki
+     */
+    Loki.prototype.loadDatabase = function (options, callback) {
+      var self=this;
+
+      // if throttling disabled, just call internal
+      if (!this.throttledSaves) {
+        this.loadDatabaseInternal(options, callback);
+        return;
+      }
+
+      // try to drain any pending saves in the queue to lock it for loading
+      this.throttledSaveDrain(function(success) {
+        if (success) {
+          // pause/throttle saving until loading is done
+          self.throttledSavePending = true;
+
+          self.loadDatabaseInternal(options, function(err) {
+            // now that we are finished loading, if no saves were throttled, disable flag
+            if (self.throttledCallbacks.length === 0) {
+              self.throttledSavePending = false;
+            }
+            // if saves requests came in while loading, kick off new save to kick off resume saves
+            else {
+              self.saveDatabase();
+            }
+
+            if (typeof callback === 'function') {
+              callback(err);
+            }
+          });
+          return;
+        }
+        else {
+          if (typeof callback === 'function') {
+            callback(new Error("Unable to pause save throttling long enough to read database"));
+          }
+        }
+      }, options);
+    };
+
+    /**
+     * Internal save logic, decoupled from save throttling logic
+     */
     Loki.prototype.saveDatabaseInternal = function (callback) {
       var cFun = callback || function (err) {
           if (err) {

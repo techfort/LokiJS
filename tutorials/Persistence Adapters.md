@@ -110,11 +110,41 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
 ```
 [Try in Loki Sandbox](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/447edca33d1274dd9a64767d23df56e9/raw/740d3bedc1ed76d3718acd207b6913281a11ed78/autoloadCallback).
 
-# High-Frequency save throttling
-If you manually save a lot or if your autosave timer is so low that there is a risk of overlap, you will want to enable a new loki option 'throttledSaves'. When that option is true, during the time between a adapter save and an adapter response, if new save requests come in, we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent save will callback all ten queued/tiered callbacks when -it- completes.  Once this feature is tested and verified to work with all existing code already in production, this feature will be made the default... until then enable this feature as described below : 
+# Save throttling and persistence contention management
+LokiJS now supports throttled saves and loads to avoid overlapping saveDatabase and loadDatabase calls from interfering with each other.  This is controlled by a loki constructor option called 'throttledSaves' and the default for that option is 'true'. 
+
+This means that within any single Loki database instance, multiple saves routed to the persistence adapter will be throttled and ensured to not conflict by overlap.  With save throttling, during the time between an adapter save and an adapter response to that save, if new save requests come in we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent (single) save will callback all ten queued/tiered callbacks when -it- completes.  
+
+If a loadDatabase call occurs while a save is pending, we will (by default) wait indefinitely for the queue to deplete without being replenished.  Once that occurs we will lock all saves during the load... any incoming save requests made while the database is being loaded will then be queued for saving once the load is completed.  Since loadDatabase now internally calls a new 'throttledSaveDrain' we will pass through options to control that drain. (These options will be summarized below).
+
+You may also directly call this 'throttledSaveDrain' loki method which can wait for the queue to drain. You might do this using any of these variations/options : 
 
 ```javascript
-    var db = new loki('test.db', { throttledSaves: true }); 
+    // wait indefinitely (recursively)
+    db.throttledSaveDrain(function () {
+      console.log("no saves in progress");
+    });
+```
+```javascript
+    // wait only for the -current- queue to deplete
+    db.throttledSaveDrain(function () {
+      console.log("queue drained");
+    }, { recursiveWait: false } );
+```
+```javascript
+    // wait recursively but only for so long...
+    db.throttledSaveDrain(function (success) {
+      if (success) {
+        console.log("no saves in progress");
+      }
+      else {
+        console.log("taking too long, try again later");
+      }
+    }, { recursiveWaitLimit: false, recursiveWaitLimitDuration: 2000 });
+```
+If you do not wish loki to supervise these conflicts with its throttling contention management, you can disable this by constructing loki with the following option (in addition to any existing options you are passing) : 
+```javascript
+var db = new loki('test.db', { throttledSaves: false });
 ```
 
 # Creating your own Loki Persistence Adapters

@@ -589,10 +589,13 @@
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       var self = this;
+
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          self.removeListener(currentEventName, listen);
+          self.removeListener(currentEventName, listener);
         });
+
+        return;
       }
 
       if (this.events[eventName]) {

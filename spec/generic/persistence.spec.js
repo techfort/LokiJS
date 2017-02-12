@@ -295,6 +295,9 @@ describe('testing adapter functionality', function () {
     var another = db.addCollection('another');
     var ai = another.insert({ a:1, b:2 });
 
+    // make sure maxId was restored correctly over partitioned save/load cycle
+    var itemMaxId = items.maxId;
+
     // for purposes of our memory adapter it is pretty much synchronous
     db.saveDatabase(function(err) {
       // should have partitioned the data
@@ -323,6 +326,7 @@ describe('testing adapter functionality', function () {
         // ok now lets load from it
         var db2 = new loki('sandbox.db', { adapter: adapter});
         db2.loadDatabase({}, function(err) {
+          expect(db2.getCollection("items").maxId).toEqual(itemMaxId);
           expect(db2.collections.length).toEqual(2);
           expect(db2.collections[0].data.length).toEqual(4);
           expect(db2.collections[1].data.length).toEqual(1);

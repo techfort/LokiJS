@@ -206,6 +206,69 @@ describe('loki', function () {
     })
   });
 
+  describe('meta validation', function() {
+    it('meta set on returned objects', function() {
+      var tdb = new loki('test.db');
+      var coll = tdb.addCollection('tc');
+      var now = (new Date()).getTime();
+
+      // verify single insert return objs have meta set properly
+      var obj = coll.insert({a:1, b:2});
+      expect(obj.hasOwnProperty('meta')).toEqual(true);
+      expect(obj.hasOwnProperty('$loki')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.meta.created).not.toBeLessThan(now);
+
+      // verify batch insert return objs have meta set properly
+      var objs = coll.insert([ { a:2, b:3}, { a:3, b:4}]);
+      expect(Array.isArray(objs));
+      objs.forEach(function(o) {
+        expect(o.hasOwnProperty('meta')).toEqual(true);
+        expect(o.hasOwnProperty('$loki')).toEqual(true);
+        expect(o.meta.hasOwnProperty('revision')).toEqual(true);
+        expect(o.meta.hasOwnProperty('version')).toEqual(true);
+        expect(o.meta.hasOwnProperty('created')).toEqual(true);
+        expect(o.meta.created).not.toBeLessThan(now);
+      });
+    });
+
+    it('meta set on events', function(done) {
+      var tdb = new loki('test.db');
+      var coll = tdb.addCollection('tc');
+      var now = (new Date()).getTime();
+
+      coll.on('insert', function(o) {
+        if (Array.isArray(o)) {
+          o.forEach(function(obj) {
+            expect(obj.hasOwnProperty('meta')).toEqual(true);
+            expect(obj.hasOwnProperty('$loki')).toEqual(true);
+            expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
+            expect(obj.meta.hasOwnProperty('version')).toEqual(true);
+            expect(obj.meta.hasOwnProperty('created')).toEqual(true);
+            expect(obj.meta.created).not.toBeLessThan(now);
+          });
+          done();
+        }
+        else {
+          expect(o.hasOwnProperty('meta')).toEqual(true);
+          expect(o.hasOwnProperty('$loki')).toEqual(true);
+          expect(o.meta.hasOwnProperty('revision')).toEqual(true);
+          expect(o.meta.hasOwnProperty('version')).toEqual(true);
+          expect(o.meta.hasOwnProperty('created')).toEqual(true);
+          expect(o.meta.created).not.toBeLessThan(now);
+        }
+      });
+
+      // verify single inserts emit with obj which has meta set properly
+      coll.insert({a:1, b:2});
+
+      // verify batch inserts emit with objs which have meta set properly
+      coll.insert([ { a:2, b:3}, { a:3, b:4}]);
+    });
+  });
+
   describe('dot notation', function () {
     it('works', function () {
       var dnc = db.addCollection('dncoll');

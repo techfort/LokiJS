@@ -1449,12 +1449,12 @@
 
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
-        copyColl = this.addCollection(coll.name);
+
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
-        copyColl.disableChangesApi = coll.disableChangesApi;
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;

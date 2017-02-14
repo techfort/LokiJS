@@ -140,7 +140,7 @@ You may also directly call this 'throttledSaveDrain' loki method which can wait 
       else {
         console.log("taking too long, try again later");
       }
-    }, { recursiveWaitLimit: false, recursiveWaitLimitDuration: 2000 });
+    }, { recursiveWaitLimit: true, recursiveWaitLimitDuration: 2000 });
 ```
 If you do not wish loki to supervise these conflicts with its throttling contention management, you can disable this by constructing loki with the following option (in addition to any existing options you are passing) : 
 ```javascript
@@ -276,7 +276,7 @@ What is happening in the gist linked above is that we create an instance of a Lo
 # 'Rolling your own' structured serialization mechanism
 In addition to the [ChangesAPI](https://github.com/techfort/LokiJS/wiki/Changes-API) which can be utilized to isolate changesets, LokiJS has established several internal utility methods to assist users in developing optimal persistence or transmission of database contents. 
 
-Those mechanisms include the ability to decompose the database into 'partitions' of structured serializations or assembled into a line oriented format (non-partitioned) and either delimited (single delimited string per collection) or non-delimited (array of strings, one per document).  These utility methods are located on the Loki object instance itself as the 'serializeDestructured' and 'deserializeDestructured' methods.  They can be invoked to create structured json serialization for the entire database, or (if you pass a partition option) it can provide a single partition at a time.  Internal loki structured serialization in its current form provides mild memory overhead reduction and increases I/O time if only some collections need to be saved.  It may also be useful for other data exchange or synchronization mechanisms. 
+Those mechanisms include the ability to decompose the database into 'partitions' of structured serializations or assembled into a line oriented format (non-partitioned) and either delimited (single delimited string per collection) or non-delimited (array of strings, one per document).  These utility methods are located on the Loki object instance itself as the 'serializeDestructured' and 'deserializeDestructured' methods.  They can be invoked to create structured json serialization for the entire database, or (if you pass a partition option) it can provide a single partition at a time.  Internal loki structured serialization in its current form provides mild memory overhead reduction and decreases I/O time if only some collections need to be saved.  It may also be useful for other data exchange or synchronization mechanisms. 
 
 In lokijs terminology the partitions of a database include the database container (partition -1) along with each individual collection (partitions 0-n).
 
@@ -382,4 +382,3 @@ In addition to core loadDatabase and saveDatabase methods, the loki Indexed adap
   adapter.deleteDatabase('UserDatabase');
   adapter.getCatalogSummary(); // gets list of all keys along with their sizes
 ```
-

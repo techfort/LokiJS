@@ -102,27 +102,40 @@
      */
     LokiFsStructuredAdapter.prototype.loadDatabase = function(dbname, callback)
     {
-      var instream = fs.createReadStream(dbname);
-      var outstream = new stream();
-      var rl = readline.createInterface(instream, outstream);
-      var self=this;
+      var instream,
+        outstream,
+        rl,
+        self=this;
 
       this.dbref = null;
 
-      // first, load db container component
-      rl.on('line', function(line) {
-        // it should single JSON object (a one line file)
-        if (self.dbref === null && line !== "") {
-          self.dbref = JSON.parse(line);
-        }
-      });
+      // make sure file exists
+      fs.stat(dbname, function (err, stats) {
+        if (!err && stats.isFile()) {
+          instream = fs.createReadStream(dbname);
+          outstream = new stream();
+          rl = readline.createInterface(instream, outstream);
 
-      // when that is done, examine its collection array to sequence loading each
-      rl.on('close', function() {
-        if (self.dbref.collections.length > 0) {
-          self.loadNextCollection(dbname, 0, function() {
-            callback(self.dbref);
+          // first, load db container component
+          rl.on('line', function(line) {
+            // it should single JSON object (a one line file)
+            if (self.dbref === null && line !== "") {
+              self.dbref = JSON.parse(line);
+            }
           });
+
+          // when that is done, examine its collection array to sequence loading each
+          rl.on('close', function() {
+            if (self.dbref.collections.length > 0) {
+              self.loadNextCollection(dbname, 0, function() {
+                callback(self.dbref);
+              });
+            }
+          });
+        }
+        else {
+          // file does not exist, so callback with null
+          callback(null);
         }
       });
     };

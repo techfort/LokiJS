@@ -27,6 +27,37 @@ describe('sorting and indexing', function () {
       expect(results[3].a).toBe(9);
     });
   });
+  
+  describe('resultset simplesort descending', function() {
+    it('works', function () {
+      var rss = db.addCollection('rssort');
+      
+      rss.insert({ a: 4, b: 2 });
+      rss.insert({ a: 7, b: 1 });
+      rss.insert({ a: 3, b: 4 });
+      rss.insert({ a: 9, b: 5 });
+
+      var results = rss.chain().simplesort('a', true).data();
+      expect(results[0].a).toBe(9);
+      expect(results[1].a).toBe(7);
+      expect(results[2].a).toBe(4);
+      expect(results[3].a).toBe(3);
+      
+      // test when indexed
+      var rss2 = db.addCollection('rssort2', { indices: ['a'] });
+      
+      rss2.insert({ a: 4, b: 2 });
+      rss2.insert({ a: 7, b: 1 });
+      rss2.insert({ a: 3, b: 4 });
+      rss2.insert({ a: 9, b: 5 });
+
+      results = rss2.chain().simplesort('a', true).data();
+      expect(results[0].a).toBe(9);
+      expect(results[1].a).toBe(7);
+      expect(results[2].a).toBe(4);
+      expect(results[3].a).toBe(3);
+    });
+  });
 
   describe('resultset simplesort with dates', function() {
     it('works', function() {

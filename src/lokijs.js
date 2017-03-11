@@ -4944,7 +4944,12 @@
         }
         results.push(obj);
       }
+      // at the 'batch' level, if clone option is true then emitted docs are clones
       this.emit('insert', results);
+
+      // if clone option is set, clone return values
+      results = this.cloneObjects ? clone(results, this.cloneMethod) : results;
+
       return results.length === 1 ? results[0] : results;
     };
 
@@ -4980,7 +4985,8 @@
         };
       }
 
-      // allow pre-insert to modify actual collection reference even if cloning
+      // both 'pre-insert' and 'insert' events are passed internal data reference even when cloning
+      // insert needs internal reference because that is where loki itself listens to add meta
       if (!bulkInsert) {
         this.emit('pre-insert', obj);
       }
@@ -4988,13 +4994,13 @@
         return undefined;
       }
 
-      // if cloning, give user back clone of 'cloned' object with $loki and meta
-      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+      returnObj = obj;
+      if (!bulkInsert) {
+        this.emit('insert', obj);
+        returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+      }
 
       this.addAutoUpdateObserver(returnObj);
-      if (!bulkInsert) {
-        this.emit('insert', returnObj);
-      }
       return returnObj;
     };
 

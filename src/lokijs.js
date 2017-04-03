@@ -1438,7 +1438,7 @@
           }
         }
 
-        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
+        copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;

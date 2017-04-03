@@ -4338,9 +4338,29 @@
        * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
        */
       function insertMeta(obj) {
+        var len, idx;
+
         if (!obj) {
           return;
         }
+
+        // if batch insert
+        if (Array.isArray(obj)) {
+          len = obj.length;
+
+          for(idx=0; idx<len; idx++) {
+            if (!obj[idx].hasOwnProperty('meta')) {
+              obj[idx].meta = {};
+            }
+
+            obj[idx].meta.created = (new Date()).getTime();
+            obj[idx].meta.revision = 0;
+          }
+
+          return;
+        }
+
+        // single object
         if (!obj.meta) {
           obj.meta = {};
         }
@@ -4783,7 +4803,7 @@
         }
         results.push(obj);
       }
-      this.emit('insert', doc);
+      this.emit('insert', results);
       return results.length === 1 ? results[0] : results;
     };
 

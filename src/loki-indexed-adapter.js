@@ -99,7 +99,7 @@
 
       // lookup up db string in AKV db
       return new Promise(function (resolve) {
-        this.catalog.getAppKey(appName, dbname, function(result) {
+        adapter.catalog.getAppKey(appName, dbname, function(result) {
           if (result.id === 0) {
             resolve();
             return;
@@ -201,7 +201,7 @@
 
       // catalog was already initialized, so just lookup object and delete by id
       return new Promise(function (resolve) {
-        this.catalog.getAppKey(appName, dbname, function(result) {
+        adapter.catalog.getAppKey(appName, dbname, function(result) {
           var id = result.id;
 
           if (id !== 0) {

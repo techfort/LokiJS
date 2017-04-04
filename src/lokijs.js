@@ -2678,6 +2678,10 @@
      * @memberof Resultset
      */
     Resultset.prototype.simplesort = function (propname, isdesc) {
+      if (typeof (isdesc) === 'undefined') {
+        isdesc = false;
+      }
+
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
         // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
@@ -2686,6 +2690,11 @@
           this.collection.ensureIndex(propname);
           // copy index values into filteredrows
           this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
+
+          if (isdesc) {
+            this.filteredrows.reverse();
+          }
+
           // we are done, return this (resultset) for further chain ops
           return this;
         }
@@ -2693,10 +2702,6 @@
         else {
           this.filteredrows = this.collection.prepareFullDocIndex();
         }
-      }
-
-      if (typeof (isdesc) === 'undefined') {
-        isdesc = false;
       }
 
       var wrappedComparer =

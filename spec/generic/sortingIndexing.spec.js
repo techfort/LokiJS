@@ -14,7 +14,7 @@ describe('sorting and indexing', function () {
   describe('resultset simplesort', function() {
     it('works', function () {
       var rss = db.addCollection('rssort');
-      
+
       rss.insert({ a: 4, b: 2 });
       rss.insert({ a: 7, b: 1 });
       rss.insert({ a: 3, b: 4 });
@@ -28,6 +28,37 @@ describe('sorting and indexing', function () {
     });
   });
 
+  describe('resultset simplesort descending', function() {
+    it('works', function () {
+      var rss = db.addCollection('rssort');
+
+      rss.insert({ a: 4, b: 2 });
+      rss.insert({ a: 7, b: 1 });
+      rss.insert({ a: 3, b: 4 });
+      rss.insert({ a: 9, b: 5 });
+
+      var results = rss.chain().simplesort('a', true).data();
+      expect(results[0].a).toBe(9);
+      expect(results[1].a).toBe(7);
+      expect(results[2].a).toBe(4);
+      expect(results[3].a).toBe(3);
+
+      // test when indexed
+      var rss2 = db.addCollection('rssort2', { indices: ['a'] });
+
+      rss2.insert({ a: 4, b: 2 });
+      rss2.insert({ a: 7, b: 1 });
+      rss2.insert({ a: 3, b: 4 });
+      rss2.insert({ a: 9, b: 5 });
+
+      results = rss2.chain().simplesort('a', true).data();
+      expect(results[0].a).toBe(9);
+      expect(results[1].a).toBe(7);
+      expect(results[2].a).toBe(4);
+      expect(results[3].a).toBe(3);
+    });
+  });
+
   describe('resultset simplesort with dates', function() {
     it('works', function() {
       var now = new Date().getTime();
@@ -38,7 +69,7 @@ describe('sorting and indexing', function () {
       var dt5 = new Date(now - 3000);
 
       var rss = db.addCollection('rssort');
-      
+
       rss.insert({ a: 1, b: dt1 });
       rss.insert({ a: 2, b: dt2 });
       rss.insert({ a: 3, b: dt3 });
@@ -58,7 +89,7 @@ describe('sorting and indexing', function () {
     it('works', function() {
       var db = new loki('test.db');
       var coll = db.addCollection('coll');
-      
+
       coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
 
       var sortfun = function(obj1, obj2) {
@@ -74,12 +105,12 @@ describe('sorting and indexing', function () {
       expect(result[2].a).toEqual(5);
     });
   });
-  
+
   describe('resultset compoundsort works correctly', function() {
     it('works', function() {
       var db = new loki('test.db');
       var coll = db.addCollection('coll');
-      
+
       coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
 
       var result = coll.chain().compoundsort(['b', 'c']).data();
@@ -92,7 +123,7 @@ describe('sorting and indexing', function () {
       expect(result.length).toEqual(3);
       expect(result[0].a).toEqual(5);
       expect(result[1].a).toEqual(2);
-      expect(result[2].a).toEqual(1);      
+      expect(result[2].a).toEqual(1);
     });
   });
 
@@ -106,7 +137,7 @@ describe('sorting and indexing', function () {
       var dt5 = new Date(now - 3000);
 
       var cidx = db.addCollection('collidx', { indices : ['b']});
-      
+
       cidx.insert({ a: 1, b: dt1 });
       cidx.insert({ a: 2, b: dt2 });
       cidx.insert({ a: 3, b: dt3 });

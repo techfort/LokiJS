@@ -4811,7 +4811,13 @@
         }
         results.push(obj);
       }
+
+      // at the 'batch' level, if clone option is true then emitted docs are clones
       this.emit('insert', results);
+
+      // if clone option is set, clone return values
+      results = this.cloneObjects ? clone(results, this.cloneMethod) : results;
+
       return results.length === 1 ? results[0] : results;
     };
 

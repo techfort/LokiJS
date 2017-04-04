@@ -97,4 +97,165 @@ describe('collection', function () {
 
     expect(result).toEqual(true);
   });
+
+  it('single inserts emit with meta when async listeners false', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll');
+
+    // listen for insert events to validate objects
+    coll.on("insert", function(obj) {
+      expect(obj.hasOwnProperty('a')).toEqual(true);
+      expect([3,6,1,7,5].indexOf(obj.a)).toBeGreaterThan(-1);
+
+      switch(obj.a) {
+        case 3: expect(obj.b).toEqual(3); break;
+        case 6: expect(obj.b).toEqual(7); break;
+        case 1: expect(obj.b).toEqual(2); break;
+        case 7: expect(obj.b).toEqual(8); break;
+        case 5: expect(obj.b).toEqual(4); break;
+      };
+
+      expect(obj.hasOwnProperty('$loki')).toEqual(true);
+      expect(obj.hasOwnProperty('meta')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.meta.revision).toEqual(0);
+      expect(obj.meta.version).toEqual(0);
+      expect(obj.meta.created).toBeGreaterThan(0);
+    });
+
+    coll.insert({ a:3, b:3 });
+    coll.insert({ a:6, b:7 });
+    coll.insert({ a:1, b:2 });
+    coll.insert({ a:7, b:8 });
+    coll.insert({ a:5, b:4 });
+  });
+
+  it('single inserts (with clone) emit meta and return instances correctly', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll', { clone:true });
+
+    // listen for insert events to validate objects
+    coll.on("insert", function(obj) {
+      expect(obj.hasOwnProperty('a')).toEqual(true);
+      expect([3,6,1,7,5].indexOf(obj.a)).toBeGreaterThan(-1);
+
+      switch(obj.a) {
+        case 3: expect(obj.b).toEqual(3); break;
+        case 6: expect(obj.b).toEqual(7); break;
+        case 1: expect(obj.b).toEqual(2); break;
+        case 7: expect(obj.b).toEqual(8); break;
+        case 5: expect(obj.b).toEqual(4); break;
+      };
+
+      expect(obj.hasOwnProperty('$loki')).toEqual(true);
+      expect(obj.hasOwnProperty('meta')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.meta.revision).toEqual(0);
+      expect(obj.meta.version).toEqual(0);
+      expect(obj.meta.created).toBeGreaterThan(0);
+    });
+
+    var i1 = coll.insert({ a:3, b:3 });
+    coll.insert({ a:6, b:7 });
+    coll.insert({ a:1, b:2 });
+    coll.insert({ a:7, b:8 });
+    coll.insert({ a:5, b:4 });
+
+    // verify that the objects returned from an insert are clones by tampering with values
+    i1.b = 9;
+    var result = coll.findOne({a:3});
+    expect(result.b).toEqual(3);
+  });
+
+  it('batch inserts emit with meta', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll');
+
+    // listen for insert events to validate objects
+    coll.on("insert", function(objs) {
+      expect(Array.isArray(objs)).toEqual(true);
+      expect(objs.length).toEqual(5);
+
+      expect(objs[0].b).toEqual(3);
+      expect(objs[1].b).toEqual(7);
+      expect(objs[2].b).toEqual(2);
+      expect(objs[3].b).toEqual(8);
+      expect(objs[4].b).toEqual(4);
+
+      expect(objs[0].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[1].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[2].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[3].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[4].hasOwnProperty('$loki')).toEqual(true);
+
+      expect(objs[0].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[1].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[2].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[3].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[4].hasOwnProperty('meta')).toEqual(true);
+
+      expect(objs[0].meta.hasOwnProperty('revision')).toEqual(true);
+      expect(objs[0].meta.hasOwnProperty('created')).toEqual(true);
+      expect(objs[0].meta.hasOwnProperty('version')).toEqual(true);
+      expect(objs[0].meta.revision).toEqual(0);
+      expect(objs[0].meta.version).toEqual(0);
+      expect(objs[0].meta.created).toBeGreaterThan(0);
+    });
+
+    coll.insert([{ a:3, b:3 },{ a:6, b:7 },{ a:1, b:2 },{ a:7, b:8 },{ a:5, b:4 }]);
+  });
+
+  it('batch inserts emit with meta and return clones', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll', { clone:true });
+
+    // listen for insert events to validate objects
+    coll.on("insert", function(objs) {
+      expect(Array.isArray(objs)).toEqual(true);
+      expect(objs.length).toEqual(5);
+
+      expect(objs[0].b).toEqual(3);
+      expect(objs[1].b).toEqual(7);
+      expect(objs[2].b).toEqual(2);
+      expect(objs[3].b).toEqual(8);
+      expect(objs[4].b).toEqual(4);
+
+      expect(objs[0].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[1].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[2].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[3].hasOwnProperty('$loki')).toEqual(true);
+      expect(objs[4].hasOwnProperty('$loki')).toEqual(true);
+
+      expect(objs[0].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[1].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[2].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[3].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[4].hasOwnProperty('meta')).toEqual(true);
+
+      expect(objs[0].meta.hasOwnProperty('revision')).toEqual(true);
+      expect(objs[0].meta.hasOwnProperty('created')).toEqual(true);
+      expect(objs[0].meta.hasOwnProperty('version')).toEqual(true);
+      expect(objs[0].meta.revision).toEqual(0);
+      expect(objs[0].meta.version).toEqual(0);
+      expect(objs[0].meta.created).toBeGreaterThan(0);
+    });
+
+    var obj1 = { a:3, b: 3};
+    var result = coll.insert([obj1,{ a:6, b:7 },{ a:1, b:2 },{ a:7, b:8 },{ a:5, b:4 }]);
+
+    expect(Array.isArray(result)).toEqual(true);
+
+    // tamper original (after insert)
+    obj1.b = 99;
+    // returned values should have been clones of original
+    expect(result[0].b).toEqual(3);
+
+    // internal data references should have benn clones of original
+    var obj = coll.findOne({a:3});
+    expect(obj.b).toEqual(3);
+  });
 });

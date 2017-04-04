@@ -848,7 +848,8 @@
      * @memberof Loki
      */
     Loki.prototype.copy = function(options) {
-      var databaseCopy = new Loki(this.filename);
+      // in case running in an environment without accurate environment detection, pass 'NA'
+      var databaseCopy = new Loki(this.filename, { env: "NA" });
       var clen, idx;
 
       options = options || {};

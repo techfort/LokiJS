@@ -141,7 +141,7 @@
 
     
 
-    <h4 class="name" id="exportDatabase"><span class="type-signature"></span>exportDatabase<span class="signature">(dbname, dbref, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="exportDatabase"><span class="type-signature"></span>exportDatabase<span class="signature">(dbname, dbref)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -213,7 +213,7 @@
             <td class="type">
             
                 
-<span class="param-type">object</span>
+<span class="param-type">string</span>
 
 
             
@@ -224,29 +224,6 @@
             
 
             <td class="description last"><p>the loki database object reference to save.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>callback passed obj.success with true or false</p></td>
         </tr>
 
     
@@ -287,7 +264,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line198">line 198</a>
+        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line205">line 205</a>
     </li></ul></dd>
     
 
@@ -310,6 +287,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was exported</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -598,7 +597,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line175">line 175</a>
+        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line182">line 182</a>
     </li></ul></dd>
     
 
@@ -629,7 +628,7 @@
 
     
 
-    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -689,29 +688,6 @@
             
 
             <td class="description last"><p>the name of the database to retrieve.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>callback should accept string param containing db object reference.</p></td>
         </tr>
 
     
@@ -775,6 +751,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -783,14 +781,14 @@
 
     
 
-    <h4 class="name" id="loadNextCollection"><span class="type-signature"></span>loadNextCollection<span class="signature">(dbname, collectionIndex, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadNextCollection"><span class="type-signature"></span>loadNextCollection<span class="signature">(dbname, collectionIndex)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Recursive function to chain loading of each collection one at a time. 
+    <p>Recursive function to chain loading of each collection one at a time.
 If at some point i can determine how to make async driven generator, this may be converted to generator.</p>
 </div>
 
@@ -870,29 +868,6 @@ If at some point i can determine how to make async driven generator, this may be
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>callback to pass to next invocation or to call when done</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -930,7 +905,7 @@ If at some point i can determine how to make async driven generator, this may be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line139">line 139</a>
+        <a href="loki-fs-structured-adapter.js.html">loki-fs-structured-adapter.js</a>, <a href="loki-fs-structured-adapter.js.html#line146">line 146</a>
     </li></ul></dd>
     
 
@@ -953,6 +928,28 @@ If at some point i can determine how to make async driven generator, this may be
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the next collection is loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -978,7 +975,7 @@ If at some point i can determine how to make async driven generator, this may be
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

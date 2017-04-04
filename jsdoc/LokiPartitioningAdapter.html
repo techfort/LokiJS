@@ -50,9 +50,9 @@
     <p>An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
 which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
 only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
-a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter). 
+a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter).
 A dirty collection that spans three pages will save all three pages again
-Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a 
+Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a
 single indexeddb row.  If a single document update causes the collection to be flagged as dirty, all
 of that collection's pages will be written on next save.</p>
 </div>
@@ -285,7 +285,7 @@ of that collection's pages will be written on next save.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1667">line 1667</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1691">line 1691</a>
     </li></ul></dd>
     
 
@@ -334,7 +334,7 @@ of that collection's pages will be written on next save.</p>
 
     
 
-    <h4 class="name" id="exportDatabase"><span class="type-signature"></span>exportDatabase<span class="signature">(dbname, dbref, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="exportDatabase"><span class="type-signature"></span>exportDatabase<span class="signature">(dbname, dbref)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -421,29 +421,6 @@ of that collection's pages will be written on next save.</p>
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>adapter callback to return load result to caller</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -481,7 +458,7 @@ of that collection's pages will be written on next save.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1855">line 1855</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1870">line 1870</a>
     </li></ul></dd>
     
 
@@ -504,161 +481,28 @@ of that collection's pages will be written on next save.</p>
 
 
 
-
-
+<h5>Returns:</h5>
 
         
-            
-
-    
-
-    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Loads a database which was partitioned into several key/value saves.
-(Loki persistence adapter interface function)</p>
+<div class="param-desc">
+    <p>a Promise that resolves after the database was deleted</p>
 </div>
 
 
 
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
         
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbname</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
+<span class="param-type">Promise</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>name of the database (filename/keyname)</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>adapter callback to return load result to caller</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1728">line 1728</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
+    </dd>
 </dl>
 
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
@@ -684,7 +528,7 @@ of that collection's pages will be written on next save.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

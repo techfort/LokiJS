@@ -40,14 +40,15 @@
 
     
 
-    <h4 class="name" id="LokiMemoryAdapter"><span class="type-signature"></span>new LokiMemoryAdapter<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LokiMemoryAdapter"><span class="type-signature"></span>new LokiMemoryAdapter<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    <p>In in-memory persistence adapter for an in-memory database.<br>This simple 'key/value' adapter is intended for unit testing and diagnostics.</p>
+    <p>In in-memory persistence adapter for an in-memory database.
+This simple 'key/value' adapter is intended for unit testing and diagnostics.</p>
 </div>
 
 
@@ -56,6 +57,139 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>memory adapter options</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>asyncResponses</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>whether callbacks are invoked asynchronously (default: false)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>asyncTimeout</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">int</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>timeout in ms to queue callbacks (default: 50)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -91,7 +225,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1603">line 1603</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1581">line 1581</a>
     </li></ul></dd>
     
 
@@ -140,7 +274,161 @@
 
     
 
-    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadDatabase"><span class="type-signature">(static) </span>LokiPartitioningAdapter#loadDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Loads a database which was partitioned into several key/value saves.
+(Loki persistence adapter interface function)</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>dbname</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>name of the database (filename/keyname)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1752">line 1752</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -203,29 +491,6 @@
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>function to call when done</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -263,7 +528,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1657">line 1657</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1683">line 1683</a>
     </li></ul></dd>
     
 
@@ -286,6 +551,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was deleted</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -294,7 +581,7 @@
 
     
 
-    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -358,29 +645,6 @@
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>adapter callback to return load result to caller</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -418,7 +682,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1621">line 1621</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1612">line 1612</a>
     </li></ul></dd>
     
 
@@ -441,6 +705,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -449,7 +735,7 @@
 
     
 
-    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -513,29 +799,6 @@
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>adapter callback to return load result to caller</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -573,7 +836,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1638">line 1638</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1645">line 1645</a>
     </li></ul></dd>
     
 
@@ -596,6 +859,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was persisted</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -621,7 +906,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

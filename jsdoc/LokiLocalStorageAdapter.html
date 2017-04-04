@@ -91,7 +91,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2065">line 2065</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2073">line 2073</a>
     </li></ul></dd>
     
 
@@ -140,7 +140,7 @@
 
     
 
-    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -204,29 +204,6 @@ can't be deleted</p>
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the callback to handle the result</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -264,7 +241,7 @@ can't be deleted</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2108">line 2108</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2117">line 2117</a>
     </li></ul></dd>
     
 
@@ -287,6 +264,28 @@ can't be deleted</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was deleted</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -295,7 +294,7 @@ can't be deleted</p>
 
     
 
-    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -358,29 +357,6 @@ can't be deleted</p>
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the callback to handle the result</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -418,7 +394,7 @@ can't be deleted</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2077">line 2077</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2085">line 2085</a>
     </li></ul></dd>
     
 
@@ -441,6 +417,28 @@ can't be deleted</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -449,7 +447,7 @@ can't be deleted</p>
 
     
 
-    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -513,29 +511,6 @@ might want to expand this to avoid dataloss on partial save</p>
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the callback to handle the result</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -573,7 +548,7 @@ might want to expand this to avoid dataloss on partial save</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2092">line 2092</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2100">line 2100</a>
     </li></ul></dd>
     
 
@@ -596,6 +571,28 @@ might want to expand this to avoid dataloss on partial save</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was saved</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -621,7 +618,7 @@ might want to expand this to avoid dataloss on partial save</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

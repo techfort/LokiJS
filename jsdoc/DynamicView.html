@@ -318,7 +318,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3306">line 3306</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3408">line 3408</a>
     </li></ul></dd>
     
 
@@ -352,7 +352,10 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydv = mycollection.addDynamicView('test');  // default is non-persistentmydv.applyFind({ 'doors' : 4 });mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });var results = mydv.data();</code></pre>
+    <pre class="prettyprint"><code>var mydv = mycollection.addDynamicView('test');  // default is non-persistent
+mydv.applyFind({ 'doors' : 4 });
+mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });
+var results = mydv.data();</code></pre>
 
 
 
@@ -480,7 +483,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3682">line 3682</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3784">line 3784</a>
     </li></ul></dd>
     
 
@@ -679,7 +682,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3714">line 3714</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3816">line 3816</a>
     </li></ul></dd>
     
 
@@ -875,7 +878,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3539">line 3539</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3641">line 3641</a>
     </li></ul></dd>
     
 
@@ -1033,7 +1036,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3520">line 3520</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3622">line 3622</a>
     </li></ul></dd>
     
 
@@ -1082,7 +1085,11 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>dv.applySort(function(obj1, obj2) {  if (obj1.name === obj2.name) return 0;  if (obj1.name > obj2.name) return 1;  if (obj1.name &lt; obj2.name) return -1;});</code></pre>
+    <pre class="prettyprint"><code>dv.applySort(function(obj1, obj2) {
+  if (obj1.name === obj2.name) return 0;
+  if (obj1.name > obj2.name) return 1;
+  if (obj1.name &lt; obj2.name) return -1;
+});</code></pre>
 
 
 
@@ -1191,7 +1198,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3564">line 3564</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3666">line 3666</a>
     </li></ul></dd>
     
 
@@ -1240,7 +1247,12 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>// to sort by age and then name (both ascending)dv.applySortCriteria(['age', 'name']);// to sort by age (ascending) and then by name (descending)dv.applySortCriteria(['age', ['name', true]);// to sort by age (descending) and then by name (descending)dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
+    <pre class="prettyprint"><code>// to sort by age and then name (both ascending)
+dv.applySortCriteria(['age', 'name']);
+// to sort by age (ascending) and then by name (descending)
+dv.applySortCriteria(['age', ['name', true]);
+// to sort by age (descending) and then by name (descending)
+dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
 
 
 
@@ -1395,7 +1407,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3731">line 3731</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3833">line 3833</a>
     </li></ul></dd>
     
 
@@ -1596,7 +1608,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3445">line 3445</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3547">line 3547</a>
     </li></ul></dd>
     
 
@@ -1700,7 +1712,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3764">line 3764</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3866">line 3866</a>
     </li></ul></dd>
     
 
@@ -1804,7 +1816,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3781">line 3781</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3883">line 3883</a>
     </li></ul></dd>
     
 
@@ -1980,7 +1992,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4043">line 4043</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4145">line 4145</a>
     </li></ul></dd>
     
 
@@ -2136,7 +2148,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3385">line 3385</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3487">line 3487</a>
     </li></ul></dd>
     
 
@@ -2297,7 +2309,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3747">line 3747</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3849">line 3849</a>
     </li></ul></dd>
     
 
@@ -2524,7 +2536,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3483">line 3483</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3585">line 3585</a>
     </li></ul></dd>
     
 
@@ -2572,7 +2584,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

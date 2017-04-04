@@ -22,7 +22,7 @@ var db = new loki('sandbox.db', { adapter : lfsa});
 ```
 
 # Web QuickStart
-If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5gb so that won't last long but here is how to quickly get started experimenting with lokijs :
+If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5mb so that won't last long but here is how to quickly get started experimenting with lokijs :
 ```
 <script src="../../src/lokijs.js"></script>
 ```
@@ -91,7 +91,7 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
 ### Autosave with autoload example
 ```javascript
     var idbAdapter = new lokiIndexedAdapter('loki');
-    var db = new loki('test', 
+    var db = new loki('test.db', 
       {
         autoload: true,
         autoloadCallback : loadHandler,
@@ -109,6 +109,13 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
     }
 ```
 [Try in Loki Sandbox](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/447edca33d1274dd9a64767d23df56e9/raw/740d3bedc1ed76d3718acd207b6913281a11ed78/autoloadCallback).
+
+# High-Frequency save throttling
+If you manually save a lot or if your autosave timer is so low that there is a risk of overlap, you will want to enable a new loki option 'throttledSaves'. When that option is true, during the time between a adapter save and an adapter response, if new save requests come in, we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent save will callback all ten queued/tiered callbacks when -it- completes.  Once this feature is tested and verified to work with all existing code already in production, this feature will be made the default... until then enable this feature as described below : 
+
+```javascript
+    var db = new loki('test.db', { throttledSaves: true }); 
+```
 
 # Creating your own Loki Persistence Adapters
 Lokijs currently supports two types of database adapters : 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.
@@ -224,6 +231,14 @@ You might access this memory adapter (which is included in the main source file)
 var mem = new loki.LokiMemoryAdapter();
 var db = new loki('sandbox.db', {adapter: mem});
 ```
+
+If you wish to simulate asynchronous 'basic' adapter you can pass options to its constructor : 
+```javascript
+// simulate 50ms async delay for loads and saves. this will yield thread until then
+var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+var db = new loki('sandbox.db', {adapter: mem});
+```
+
 > In order to see LokiPartitioningAdapter used in conjunction with LokiMemoryAdapter you can view this [Loki Sandbox gist](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/15c1aa87da16cd89b328eb84bbcdf8fa/raw/d91ac3fee212dc5aa96cb05f479d825faa17c1c8/PartitionedMemoryAdapterTest) in your browser.  
 
 What is happening in the gist linked above is that we create an instance of a LokiMemoryAdapter and pass that instance to the LokiPartitioningAdapter.  We utilimately pass in the created LokiPartitioningAdapter instance to the database constructor.  We then add multiple collections to our database, save it, update one of the collections (causing that collection's 'dirty' flag to be set), and save again.  When we examine the output of the script we can view the contents of the memory adapter's internal hash store to see how there are multiple keys for a single database.  We can also see that our modified collection (along with the database container itself) was saved again.  The database container currently has no 'dirty' flag set but since we remove all collection.data[] object instances from it, it is relatively lightweight.

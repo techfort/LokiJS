@@ -497,6 +497,296 @@ describe('testing adapter functionality', function () {
   });
 });
 
+describe('async adapter tests', function() {
+  it('verify throttled async drain', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+    var db = new loki('sandbox.db');
+    db.initializePersistence({adapter: mem, throttledSaves: true});
+
+    // Add a collection to the database
+    var items = db.addCollection('items');
+    var mjol = items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    var gun = items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    var tyr = items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    var drau = items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    var another = db.addCollection('another');
+    var ai = another.insert({ a:1, b:2 });
+
+    // this should immediately kick off the first save
+    db.saveDatabase();
+
+    // the following saves (all async) should coalesce into one save
+    ai.b = 3;
+    another.update(ai);
+    db.saveDatabase();
+
+    tyr.owner = "arngrim";
+    items.update(tyr);
+    db.saveDatabase();
+
+    drau.maker = 'dwarves';
+    items.update(drau);
+    db.saveDatabase();
+
+    db.throttledSaveDrain().then(function () {
+      // Wait until saves are complete and then loading the database and make
+      // sure all saves are complete and includes their changes
+      var db2 = new loki('sandbox.db');
+      db2.initializePersistence({ adapter: mem });
+
+      db2.loadDatabase().then(function() {
+        // total of 2 saves should have occurred
+        expect(mem.hashStore["sandbox.db"].savecount).toEqual(2);
+
+        // verify the saved database contains all expected changes
+        expect(db2.getCollection("another").findOne({a:1}).b).toEqual(3);
+        expect(db2.getCollection("items").findOne({name:'tyrfing'}).owner).toEqual('arngrim');
+        expect(db2.getCollection("items").findOne({name:'draupnir'}).maker).toEqual('dwarves');
+        done();
+      });
+    });
+  });
+
+  it('verify throttledSaveDrain with duration timeout works', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 100 });
+    var db = new loki('sandbox.db');
+    db.initializePersistence({ adapter: mem });
+
+    // Add a collection to the database
+    var items = db.addCollection('items');
+    var mjol = items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    var gun = items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    var tyr = items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    var drau = items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    var another = db.addCollection('another');
+    var ai = another.insert({ a:1, b:2 });
+
+    // this should immediately kick off the first save (~100ms)
+    db.saveDatabase();
+
+    // now queue up a sequence to be run one after the other, at ~50ms each (~300ms total) when first completes
+    ai.b = 3;
+    another.update(ai);
+    db.saveDatabase(function() {
+      tyr.owner = "arngrim";
+      items.update(tyr);
+
+      db.saveDatabase(function() {
+        drau.maker = 'dwarves';
+        items.update(drau);
+
+        db.saveDatabase();
+      });
+    });
+
+    expect(db.throttledSaveRunning).not.toEqual(null);
+    expect(db.throttledSavePending).not.toEqual(null);
+
+    // we want this to fail so above they should be bootstrapping several
+    // saves which take about 400ms to complete.
+    // The full drain can take one save/callback cycle longer than duration (~100ms).
+    db.throttledSaveDrain({ recursiveWaitLimit: true, recursiveWaitLimitDuration: 200 })
+      .then(function () {
+        expect(true).toEqual(true);
+      }, function () {
+        expect(true).toEqual(false);
+      });
+
+    setTimeout(function() {
+      done();
+    }, 600);
+  });
+
+  it('verify throttled async throttles', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+    var db = new loki('sandbox.db');
+    db.initializePersistence({ adapter: mem });
+
+    // Add a collection to the database
+    var items = db.addCollection('items');
+    var mjol = items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    var gun = items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    var tyr = items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    var drau = items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    var another = db.addCollection('another');
+    var ai = another.insert({ a:1, b:2 });
+
+    // this should immediately kick off the first save
+    db.saveDatabase();
+
+    // the following saves (all async) should coalesce into one save
+    ai.b = 3;
+    another.update(ai);
+    db.saveDatabase();
+
+    tyr.owner = "arngrim";
+    items.update(tyr);
+    db.saveDatabase();
+
+    drau.maker = 'dwarves';
+    items.update(drau);
+    db.saveDatabase();
+
+    // give all async saves time to complete and then verify outcome
+    setTimeout(function() {
+      // total of 2 saves should have occurred
+      expect(mem.hashStore["sandbox.db"].savecount).toEqual(2);
+
+      // verify the saved database contains all expected changes
+      var db2 = new loki('sandbox.db');
+      db2.initializePersistence({adapter: mem});
+      db2.loadDatabase().then(function() {
+        expect(db2.getCollection("another").findOne({a:1}).b).toEqual(3);
+        expect(db2.getCollection("items").findOne({name:'tyrfing'}).owner).toEqual('arngrim');
+        expect(db2.getCollection("items").findOne({name:'draupnir'}).maker).toEqual('dwarves');
+        done();
+      });
+    }, 200);
+  });
+
+  it('verify throttled async works as expected', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+    var adapter = new loki.LokiPartitioningAdapter(mem);
+    var throttled = true;
+    var db = new loki('sandbox.db');
+    db.initializePersistence({adapter: adapter, throttledSaves: throttled});
+
+    // Add a collection to the database
+    var items = db.addCollection('items');
+    items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    var tyr = items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    var another = db.addCollection('another');
+    var ai = another.insert({ a:1, b:2 });
+
+    db.saveDatabase().then(function() {
+      // should have partitioned the data
+      expect(Object.keys(mem.hashStore).length).toEqual(3);
+      expect(mem.hashStore.hasOwnProperty("sandbox.db")).toEqual(true);
+      expect(mem.hashStore.hasOwnProperty("sandbox.db.0")).toEqual(true);
+      expect(mem.hashStore.hasOwnProperty("sandbox.db.1")).toEqual(true);
+      // all partitions should have been saved once each
+      expect(mem.hashStore["sandbox.db"].savecount).toEqual(1);
+      expect(mem.hashStore["sandbox.db.0"].savecount).toEqual(1);
+      expect(mem.hashStore["sandbox.db.1"].savecount).toEqual(1);
+
+      // so let's go ahead and update one of our collections to make it dirty
+      ai.b = 3;
+      another.update(ai);
+
+      // and save again to ensure lastsave is different on for db container and that one collection
+      db.saveDatabase().then(function() {
+        // db container always gets saved since we currently have no 'dirty' flag on it to check
+        expect(mem.hashStore["sandbox.db"].savecount).toEqual(2);
+        // we didn't change this
+        expect(mem.hashStore["sandbox.db.0"].savecount).toEqual(1);
+        // we updated this collection so it should have been saved again
+        expect(mem.hashStore["sandbox.db.1"].savecount).toEqual(2);
+
+        // now update a multi page items collection and verify both pages were saved
+        tyr.maker = "elves";
+        items.update(tyr);
+        db.saveDatabase().then(function() {
+          expect(mem.hashStore["sandbox.db"].savecount).toEqual(3);
+          expect(mem.hashStore["sandbox.db.0"].savecount).toEqual(2);
+          expect(mem.hashStore["sandbox.db.1"].savecount).toEqual(2);
+
+          // ok now lets load from it
+          var db2 = new loki('sandbox.db');
+          db2.initializePersistence({adapter: adapter, throttledSaves: throttled});
+          db2.loadDatabase().then(function() {
+            expect(db2.collections.length).toEqual(2);
+            expect(db2.collections[0].data.length).toEqual(4);
+            expect(db2.collections[1].data.length).toEqual(1);
+            expect(db2.getCollection("items").findOne({ name : 'tyrfing'}).maker).toEqual("elves");
+            expect(db2.getCollection("another").findOne({ a: 1}).b).toEqual(3);
+
+            // verify empty collection saves with paging
+            db.addCollection("extracoll");
+            db.saveDatabase().then(function() {
+              expect(mem.hashStore["sandbox.db"].savecount).toEqual(4);
+              expect(mem.hashStore["sandbox.db.0"].savecount).toEqual(2);
+              expect(mem.hashStore["sandbox.db.1"].savecount).toEqual(2);
+              expect(mem.hashStore["sandbox.db.2"].savecount).toEqual(1);
+
+              // now verify loading empty collection works with paging codepath
+              db2 = new loki('sandbox.db');
+              db2.initializePersistence({adapter: adapter, throttledSaves: throttled});
+              db2.loadDatabase().then(function() {
+                expect(db2.collections.length).toEqual(3);
+                expect(db2.collections[0].data.length).toEqual(4);
+                expect(db2.collections[1].data.length).toEqual(1);
+                expect(db2.collections[2].data.length).toEqual(0);
+
+                // since async calls are being used, use jasmine done() to indicate test finished
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+
+  it('verify loadDatabase in the middle of throttled saves will wait for queue to drain first', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 75 });
+    var db = new loki('sandbox.db');
+    db.initializePersistence({ adapter: mem });
+
+    // Add a collection to the database
+    var items = db.addCollection('items');
+    var mjol = items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    var gun = items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+    var tyr = items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+    var drau = items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+    var another = db.addCollection('another');
+    var ai = another.insert({ a:1, b:2 });
+
+    // this should immediately kick off the first save (~100ms)
+    db.saveDatabase();
+
+    // now queue up a sequence to be run one after the other, at ~50ms each (~300ms total) when first completes
+    ai.b = 3;
+    another.update(ai);
+    db.saveDatabase().then(function() {
+      tyr.owner = "arngrim";
+      items.update(tyr);
+
+      db.saveDatabase().then(function() {
+        drau.maker = 'dwarves';
+        items.update(drau);
+
+        db.saveDatabase();
+      });
+    });
+
+    expect(db.throttledSaveRunning).not.toEqual(null);
+    expect(db.throttledSavePending).not.toEqual(null);
+
+    // at this point, several rounds of saves should be triggered...
+    // a load at this scope (possibly simulating script run from different code path)
+    // should wait until any pending saves are complete, then freeze saves (queue them ) while loading,
+    // then re-enable saves
+    db.loadDatabase().then(function () {
+
+      expect(db.getCollection('another').findOne({a:1}).b).toEqual(3);
+      expect(db.getCollection('items').findOne({name:'tyrfing'}).owner).toEqual('arngrim');
+      expect(db.getCollection('items').findOne({name:'draupnir'}).maker).toEqual('dwarves');
+    });
+
+    setTimeout(function() {
+      done();
+    }, 600);
+  });
+});
+
 describe('testing changesAPI', function() {
   it('verify pending changes persist across save/load cycle', function(done) {
     var mem = new loki.LokiMemoryAdapter();

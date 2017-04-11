@@ -48,11 +48,9 @@
 
 <div class="description">
     <p>Loki persistence adapter class for indexedDb.
-    This class fulfills abstract adapter interface which can be applied to other storage methods. 
+    This class fulfills abstract adapter interface which can be applied to other storage methods.
     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
-    Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
-    Anywhere a callback is omitted, it should return results (if applicable) to console.
-    IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+    IndexedDb storage is provided per-domain, so we implement app/key/value database to
     allow separate contexts for separate apps within a domain.</p>
 </div>
 
@@ -251,7 +249,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line64">line 64</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line62">line 62</a>
     </li></ul></dd>
     
 
@@ -304,7 +302,7 @@
 
     
 
-    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname, callback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -335,8 +333,6 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -362,51 +358,10 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
             <td class="description last"><p>the name of the database to delete from the catalog.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>(Optional) executed on database delete</p></td>
         </tr>
 
     
@@ -447,7 +402,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line184">line 184</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line186">line 186</a>
     </li></ul></dd>
     
 
@@ -470,11 +425,37 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was deleted</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>// DELETE DATABASE// delete 'finance'/'test' value from catalogidbAdapter.deleteDatabase('test', function {  // database deleted});</code></pre>
+    <pre class="prettyprint"><code>// DELETE DATABASE
+// delete 'finance'/'test' value from catalog
+idbAdapter.deleteDatabase('test', function {
+  // database deleted
+});</code></pre>
 
 
 
@@ -584,7 +565,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line224">line 224</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line226">line 226</a>
     </li></ul></dd>
     
 
@@ -715,7 +696,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line294">line 294</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line296">line 296</a>
     </li></ul></dd>
     
 
@@ -846,7 +827,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line249">line 249</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line251">line 251</a>
     </li></ul></dd>
     
 
@@ -873,7 +854,12 @@ This utility method does not (yet) guarantee async deletions will be completed b
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>idbAdapter.getDatabaseList(function(result) {  // result is array of string names for that appcontext ('finance')  result.forEach(function(str) {    console.log(str);  });});</code></pre>
+    <pre class="prettyprint"><code>idbAdapter.getDatabaseList(function(result) {
+  // result is array of string names for that appcontext ('finance')
+  result.forEach(function(str) {
+    console.log(str);
+  });
+});</code></pre>
 
 
 
@@ -882,7 +868,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
 
     
 
-    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadDatabase"><span class="type-signature"></span>loadDatabase<span class="signature">(dbname)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -945,29 +931,6 @@ This utility method does not (yet) guarantee async deletions will be completed b
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>callback should accept string param containing serialized db string.</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -1005,7 +968,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line86">line 86</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line84">line 84</a>
     </li></ul></dd>
     
 
@@ -1028,11 +991,38 @@ This utility method does not (yet) guarantee async deletions will be completed b
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was loaded</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>// LOADvar idbAdapter = new LokiIndexedAdapter('finance');var db = new loki('test', { adapter: idbAdapter });  db.loadDatabase(function(result) {  console.log('done');});</code></pre>
+    <pre class="prettyprint"><code>// LOAD
+var idbAdapter = new LokiIndexedAdapter('finance');
+var db = new loki('test', { adapter: idbAdapter });
+  db.loadDatabase(function(result) {
+  console.log('done');
+});</code></pre>
 
 
 
@@ -1041,7 +1031,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
 
     
 
-    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname, dbstring, callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="saveDatabase"><span class="type-signature"></span>saveDatabase<span class="signature">(dbname, dbstring)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
 
     
 
@@ -1127,29 +1117,6 @@ This utility method does not (yet) guarantee async deletions will be completed b
         </tr>
 
     
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(Optional) callback passed obj.success with true or false</p></td>
-        </tr>
-
-    
     </tbody>
 </table>
 
@@ -1187,7 +1154,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line137">line 137</a>
+        <a href="loki-indexed-adapter.js.html">loki-indexed-adapter.js</a>, <a href="loki-indexed-adapter.js.html#line131">line 131</a>
     </li></ul></dd>
     
 
@@ -1210,11 +1177,38 @@ This utility method does not (yet) guarantee async deletions will be completed b
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a Promise that resolves after the database was persisted</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>// SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}var idbAdapter = new LokiIndexedAdapter('finance');var db = new loki('test', { adapter: idbAdapter });var coll = db.addCollection('testColl');coll.insert({test: 'val'});db.saveDatabase();  // could pass callback if needed for async complete</code></pre>
+    <pre class="prettyprint"><code>// SAVE : will save App/Key/Val as 'finance'/'test'/{serializedDb}
+var idbAdapter = new LokiIndexedAdapter('finance');
+var db = new loki('test', { adapter: idbAdapter });
+var coll = db.addCollection('testColl');
+coll.insert({test: 'val'});
+db.saveDatabase();  // could pass callback if needed for async complete</code></pre>
 
 
 
@@ -1240,7 +1234,7 @@ This utility method does not (yet) guarantee async deletions will be completed b
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

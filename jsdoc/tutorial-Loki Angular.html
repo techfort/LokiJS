@@ -29,11 +29,14 @@
 
 <article>
     <h1>Lokiwork, the LokiJS Angular Service</h1><h2>Overview</h2><p>This service of Lokijs for Angular simplifies things to the most basic level because i found Loki difficult to work with in a mobile environment.  all you do is setup json files that specify the layout of your data then add, and update entries to the databases.</p>
-<h3>Demo</h3><p>View the Plunker demo <a href="http://plnkr.co/3H1kgFKWsr341zsWLZvp">here</a>.</p>
-<h3>Install:</h3><p><code>bower install lokijs</code></p>
-<h3>Html:</h3><pre class="prettyprint source"><code>&lt;script src=&quot;bower_components/lokijs/src/lokijs.js&quot;>&lt;/script>
-&lt;script src=&quot;bower_components/lokijs/src/loki-angular.js&quot;>&lt;/script></code></pre><h3>App:</h3><p><code>angular.module('app',['lokijs']);</code></p>
-<h3>Configure database template:</h3><p>I might call this file -&gt; <code>json_locations.js</code> Note: each one has to be called, json1, json2, json3, etc as shown in the following: </p>
+<p>###Install:
+<code>bower install lokijs</code></p>
+<p>###Html:</p>
+<pre class="prettyprint source"><code>&lt;script src=&quot;bower_components/lokijs/src/lokijs.js&quot;>&lt;/script>
+&lt;script src=&quot;bower_components/lokijs/src/loki-angular.js&quot;>&lt;/script></code></pre><p>###App:
+<code>angular.module('app',['lokijs']);</code></p>
+<p>###Configure database template:
+I might call this file -&gt; <code>json_locations.js</code> Note: each one has to be called, json1, json2, json3, etc as shown in the following: </p>
 <pre class="prettyprint source"><code>app.constant(
     'json1', 
     {  
@@ -48,7 +51,9 @@
                       }
             ]
     }
-    );</code></pre><h3>Controller:</h3><pre class="prettyprint source"><code>app.controller('myCtrl', function($scope, Lokiwork){...});</code></pre><h3>Usage:</h3><p>Lokiwork.setCurrentDoc(dbname, collection, document_identifier);</p>
+    );</code></pre><p>###Controller:</p>
+<pre class="prettyprint source"><code>app.controller('myCtrl', function($scope, Lokiwork){...});</code></pre><p>###Usage:</p>
+<p>Lokiwork.setCurrentDoc(dbname, collection, document_identifier);</p>
 <pre class="prettyprint source"><code>Lokiwork.setCurrentDoc('settings', 'globals', {'name': &quot;user settings&quot;});</code></pre><p>Lokiwork.getCurrentDoc();</p>
 <pre class="prettyprint source"><code>Lokiwork.getCurrentDoc();</code></pre><p>Lokiwork.updateCurrentDoc(name, value);</p>
 <pre class="prettyprint source"><code>Lokiwork.updateCurrentDoc(&quot;power&quot;, true);</code></pre><p>Lokiwork.deleteCurrentDoc();</p>
@@ -60,7 +65,8 @@
 <pre class="prettyprint source"><code>Lokiwork.getCollection('settings', 'globals');</code></pre><p>Lokwork.addCollection(json_obj);</p>
 <pre class="prettyprint source"><code>Lokiwork.addCollection(item); // example below</code></pre><p>Lokiwork.deleteCollection(dbName, collName);</p>
 <pre class="prettyprint source"><code>Lokiwork.deleteCollection('settings', globals');</code></pre><p>Lokiwork.deleteDatabase(dbName);</p>
-<pre class="prettyprint source"><code>Lokiwork.deleteDatabase(&quot;settings&quot;);</code></pre><h4>Further examples:</h4><pre class="prettyprint source"><code>var collection = {  
+<pre class="prettyprint source"><code>Lokiwork.deleteDatabase(&quot;settings&quot;);</code></pre><p>####Further examples:</p>
+<pre class="prettyprint source"><code>var collection = {  
   &quot;db&quot;:&quot;settings&quot;,
   &quot;collection&quot;: &quot;globals&quot; ,
   &quot;documents&quot; :
@@ -77,12 +83,15 @@
 <pre class="prettyprint source"><code>Lokiwork.setCurrentDoc('settings', 'globals', {'name': &quot;user settings&quot;})
     .then(function(data){               
        Lokiwork.updateCurrentDoc(&quot;address&quot;, &quot;1801 Waters Ridge Drive&quot;);
-    });</code></pre><h3>Remember!</h3><p>A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.</p>
-<h3>Notes:</h3><ul>
+    });</code></pre><p>###Remember!
+A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.</p>
+<p>###Notes:</p>
+<ul>
 <li>If you delete a database it's recreated the next time the app is restarted and on the first query because it will see the angular json file and recreate it (it won't overwrite existing though).  If you want to permanantly remove a database, then you have to also remove the angular json file.  This is perfect, because on a mobile device the user may have local storage wiped, no problem, because the next time they boot up the databases will all be recreated.</li>
 <li>Since Lokijs is generating all of the database content it should be 100% compatible with native Lokijs commands not listed here but found on the office website shown below.</li>
 </ul>
-<h3>The official Lokijs page</h3><p><a href="https://github.com/techfort/LokiJS">LokiJS</a></p>
+<p>###The official Lokijs page
+<a href="https://github.com/techfort/LokiJS">LokiJS</a></p>
 </article>
 
 </section>
@@ -96,7 +105,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

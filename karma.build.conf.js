@@ -17,6 +17,7 @@ module.exports = function (config) {
     files: [
       'node_modules/es6-promise/dist/es6-promise.auto.js',
       'build/lokijs.min.js',
+      'src/loki-indexed-adapter.js',
       'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',
       'spec/browser/*.js'

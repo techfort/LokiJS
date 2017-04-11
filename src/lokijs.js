@@ -587,10 +587,13 @@
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       var self = this;
+
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          self.removeListener(currentEventName, listen);
+          self.removeListener(currentEventName, listener);
         });
+
+        return;
       }
 
       if (this.events[eventName]) {
@@ -622,6 +625,7 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
+      this.throttledSaves = true;
 
       this.options = {
         serializationMethod: options && options.hasOwnProperty('serializationMethod') ? options.serializationMethod : 'normal',
@@ -639,6 +643,10 @@
 
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
+
+      // flags used to throttle saves
+      this.throttledSaveRunning = null;
+      this.throttledSavePending = null;
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options && options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -699,8 +707,6 @@
 
       return adapter;
     };
-
-
     /**
      * configures options related to database persistence.
      *
@@ -712,6 +718,8 @@
      * @param {object} options.inflate - options that are passed to loadDatabase if autoload enabled
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
+     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+     *   and guaranteeing proper serialization of the calls. Default value is true.
      * @returns {Promise} a Promise that resolves after initialization and (if enabled) autoloading the database
      * @memberof Loki
      */
@@ -770,6 +778,10 @@
 
       if (this.options.hasOwnProperty('autosaveInterval')) {
         this.autosaveInterval = parseInt(this.options.autosaveInterval, 10);
+      }
+
+      if (this.options.hasOwnProperty('throttledSaves')) {
+        this.throttledSaves = this.options.throttledSaves;
       }
 
       this.autosaveDisable();
@@ -1392,12 +1404,12 @@
 
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
-        copyColl = this.addCollection(coll.name);
+
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
-        copyColl.disableChangesApi = coll.disableChangesApi;
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
@@ -1429,7 +1441,7 @@
           }
         }
 
-        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
+        copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
@@ -1570,10 +1582,23 @@
      * In in-memory persistence adapter for an in-memory database.
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
+     * @param {object=} options - memory adapter options
+     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously (default: false)
+     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks (default: 50)
+     *
      * @constructor LokiMemoryAdapter
      */
-    function LokiMemoryAdapter() {
+    function LokiMemoryAdapter(options) {
       this.hashStore = {};
+      this.options = options || {};
+
+      if (!this.options.hasOwnProperty('asyncResponses')) {
+        this.options.asyncResponses = false;
+      }
+
+      if (!this.options.hasOwnProperty('asyncTimeout')) {
+        this.options.asyncTimeout = 50; // 50 ms default
+      }
     }
 
     /**
@@ -1585,11 +1610,27 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.loadDatabase = function (dbname) {
-      if (this.hashStore.hasOwnProperty(dbname)) {
-        return Promise.resolve(this.hashStore[dbname].value);
+      var self = this;
+
+      if (this.options.asyncResponses) {
+        return new Promise(function(resolve, reject) {
+          setTimeout(function () {
+            if (self.hashStore.hasOwnProperty(dbname)) {
+              resolve(self.hashStore[dbname].value);
+            }
+            else {
+              reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+            }
+          }, self.options.asyncTimeout);
+        });
       }
       else {
-        return Promise.reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        if (this.hashStore.hasOwnProperty(dbname)) {
+          return Promise.resolve(this.hashStore[dbname].value);
+        }
+        else {
+          return Promise.reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        }
       }
     };
 
@@ -1602,15 +1643,34 @@
      * @memberof LokiMemoryAdapter
      */
     LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring) {
-      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+      var self=this;
+      var saveCount;
 
-      this.hashStore[dbname] = {
-        savecount: saveCount+1,
-        lastsave: new Date(),
-        value: dbstring
-      };
+      if (this.options.asyncResponses) {
+        return new Promise(function(resolve, reject) {
+          setTimeout(function () {
+            saveCount = (self.hashStore.hasOwnProperty(dbname) ? self.hashStore[dbname].savecount : 0);
 
-      return Promise.resolve();
+            self.hashStore[dbname] = {
+              savecount: saveCount + 1,
+              lastsave: new Date(),
+              value: dbstring
+            };
+
+            resolve();
+          }, self.options.asyncTimeout);
+        });
+      } else {
+        saveCount = (this.hashStore.hasOwnProperty(dbname) ? this.hashStore[dbname].savecount : 0);
+
+        this.hashStore[dbname] = {
+          savecount: saveCount + 1,
+          lastsave: new Date(),
+          value: dbstring
+        };
+
+        return Promise.resolve();
+      }
     };
 
     /**
@@ -2065,13 +2125,72 @@
     };
 
     /**
-     * Handles loading from file system, local storage, or adapter (indexeddb).
+     * Wait for throttledSaves to complete and invoke your callback when drained or duration is met.
+     *
+     * @param {object=} options - configuration options
+     * @param {boolean} options.recursiveWait - (default: true) if after queue is drained, another save was kicked off, wait for it
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @returns {Promise} a Promise that resolves when save queue is drained, it is passed a sucess parameter value
+     * @memberof Loki
+     */
+    Loki.prototype.throttledSaveDrain = function(options) {
+      var self = this;
+      var now = (new Date()).getTime();
+
+      if (!this.throttledSaves) {
+        return Promise.resolve();
+      }
+
+      options = options || {};
+      if (!options.hasOwnProperty('recursiveWait')) {
+        options.recursiveWait = true;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimit')) {
+        options.recursiveWaitLimit = false;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimitDuration')) {
+        options.recursiveWaitLimitDuration = 2000;
+      }
+      if (!options.hasOwnProperty('started')) {
+        options.started = (new Date()).getTime();
+      }
+
+      // if save is pending
+      if (this.throttledSaves && this.throttledSaveRunning !== null) {
+        // if we want to wait until we are in a state where there are no pending saves at all
+        if (options.recursiveWait) {
+          // queue the following meta callback for when it completes
+          return Promise.resolve(Promise.all([this.throttledSaveRunning, this.throttledSavePending])).then(function() {
+            if (self.throttledSaveRunning !== null || self.throttledSavePending !== null) {
+              if (options.recursiveWaitLimit && (now - options.started > options.recursiveWaitLimitDuration)) {
+                return Promise.reject();
+              }
+              return self.throttledSaveDrain(options);
+            } else {
+              return Promise.resolve();
+            }
+          });
+        }
+        // just notify when current queue is depleted
+        else {
+          return Promise.resolve(this.throttledSaveRunning);
+        }
+      }
+      // no save pending, just callback
+      else {
+        return Promise.resolve();
+      }
+    };
+
+    /**
+     * Internal load logic, decoupled from throttling/contention logic
      *
      * @param {object} options - an object containing inflation options for each collection
      * @returns {Promise} a Promise that resolves after the database is loaded
      * @memberof Loki
      */
-    Loki.prototype.loadDatabase = function (options) {
+    Loki.prototype.loadDatabaseInternal = function (options) {
       var self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
@@ -2100,12 +2219,40 @@
     };
 
     /**
-     * Handles saving to file system, local storage, or adapter (indexeddb)
+     * Handles loading from file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *    To avoid contention with any throttledSaves, we will drain the save queue first.
      *
+     * @param {object} options - if throttling saves and loads, this controls how we drain save queue before loading
+     * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @returns {Promise} a Promise that resolves after the database is loaded
      * @memberof Loki
-     * @returns {Promise} a Promise that resolves after the database is persisted
      */
-    Loki.prototype.saveDatabase = function () {
+    Loki.prototype.loadDatabase = function (options) {
+      var self=this;
+
+      // if throttling disabled, just call internal
+      if (!this.throttledSaves) {
+        return this.loadDatabaseInternal(options);
+      }
+
+      // try to drain any pending saves in the queue to lock it for loading
+      return this.throttledSaveDrain(options).then(function() {
+        // pause/throttle saving until loading is done
+        self.throttledSaveRunning  = self.loadDatabaseInternal(options).then(function() {
+          // now that we are finished loading, if no saves were throttled, disable flag
+          self.throttledSaveRunning = null;
+        });
+        return self.throttledSaveRunning;
+      }, function() {
+        throw new Error("Unable to pause save throttling long enough to read database");
+      });
+    };
+
+    Loki.prototype.saveDatabaseInternal = function () {
       var self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
@@ -2118,7 +2265,7 @@
       // check if the adapter is requesting (and supports) a 'reference' mode export
       if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // filename may seem redundant but loadDatabase will need to expect this same filename
-        saved = this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}));
+        saved = this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable: true}));
       }
       // otherwise just pass the serialized database to adapter
       else {
@@ -2129,6 +2276,40 @@
         self.autosaveClearFlags();
         self.emit("save");
       });
+    };
+
+    /**
+     * Handles saving to file system, local storage, or adapter (indexeddb)
+     *    This method utilizes loki configuration options (if provided) to determine which
+     *    persistence method to use, or environment detection (if configuration was not provided).
+     *
+     * @memberof Loki
+     * @returns {Promise} a Promise that resolves after the database is persisted
+     */
+    Loki.prototype.saveDatabase = function () {
+      if (!this.throttledSaves) {
+        return this.saveDatabaseInternal();
+      }
+      var self = this;
+
+      // if the db save is currently running, a new promise for a next db save is created
+      // all calls to save db will get this new promise which will be processed right after
+      // the current db save is finished
+      if (this.throttledSaveRunning !== null && this.throttledSavePending === null) {
+        this.throttledSavePending = Promise.resolve(this.throttledSaveRunning).then(function() {
+          self.throttledSaveRunning = null;
+          self.throttledSavePending = null;
+          return self.saveDatabase();
+        });
+      }
+      if (this.throttledSavePending !== null) {
+        return this.throttledSavePending;
+      }
+      this.throttledSaveRunning = this.saveDatabaseInternal().then(function() {
+        self.throttledSaveRunning = null;
+      });
+
+      return this.throttledSaveRunning;
     };
 
     // alias
@@ -2497,6 +2678,10 @@
      * @memberof Resultset
      */
     Resultset.prototype.simplesort = function (propname, isdesc) {
+      if (typeof (isdesc) === 'undefined') {
+        isdesc = false;
+      }
+
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained && !this.filterInitialized && this.filteredrows.length === 0) {
         // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
@@ -2505,6 +2690,11 @@
           this.collection.ensureIndex(propname);
           // copy index values into filteredrows
           this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
+
+          if (isdesc) {
+            this.filteredrows.reverse();
+          }
+
           // we are done, return this (resultset) for further chain ops
           return this;
         }
@@ -2512,10 +2702,6 @@
         else {
           this.filteredrows = this.collection.prepareFullDocIndex();
         }
-      }
-
-      if (typeof (isdesc) === 'undefined') {
-        isdesc = false;
       }
 
       var wrappedComparer =
@@ -4160,9 +4346,29 @@
        * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
        */
       function insertMeta(obj) {
+        var len, idx;
+
         if (!obj) {
           return;
         }
+
+        // if batch insert
+        if (Array.isArray(obj)) {
+          len = obj.length;
+
+          for(idx=0; idx<len; idx++) {
+            if (!obj[idx].hasOwnProperty('meta')) {
+              obj[idx].meta = {};
+            }
+
+            obj[idx].meta.created = (new Date()).getTime();
+            obj[idx].meta.revision = 0;
+          }
+
+          return;
+        }
+
+        // single object
         if (!obj.meta) {
           obj.meta = {};
         }
@@ -4605,7 +4811,13 @@
         }
         results.push(obj);
       }
-      this.emit('insert', doc);
+
+      // at the 'batch' level, if clone option is true then emitted docs are clones
+      this.emit('insert', results);
+
+      // if clone option is set, clone return values
+      results = this.cloneObjects ? clone(results, this.cloneMethod) : results;
+
       return results.length === 1 ? results[0] : results;
     };
 

@@ -594,8 +594,6 @@
           }
 
         });
-      } else {
-        throw new Error('No event ' + eventName + ' defined');
       }
     };
 
@@ -617,10 +615,13 @@
      */
     LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
       var self = this;
+
       if (Array.isArray(eventName)) {
         eventName.forEach(function(currentEventName) {
-          self.removeListener(currentEventName, listen);
+          self.removeListener(currentEventName, listener);
         });
+
+        return;
       }
 
       if (this.events[eventName]) {
@@ -637,13 +638,6 @@
      * @param {object=} options - (Optional) config options object
      * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
      * @param {boolean} options.verbose - enable console output (default is 'false')
-     * @param {boolean} options.autosave - enables autosave
-     * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
-     * @param {boolean} options.autoload - enables autoload on loki instantiation
-     * @param {function} options.autoloadCallback - user callback called after database load
-     * @param {adapter} options.adapter - an instance of a loki persistence adapter
-     * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
-     * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -659,8 +653,12 @@
       this.autosave = false;
       this.autosaveInterval = 5000;
       this.autosaveHandle = null;
+      this.throttledSaves = true;
 
-      this.options = {};
+      this.options = {
+        serializationMethod: options &amp;&amp; options.hasOwnProperty('serializationMethod') ? options.serializationMethod : 'normal',
+        destructureDelimiter: options &amp;&amp; options.hasOwnProperty('destructureDelimiter') ? options.destructureDelimiter : '$&lt;\n'
+      };
 
       // currently keeping persistenceMethod and persistenceAdapter as loki level properties that
       // will not or cannot be deserialized.  You are required to configure persistence every time
@@ -673,6 +671,10 @@
 
       // retain reference to optional (non-serializable) persistenceAdapter 'instance'
       this.persistenceAdapter = null;
+
+      // flags used to throttle saves
+      this.throttledSaveRunning = null;
+      this.throttledSavePending = null;
 
       // enable console output if verbose flag is set (disabled by default)
       this.verbose = options &amp;&amp; options.hasOwnProperty('verbose') ? options.verbose : false;
@@ -687,15 +689,6 @@
       };
 
       var getENV = function () {
-        // if (typeof global !== 'undefined' &amp;&amp; (global.android || global.NSObject)) {
-        //   //If no adapter is set use the default nativescript adapter
-        //   if (!options.adapter) {
-        //     var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
-        //     options.adapter=new LokiNativescriptAdapter();
-        //   }
-        //   return 'NATIVESCRIPT'; //nativescript
-        // }
-
         if (typeof window === 'undefined') {
           return 'NODEJS';
         }
@@ -723,15 +716,6 @@
         this.ENV = getENV();
       }
 
-      // not sure if this is necessary now that i have refactored the line above
-      if (this.ENV === 'undefined') {
-        this.ENV = 'NODEJS';
-      }
-
-      //if (typeof (options) !== 'undefined') {
-      this.configureOptions(options, true);
-      //}
-
       this.on('init', this.clearChanges);
 
     }
@@ -751,25 +735,24 @@
 
       return adapter;
     };
-
-
     /**
-     * Allows reconfiguring database options
+     * configures options related to database persistence.
      *
      * @param {object} options - configuration options to apply to loki db object
-     * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
-     * @param {boolean} options.verbose - enable console output (default is 'false')
+     * @param {adapter} options.adapter - an instance of a loki persistence adapter
      * @param {boolean} options.autosave - enables autosave
      * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
      * @param {boolean} options.autoload - enables autoload on loki instantiation
-     * @param {function} options.autoloadCallback - user callback called after database load
-     * @param {adapter} options.adapter - an instance of a loki persistence adapter
+     * @param {object} options.inflate - options that are passed to loadDatabase if autoload enabled
      * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
-     * @param {boolean} initialConfig - (internal) true is passed when loki ctor is invoking
+     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
+     *   and guaranteeing proper serialization of the calls. Default value is true.
+     * @returns {Promise} a Promise that resolves after initialization and (if enabled) autoloading the database
      * @memberof Loki
      */
-    Loki.prototype.configureOptions = function (options, initialConfig) {
+    Loki.prototype.initializePersistence = function (options) {
+      var self = this;
       var defaultPersistence = {
           'NODEJS': 'fs',
           'BROWSER': 'localStorage',
@@ -780,7 +763,7 @@
           'localStorage': LokiLocalStorageAdapter
         };
 
-      this.options = {};
+      this.options = options || {};
 
       this.persistenceMethod = null;
       // retain reference to optional persistence adapter 'instance'
@@ -788,51 +771,14 @@
       this.persistenceAdapter = null;
 
       // process the options
-      if (typeof (options) !== 'undefined') {
-        this.options = options;
-
-        if (this.options.hasOwnProperty('persistenceMethod')) {
-          // check if the specified persistence method is known
-          if (typeof (persistenceMethods[options.persistenceMethod]) == 'function') {
-            this.persistenceMethod = options.persistenceMethod;
-            this.persistenceAdapter = new persistenceMethods[options.persistenceMethod]();
-          }
-          // should be throw an error here, or just fall back to defaults ??
+      if (this.options.hasOwnProperty('persistenceMethod')) {
+        // check if the specified persistence method is known
+        if (typeof (persistenceMethods[this.options.persistenceMethod]) === 'function') {
+          this.persistenceMethod = this.options.persistenceMethod;
+          this.persistenceAdapter = new persistenceMethods[this.options.persistenceMethod]();
         }
-
-        // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
-        if (this.options.hasOwnProperty('adapter')) {
-          this.persistenceMethod = 'adapter';
-          this.persistenceAdapter = options.adapter;
-          this.options.adapter = null;
-        }
-
-
-        // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
-        if (options.autoload &amp;&amp; initialConfig) {
-          // for autoload, let the constructor complete before firing callback
-          var self = this;
-          setTimeout(function () {
-            self.loadDatabase(options, options.autoloadCallback);
-          }, 1);
-        }
-
-        if (this.options.hasOwnProperty('autosaveInterval')) {
-          this.autosaveDisable();
-          this.autosaveInterval = parseInt(this.options.autosaveInterval, 10);
-        }
-
-        if (this.options.hasOwnProperty('autosave') &amp;&amp; this.options.autosave) {
-          this.autosaveDisable();
-          this.autosave = true;
-
-          if (this.options.hasOwnProperty('autosaveCallback')) {
-            this.autosaveEnable(options, options.autosaveCallback);
-          } else {
-            this.autosaveEnable();
-          }
-        }
-      } // end of options processing
+        // should be throw an error here, or just fall back to defaults ??
+      }
 
       // ensure defaults exists for options which were not set
       if (!this.options.hasOwnProperty('serializationMethod')) {
@@ -852,6 +798,37 @@
         }
       }
 
+      // if user passes adapter, set persistence mode to adapter and retain persistence adapter instance
+      if (this.options.hasOwnProperty('adapter')) {
+        this.persistenceMethod = 'adapter';
+        this.persistenceAdapter = this.options.adapter;
+      }
+
+      if (this.options.hasOwnProperty('autosaveInterval')) {
+        this.autosaveInterval = parseInt(this.options.autosaveInterval, 10);
+      }
+
+      if (this.options.hasOwnProperty('throttledSaves')) {
+        this.throttledSaves = this.options.throttledSaves;
+      }
+
+      this.autosaveDisable();
+
+      var loaded;
+
+      // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
+      if (this.options.autoload) {
+        loaded = this.loadDatabase(this.options.inflate);
+      }
+      else {
+        loaded = Promise.resolve();
+      }
+
+      return loaded.then(function () {
+        if (self.options.autosave) {
+          self.autosaveEnable();
+        }
+      });
     };
 
     /**
@@ -881,7 +858,7 @@
           databaseCopy.collections[idx].ttl = null;
         }
       }
-      
+
       return databaseCopy;
     };
 
@@ -1046,8 +1023,8 @@
 
     /**
      * Destructured JSON serialization routine to allow alternate serialization methods.
-     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
-     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
      * your own structured persistence or data exchange.
      *
      * @param {object=} options - output format options for use externally to loki
@@ -1230,8 +1207,8 @@
 
     /**
      * Destructured JSON deserialization routine to minimize memory overhead.
-     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
-     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
      * your own structured persistence or data exchange.
      *
      * @param {string|array} destructuredSource - destructured json or array to deserialize from
@@ -1440,7 +1417,7 @@
         var collOptions = options[coll.name];
         var inflater;
 
-        if(collOptions.proto) {
+        if (collOptions.proto) {
           inflater = collOptions.inflate || Utils.copyProperties;
 
           return function(data) {
@@ -1455,12 +1432,12 @@
 
       for (i; i &lt; len; i += 1) {
         coll = dbObject.collections[i];
-        copyColl = this.addCollection(coll.name);
+
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
         copyColl.asyncListeners = coll.asyncListeners;
-        copyColl.disableChangesApi = coll.disableChangesApi;
         copyColl.cloneObjects = coll.cloneObjects;
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
@@ -1492,7 +1469,7 @@
           }
         }
 
-        copyColl.maxId = (coll.data.length === 0) ? 0 : coll.maxId;
+        copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
         copyColl.idIndex = coll.idIndex;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
@@ -1543,24 +1520,25 @@
      * Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
      * Does not actually destroy the db.
      *
-     * @param {function=} callback - (Optional) if supplied will be registered with close event before emitting.
+     * @returns {Promise} a Promise that resolves after closing the database succeeded
      * @memberof Loki
      */
-    Loki.prototype.close = function (callback) {
+    Loki.prototype.close = function () {
+      var self = this;
+      var saved;
+
       // for autosave scenarios, we will let close perform final save (if dirty)
       // For web use, you might call from window.onbeforeunload to shutdown database, saving pending changes
       if (this.autosave) {
         this.autosaveDisable();
         if (this.autosaveDirty()) {
-          this.saveDatabase(callback);
-          callback = undefined;
+          saved = this.saveDatabase();
         }
       }
 
-      if (callback) {
-        this.on('close', callback);
-      }
-      this.emit('close');
+      return Promise.resolve(saved).then(function () {
+        self.emit('close');
+      });
     };
 
     /**-------------------------+
@@ -1629,13 +1607,26 @@
      */
 
     /**
-     * In in-memory persistence adapter for an in-memory database.  
+     * In in-memory persistence adapter for an in-memory database.
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
+     *
+     * @param {object=} options - memory adapter options
+     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously (default: false)
+     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks (default: 50)
      *
      * @constructor LokiMemoryAdapter
      */
-    function LokiMemoryAdapter() {
+    function LokiMemoryAdapter(options) {
       this.hashStore = {};
+      this.options = options || {};
+
+      if (!this.options.hasOwnProperty('asyncResponses')) {
+        this.options.asyncResponses = false;
+      }
+
+      if (!this.options.hasOwnProperty('asyncTimeout')) {
+        this.options.asyncTimeout = 50; // 50 ms default
+      }
     }
 
     /**
@@ -1643,15 +1634,31 @@
      * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiMemoryAdapter
      */
-    LokiMemoryAdapter.prototype.loadDatabase = function (dbname, callback) {
-      if (this.hashStore.hasOwnProperty(dbname)) {
-        callback(this.hashStore[dbname].value);
+    LokiMemoryAdapter.prototype.loadDatabase = function (dbname) {
+      var self = this;
+
+      if (this.options.asyncResponses) {
+        return new Promise(function(resolve, reject) {
+          setTimeout(function () {
+            if (self.hashStore.hasOwnProperty(dbname)) {
+              resolve(self.hashStore[dbname].value);
+            }
+            else {
+              reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+            }
+          }, self.options.asyncTimeout);
+        });
       }
       else {
-        callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        if (this.hashStore.hasOwnProperty(dbname)) {
+          return Promise.resolve(this.hashStore[dbname].value);
+        }
+        else {
+          return Promise.reject(new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+        }
       }
     };
 
@@ -1660,45 +1667,62 @@
      * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the database was persisted
      * @memberof LokiMemoryAdapter
      */
-    LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring, callback) {
-      var saveCount = (this.hashStore.hasOwnProperty(dbname)?this.hashStore[dbname].savecount:0);
+    LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring) {
+      var self=this;
+      var saveCount;
 
-      this.hashStore[dbname] = {
-        savecount: saveCount+1,
-        lastsave: new Date(),
-        value: dbstring 
-      };
+      if (this.options.asyncResponses) {
+        return new Promise(function(resolve, reject) {
+          setTimeout(function () {
+            saveCount = (self.hashStore.hasOwnProperty(dbname) ? self.hashStore[dbname].savecount : 0);
 
-      callback();
+            self.hashStore[dbname] = {
+              savecount: saveCount + 1,
+              lastsave: new Date(),
+              value: dbstring
+            };
+
+            resolve();
+          }, self.options.asyncTimeout);
+        });
+      } else {
+        saveCount = (this.hashStore.hasOwnProperty(dbname) ? this.hashStore[dbname].savecount : 0);
+
+        this.hashStore[dbname] = {
+          savecount: saveCount + 1,
+          lastsave: new Date(),
+          value: dbstring
+        };
+
+        return Promise.resolve();
+      }
     };
 
     /**
      * Deletes a database from its in-memory store.
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {function} callback - function to call when done
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiMemoryAdapter
      */
-    LokiMemoryAdapter.prototype.deleteDatabase = function(dbname, callback) {
+    LokiMemoryAdapter.prototype.deleteDatabase = function(dbname) {
       if (this.hashStore.hasOwnProperty(dbname)) {
-        delete this.hashStore.dbname;
+        delete this.hashStore[dbname];
       }
-      
-      if (typeof callback === "function") {
-        callback();
-      }
+
+      return Promise.resolve();
     };
 
     /**
      * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
      * only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
-     * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter). 
+     * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter).
      * A dirty collection that spans three pages will save all three pages again
-     * Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a 
+     * Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a
      * single indexeddb row.  If a single document update causes the collection to be flagged as dirty, all
      * of that collection's pages will be written on next save.
      *
@@ -1750,18 +1774,18 @@
      * (Loki persistence adapter interface function)
      *
      * @param {string} dbname - name of the database (filename/keyname)
-     * @param {function} callback - adapter callback to return load result to caller
-     * @memberof LokiPartitioningAdapter
+     * @returns {Promise} a Promise that resolves after the database was loaded
+     * @memberof LokiMemoryAdapter
      */
-    LokiPartitioningAdapter.prototype.loadDatabase = function (dbname, callback) {
+    LokiPartitioningAdapter.prototype.loadDatabase = function (dbname) {
       var self=this;
       this.dbname = dbname;
       this.dbref = new Loki(dbname);
 
       // load the db container (without data)
-      this.adapter.loadDatabase(dbname, function(result) {
+      return this.adapter.loadDatabase(dbname).then(function(result) {
         if (typeof result !== "string") {
-          callback(new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()"));
+          throw new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()");
         }
 
         // I will want to use loki destructuring helper methods so i will inflate into typed instance
@@ -1772,8 +1796,7 @@
         var clen = self.dbref.collections.length;
 
         if (self.dbref.collections.length === 0) {
-          callback(self.dbref);
-          return;
+          return self.dbref;
         }
 
         self.pageIterator = {
@@ -1781,8 +1804,8 @@
           pageIndex: 0
         };
 
-        self.loadNextPartition(0, function() {
-          callback(self.dbref);
+        return self.loadNextPartition(0).then(function() {
+          return self.dbref;
         });
       });
     };
@@ -1791,27 +1814,23 @@
      * Used to sequentially load each collection partition, one at a time.
      *
      * @param {int} partition - ordinal collection position to load next
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the next partition is loaded
      */
-    LokiPartitioningAdapter.prototype.loadNextPartition = function(partition, callback) {
+    LokiPartitioningAdapter.prototype.loadNextPartition = function(partition) {
       var keyname = this.dbname + "." + partition;
       var self=this;
 
       if (this.options.paging === true) {
         this.pageIterator.pageIndex = 0;
-        this.loadNextPage(callback);
-        return;
+        return this.loadNextPage();
       }
 
-      this.adapter.loadDatabase(keyname, function(result) {
+      return this.adapter.loadDatabase(keyname).then(function(result) {
         var data = self.dbref.deserializeCollection(result, { delimited: true, collectionIndex: partition });
         self.dbref.collections[partition].data = data;
 
         if (++partition &lt; self.dbref.collections.length) {
-          self.loadNextPartition(partition, callback);
-        }
-        else {
-          callback();
+          return self.loadNextPartition(partition);
         }
       });
     };
@@ -1819,15 +1838,15 @@
     /**
      * Used to sequentially load the next page of collection partition, one at a time.
      *
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the next page is loaded
      */
-    LokiPartitioningAdapter.prototype.loadNextPage = function(callback) {
+    LokiPartitioningAdapter.prototype.loadNextPage = function() {
       // calculate name for next saved page in sequence
       var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
       var self=this;
 
       // load whatever page is next in sequence
-      this.adapter.loadDatabase(keyname, function(result) {
+      return this.adapter.loadDatabase(keyname).then(function(result) {
         var data = result.split(self.options.delimiter);
         result = ""; // free up memory now that we have split it into array
         var dlen = data.length;
@@ -1854,18 +1873,14 @@
 
         // if last page, we are done with this partition
         if (isLastPage) {
-
           // if there are more partitions, kick off next partition load
           if (++self.pageIterator.collection &lt; self.dbref.collections.length) {
-            self.loadNextPartition(self.pageIterator.collection, callback);
-          }
-          else {
-            callback();
+            return self.loadNextPartition(self.pageIterator.collection);
           }
         }
         else {
           self.pageIterator.pageIndex++;
-          self.loadNextPage(callback);
+          return self.loadNextPage();
         }
       });
     };
@@ -1876,11 +1891,11 @@
      *
      * @param {string} dbname - name of the database (filename/keyname)
      * @param {object} dbref - reference to database which we will partition and save.
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the database was deleted
      *
-     * @memberof LokiPartitioningAdapter     
+     * @memberof LokiPartitioningAdapter
      */
-    LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref, callback) {
+    LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref) {
       var self=this;
       var idx, clen = dbref.collections.length;
 
@@ -1895,17 +1910,15 @@
         }
       }
 
-      this.saveNextPartition(function(err) {
-        callback(err);
-      });
+      return this.saveNextPartition();
     };
 
     /**
      * Helper method used internally to save each dirty collection, one at a time.
      *
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the next partition is saved
      */
-    LokiPartitioningAdapter.prototype.saveNextPartition = function(callback) {
+    LokiPartitioningAdapter.prototype.saveNextPartition = function() {
       var self=this;
       var partition = this.dirtyPartitions.shift();
       var keyname = this.dbname + ((partition===-1)?"":("." + partition));
@@ -1919,15 +1932,11 @@
         };
 
         // since saveNextPage recursively calls itself until done, our callback means this whole paged partition is finished
-        this.saveNextPage(function(err) {
-          if (self.dirtyPartitions.length === 0) {
-            callback(err);
-          }
-          else {
-            self.saveNextPartition(callback);
+        return this.saveNextPage().then(function() {
+          if (self.dirtyPartitions.length !== 0) {
+            return self.saveNextPartition();
           }
         });
-        return;
       }
 
       // otherwise this is 'non-paged' partioning...
@@ -1937,17 +1946,9 @@
         partition: partition
       });
 
-      this.adapter.saveDatabase(keyname, result, function(err) {
-        if (err) {
-          callback(err);
-          return;
-        }
-
-        if (self.dirtyPartitions.length === 0) {
-          callback(null);
-        }
-        else {
-          self.saveNextPartition(callback);
+      return this.adapter.saveDatabase(keyname, result).then(function() {
+        if (self.dirtyPartitions.length !== 0) {
+          return self.saveNextPartition();
         }
       });
     };
@@ -1955,9 +1956,9 @@
     /**
      * Helper method used internally to generate and save the next page of the current (dirty) partition.
      *
-     * @param {function} callback - adapter callback to return load result to caller
+     * @returns {Promise} a Promise that resolves after the next partition is saved
      */
-    LokiPartitioningAdapter.prototype.saveNextPage = function(callback) {
+    LokiPartitioningAdapter.prototype.saveNextPage = function() {
       var self=this;
       var coll = this.dbref.collections[this.pageIterator.collection];
       var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
@@ -1969,20 +1970,13 @@
       var doneWithPartition=false,
         doneWithPage=false;
 
-      var pageSaveCallback = function(err) {
+      var pageSaveCallback = function() {
         pageBuilder = "";
 
-        if (err) {
-          callback(err);
-        }
-
         // update meta properties then continue process by invoking callback
-        if (doneWithPartition) {
-          callback(null);
-        }
-        else {
+        if (!doneWithPartition) {
           self.pageIterator.pageIndex++;
-          self.saveNextPage(callback);
+          return self.saveNextPage();
         }
       };
 
@@ -2012,8 +2006,7 @@
 
         // if we are done with page save it and pass off to next recursive call or callback
         if (doneWithPartition || doneWithPage) {
-          this.adapter.saveDatabase(keyname, pageBuilder, pageSaveCallback);
-          return;
+          return this.adapter.saveDatabase(keyname, pageBuilder).then(pageSaveCallback);
         }
       }
     };
@@ -2029,27 +2022,29 @@
     /**
      * loadDatabase() - Load data from file, will throw an error if the file does not exist
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       var self = this;
 
-      this.fs.stat(dbname, function (err, stats) {
-        if (!err &amp;&amp; stats.isFile()) {
-          self.fs.readFile(dbname, {
-            encoding: 'utf8'
-          }, function readFileCallback(err, data) {
-            if (err) {
-              callback(new Error(err));
-            } else {
-              callback(data);
-            }
-          });
-        }
-        else {
-          callback(null);
-        }
+      return new Promise(function (resolve, reject) {
+        self.fs.stat(dbname, function (err, stats) {
+          if (!err &amp;&amp; stats.isFile()) {
+            self.fs.readFile(dbname, {
+              encoding: 'utf8'
+            }, function readFileCallback(err, data) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(data);
+              }
+            });
+          }
+          else {
+            reject();
+          }
+        });
       });
     };
 
@@ -2057,18 +2052,27 @@
      * saveDatabase() - save data to file, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was persisted
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+    LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
       var self = this;
       var tmpdbname = dbname + '~';
-      this.fs.writeFile(tmpdbname, dbstring, function writeFileCallback(err) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          self.fs.rename(tmpdbname,dbname,callback);
-        }
+
+      return new Promise(function (resolve, reject) {
+        self.fs.writeFile(tmpdbname, dbstring, function (err) {
+          if (err) {
+            reject(err);
+          } else {
+            self.fs.rename(tmpdbname, dbname, function (err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
+          }
+        });
       });
     };
 
@@ -2076,16 +2080,20 @@
      * deleteDatabase() - delete the database file, will throw an error if the
      * file can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiFsAdapter
      */
-    LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
-      this.fs.unlink(dbname, function deleteDatabaseCallback(err) {
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback();
-        }
+    LokiFsAdapter.prototype.deleteDatabase = function deleteDatabase(dbname) {
+      var self = this;
+
+      return new Promise(function (resolve, reject) {
+        self.fs.unlink(dbname, function deleteDatabaseCallback(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
       });
     };
 
@@ -2099,98 +2107,203 @@
     /**
      * loadDatabase() - Load data from localstorage
      * @param {string} dbname - the name of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was loaded
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.loadDatabase = function loadDatabase(dbname) {
       if (localStorageAvailable()) {
-        callback(localStorage.getItem(dbname));
-      } else {
-        callback(new Error('localStorage is not available'));
+        return Promise.resolve(localStorage.getItem(dbname));
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * saveDatabase() - save data to localstorage, will throw an error if the file can't be saved
      * might want to expand this to avoid dataloss on partial save
      * @param {string} dbname - the filename of the database to load
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was saved
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
+    LokiLocalStorageAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring) {
       if (localStorageAvailable()) {
         localStorage.setItem(dbname, dbstring);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
     };
 
     /**
      * deleteDatabase() - delete the database from localstorage, will throw an error if it
      * can't be deleted
      * @param {string} dbname - the filename of the database to delete
-     * @param {function} callback - the callback to handle the result
+     * @returns {Promise} a Promise that resolves after the database was deleted
      * @memberof LokiLocalStorageAdapter
      */
-    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname, callback) {
+    LokiLocalStorageAdapter.prototype.deleteDatabase = function deleteDatabase(dbname) {
       if (localStorageAvailable()) {
         localStorage.removeItem(dbname);
-        callback(null);
-      } else {
-        callback(new Error('localStorage is not available'));
+
+        return Promise.resolve();
       }
+
+      return Promise.reject(new Error('localStorage is not available'));
+    };
+
+    /**
+     * Wait for throttledSaves to complete and invoke your callback when drained or duration is met.
+     *
+     * @param {object=} options - configuration options
+     * @param {boolean} options.recursiveWait - (default: true) if after queue is drained, another save was kicked off, wait for it
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @returns {Promise} a Promise that resolves when save queue is drained, it is passed a sucess parameter value
+     * @memberof Loki
+     */
+    Loki.prototype.throttledSaveDrain = function(options) {
+      var self = this;
+      var now = (new Date()).getTime();
+
+      if (!this.throttledSaves) {
+        return Promise.resolve();
+      }
+
+      options = options || {};
+      if (!options.hasOwnProperty('recursiveWait')) {
+        options.recursiveWait = true;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimit')) {
+        options.recursiveWaitLimit = false;
+      }
+      if (!options.hasOwnProperty('recursiveWaitLimitDuration')) {
+        options.recursiveWaitLimitDuration = 2000;
+      }
+      if (!options.hasOwnProperty('started')) {
+        options.started = (new Date()).getTime();
+      }
+
+      // if save is pending
+      if (this.throttledSaves &amp;&amp; this.throttledSaveRunning !== null) {
+        // if we want to wait until we are in a state where there are no pending saves at all
+        if (options.recursiveWait) {
+          // queue the following meta callback for when it completes
+          return Promise.resolve(Promise.all([this.throttledSaveRunning, this.throttledSavePending])).then(function() {
+            if (self.throttledSaveRunning !== null || self.throttledSavePending !== null) {
+              if (options.recursiveWaitLimit &amp;&amp; (now - options.started > options.recursiveWaitLimitDuration)) {
+                return Promise.reject();
+              }
+              return self.throttledSaveDrain(options);
+            } else {
+              return Promise.resolve();
+            }
+          });
+        }
+        // just notify when current queue is depleted
+        else {
+          return Promise.resolve(this.throttledSaveRunning);
+        }
+      }
+      // no save pending, just callback
+      else {
+        return Promise.resolve();
+      }
+    };
+
+    /**
+     * Internal load logic, decoupled from throttling/contention logic
+     *
+     * @param {object} options - an object containing inflation options for each collection
+     * @returns {Promise} a Promise that resolves after the database is loaded
+     * @memberof Loki
+     */
+    Loki.prototype.loadDatabaseInternal = function (options) {
+      var self = this;
+
+      // the persistenceAdapter should be present if all is ok, but check to be sure.
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
+      }
+
+      return Promise.resolve(this.persistenceAdapter.loadDatabase(this.filename))
+        .then(function loadDatabaseCallback(dbString) {
+          if (typeof (dbString) === 'string') {
+            self.loadJSON(dbString, options || {});
+            self.emit('load', self);
+          } else {
+            // if adapter has returned an js object (other than null or error) attempt to load from JSON object
+            if (typeof (dbString) === "object" &amp;&amp; dbString !== null &amp;&amp; !(dbString instanceof Error)) {
+              self.loadJSONObject(dbString, options || {});
+              self.emit('load', self);
+            } else {
+              if (dbString instanceof Error)
+                throw dbString;
+
+              throw new TypeError('The persistence adapter did not load a serialized DB string or object.');
+            }
+          }
+        });
     };
 
     /**
      * Handles loading from file system, local storage, or adapter (indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
+     *    To avoid contention with any throttledSaves, we will drain the save queue first.
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @param {object} options - if throttling saves and loads, this controls how we drain save queue before loading
+     * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued
+     * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
+     * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
+     * @returns {Promise} a Promise that resolves after the database is loaded
      * @memberof Loki
      */
-    Loki.prototype.loadDatabase = function (options, callback) {
-      var cFun = callback || function (err, data) {
-          if (err) {
-            throw err;
-          }
-        },
-        self = this;
+    Loki.prototype.loadDatabase = function (options) {
+      var self=this;
+
+      // if throttling disabled, just call internal
+      if (!this.throttledSaves) {
+        return this.loadDatabaseInternal(options);
+      }
+
+      // try to drain any pending saves in the queue to lock it for loading
+      return this.throttledSaveDrain(options).then(function() {
+        // pause/throttle saving until loading is done
+        self.throttledSaveRunning  = self.loadDatabaseInternal(options).then(function() {
+          // now that we are finished loading, if no saves were throttled, disable flag
+          self.throttledSaveRunning = null;
+        });
+        return self.throttledSaveRunning;
+      }, function() {
+        throw new Error("Unable to pause save throttling long enough to read database");
+      });
+    };
+
+    Loki.prototype.saveDatabaseInternal = function () {
+      var self = this;
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-
-        this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
-          if (typeof (dbString) === 'string') {
-            var parseSuccess = false;
-            try {
-              self.loadJSON(dbString, options || {});
-              parseSuccess = true;
-            } catch (err) {
-              cFun(err);
-            }
-            if (parseSuccess) {
-              cFun(null);
-              self.emit('loaded', 'database ' + self.filename + ' loaded');
-            }
-          } else {
-            // if adapter has returned an js object (other than null or error) attempt to load from JSON object
-            if (typeof (dbString) === "object" &amp;&amp; dbString !== null &amp;&amp; !(dbString instanceof Error)) {
-              self.loadJSONObject(dbString, options || {});
-              cFun(null); // return null on success
-              self.emit('loaded', 'database ' + self.filename + ' loaded');
-            } else {
-              // error from adapter (either null or instance of error), pass on to 'user' callback
-              cFun(dbString);
-            }
-          }
-        });
-
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
       }
+
+      var saved;
+
+      // check if the adapter is requesting (and supports) a 'reference' mode export
+      if (this.persistenceAdapter.mode === "reference" &amp;&amp; typeof this.persistenceAdapter.exportDatabase === "function") {
+        // filename may seem redundant but loadDatabase will need to expect this same filename
+        saved = this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable: true}));
+      }
+      // otherwise just pass the serialized database to adapter
+      else {
+        saved = this.persistenceAdapter.saveDatabase(this.filename, self.serialize());
+      }
+
+      return Promise.resolve(saved).then(function () {
+        self.autosaveClearFlags();
+        self.emit("save");
+      });
     };
 
     /**
@@ -2198,68 +2311,51 @@
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
+     * @returns {Promise} a Promise that resolves after the database is persisted
      */
-    Loki.prototype.saveDatabase = function (callback) {
-      var cFun = callback || function (err) {
-          if (err) {
-            throw err;
-          }
-          return;
-        },
-        self = this;
-
-      // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        // check if the adapter is requesting (and supports) a 'reference' mode export
-        if (this.persistenceAdapter.mode === "reference" &amp;&amp; typeof this.persistenceAdapter.exportDatabase === "function") {
-          // filename may seem redundant but loadDatabase will need to expect this same filename
-          this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-        // otherwise just pass the serialized database to adapter
-        else {
-          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
+    Loki.prototype.saveDatabase = function () {
+      if (!this.throttledSaves) {
+        return this.saveDatabaseInternal();
       }
+      var self = this;
+
+      // if the db save is currently running, a new promise for a next db save is created
+      // all calls to save db will get this new promise which will be processed right after
+      // the current db save is finished
+      if (this.throttledSaveRunning !== null &amp;&amp; this.throttledSavePending === null) {
+        this.throttledSavePending = Promise.resolve(this.throttledSaveRunning).then(function() {
+          self.throttledSaveRunning = null;
+          self.throttledSavePending = null;
+          return self.saveDatabase();
+        });
+      }
+      if (this.throttledSavePending !== null) {
+        return this.throttledSavePending;
+      }
+      this.throttledSaveRunning = this.saveDatabaseInternal().then(function() {
+        self.throttledSaveRunning = null;
+      });
+
+      return this.throttledSaveRunning;
     };
 
     // alias
     Loki.prototype.save = Loki.prototype.saveDatabase;
 
     /**
-     * Handles deleting a database from file system, local
-     *    storage, or adapter (indexeddb)
-     *    This method utilizes loki configuration options (if provided) to determine which
-     *    persistence method to use, or environment detection (if configuration was not provided).
+     * Handles deleting a database from file system, local storage, or adapter (indexeddb)
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback / error handler
+     * @returns {Promise} a Promise that resolves after the database is deleted
      * @memberof Loki
      */
-    Loki.prototype.deleteDatabase = function (options, callback) {
-      var cFun = callback || function (err, data) {
-        if (err) {
-          throw err;
-        }
-      };
-
+    Loki.prototype.deleteDatabase = function () {
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        this.persistenceAdapter.deleteDatabase(this.filename, function deleteDatabaseCallback(err) {
-          cFun(err);
-        });
-      } else {
-        cFun(new Error('persistenceAdapter not configured'));
+      if (this.persistenceAdapter === null) {
+        return Promise.reject(new Error('persistenceAdapter not configured'));
       }
+
+      return Promise.resolve(this.persistenceAdapter.deleteDatabase(this.filename));
     };
 
     /**
@@ -2291,28 +2387,28 @@
     /**
      * autosaveEnable - begin a javascript interval to periodically save the database.
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
-     * @param {function=} callback - (Optional) user supplied async callback
      */
-    Loki.prototype.autosaveEnable = function (options, callback) {
-      this.autosave = true;
-
-      var delay = 5000,
-        self = this;
-
-      if (typeof (this.autosaveInterval) !== 'undefined' &amp;&amp; this.autosaveInterval !== null) {
-        delay = this.autosaveInterval;
+    Loki.prototype.autosaveEnable = function () {
+      if (this.autosaveHandle) {
+        return;
       }
 
-      this.autosaveHandle = setInterval(function autosaveHandleInterval() {
-        // use of dirty flag will need to be hierarchical since mods are done at collection level with no visibility of 'db'
-        // so next step will be to implement collection level dirty flags set on insert/update/remove
-        // along with loki level isdirty() function which iterates all collections to see if any are dirty
+      var self = this;
+      var running = true;
 
-        if (self.autosaveDirty()) {
-          self.saveDatabase(callback);
-        }
-      }, delay);
+      this.autosave = true;
+      this.autosaveHandle = function () {
+        running = false;
+        self.autosaveHandle = undefined;
+      };
+
+      (function saveDatabase() {
+        setTimeout(function () {
+          if (running) {
+            self.saveDatabase().then(saveDatabase, saveDatabase);
+          }
+        }, self.autosaveInterval);
+      })();
     };
 
     /**
@@ -2320,9 +2416,10 @@
      *
      */
     Loki.prototype.autosaveDisable = function () {
-      if (typeof (this.autosaveHandle) !== 'undefined' &amp;&amp; this.autosaveHandle !== null) {
-        clearInterval(this.autosaveHandle);
-        this.autosaveHandle = null;
+      this.autosave = false;
+
+      if (this.autosaveHandle) {
+        this.autosaveHandle();
       }
     };
 
@@ -2609,6 +2706,10 @@
      * @memberof Resultset
      */
     Resultset.prototype.simplesort = function (propname, isdesc) {
+      if (typeof (isdesc) === 'undefined') {
+        isdesc = false;
+      }
+
       // if this is chained resultset with no filters applied, just we need to populate filteredrows first
       if (this.searchIsChained &amp;&amp; !this.filterInitialized &amp;&amp; this.filteredrows.length === 0) {
         // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
@@ -2617,6 +2718,11 @@
           this.collection.ensureIndex(propname);
           // copy index values into filteredrows
           this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
+
+          if (isdesc) {
+            this.filteredrows.reverse();
+          }
+
           // we are done, return this (resultset) for further chain ops
           return this;
         }
@@ -2624,10 +2730,6 @@
         else {
           this.filteredrows = this.collection.prepareFullDocIndex();
         }
-      }
-
-      if (typeof (isdesc) === 'undefined') {
-        isdesc = false;
       }
 
       var wrappedComparer =
@@ -4272,9 +4374,29 @@
        * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
        */
       function insertMeta(obj) {
+        var len, idx;
+
         if (!obj) {
           return;
         }
+
+        // if batch insert
+        if (Array.isArray(obj)) {
+          len = obj.length;
+
+          for(idx=0; idx&lt;len; idx++) {
+            if (!obj[idx].hasOwnProperty('meta')) {
+              obj[idx].meta = {};
+            }
+
+            obj[idx].meta.created = (new Date()).getTime();
+            obj[idx].meta.revision = 0;
+          }
+
+          return;
+        }
+
+        // single object
         if (!obj.meta) {
           obj.meta = {};
         }
@@ -4621,15 +4743,6 @@
     };
 
     /**
-     * Rebuild idIndex async with callback - useful for background syncing with a remote server
-     */
-    Collection.prototype.ensureIdAsync = function (callback) {
-      this.async(function () {
-        this.ensureId();
-      }, callback);
-    };
-
-    /**
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
      * @param {object=} options - (optional) options to configure dynamic view with
@@ -4726,7 +4839,13 @@
         }
         results.push(obj);
       }
-      this.emit('insert', doc);
+
+      // at the 'batch' level, if clone option is true then emitted docs are clones
+      this.emit('insert', results);
+
+      // if clone option is set, clone return values
+      results = this.cloneObjects ? clone(results, this.cloneMethod) : results;
+
       return results.length === 1 ? results[0] : results;
     };
 
@@ -5361,7 +5480,7 @@
       if (rcd.length === 0) {
         return [0, -1];
       }
-      
+
       var minVal = rcd[index[min]][prop];
       var maxVal = rcd[index[max]][prop];
 
@@ -5665,18 +5784,6 @@
           this.DynamicViews[idx].rollback();
         }
       }
-    };
-
-    // async executor. This is only to enable callbacks at the end of the execution.
-    Collection.prototype.async = function (fun, callback) {
-      setTimeout(function () {
-        if (typeof fun === 'function') {
-          fun();
-          callback();
-        } else {
-          throw new TypeError('Argument passed for async execution is not a function');
-        }
-      }, 0);
     };
 
     /**
@@ -6278,7 +6385,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Jan 09 2017 18:35:28 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Apr 04 2017 19:10:03 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

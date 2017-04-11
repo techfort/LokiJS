@@ -22,7 +22,7 @@ var db = new loki('sandbox.db', { adapter : lfsa});
 ```
 
 # Web QuickStart
-If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5gb so that won't last long but here is how to quickly get started experimenting with lokijs :
+If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5mb so that won't last long but here is how to quickly get started experimenting with lokijs :
 ```
 <script src="../../src/lokijs.js"></script>
 ```
@@ -91,7 +91,7 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
 ### Autosave with autoload example
 ```javascript
     var idbAdapter = new lokiIndexedAdapter('loki');
-    var db = new loki('test', 
+    var db = new loki('test.db', 
       {
         autoload: true,
         autoloadCallback : loadHandler,
@@ -109,6 +109,43 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
     }
 ```
 [Try in Loki Sandbox](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/447edca33d1274dd9a64767d23df56e9/raw/740d3bedc1ed76d3718acd207b6913281a11ed78/autoloadCallback).
+
+# Save throttling and persistence contention management
+LokiJS now supports throttled saves and loads to avoid overlapping saveDatabase and loadDatabase calls from interfering with each other.  This is controlled by a loki constructor option called 'throttledSaves' and the default for that option is 'true'. 
+
+This means that within any single Loki database instance, multiple saves routed to the persistence adapter will be throttled and ensured to not conflict by overlap.  With save throttling, during the time between an adapter save and an adapter response to that save, if new save requests come in we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent (single) save will callback all ten queued/tiered callbacks when -it- completes.  
+
+If a loadDatabase call occurs while a save is pending, we will (by default) wait indefinitely for the queue to deplete without being replenished.  Once that occurs we will lock all saves during the load... any incoming save requests made while the database is being loaded will then be queued for saving once the load is completed.  Since loadDatabase now internally calls a new 'throttledSaveDrain' we will pass through options to control that drain. (These options will be summarized below).
+
+You may also directly call this 'throttledSaveDrain' loki method which can wait for the queue to drain. You might do this using any of these variations/options : 
+
+```javascript
+    // wait indefinitely (recursively)
+    db.throttledSaveDrain(function () {
+      console.log("no saves in progress");
+    });
+```
+```javascript
+    // wait only for the -current- queue to deplete
+    db.throttledSaveDrain(function () {
+      console.log("queue drained");
+    }, { recursiveWait: false } );
+```
+```javascript
+    // wait recursively but only for so long...
+    db.throttledSaveDrain(function (success) {
+      if (success) {
+        console.log("no saves in progress");
+      }
+      else {
+        console.log("taking too long, try again later");
+      }
+    }, { recursiveWaitLimit: true, recursiveWaitLimitDuration: 2000 });
+```
+If you do not wish loki to supervise these conflicts with its throttling contention management, you can disable this by constructing loki with the following option (in addition to any existing options you are passing) : 
+```javascript
+var db = new loki('test.db', { throttledSaves: false });
+```
 
 # Creating your own Loki Persistence Adapters
 Lokijs currently supports two types of database adapters : 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.
@@ -224,6 +261,14 @@ You might access this memory adapter (which is included in the main source file)
 var mem = new loki.LokiMemoryAdapter();
 var db = new loki('sandbox.db', {adapter: mem});
 ```
+
+If you wish to simulate asynchronous 'basic' adapter you can pass options to its constructor : 
+```javascript
+// simulate 50ms async delay for loads and saves. this will yield thread until then
+var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+var db = new loki('sandbox.db', {adapter: mem});
+```
+
 > In order to see LokiPartitioningAdapter used in conjunction with LokiMemoryAdapter you can view this [Loki Sandbox gist](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/15c1aa87da16cd89b328eb84bbcdf8fa/raw/d91ac3fee212dc5aa96cb05f479d825faa17c1c8/PartitionedMemoryAdapterTest) in your browser.  
 
 What is happening in the gist linked above is that we create an instance of a LokiMemoryAdapter and pass that instance to the LokiPartitioningAdapter.  We utilimately pass in the created LokiPartitioningAdapter instance to the database constructor.  We then add multiple collections to our database, save it, update one of the collections (causing that collection's 'dirty' flag to be set), and save again.  When we examine the output of the script we can view the contents of the memory adapter's internal hash store to see how there are multiple keys for a single database.  We can also see that our modified collection (along with the database container itself) was saved again.  The database container currently has no 'dirty' flag set but since we remove all collection.data[] object instances from it, it is relatively lightweight.
@@ -231,7 +276,7 @@ What is happening in the gist linked above is that we create an instance of a Lo
 # 'Rolling your own' structured serialization mechanism
 In addition to the [ChangesAPI](https://github.com/techfort/LokiJS/wiki/Changes-API) which can be utilized to isolate changesets, LokiJS has established several internal utility methods to assist users in developing optimal persistence or transmission of database contents. 
 
-Those mechanisms include the ability to decompose the database into 'partitions' of structured serializations or assembled into a line oriented format (non-partitioned) and either delimited (single delimited string per collection) or non-delimited (array of strings, one per document).  These utility methods are located on the Loki object instance itself as the 'serializeDestructured' and 'deserializeDestructured' methods.  They can be invoked to create structured json serialization for the entire database, or (if you pass a partition option) it can provide a single partition at a time.  Internal loki structured serialization in its current form provides mild memory overhead reduction and increases I/O time if only some collections need to be saved.  It may also be useful for other data exchange or synchronization mechanisms. 
+Those mechanisms include the ability to decompose the database into 'partitions' of structured serializations or assembled into a line oriented format (non-partitioned) and either delimited (single delimited string per collection) or non-delimited (array of strings, one per document).  These utility methods are located on the Loki object instance itself as the 'serializeDestructured' and 'deserializeDestructured' methods.  They can be invoked to create structured json serialization for the entire database, or (if you pass a partition option) it can provide a single partition at a time.  Internal loki structured serialization in its current form provides mild memory overhead reduction and decreases I/O time if only some collections need to be saved.  It may also be useful for other data exchange or synchronization mechanisms. 
 
 In lokijs terminology the partitions of a database include the database container (partition -1) along with each individual collection (partitions 0-n).
 
@@ -337,4 +382,3 @@ In addition to core loadDatabase and saveDatabase methods, the loki Indexed adap
   adapter.deleteDatabase('UserDatabase');
   adapter.getCatalogSummary(); // gets list of all keys along with their sizes
 ```
-

@@ -762,7 +762,7 @@ describe('async adapter tests', function() {
 });
 
 describe('testing changesAPI', function() {
-  it('verify pending changes persist across save/load cycle', function() {
+  it('verify pending changes persist across save/load cycle', function(done) {
     var mem = new loki.LokiMemoryAdapter();
     var db = new loki('sandbox.db', { adapter: mem });
 
@@ -795,6 +795,8 @@ describe('testing changesAPI', function() {
       expect(result[4].name).toEqual("items");
       expect(result[4].operation).toEqual("U");
       expect(result[4].obj.name).toEqual("tyrfing");
+      
+      done();
     });
   });
 });

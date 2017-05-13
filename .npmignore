@@ -1,5 +1,8 @@
 docs/
-benchmarks/
+benchmark/
 demos/
 examples/
-jsdocs/
+jsdoc/
+tutorials/
+spec/
+coverage/

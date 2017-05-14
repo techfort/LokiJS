@@ -27,6 +27,30 @@ describe('binary indices', function () {
       expect(items.binaryIndices.hasOwnProperty('name')).toEqual(false);
     });
   });
+  
+  describe('binary index loosly but reliably works across datatypes', function() {
+    it('works', function() {
+        var db = new loki('ugly.db');
+
+        // Add a collection to the database
+        var dirtydata = db.addCollection('dirtydata', { indices: ['b'] });
+
+        // Add some documents to the collection
+        dirtydata.insert({ a : 0 });
+        var b4 = { a : 1, b: 4 }; dirtydata.insert(b4);
+        dirtydata.insert({ a : 2, b: undefined});
+        dirtydata.insert({ a: 3, b: 3.14});
+        dirtydata.insert({ a: 4, b: new Date() });
+        dirtydata.insert({ a: 5, b: false });
+        dirtydata.insert({ a: 6, b: true });
+        dirtydata.insert({ a: 7, b: null });
+        dirtydata.insert({ a : 8, b: '0'});
+        dirtydata.insert({ a : 9, b: 0});
+        dirtydata.insert({ a : 10, b: 3});
+        dirtydata.insert({ a : 11, b: '3'});
+        dirtydata.insert({ a : 12, b: '4'});
+    });
+  });
 
   describe('index maintained across inserts', function() {
     it('works', function () {
@@ -208,16 +232,16 @@ describe('binary indices', function () {
       // force index build
       items.find({ name: 'mjolnir'});
 
-      var pos = items.calculateRangeStart('name', 'fff');
+      var pos = items.calculateRangeStart('name', 'fff', true);
       expect(pos).toBe(1);
 
-      var pos = items.calculateRangeStart('name', 'zzz');
+      var pos = items.calculateRangeStart('name', 'zzz', true);
       expect(pos).toBe(4);
 
-      var pos = items.calculateRangeStart('name', 'aaa');
+      var pos = items.calculateRangeStart('name', 'aaa', true);
       expect(pos).toBe(0);
 
-      var pos = items.calculateRangeStart('name', 'gungnir');
+      var pos = items.calculateRangeStart('name', 'gungnir', true);
       expect(pos).toBe(1);
     });
   });

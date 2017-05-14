@@ -31,47 +31,64 @@ results = coll.where(sleipnirFunction);
 ### 'Find' queries
 Find queries are based on subset of mongo query syntax and are capable of utilizing indexes to speed up queries.  When used with Collection Transforms or Dynamic Views, these filters can be saved into the database itself.  This is the preferred method for querying a Loki database.  Query everything (or filter as much as you can) with find queries, and use 'where' filtering if there are edge cases which find does not support (or does not support yet).
 
-### 'Find' Operators
-The primary operators currently supported are : 
-
-* $eq - filter for document(s) with property of (strict) equality
-* $dteq - filter for document(s) with date property equal to provided date value
-* $gt - filter for document(s) with property greater than provided value
-* $gte - filter for document(s) with property greater or equal to provided value
-* $lt - filter for document(s) with property less than provided value
-* $lte - filter for document(s) with property less than or equal to provided value
-* $between - filter for documents(s) with property between provided vals
-* $ne - filter for document(s) with property not equal to provided value
-* $regex - filter for document(s) with property matching provided regular expression
-* $in - filter for document(s) with property matching any of the provided array values.
-* $contains - filter for document(s) with property containing the provided value
-* $containsAny - filter for document(s) with property containing any of the provided values
-* $containsNone - filter for documents(s) with property containing none of the provided values
-* $and - filter for documents which meet all nested subexpressions
-* $or - filter for documents which meet any of the nested subexpressions
-
-### Features which support 'find' queries
-These operators can be used to compose find filter objects which can be used within : 
-* Collection find()
-* Collection findOne()
-* (chained) Resultset find()
-* Collection Transforms
-* DynamicView applyFind()
-
 ### 'Find' Operator Examples : 
 
-$eq / $ne : 
+**_[Currently adding and reviewing functionality of several operators... we should probably expand this section out into greater detail with better examples]_**
+
+The primary operators currently supported are : 
+
+**$eq** - filter for document(s) with property of (strict) equality
 ```javascript
-// explicit
-var results = coll.find({'Name': { '$eq' : 'Odin' }});
+// implicit (assumes $eq operator)
+var results = coll.find({'Name': 'Odin'});
 
-// implicit (assumes equality operator)
-results = coll.find({'Name': 'Odin'});
-
-// not equal test
-results = coll.find({'legs': { '$ne' : 8 }});
+// explicit $eq
+results = coll.find({'Name': { '$eq' : 'Odin' }});
 ```
-$regex:
+**$ne** - filter for document(s) with property not equal to provided value
+```javascript
+// not equal test
+var results = coll.find({'legs': { '$ne' : 8 }});
+```
+**$aeq** - filter for document(s) with property of abstract (loose) equality
+```javascript
+// will match documents with age of '20' or 20
+var results = coll.find(age: {$aeq: 20});
+```
+**$dteq** - filter for document(s) with date property equal to provided date value
+```javascript
+var dt1 = new Date("1/1/2017");
+var dt2 = new Date("1/1/2017");
+
+items.insert({ name : 'mjolnir', created: dt1 });
+items.insert({ name : 'gungnir', created: dt2 });
+
+// returns both of the above inserted documents
+var results = items.find({ created: { $dteq: new Date("1/1/2017") } });
+```
+**$gt** - filter for document(s) with property greater than provided value
+```javascript
+var results = coll.find({'age': {'$gt': 40}});
+```
+**$gte** - filter for document(s) with property greater or equal to provided value
+```javascript
+var results = coll.find({'age': {'$gte': 40}});
+```
+**$lt** - filter for document(s) with property less than provided value
+```javascript
+var results = coll.find({'age': {'$lt': 40}});
+```
+**$lte** - filter for document(s) with property less than or equal to provided value
+```javascript
+var results = coll.find({'age': {'$lte': 40}});
+```
+**$between** - filter for documents(s) with property between provided vals
+```javascript
+// match users with count value between 50 and 75
+var results = users.find({ count : { '$between': [50, 75] });
+```
+**$regex** - filter for document(s) with property matching provided regular expression
+>_If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well._
 ```javascript
 // pass in raw regex
 var results = coll.find({'Name': { '$regex' : /din/ }});
@@ -82,11 +99,9 @@ results = coll.find({'Name': { '$regex': 'din' }});
 // or pass in [pattern, options] string array
 results = coll.find({'Name': { '$regex': ['din', 'i'] }});
 ```
-> _If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well._
 
-$in:
+**$in** - filter for document(s) with property matching any of the provided array values.
 ```javascript
-var users = db.addCollection("users");
 users.insert({ name : 'odin' });
 users.insert({ name : 'thor' });
 users.insert({ name : 'svafrlami' });
@@ -94,15 +109,53 @@ users.insert({ name : 'svafrlami' });
 // match users with name in array set ['odin' or 'thor']
 var results = users.find({ 'name' : { '$in' : ['odin', 'thor'] } });
 ```
-$between
+**$nin** - filter for document(s) with property not matching any of the provided array values.
 ```javascript
-// match users with count value between 50 and 75
-var results = users.find({ count : { '$between': [50, 75] });
-```
+users.insert({ name : 'odin' });
+users.insert({ name : 'thor' });
+users.insert({ name : 'svafrlami' });
 
-$contains / $containsAny / $containsNone
+// match users with name not in array set ['odin' or 'thor'] (svafrlami doc only)
+var results = users.find({ 'name' : { '$nin' : ['odin', 'thor'] } }); 
+```
+**$keyin** - filter for document(s) whose property value is defined in the provided hash object keys.  _(Equivalent to $in: Object.keys(hashObject))_ ( [#362](https://github.com/techfort/LokiJS/issues/362), [#365](https://github.com/techfort/LokiJS/issues/365) )
 ```javascript
-var users = db.addCollection("users");
+categories.insert({ name: 'Title', column: 'title'})
+
+// since the op doesn't use the title value, this is most effective with existing objects
+var result = categories.find({column: { $keyin: { title: 'anything'} }});
+```
+**$nkeyin** - filter for document(s) whose property value is not defined in the provided hash object keys. **_(Equivalent to $nin: Object.keys(hashObject))_** ( [#362](https://github.com/techfort/LokiJS/issues/362), [#365](https://github.com/techfort/LokiJS/issues/365) )
+```javascript
+var result = categories.find({column: { $nkeyin: { title: 'anything'} }});
+```
+**$definedin** - filter for document(s) whose property value is defined in the provided hash object as a value other than **_undefined_**. [#285](https://github.com/techfort/LokiJS/issues/285)
+```javascript
+items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+// returns gungnir and draupnir.  similar to $keyin, the value ('rule') is not used by the op
+var results = items.find({maker: { $efinedin: { elves: 'rule' } } });
+```
+**$undefinedin** -  filter for document(s) whose property value is not defined in the provided hash object or defined but is **_undefined_**. [#285](https://github.com/techfort/LokiJS/issues/285)
+```javascript
+items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
+
+// returns mjolnir and tyrfing where the 'dwarves' val is not a property on our passed object
+var results = items.find({maker: { $undefinedin: { elves: 'rule' } } });
+```
+**$contains** - filter for document(s) with property containing the provided value. ( [commit](https://github.com/techfort/LokiJS/pull/120/commits/1f08433203554ccf00b381cbea4e72e25e62d5da), [#205](https://github.com/techfort/LokiJS/issues/205) )
+>When typepof property is : 
+>- string: it will do a substring match for your string (indexOf)
+>- array:  it will check for 'value' existence in that array (indexOf) 
+>- object: it will check to see if your 'value' is a defined property of that object
+
+```javascript
 users.insert({ name : 'odin', weapons : ['gungnir', 'draupnir']});
 users.insert({ name : 'thor', weapons : ['mjolnir']});
 users.insert({ name : 'svafrlami', weapons : ['tyrfing']});
@@ -110,17 +163,64 @@ users.insert({ name : 'arngrim', weapons : ['tyrfing']});
 
 // returns 'svafrlami' and 'arngrim' documents
 var results = users.find({ 'weapons' : { '$contains' : 'tyrfing' } });
+```
+**$containsAny** - filter for document(s) with property containing any of the provided values
+```javascript
+users.insert({ name : 'odin', weapons : ['gungnir', 'draupnir']});
+users.insert({ name : 'thor', weapons : ['mjolnir']});
+users.insert({ name : 'svafrlami', weapons : ['tyrfing']});
+users.insert({ name : 'arngrim', weapons : ['tyrfing']});
 
 // returns 'svafrlami', 'arngrim', and 'thor' documents
 results = users.find({ 'weapons' : { '$containsAny' : ['tyrfing', 'mjolnir'] } });
+```
+**$containsNone** - filter for documents(s) with property containing none of the provided values
+```javascript
+users.insert({ name : 'odin', weapons : ['gungnir', 'draupnir']});
+users.insert({ name : 'thor', weapons : ['mjolnir']});
+users.insert({ name : 'svafrlami', weapons : ['tyrfing']});
+users.insert({ name : 'arngrim', weapons : ['tyrfing']});
 
 // returns 'svafrlami' and 'arngrim'
 results = users.find({ 'weapons' : { '$containsNone' : ['gungnir', 'mjolnir'] } });
 ```
+**$type** - filter for documents which have a property of a specified type
+```javascript
+users.insert([
+  { name: 'odin', weapons: ['gungnir', 'draupnir'] },
+  { name: 'thor', weapons: 'mjolnir' },
+  { name: 'svafrlami', weapons: ['tyrfing'] },
+  { name: 'arngrim', weapons: ['tyrfing'] }
+]);
 
-### Composing Nested Queries
+// returns docs with (non-array) string value for 'weapons' (mjolnir)
+var results = users.find({ 'weapons' : { '$type' : 'string' } });
+```
+**$size** - filter for documents which have array property of specified size. _(does not work for strings)_
+```javascript
+users.insert([
+  { name: 'odin', weapons: ['gungnir', 'draupnir'] },
+  { name: 'thor', weapons: 'mjolnir' },
+  { name: 'svafrlami', weapons: ['tyrfing'] },
+  { name: 'arngrim', weapons: ['tyrfing'] }
+]);
 
-$and : 
+// returns docs where 'weapons' are 2-element arrays (odin)
+var results = users.find({ 'weapons' : { '$size' : 2 } });
+```
+**$len** - filter for documents which have string property of specified length.
+```javascript
+users.insert([
+  { name: 'odin', weapons: ['gungnir', 'draupnir'] },
+  { name: 'thor', weapons: 'mjolnir' },
+  { name: 'svafrlami', weapons: ['tyrfing'] },
+  { name: 'arngrim', weapons: ['tyrfing'] }
+]);
+
+// returns docs where 'name' is a 9 character string (svafrllami)
+var results = users.find({ 'name' : { '$len' : 9 } });
+```
+**$and** - filter for documents which meet all nested subexpressions
 ```javascript
 // fetch documents matching both sub-expressions
 var results = coll.find({
@@ -133,8 +233,7 @@ var results = coll.find({
     }]
 });
 ```
-
-$or : 
+**$or** - filter for documents which meet any of the nested subexpressions
 ```javascript
 // fetch documents matching any of the sub-expressions
 var results = coll.find({
@@ -147,6 +246,14 @@ var results = coll.find({
     }]
 });
 ```
+
+### Features which support 'find' queries
+These operators can be used to compose find filter objects which can be used within : 
+* Collection find()
+* Collection findOne()
+* (chained) Resultset find()
+* Collection Transforms
+* DynamicView applyFind()
 
 ### Programmatic query examples
 The following queries return the same results : 
@@ -175,7 +282,7 @@ The core 'find' and 'where' functionality are two of the main building blocks th
 * map - maps into a new anonymous collection, provide this with a map function
 * mapReduce - allows you to specify both a map function and a reduce function on the current resultset data.
 * eqJoin - Left joining two sets of data. Join keys can be defined or calculated properties
-* transform - at the resultset level, this requires a raw transform array. When beginning a chain, a named or raw transform may be passed in to the chain method.  See 'Collection Transforms' wiki page for more details.
+* transform - at the resultset level, this requires a raw transform array. When beginning a chain, a named or raw transform may be passed in to the chain method.  (See the ['Collection Transforms'](https://github.com/techfort/LokiJS/wiki/Collection-Transforms) wiki page for more details.)
 
 An example making better use of chaining might be the following : 
 
@@ -206,7 +313,7 @@ The advantage being if the base resulset query was time consuming, your subseque
 
 Retaining the resultset (even when not branching) can be done to break up a chain into several parts if you need to examine data() or document counts at various stages in the chain.
 
-### Strategies for determining which methods to use
+### Summary
 
 Wherever possible, use 'Find' queries over 'Where' queries.  'Find' queries are able to utilize indexes if they are applied and are relevant to your query.
 

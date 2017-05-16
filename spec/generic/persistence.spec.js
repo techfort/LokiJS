@@ -279,7 +279,7 @@ describe('testing adapter functionality', function () {
 
   });
 
-  it('verify partioning adapter works', function() {
+  it('verify partioning adapter works', function(done) {
     var mem = new loki.LokiMemoryAdapter();
     var adapter = new loki.LokiPartitioningAdapter(mem);
 
@@ -332,12 +332,14 @@ describe('testing adapter functionality', function () {
           expect(db2.collections[1].data.length).toEqual(1);
           expect(db2.getCollection("items").findOne({ name : 'gungnir'}).owner).toEqual("odin");
           expect(db2.getCollection("another").findOne({ a: 1}).b).toEqual(3);
+          
+          done();
         });
       });
     });
   });
 
-  it('verify partioning adapter with paging mode enabled works', function() {
+  it('verify partioning adapter with paging mode enabled works', function(done) {
     var mem = new loki.LokiMemoryAdapter();
 
     // we will use an exceptionally low page size (128bytes) to test with small dataset
@@ -422,9 +424,11 @@ describe('testing adapter functionality', function () {
         });
       });
     });
+    
+    setTimeout(done, 700);
   });
 
-  it('verify reference adapters get db reference which is copy and serializable-safe', function() {
+  it('verify reference adapters get db reference which is copy and serializable-safe', function(done) {
     // Current loki functionality with regards to reference mode adapters:
     // Since we don't use serializeReplacer on reference mode adapters, we make 
     // lightweight clone, cloning only db container and collection containers (object refs are same).
@@ -479,6 +483,8 @@ describe('testing adapter functionality', function () {
       expect(db2.collections[0].name).toEqual("n1");
       expect(db2.collections[1].name).toEqual("n2");
       expect(db2.getCollection("n1").findOne({m:9}).n).toEqual(8);
+      
+      done();
     });
   });  
 });

@@ -76,8 +76,6 @@
       var cv1, cv2, t1, t2;
 
       if (prop1 === prop2) return true;
-      if (prop1 < prop2) return false;
-      if (prop1 > prop2) return false;
 
       // 'falsy' and Boolean handling
       if (!prop1 || !prop2 || prop1 === true || prop2 === true || prop1 !== prop1 || prop2 !== prop2) {
@@ -106,6 +104,25 @@
         }
       }
 
+      // Handle 'Number-like' comparisons
+      cv1 = Number(prop1);
+      cv2 = Number(prop2);
+
+      // if they are both 'number-like'...
+      if (cv1 === cv1 && cv2 === cv2) {
+        return (cv1 === cv2);
+      }
+
+      // if prop1 is number-like but not prop2
+      if (cv1 === cv1 && cv2 !== cv2) {
+        return true;
+      }
+      
+      // if prop2 is number-like but not prop1
+      if (cv2 === cv2 && cv1 !== cv1) {
+        return false;
+      }
+      
       // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
       cv1 = prop1.toString();
       cv2 = prop2.toString();
@@ -151,15 +168,22 @@
 
       // if both are numbers (string encoded or not), compare as numbers
       cv1 = Number(prop1);
-      if (cv1 === cv1) {
-        cv2 = Number(prop2);
-        if (cv2 === cv2) {
-          if (cv1 < cv2) return true;
-          if (cv1 > cv2) return false;
-          return equal;
-        }
+      cv2 = Number(prop2);
+      
+      if (cv1 === cv1 && cv2 === cv2) {
+        if (cv1 < cv2) return true;
+        if (cv1 > cv2) return false;
+        return equal;
       }
 
+      if (cv1 === cv1 && cv2 !== cv2) {
+        return true;
+      }
+      
+      if (cv2 === cv2 && cv1 !== cv1) {
+        return false;
+      }
+      
       if (prop1 < prop2) return true;
       if (prop1 > prop2) return false;
       if (prop1 == prop2) return equal;
@@ -211,13 +235,19 @@
 
       // if both are numbers (string encoded or not), compare as numbers
       cv1 = Number(prop1);
-      if (cv1 === cv1) {
-        cv2 = Number(prop2);
-        if (cv2 === cv2) {
-          if (cv1 > cv2) return true;
-          if (cv1 < cv2) return false;
-          return equal;
-        }
+      cv2 = Number(prop2);
+      if (cv1 === cv1 && cv2 === cv2) {
+        if (cv1 > cv2) return true;
+        if (cv1 < cv2) return false;
+        return equal;
+      }
+      
+      if (cv1 === cv1 && cv2 !== cv2) {
+        return false;
+      }
+      
+      if (cv2 === cv2 && cv1 !== cv1) {
+        return true;
       }
 
       if (prop1 > prop2) return true;
@@ -701,8 +731,8 @@
 
       // persist version of code which created the database to the database.
       // could use for upgrade scenarios
-      this.databaseVersion = 1.44;
-      this.engineVersion = 1.44;
+      this.databaseVersion = 1.441;
+      this.engineVersion = 1.441;
 
       // autosave support (disabled by default)
       // pass autosave: true, autosaveInterval: 6000 in options to set 6 second autosave
@@ -1608,7 +1638,7 @@
         }
 
         // Upgrade Logic for binary index refactoring at version 1.4.4
-        if (dbObject.databaseVersion < 1.44) {
+        if (dbObject.databaseVersion < 1.441) {
             // rebuild all indices
             copyColl.ensureAllIndexes(true);
             copyColl.dirty = true;

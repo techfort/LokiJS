@@ -144,6 +144,7 @@ describe('sorting and indexing', function () {
       coll.insert({ a: 7.5, b: 5 });
       coll.insert({ a: NaN, b: 5 });
       coll.insert({ a: [8, 1, 15], b: 5}); 
+      coll.insert({ a: 'asdf', b: 5 });
       
       var indexVals = [];
 
@@ -154,7 +155,7 @@ describe('sorting and indexing', function () {
         indexVals.push(obj.a);
       });
 
-      expect(indexVals.length).toEqual(13);
+      expect(indexVals.length).toEqual(14);
 
       // undefined, null, or NaN
       expect(indexVals[0] !== indexVals[0]).toEqual(true); 
@@ -168,9 +169,10 @@ describe('sorting and indexing', function () {
       expect(indexVals[7] === "7" || indexVals[5] === 7).toEqual(true);
       expect(indexVals[8] === 7.5).toEqual(true);
       expect(indexVals[9] === "11").toEqual(true);
-      expect(Array.isArray(indexVals[10])).toEqual(true);
-      expect(indexVals[11] instanceof Date).toEqual(true);
+      expect(indexVals[10] instanceof Date).toEqual(true);
+      expect(Array.isArray(indexVals[11])).toEqual(true);
       expect(typeof indexVals[12] === "object").toEqual(true);
+      expect(indexVals[13] === "asdf").toEqual(true);
 
       // now make sure binary index uses same range
       indexVals = [];
@@ -180,7 +182,7 @@ describe('sorting and indexing', function () {
         indexVals.push(coll.data[vi].a);
       }); 
 
-      expect(indexVals.length).toEqual(13);
+      expect(indexVals.length).toEqual(14);
 
       // undefined, null, or NaN
       expect(indexVals[0] !== indexVals[0]).toEqual(true); 
@@ -194,9 +196,10 @@ describe('sorting and indexing', function () {
       expect(indexVals[7] === "7" || indexVals[5] === 7).toEqual(true);
       expect(indexVals[8] === 7.5).toEqual(true);
       expect(indexVals[9] === "11").toEqual(true);
-      expect(Array.isArray(indexVals[10])).toEqual(true);
-      expect(indexVals[11] instanceof Date).toEqual(true);
+      expect(indexVals[10] instanceof Date).toEqual(true);
+      expect(Array.isArray(indexVals[11])).toEqual(true);
       expect(typeof indexVals[12] === "object").toEqual(true);
+      expect(indexVals[13] === "asdf").toEqual(true);
     });
     
     it('works', function() {

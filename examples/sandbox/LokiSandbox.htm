@@ -345,11 +345,6 @@
     
     function gistLoaded () {
       sbv.editorJS.setValue(this.responseText);
-      
-      setTimeout(function() {
-        windowResize();
-        runloki();
-      }, 100);
     }
     
     function windowResize() {
@@ -457,7 +452,7 @@
       initCode += "inspectObject(db);\r\n";
 
       sbv.editorJS.setValue(initCode);
-      sbv.editorOutput.setValue('Welcome to loki sandbox 0.1.0\r\n');
+      sbv.editorOutput.setValue("Welcome to loki sandbox 0.1.0\r\nClick 'Run' to launch your script.");
     }
 
     function logDatabase() {

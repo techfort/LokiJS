@@ -108,21 +108,11 @@
       cv1 = Number(prop1);
       cv2 = Number(prop2);
 
-      // if they are both 'number-like'...
-      if (cv1 === cv1 && cv2 === cv2) {
+      // if one or both are 'number-like'...
+      if (cv1 === cv1 || cv2 === cv2) {
         return (cv1 === cv2);
       }
 
-      // if prop1 is number-like but not prop2
-      if (cv1 === cv1 && cv2 !== cv2) {
-        return true;
-      }
-      
-      // if prop2 is number-like but not prop1
-      if (cv2 === cv2 && cv1 !== cv1) {
-        return false;
-      }
-      
       // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
       cv1 = prop1.toString();
       cv2 = prop2.toString();

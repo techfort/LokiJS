@@ -72,119 +72,176 @@
       }
     };
 
+    function aeqHelper(prop1, prop2) {
+      var cv1, cv2, t1, t2;
+
+      if (prop1 === prop2) return true;
+      if (prop1 < prop2) return false;
+      if (prop1 > prop2) return false;
+
+      // 'falsy' and Boolean handling
+      if (!prop1 || !prop2 || prop1 === true || prop2 === true || prop1 !== prop1 || prop2 !== prop2) {
+        // dates and NaN conditions (typed dates before serialization)
+        switch (prop1) {
+          case undefined: t1 = 1; break;
+          case null: t1 = 1; break;
+          case false: t1 = 3; break;
+          case true: t1 = 4; break;
+          case "": t1 = 5; break;
+          default: t1 = (prop1 === prop1)?9:0; break;
+        }
+
+        switch (prop2) {
+          case undefined: t2 = 1; break;
+          case null: t2 = 1; break;
+          case false: t2 = 3; break;
+          case true: t2 = 4; break;
+          case "": t2 = 5; break;
+          default: t2 = (prop2 === prop2)?9:0; break;
+        }
+
+        // one or both is edge case
+        if (t1 !== 9 || t2 !== 9) {
+          return (t1===t2);
+        }
+      }
+
+      // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
+      cv1 = prop1.toString();
+      cv2 = prop2.toString();
+
+      return (cv1 == cv2);
+    }
+
     /** Helper function for determining 'less-than' conditions for ops, sorting, and binary indices.
      *     In the future we might want $lt and $gt ops to use their own functionality/helper.
      *     Since binary indices on a property might need to index [12, NaN, new Date(), Infinity], we
      *     need this function (as well as gtHelper) to always ensure one value is LT, GT, or EQ to another.
      */
     function ltHelper(prop1, prop2, equal) {
-      var cv1, cv2;
+      var cv1, cv2, t1, t2;
 
-      // 'falsy' and Boolean handling
-      if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
-        if ((prop1 === true || prop1 === false) && (prop2 === true || prop2 === false)) {
-          if (equal) {
-            return prop1 === prop2;
-          } else {
-            if (prop1) {
-              return false;
-            } else {
-              return prop2;
-            }
-          }
+      // if one of the params is falsy or strictly true or not equal to itself
+      // 0, 0.0, "", NaN, null, undefined, not defined, false, true
+      if (!prop1 || !prop2 || prop1 === true || prop2 === true || prop1 !== prop1 || prop2 !== prop2) {
+        switch (prop1) {
+          case undefined: t1 = 1; break;
+          case null: t1 = 1; break;
+          case false: t1 = 3; break;
+          case true: t1 = 4; break;
+          case "": t1 = 5; break;
+          // if strict equal probably 0 so sort higher, otherwise probably NaN so sort lower than even null
+          default: t1 = (prop1 === prop1)?9:0; break;
         }
 
-        if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
+        switch (prop2) {
+          case undefined: t2 = 1; break;
+          case null: t2 = 1; break;
+          case false: t2 = 3; break;
+          case true: t2 = 4; break;
+          case "": t2 = 5; break;
+          default: t2 = (prop2 === prop2)?9:0; break;
+        }
+
+        // one or both is edge case
+        if (t1 !== 9 || t2 !== 9) {
+          return (t1===t2)?equal:(t1<t2);
+        }
+      }
+
+      // if both are numbers (string encoded or not), compare as numbers
+      cv1 = Number(prop1);
+      if (cv1 === cv1) {
+        cv2 = Number(prop2);
+        if (cv2 === cv2) {
+          if (cv1 < cv2) return true;
+          if (cv1 > cv2) return false;
           return equal;
         }
-        if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
-          return true;
-        }
       }
 
-      if (prop1 === prop2) {
-        return equal;
-      }
-
-      if (prop1 < prop2) {
-        return true;
-      }
-
-      if (prop1 > prop2) {
-        return false;
-      }
+      if (prop1 < prop2) return true;
+      if (prop1 > prop2) return false;
+      if (prop1 == prop2) return equal;
 
       // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
       cv1 = prop1.toString();
       cv2 = prop2.toString();
 
-      if (cv1 == cv2) {
-        return equal;
-      }
-
       if (cv1 < cv2) {
         return true;
+      }
+
+      if (cv1 == cv2) {
+        return equal;
       }
 
       return false;
     }
 
     function gtHelper(prop1, prop2, equal) {
-      var cv1, cv2;
+      var cv1, cv2, t1, t2;
 
       // 'falsy' and Boolean handling
-      if (!prop1 || !prop2 || prop1 === true || prop2 === true) {
-        if ((prop1 === true || prop1 === false) && (prop2 === true || prop2 === false)) {
-          if (equal) {
-            return prop1 === prop2;
-          } else {
-            if (prop1) {
-              return !prop2;
-            } else {
-              return false;
-            }
-          }
+      if (!prop1 || !prop2 || prop1 === true || prop2 === true || prop1 !== prop1 || prop2 !== prop2) {
+        switch (prop1) {
+          case undefined: t1 = 1; break;
+          case null: t1 = 1; break;
+          case false: t1 = 3; break;
+          case true: t1 = 4; break;
+          case "": t1 = 5; break;
+          // NaN 0
+          default: t1 = (prop1 === prop1)?9:0; break;
         }
 
-        if (prop1 === undefined || prop1 === null || prop1 === false || prop2 === true) {
+        switch (prop2) {
+          case undefined: t2 = 1; break;
+          case null: t2 = 1; break;
+          case false: t2 = 3; break;
+          case true: t2 = 4; break;
+          case "": t2 = 5; break;
+          default: t2 = (prop2 === prop2)?9:0; break;
+        }
+
+        // one or both is edge case
+        if (t1 !== 9 || t2 !== 9) {
+          return (t1===t2)?equal:(t1>t2);
+        }
+      }
+
+      // if both are numbers (string encoded or not), compare as numbers
+      cv1 = Number(prop1);
+      if (cv1 === cv1) {
+        cv2 = Number(prop2);
+        if (cv2 === cv2) {
+          if (cv1 > cv2) return true;
+          if (cv1 < cv2) return false;
           return equal;
         }
-        if (prop2 === undefined || prop2 === null || prop1 === true || prop2 === false) {
-          return true;
-        }
       }
 
-      if (prop1 === prop2) {
-        return equal;
-      }
+      if (prop1 > prop2) return true;
+      if (prop1 < prop2) return false;
+      if (prop1 == prop2) return equal;
 
-      if (prop1 > prop2) {
-        return true;
-      }
-
-      if (prop1 < prop2) {
-        return false;
-      }
-
-      // not strict equal nor less than nor gt so must be mixed types, convert to string and use that to compare
+      // not strict equal nor less than nor gt so must be dates or mixed types
+      // convert to string and use that to compare
       cv1 = prop1.toString();
       cv2 = prop2.toString();
 
-      if (cv1 == cv2) {
-        return equal;
-      }
-
       if (cv1 > cv2) {
         return true;
+      }
+
+      if (cv1 == cv2) {
+        return equal;
       }
 
       return false;
     }
 
     function sortHelper(prop1, prop2, desc) {
-      if (prop1 === prop2) {
-        return 0;
-      }
+      if (aeqHelper(prop1, prop2)) return 0;
 
       if (ltHelper(prop1, prop2, false)) {
         return (desc) ? (1) : (-1);
@@ -394,6 +451,10 @@
         return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b);
       },
 
+      $finite: function(a, b) {
+        return (b === isFinite(a));
+      },
+
       $size: function (a, b) {
         if (Array.isArray(a)) {
           return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
@@ -439,8 +500,20 @@
       }
     };
 
-    // making indexing opt-in... our range function knows how to deal with these ops :
-    var indexedOpsList = ['$eq', '$aeq', '$dteq', '$gt', '$gte', '$lt', '$lte', '$in', '$between'];
+    // if an op is registered in this object, our 'calculateRange' can use it with our binary indices.
+    // if the op is registered to a function, we will run that function/op as a 2nd pass filter on results.
+    // those 2nd pass filter functions should be similar to LokiOps functions, accepting 2 vals to compare.
+    var indexedOps = {
+      $eq: LokiOps.$eq,
+      $aeq: true,
+      $dteq: true,
+      $gt: true,
+      $gte: true,
+      $lt: true,
+      $lte: true,
+      $in: true,
+      $between: true
+    };
 
     function clone(data, method) {
       if (data === null || data === undefined) {
@@ -617,8 +690,8 @@
 
       // persist version of code which created the database to the database.
       // could use for upgrade scenarios
-      this.databaseVersion = 1.1;
-      this.engineVersion = 1.1;
+      this.databaseVersion = 1.44;
+      this.engineVersion = 1.44;
 
       // autosave support (disabled by default)
       // pass autosave: true, autosaveInterval: 6000 in options to set 6 second autosave
@@ -662,12 +735,12 @@
 
       var getENV = function () {
         if (typeof global !== 'undefined' && (global.android || global.NSObject)) {
-          // If no adapter is set use the default nativescript adapter
-          if (!options.adapter) {
-            //var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
-            //options.adapter=new LokiNativescriptAdapter();
-          }
-          return 'NATIVESCRIPT'; //nativescript
+           // If no adapter is set use the default nativescript adapter
+           if (!options.adapter) {
+             //var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
+             //options.adapter=new LokiNativescriptAdapter();
+           }
+           return 'NATIVESCRIPT'; //nativescript
         }
 
         if (typeof window === 'undefined') {
@@ -716,6 +789,8 @@
 
       return adapter;
     };
+
+
     /**
      * configures options related to database persistence.
      *
@@ -1390,10 +1465,10 @@
       this.name = dbObject.name;
 
       // restore database version
-      this.databaseVersion = 1.0;
-      if (dbObject.hasOwnProperty('databaseVersion')) {
-        this.databaseVersion = dbObject.databaseVersion;
-      }
+      // this.databaseVersion = 1.0;
+      // if (dbObject.hasOwnProperty('databaseVersion')) {
+      //   this.databaseVersion = dbObject.databaseVersion;
+      // }
 
       this.collections = [];
 
@@ -1496,6 +1571,13 @@
           dv.rematerialize({
             removeWhereFilters: true
           });
+        }
+
+        // Upgrade Logic for binary index refactoring at version 1.4.4
+        if (dbObject.databaseVersion < 1.44) {
+          // rebuild all indices
+          copyColl.ensureAllIndexes(true);
+          copyColl.dirty = true;
         }
       }
     };
@@ -2961,8 +3043,7 @@
       var doIndexCheck = !usingDotNotation &&
         (!this.searchIsChained || !this.filterInitialized);
 
-      if (doIndexCheck && this.collection.binaryIndices[property] &&
-        indexedOpsList.indexOf(operator) !== -1) {
+      if (doIndexCheck && this.collection.binaryIndices[property] && indexedOps[operator]) {
         // this is where our lazy index rebuilding will take place
         // basically we will leave all indexes dirty until we need them
         // so here we will rebuild only the index tied to this property
@@ -3046,7 +3127,14 @@
 
           if (operator !== '$in') {
             for (i = seg[0]; i <= seg[1]; i++) {
-              result.push(t[index.values[i]]);
+              if (indexedOps[operator] !== true) {
+                if (indexedOps[operator](t[index.values[i]][property], value)) {
+                  result.push(t[index.values[i]]);
+                }
+              }
+              else {
+                result.push(t[index.values[i]]);
+              }
             }
           } else {
             for (i = 0, len = seg.length; i < len; i++) {
@@ -3114,7 +3202,15 @@
 
           if (operator !== '$in') {
             for (i = segm[0]; i <= segm[1]; i++) {
-              result.push(index.values[i]);
+              if (indexedOps[operator] !== true) {
+                // must be a function, implying 2nd phase filtering of results from calculateRange
+                if (indexedOps[operator](t[index.values[i]][property], value)) {
+                  result.push(index.values[i]);
+                }
+              }
+              else {
+                result.push(index.values[i]);
+              }
             }
           } else {
             for (i = 0, len = segm.length; i < len; i++) {
@@ -4865,7 +4961,8 @@
         };
       }
 
-      // allow pre-insert to modify actual collection reference even if cloning
+      // both 'pre-insert' and 'insert' events are passed internal data reference even when cloning
+      // insert needs internal reference because that is where loki itself listens to add meta
       if (!bulkInsert) {
         this.emit('pre-insert', obj);
       }
@@ -4873,13 +4970,13 @@
         return undefined;
       }
 
-      // if cloning, give user back clone of 'cloned' object with $loki and meta
-      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+      returnObj = obj;
+      if (!bulkInsert) {
+        this.emit('insert', obj);
+        returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+      }
 
       this.addAutoUpdateObserver(returnObj);
-      if (!bulkInsert) {
-        this.emit('insert', returnObj);
-      }
       return returnObj;
     };
 
@@ -5299,8 +5396,8 @@
     Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
       var index = this.binaryIndices[binaryIndexName].values;
       var val = this.data[dataPosition][binaryIndexName];
-      //var rs = new Resultset(this, null, null);
-      var idxPos = this.calculateRangeStart(binaryIndexName, val);
+
+      var idxPos = (index.length === 0)?0:this.calculateRangeStart(binaryIndexName, val, true);
 
       // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
       // doing this after adjusting dataPositions so no clash with previous item at that position.
@@ -5366,10 +5463,20 @@
     };
 
     /**
-     * Internal method used for index maintenance.  Given a prop (index name), and a value
-     * (which may or may not yet exist) this will find the proper location where it can be added.
+     * Internal method used for index maintenance and indexed searching.
+     * Calculates the beginning of an index range for a given value.
+     * For index maintainance (adaptive:true), we will return a valid index position to insert to.
+     * For querying (adaptive:false/undefined), we will :
+     *    return lower bound/index of range of that value (if found)
+     *    return next lower index position if not found (hole)
+     * If index is empty it is assumed to be handled at higher level, so
+     * this method assumes there is at least 1 document in index.
+     *
+     * @param {string} prop - name of property which has binary index
+     * @param {any} val - value to find within index
+     * @param {bool?} adaptive - if true, we will return insert position
      */
-    Collection.prototype.calculateRangeStart = function (prop, val) {
+    Collection.prototype.calculateRangeStart = function (prop, val, adaptive) {
       var rcd = this.data;
       var index = this.binaryIndices[prop].values;
       var min = 0;
@@ -5377,7 +5484,7 @@
       var mid = 0;
 
       if (index.length === 0) {
-        return 0;
+        return -1;
       }
 
       var minVal = rcd[index[min]][prop];
@@ -5396,12 +5503,18 @@
 
       var lbound = min;
 
-      if (ltHelper(rcd[index[lbound]][prop], val, false)) {
-        return lbound+1;
-      }
-      else {
+      // found it... return it
+      if (aeqHelper(val, rcd[index[lbound]][prop])) {
         return lbound;
       }
+
+      // if not in index and our value is less than the found one
+      if (ltHelper(val, rcd[index[lbound]][prop], false)) {
+        return adaptive?lbound:lbound-1;
+      }
+
+      // not in index and our value is greater than the found one
+      return adaptive?lbound+1:lbound;
     };
 
     /**
@@ -5416,7 +5529,7 @@
       var mid = 0;
 
       if (index.length === 0) {
-        return 0;
+        return -1;
       }
 
       var minVal = rcd[index[min]][prop];
@@ -5435,12 +5548,23 @@
 
       var ubound = max;
 
-      if (gtHelper(rcd[index[ubound]][prop], val, false)) {
-        return ubound-1;
-      }
-      else {
+      // only eq if last element in array is our val
+      if (aeqHelper(val, rcd[index[ubound]][prop])) {
         return ubound;
       }
+
+      // if not in index and our value is less than the found one
+      if (gtHelper(val, rcd[index[ubound]][prop], false)) {
+        return ubound+1;
+      }
+
+      // either hole or first nonmatch
+      if (aeqHelper(val, rcd[index[ubound-1]][prop])) {
+        return ubound-1;
+      }
+
+      // hole, so ubound if nearest gt than the val we were looking for
+      return ubound;
     };
 
     /**
@@ -5459,6 +5583,8 @@
       var min = 0;
       var max = index.length - 1;
       var mid = 0;
+      var lbound, lval;
+      var ubound, uval;
 
       // when no documents are in collection, return empty range condition
       if (rcd.length === 0) {
@@ -5482,33 +5608,67 @@
         }
         break;
       case '$gt':
+        // none are within range
         if (gtHelper(val, maxVal, true)) {
           return [0, -1];
         }
+        // all are within range
+        if (gtHelper(minVal, val, false)) {
+          return [min, max];
+        }
         break;
       case '$gte':
+        // none are within range
         if (gtHelper(val, maxVal, false)) {
           return [0, -1];
         }
+        // all are within range
+        if (gtHelper(minVal, val, true)) {
+          return [min, max];
+        }
         break;
       case '$lt':
+        // none are within range
         if (ltHelper(val, minVal, true)) {
           return [0, -1];
         }
+        // all are within range
         if (ltHelper(maxVal, val, false)) {
-          return [0, rcd.length - 1];
+          return [min, max];
         }
         break;
       case '$lte':
+        // none are within range
         if (ltHelper(val, minVal, false)) {
           return [0, -1];
         }
+        // all are within range
         if (ltHelper(maxVal, val, true)) {
-          return [0, rcd.length - 1];
+          return [min, max];
         }
         break;
       case '$between':
-        return ([this.calculateRangeStart(prop, val[0]), this.calculateRangeEnd(prop, val[1])]);
+        // none are within range (low range is greater)
+        if (gtHelper(val[0], maxVal, false)) {
+          return [0, -1];
+        }
+        // none are within range (high range lower)
+        if (ltHelper(val[1], minVal, false)) {
+          return [0, -1];
+        }
+
+        lbound = this.calculateRangeStart(prop, val[0]);
+        ubound = this.calculateRangeEnd(prop, val[1]);
+
+        if (lbound < 0) lbound++;
+        if (ubound > max) ubound--;
+
+        if (!gtHelper(rcd[index[lbound]][prop], val[0], true)) lbound++;
+        if (!ltHelper(rcd[index[ubound]][prop], val[1], true)) ubound--;
+
+        if (ubound < lbound) return [0, -1];
+
+        return ([lbound, ubound]);
       case '$in':
         var idxset = [],
           segResult = [];
@@ -5526,91 +5686,94 @@
         return segResult;
       }
 
-      // hone in on start position of value
-      while (min < max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
-          min = mid + 1;
-        } else {
-          max = mid;
-        }
+      // determine lbound where needed
+      switch (op) {
+        case '$eq':
+        case '$aeq':
+        case '$dteq':
+        case '$gte':
+        case '$lt':
+          lbound = this.calculateRangeStart(prop, val);
+          lval = rcd[index[lbound]][prop];
+          break;
+        default: break;
       }
 
-      var lbound = min;
-
-      // do not reset min, as the upper bound cannot be prior to the found low bound
-      max = index.length - 1;
-
-      // hone in on end position of value
-      while (min < max) {
-        mid = (min + max) >> 1;
-
-        if (ltHelper(val, rcd[index[mid]][prop], false)) {
-          max = mid;
-        } else {
-          min = mid + 1;
-        }
+      // determine ubound where needed
+      switch (op) {
+        case '$eq':
+        case '$aeq':
+        case '$dteq':
+        case '$lte':
+        case '$gt':
+          ubound = this.calculateRangeEnd(prop, val);
+          uval = rcd[index[ubound]][prop];
+          break;
+        default: break;
       }
 
-      var ubound = max;
-
-      var lval = rcd[index[lbound]][prop];
-      var uval = rcd[index[ubound]][prop];
 
       switch (op) {
-      case '$eq':
-        if (lval !== val) {
-          return [0, -1];
-        }
-        if (uval !== val) {
-          ubound--;
-        }
+        case '$eq':
+        case '$aeq':
+        case '$dteq':
+          // if hole (not found)
+          //if (ltHelper(lval, val, false) || gtHelper(lval, val, false)) {
+          //  return [0, -1];
+          //}
+          if (!aeqHelper(lval, val)) {
+            return [0, -1];
+          }
 
-        return [lbound, ubound];
-      case '$dteq':
-        if (lval > val || lval < val) {
-          return [0, -1];
-        }
-        if (uval > val || uval < val) {
-          ubound--;
-        }
+          return [lbound, ubound];
 
-        return [lbound, ubound];
+        //case '$dteq':
+        // if hole (not found)
+        //  if (lval > val || lval < val) {
+        //    return [0, -1];
+        //  }
 
+        //  return [lbound, ubound];
 
-      case '$gt':
-        if (ltHelper(uval, val, true)) {
-          return [0, -1];
-        }
+        case '$gt':
+          // (an eqHelper would probably be better test)
+          // if hole (not found) ub position is already greater
+          if (!aeqHelper(rcd[index[ubound]][prop], val)) {
+            //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+            return [ubound, max];
+          }
+          // otherwise (found) so ubound is still equal, get next
+          return [ubound+1, max];
 
-        return [ubound, rcd.length - 1];
+        case '$gte':
+          // if hole (not found) lb position marks left outside of range
+          if (!aeqHelper(rcd[index[lbound]][prop], val)) {
+            //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+            return [lbound+1, max];
+          }
+          // otherwise (found) so lb is first position where its equal
+          return [lbound, max];
 
-      case '$gte':
-        if (ltHelper(lval, val, false)) {
-          return [0, -1];
-        }
+        case '$lt':
+          // if hole (not found) position already is less than
+          if (!aeqHelper(rcd[index[lbound]][prop], val)) {
+            //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+            return [min, lbound];
+          }
+          // otherwise (found) so lb marks left inside of eq range, get previous
+          return [min, lbound-1];
 
-        return [lbound, rcd.length - 1];
+        case '$lte':
+          // if hole (not found) ub position marks right outside so get previous
+          if (!aeqHelper(rcd[index[ubound]][prop], val)) {
+            //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+            return [min, ubound-1];
+          }
+          // otherwise (found) so ub is last position where its still equal
+          return [min, ubound];
 
-      case '$lt':
-        if (lbound === 0 && ltHelper(lval, val, false)) {
-          return [0, 0];
-        }
-        return [0, lbound - 1];
-
-      case '$lte':
-        if (uval !== val) {
-          ubound--;
-        }
-
-        if (ubound === 0 && ltHelper(uval, val, false)) {
-          return [0, 0];
-        }
-        return [0, ubound];
-
-      default:
-        return [0, rcd.length - 1];
+        default:
+          return [0, rcd.length - 1];
       }
     };
 
@@ -6349,6 +6512,9 @@
       fs: LokiFsAdapter,
       localStorage: LokiLocalStorageAdapter
     };
+    Loki.aeq = aeqHelper;
+    Loki.lt = ltHelper;
+    Loki.gt = gtHelper;
     return Loki;
   }());
 

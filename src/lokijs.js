@@ -665,7 +665,7 @@
           // If no adapter is set use the default nativescript adapter
           if (!options.adapter) {
             //var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
-            options.adapter=new LokiNativescriptAdapter();
+            //options.adapter=new LokiNativescriptAdapter();
           }
           return 'NATIVESCRIPT'; //nativescript
         }
@@ -737,11 +737,13 @@
       var defaultPersistence = {
           'NODEJS': 'fs',
           'BROWSER': 'localStorage',
-          'CORDOVA': 'localStorage'
+          'CORDOVA': 'localStorage',
+          'MEMORY': 'memory'
         },
         persistenceMethods = {
           'fs': LokiFsAdapter,
-          'localStorage': LokiLocalStorageAdapter
+          'localStorage': LokiLocalStorageAdapter,
+          'memory': LokiMemoryAdapter
         };
 
       this.options = options || {};

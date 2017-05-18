@@ -128,6 +128,80 @@ describe('sorting and indexing', function () {
   });
 
   describe('collection indexing', function() {
+    it('mixed types sort as expected', function() {
+      var mtdb = new loki('mtdb');
+      var coll = db.addCollection('coll');
+      coll.insert({ a: undefined, b: 5 });
+      coll.insert({ b: 5 });
+      coll.insert({ a: null, b: 5});
+      coll.insert({ a: 7, b: 5 });
+      coll.insert({ a: '7', b: 5 });
+      coll.insert({ a: 7.0, b: 5 });
+      coll.insert({ a: '11', b: 5 });
+      coll.insert({ a: '4', b: 5 });
+      coll.insert({ a: new Date(), b: 5 });
+      coll.insert({ a: { ack: "object" }, b: 5 });
+      coll.insert({ a: 7.5, b: 5 });
+      coll.insert({ a: NaN, b: 5 });
+      coll.insert({ a: [8, 1, 15], b: 5});
+      coll.insert({ a: 'asdf', b: 5 });
+
+      var indexVals = [];
+
+      // make sure unindexed sort is as expected
+
+      var result = coll.chain().simplesort("a").data();
+      result.forEach(function(obj) {
+        indexVals.push(obj.a);
+      });
+
+      expect(indexVals.length).toEqual(14);
+
+      // undefined, null, or NaN
+      expect(indexVals[0] !== indexVals[0]).toEqual(true);
+      expect(indexVals[1] == null).toEqual(true);
+      expect(indexVals[2] == null).toEqual(true);
+      expect(indexVals[3] == null).toEqual(true);
+
+      expect(indexVals[4] === "4").toEqual(true);
+      expect(indexVals[5] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[6] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[7] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[8] === 7.5).toEqual(true);
+      expect(indexVals[9] === "11").toEqual(true);
+      expect(indexVals[10] instanceof Date).toEqual(true);
+      expect(Array.isArray(indexVals[11])).toEqual(true);
+      expect(typeof indexVals[12] === "object").toEqual(true);
+      expect(indexVals[13] === "asdf").toEqual(true);
+
+      // now make sure binary index uses same range
+      indexVals = [];
+      coll.ensureIndex('a');
+
+      coll.binaryIndices.a.values.forEach(function(vi) {
+        indexVals.push(coll.data[vi].a);
+      });
+
+      expect(indexVals.length).toEqual(14);
+
+      // undefined, null, or NaN
+      expect(indexVals[0] !== indexVals[0]).toEqual(true);
+      expect(indexVals[1] == null).toEqual(true);
+      expect(indexVals[2] == null).toEqual(true);
+      expect(indexVals[3] == null).toEqual(true);
+
+      expect(indexVals[4] === "4").toEqual(true);
+      expect(indexVals[5] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[6] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[7] === "7" || indexVals[5] === 7).toEqual(true);
+      expect(indexVals[8] === 7.5).toEqual(true);
+      expect(indexVals[9] === "11").toEqual(true);
+      expect(indexVals[10] instanceof Date).toEqual(true);
+      expect(Array.isArray(indexVals[11])).toEqual(true);
+      expect(typeof indexVals[12] === "object").toEqual(true);
+      expect(indexVals[13] === "asdf").toEqual(true);
+    });
+
     it('works', function() {
       var now = new Date().getTime();
       var dt1 = new Date(now - 1000);
@@ -148,11 +222,17 @@ describe('sorting and indexing', function () {
       var results = cidx.find({'b': dt2 });
       expect(results[0].a).toBe(2);
 
-      // now search for date value equal to dt2 (yet separate object instances)
-      // this should not work when using the default $eq
+      // NOTE :
+      // Binary Index imposes loose equality checks to construct its order
+      // Strict equality checks would need to be extra filtering phase
       var sdt = new Date(now + 5000);
-      results = cidx.find({'b': sdt});
-      expect(results.length).toBe(0);
+
+
+      // after refactoring binary indices to be loose equality/ranges everywhere,
+      // this unit test passed, meaning the dteq op is not needed if binary index exists
+
+      //results = cidx.find({'b': sdt});
+      //expect(results.length).toBe(0);
 
       // now try with new $dteq operator
       results = cidx.find({'b': {'$dteq': sdt}});

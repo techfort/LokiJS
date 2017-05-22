@@ -220,7 +220,7 @@ describe('sorting and indexing', function () {
       cidx.insert({ a: 5, b: dt5 });
 
       // force index build while simultaneously testing date equality test
-      var results = cidx.find({'b': dt2 });
+      var results = cidx.find({'b': { $aeq: dt2 }});
       expect(results[0].a).toBe(2);
 
       // NOTE :

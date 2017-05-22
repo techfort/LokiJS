@@ -4406,6 +4406,7 @@
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
      * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
+     * @param {boolean} options.serializableIndices  - ensures indexed property values are serializable (default: true)
      * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @see {@link Loki#addCollection} for normal creation of collections
@@ -4487,6 +4488,11 @@
       // option to observe objects and update them automatically, ignored if Object.observe is not supported
       this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
+      // by default, if you insert a document into a collection with binary indices, if those indexed properties contain
+      // a DateTime we will convert to epoch time format so that (across serializations) its value position will be the 
+      // same 'after' serialization as it was 'before'.
+      this.serializableIndices = options.hasOwnProperty('serializableIndices') ? options.serializableIndices : true;
+      
       //option to activate a cleaner daemon - clears "aged" documents at set intervals.
       this.ttl = {
         age: null,
@@ -5537,7 +5543,13 @@
     Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
       var index = this.binaryIndices[binaryIndexName].values;
       var val = this.data[dataPosition][binaryIndexName];
-      
+
+      // If you are inserting a javascript Date value into a binary index, convert to epoch time
+      if (this.serializableIndices === true && val instanceof Date) {
+        this.data[dataPosition][binaryIndexName] = val.getTime();
+        val = this.data[dataPosition][binaryIndexName];
+      }
+
       var idxPos = (index.length === 0)?0:this.calculateRangeStart(binaryIndexName, val, true);
 
       // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.

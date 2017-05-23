@@ -6,8 +6,21 @@ An important distinction between an in-memory database like lokijs and tradition
 # Node.js QuickStart
 If you are using lokijs in a node environment, we will automatically detect and use the built-in LokiFsAdapter without your needing to provide an adapter.
 ```javascript
-var loki = require("../src/lokijs.js");
+const loki = require("lokijs");
+
 var db = new loki("test.db");
+var coll = db.addCollection("test");
+
+coll.insert({a:1, b:2});
+
+db.saveDatabase(function(err) {
+  if (!err) {
+    console.log('database saved');
+  }
+  else {
+    console.log(err);
+  }
+});
 
 ```
 
@@ -15,10 +28,23 @@ If you expect your database to grow over 100mb or you experience slow save speed
 
 An example using this LokiFsStructuredAdapter might look like :
 ```javascript
-var loki = require('../src/lokijs.js');
-var lfsa = require('../src/loki-fs-structured-adapter.js');
+const loki = require("lokijs");
+const lfsa = require('../src/loki-fs-structured-adapter.js');
 
-var db = new loki('sandbox.db', { adapter : lfsa});
+var adapter = new lfsa();
+var db = new loki('sandbox.db', { adapter : adapter});
+var coll = db.addCollection("test");
+
+coll.insert({a:1, b:2});
+
+db.saveDatabase(function(err) {
+  if (!err) {
+    console.log('database saved');
+  }
+  else {
+    console.log(err);
+  }
+});
 ```
 
 # Web QuickStart
@@ -382,3 +408,4 @@ In addition to core loadDatabase and saveDatabase methods, the loki Indexed adap
   adapter.deleteDatabase('UserDatabase');
   adapter.getCatalogSummary(); // gets list of all keys along with their sizes
 ```
+

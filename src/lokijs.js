@@ -551,10 +551,16 @@
         cloned = jQuery.extend(true, {}, data);
         break;
       case "shallow":
-        cloned = Object.create(data.prototype || null);
+        // more compatible method for older browsers
+        cloned = data.prototype?Object.create(data.prototype):{};
         Object.keys(data).map(function (i) {
           cloned[i] = data[i];
         });
+        break;
+      case "shallow-assign":
+        // should be supported by newer environments/browsers
+        cloned = data.prototype?Object.create(data.prototype):{};
+        Object.assign(cloned, data);
         break;
       default:
         break;
@@ -1000,7 +1006,7 @@
      * @param {boolean} options.disableChangesApi - default is true
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
      * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
-     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
+     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow, 'shallow-assign'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @returns {Collection} a reference to the collection which was just added
      * @memberof Loki
@@ -3447,7 +3453,7 @@
      * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
      *        the collection is not configured for clone object.
      * @param {string} options.forceCloneMethod - Allows overriding the default or collection specified cloning method.
-     *        Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'
+     *        Possible values include 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
      *
      * @returns {array} Array of documents in the resultset
      * @memberof Resultset
@@ -4407,7 +4413,7 @@
      * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
      * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
      * @param {boolean} options.serializableIndices  - ensures indexed property values are serializable (default: true)
-     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow'
+     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow', 'shallow-assign'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @see {@link Loki#addCollection} for normal creation of collections
      */

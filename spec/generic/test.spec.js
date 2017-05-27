@@ -843,7 +843,7 @@ describe('loki', function () {
         'testFloat': 2.2
       }); //7
 
-      // coll.find $and
+      // coll.find explicit $and
       expect(eic.find({
         '$and': [{
           'testid': 1
@@ -852,13 +852,25 @@ describe('loki', function () {
         }]
       }).length).toEqual(1);
 
-      // resultset.find $and
+      // coll.find implicit '$and'
+      expect(eic.find({
+        'testid': 1,
+        'testString': 'bbb'
+      }).length).toEqual(1);
+
+      // resultset.find explicit $and
       expect(eic.chain().find({
         '$and': [{
           'testid': 1
         }, {
           'testString': 'bbb'
         }]
+      }).data().length).toEqual(1);
+
+      // resultset.find implicit $and
+      expect(eic.chain().find({
+        'testid': 1,
+        'testString': 'bbb'
       }).data().length).toEqual(1);
 
       // resultset.find explicit operators

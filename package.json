@@ -33,7 +33,8 @@
     "prepublish": "npm run build",
     "clean": "rimraf build/* coverage/* node_modules",
     "pour:beer": "echo New npm version published, one beer for you !",
-    "jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json"
+    "jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json",
+    "benchmark": "node benchmark/benchmark"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
   "contributors": [{

@@ -3090,30 +3090,38 @@
         p,
         property,
         queryObjectOp,
+        obj,
         operator,
         value,
         key,
         searchByIndex = false,
         result = [],
+        filters = [],
         index = null;
 
-      // if this was note invoked via findOne()
+      // flag if this was invoked via findOne()
       firstOnly = firstOnly || false;
 
       if (typeof queryObject === 'object') {
         for (p in queryObject) {
+          obj = {};
+          obj[p] = queryObject[p];
+          filters.push(obj);
+
           if (hasOwnProperty.call(queryObject, p)) {
             property = p;
             queryObjectOp = queryObject[p];
-            break;
           }
+        }
+        // if more than one expression in single query object, 
+        // convert implicit $and to explicit $and
+        if (filters.length > 1) {
+          return this.find({ '$and': filters }, firstOnly);
         }
       }
 
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
-        // coll.find(), coll.findOne(), coll.chain().find().data() all path here
-
         if (firstOnly) {
           return (this.collection.data.length > 0)?this.collection.data[0]: null;
         }

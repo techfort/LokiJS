@@ -1,8 +1,6 @@
 ### Designing Queries
 
-LokiJS has evolved several mechanisms for querying the database.  It may be difficult at first to determine which method you should use for querying, so this page will attempt to describe features and limitations of the various methods.
-
-At the highest level of abstraction, let us divide the methods into these categories : 
+LokiJS has evolved several mechanisms for querying the database.  At the highest level of abstraction, let us divide the methods into these categories : 
 * Core Methods - simple, yet powerful method for queries applied directly to a collection.
 * Chaining (via Resultsets) - allows for sorting, limiting, offsets, and multiple queries in sequence.
 * Chaining Transforms - similar to method chaining above, yet defined in object structure which can be serialized.
@@ -89,7 +87,9 @@ var results = users.find({ count : { '$between': [50, 75] });
 ```
 **$regex** - filter for document(s) with property matching provided regular expression
 >_If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well._
+
 ```javascript
+
 // pass in raw regex
 var results = coll.find({'Name': { '$regex' : /din/ }});
 
@@ -98,6 +98,7 @@ results = coll.find({'Name': { '$regex': 'din' }});
 
 // or pass in [pattern, options] string array
 results = coll.find({'Name': { '$regex': ['din', 'i'] }});
+
 ```
 
 **$in** - filter for document(s) with property matching any of the provided array values.
@@ -185,6 +186,7 @@ users.insert({ name : 'arngrim', weapons : ['tyrfing']});
 results = users.find({ 'weapons' : { '$containsNone' : ['gungnir', 'mjolnir'] } });
 ```
 **$type** - filter for documents which have a property of a specified type
+
 ```javascript
 users.insert([
   { name: 'odin', weapons: ['gungnir', 'draupnir'] },
@@ -196,6 +198,16 @@ users.insert([
 // returns docs with (non-array) string value for 'weapons' (mjolnir)
 var results = users.find({ 'weapons' : { '$type' : 'string' } });
 ```
+
+**$finite** - filter for documents with property which is numeric or non-numeric.
+
+```javascript
+
+// return all docs where isFinite(doc.age) === true
+var results = users.find({ age: { $finite: true }});
+
+```
+
 **$size** - filter for documents which have array property of specified size. _(does not work for strings)_
 ```javascript
 users.insert([
@@ -225,24 +237,31 @@ var results = users.find({ 'name' : { '$len' : 9 } });
 // fetch documents matching both sub-expressions
 var results = coll.find({
   '$and': [{ 
-      'Age' : {
+      'age' : {
         '$gt': 30
       }
     },{
-      'Name' : 'Thor'
+      'name' : 'Thor'
     }]
 });
+
+// alternative 'implicit' syntax :
+results = coll.find({
+  age: { $gt: 30 },
+  name: 'Thor'
+});
 ```
+
 **$or** - filter for documents which meet any of the nested subexpressions
 ```javascript
 // fetch documents matching any of the sub-expressions
 var results = coll.find({
   '$or': [{ 
-      'Age' : {
+      'age' : {
         '$gte': '40'
       }
     },{
-      'Name' : 'Thor'
+      'name' : 'Thor'
     }]
 });
 ```

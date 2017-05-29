@@ -5,46 +5,80 @@ An important distinction between an in-memory database like lokijs and tradition
 
 # Node.js QuickStart
 If you are using lokijs in a node environment, we will automatically detect and use the built-in LokiFsAdapter without your needing to provide an adapter.
+
+### No Persistence example (entirely synchronous and in memory) :
+
 ```javascript
 const loki = require("lokijs");
 
-var db = new loki("test.db");
-var coll = db.addCollection("test");
+var db = new loki("quickstart.db");
+var users = db.addCollection("users");
 
-coll.insert({a:1, b:2});
+users.insert({name:'odin', age: 50});
+users.insert({name:'thor', age: 35});
 
-db.saveDatabase(function(err) {
-  if (!err) {
-    console.log('database saved');
-  }
-  else {
-    console.log(err);
-  }
+var result = users.find({ age : { $lte: 35 } });
+
+// dumps array with 1 doc (thor) to console
+console.log(result);
+```
+
+### Autosave/autoload quickstart with default LokiFsAdapter (async i/o) : 
+
+```javascript
+var db = new loki('quickstart.db', {
+	autoload: true,
+	autoloadCallback : databaseInitialize,
+	autosave: true, 
+	autosaveInterval: 4000
 });
+
+// implement the autoloadback referenced in loki constructor
+function databaseInitialize() {
+  var entries = db.getCollection("entries");
+  if (entries === null) {
+    entries = db.addCollection("entries");
+  }
+
+  // kick off any program logic or start listening to external events
+  runProgramLogic();
+}
+
+// example method with any bootstrap logic to run after database initialized
+function runProgramLogic() {
+  var entryCount = db.getCollection("entries").count();
+  console.log("number of entries in database : " + entryCount);
+}
 
 ```
 
 If you expect your database to grow over 100mb or you experience slow save speeds you might to use our more high-performance LokiFsStructuredAdapter. This adapter utilitizes es6 generator iterators and node streams to stream the database line by line.  It will also save each collection into its own file with a file name derived from the base name.  This database should scale to support databases just under 1 gb on the default node heap allocation of 1.4gb.  Increasing heap allocation, you can push this limit further. 
 
-An example using this LokiFsStructuredAdapter might look like :
+### An example using fastest and most scalable LokiFsStructuredAdapter (for nodejs) might look like : 
 ```javascript
 const loki = require("lokijs");
 const lfsa = require('../src/loki-fs-structured-adapter.js');
 
 var adapter = new lfsa();
-var db = new loki('sandbox.db', { adapter : adapter});
-var coll = db.addCollection("test");
-
-coll.insert({a:1, b:2});
-
-db.saveDatabase(function(err) {
-  if (!err) {
-    console.log('database saved');
-  }
-  else {
-    console.log(err);
-  }
+var db = new loki('sandbox.db', { 
+  adapter : adapter,
+  autoload: true,
+  autoloadCallback : databaseInitialize,
+  autosave: true, 
+  autosaveInterval: 4000
 });
+
+function databaseInitialize() {
+  var log = db.getCollection("log");
+
+  if (log === null) {
+    db.addCollection("log");
+  }
+
+  // log some random event data as part of our example
+  log.add({ event: 'dbinit', dt: (new Date()).getTime() });
+}
+
 ```
 
 # Web QuickStart
@@ -52,8 +86,27 @@ If you are using lokijs in a web environment, we will automatically use the buil
 ```
 <script src="../../src/lokijs.js"></script>
 ```
+
+Example constructing loki for in-memory only or manual save/load (with default localStorage adapter) :
 ```javascript
 var loki = new loki("test.db");
+```
+
+Example constructing loki for autoload/autosave (with default localStorage adapter) : 
+```javascript
+var loki = new loki("quickstart.db", {
+  autoload: true,
+  autoloadCallback : databaseInitialize,
+  autosave: true, 
+  autosaveInterval: 4000
+});
+
+function databaseInitialize() {
+  if (!db.getCollection("users")) {
+    db.addCollection("users");
+  }
+}
+
 ```
 
 If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  More information follows on this adapter but here is how to get started quickly with this adapter :
@@ -63,7 +116,13 @@ If you expect your database to grow up to 60megs you might want to use our LokiI
 ```
 ```javascript
 var idbAdapter = new LokiIndexedAdapter();
-var db = new loki("test.db", { adapter: idbAdapter });
+var db = new loki("test.db", { 
+  adapter: idbAdapter,
+  autoload: true,
+  autoloadCallback : databaseInitialize,
+  autosave: true, 
+  autosaveInterval: 4000
+});
 ```
 
 If you expect your database to grow over 60megs things start to get browser dependent.  To provide singular guidance and since Chrome is the most popular web browser you will want to employ our LokiPartitioningAdapter in addition to our LokiIndexedAdapter.  To sum up as briefly as possible, this will divide collections into their own files and if a collection exceeds 25megs (customizable) it will subdivide into separate pages(files).  This allows our indexed db adapter to accomplish a single database save/load using many key/value pairs.  This adapter will allow scaling up to around 300mb or so in current testing.  
@@ -77,7 +136,13 @@ An example using the LokiPartitioningAdapter along with LokiIndexedAdapter might
 var idbAdapter = new LokiIndexedAdapter();
 var pa = new loki.LokiPartitioningAdapter(idbAdapter, { paging: true });
 
-var db = new loki('test.db', { adapter: pa });
+var db = new loki('test.db', { 
+  adapter: pa,
+  autoload: true,
+  autoloadCallback : databaseInitialize,
+  autosave: true, 
+  autosaveInterval: 4000
+});
 ```
 
 # Description of LokiNativescriptAdapter

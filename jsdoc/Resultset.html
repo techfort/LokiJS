@@ -279,7 +279,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2626">line 2626</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2615">line 2615</a>
     </li></ul></dd>
     
 
@@ -372,7 +372,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2753">line 2753</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2726">line 2726</a>
     </li></ul></dd>
     
 
@@ -499,7 +499,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2958">line 2958</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2898">line 2898</a>
     </li></ul></dd>
     
 
@@ -608,7 +608,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2738">line 2738</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2711">line 2711</a>
     </li></ul></dd>
     
 
@@ -712,7 +712,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3436">line 3436</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3294">line 3294</a>
     </li></ul></dd>
     
 
@@ -903,7 +903,30 @@
             
 
             <td class="description last"><p>Allows overriding the default or collection specified cloning method.
-       Possible values include 'parse-stringify', 'jquery-extend-deep', and 'shallow'</p></td>
+       Possible values include 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>removeMeta</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Will force clones and strip $loki and meta properties from documents</p></td>
         </tr>
 
     
@@ -951,7 +974,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3455">line 3455</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3314">line 3314</a>
     </li></ul></dd>
     
 
@@ -1216,7 +1239,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3581">line 3581</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3457">line 3457</a>
     </li></ul></dd>
     
 
@@ -1412,7 +1435,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3073">line 3073</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3013">line 3013</a>
     </li></ul></dd>
     
 
@@ -1451,159 +1474,6 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     <dd>
         
 <span class="param-type"><a href="Resultset.html">Resultset</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="instance"><span class="type-signature"></span>instance<span class="signature">(collectionOptions)</span><span class="type-signature"> &rarr; {<a href="Collection.html">Collection</a>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Instances a new anonymous collection with the documents contained in the current resultset.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>collectionOptions</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Options to pass to new anonymous collection construction.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2841">line 2841</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>A reference to an anonymous collection initialized with resultset data().</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Collection.html">Collection</a></span>
 
 
     </dd>
@@ -1719,7 +1589,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2701">line 2701</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2674">line 2674</a>
     </li></ul></dd>
     
 
@@ -1895,7 +1765,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3563">line 3563</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3439">line 3439</a>
     </li></ul></dd>
     
 
@@ -2048,7 +1918,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2720">line 2720</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2693">line 2693</a>
     </li></ul></dd>
     
 
@@ -2152,7 +2022,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3541">line 3541</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3417">line 3417</a>
     </li></ul></dd>
     
 
@@ -2349,7 +2219,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2907">line 2907</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2847">line 2847</a>
     </li></ul></dd>
     
 
@@ -2502,7 +2372,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2880">line 2880</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2820">line 2820</a>
     </li></ul></dd>
     
 
@@ -2706,7 +2576,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2763">line 2763</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2736">line 2736</a>
     </li></ul></dd>
     
 
@@ -2859,7 +2729,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3510">line 3510</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3386">line 3386</a>
     </li></ul></dd>
     
 
@@ -3012,7 +2882,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3370">line 3370</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3244">line 3244</a>
     </li></ul></dd>
     
 
@@ -3082,7 +2952,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue May 23 2017 19:41:05 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon May 29 2017 02:02:14 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

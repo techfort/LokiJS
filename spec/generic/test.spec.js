@@ -1037,7 +1037,7 @@ describe('loki', function () {
     });
   });
 
-  describe('resultset instance works', function() {
+  describe('resultset data removeMeta works', function() {
     it('works', function() {
       var idb = new loki('sandbox.db');
 
@@ -1050,17 +1050,69 @@ describe('loki', function () {
       items.insert({ name : 'tyrfing', owner: 'svafrlami', maker: 'dwarves' });
       items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
 
-      // combine indexed enabled sort with instancing
-      var instanceCollection = items.chain().simplesort('owner').limit(2).instance();
-      expect(instanceCollection.data.length).toEqual(2);
-      expect(instanceCollection.data[0].owner).toEqual('odin');
-      expect(instanceCollection.data[1].owner).toEqual('odin');
-      
-      // combine unindexed find with instancing
-      instanceCollection = items.chain().find({maker: 'elves'}).instance();
-      expect(instanceCollection.data.length).toEqual(2);
-      expect(instanceCollection.data[0].maker).toEqual('elves');
-      expect(instanceCollection.data[1].maker).toEqual('elves');      
+      // unfiltered with strip meta
+      var result = items.chain().data({removeMeta:true});
+      expect(result.length).toEqual(4);
+      expect(result[0].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+      expect(result[2].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[2].hasOwnProperty('meta')).toEqual(false);
+      expect(result[3].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[3].hasOwnProperty('meta')).toEqual(false);
+
+      // indexed sort with strip meta
+      result = items.chain().simplesort('owner').limit(2).data({removeMeta:true});
+      expect(result.length).toEqual(2);
+      expect(result[0].owner).toEqual('odin');
+      expect(result[0].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].owner).toEqual('odin');
+      expect(result[1].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+
+      // unindexed find strip meta
+      result = items.chain().find({maker: 'elves'}).data({removeMeta: true});
+      expect(result.length).toEqual(2);
+      expect(result[0].maker).toEqual('elves');
+      expect(result[0].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].maker).toEqual('elves');      
+      expect(result[1].hasOwnProperty('$loki')).toEqual(false);
+      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+
+      // now try unfiltered without strip meta and ensure loki and meta are present
+      result = items.chain().data();
+      expect(result.length).toEqual(4);
+      expect(result[0].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[1].hasOwnProperty('meta')).toEqual(true);
+      expect(result[2].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[2].hasOwnProperty('meta')).toEqual(true);
+      expect(result[3].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[3].hasOwnProperty('meta')).toEqual(true);
+
+      // now try without strip meta and ensure loki and meta are present
+      result = items.chain().simplesort('owner').limit(2).data();
+      expect(result.length).toEqual(2);
+      expect(result[0].owner).toEqual('odin');
+      expect(result[0].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].owner).toEqual('odin');
+      expect(result[1].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[1].hasOwnProperty('meta')).toEqual(true);
+
+      // unindexed find strip meta
+      result = items.chain().find({maker: 'elves'}).data();
+      expect(result.length).toEqual(2);
+      expect(result[0].maker).toEqual('elves');
+      expect(result[0].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].maker).toEqual('elves');      
+      expect(result[1].hasOwnProperty('$loki')).toEqual(true);
+      expect(result[1].hasOwnProperty('meta')).toEqual(true);
     });
   });
 
@@ -1292,31 +1344,6 @@ describe('loki', function () {
       });
       it('no results found', function () {
         expect(resultsWithIndex.length).toEqual(0);
-      });
-    });
-  });
-
-  describe('stepDynamicViewPersistence', function () {
-    it('works', function testAnonym() {
-      var coll = db.anonym([{
-        name: 'joe'
-      }, {
-        name: 'jack'
-      }], ['name']);
-      it('Anonym collection', function () {
-        expect(coll.data.length).toEqual(2);
-      });
-      it('Collection not found', function () {
-        expect(db.getCollection('anonym')).toEqual(null);
-      });
-      coll.name = 'anonym';
-      db.loadCollection(coll);
-      it('Anonym collection loaded', function () {
-        expect(!!db.getCollection('anonym') === true).toBeTruthy();
-      });
-      coll.clear();
-      it('No data after coll.clear()', function () {
-        expect(0).toEqual(coll.data.length)
       });
     });
   });

@@ -1,16 +1,16 @@
 var loki = require('../src/lokijs.js');
 
-// Standalone node example, run with 'node lokiContinuum'
-
-// Intended to leverage simple, existing simulation engine port
-// to use and demonstrate some lokijs functionality.
-// Since UI layer was stripped out, you only see final balances.
-
 /* 
-  LokiContinuum - a financial simulation engine, modeling funds, actors, transactions.
-  This is a port of a c#.net program to test capabilities of loki and javascript.  
-  We create here a LokiContinuum class which we will use as an interface to the 
-  loki continuum 'engine'.
+  loki-continuum - a stripped down port of  c#.net program to test capabilities of loki and javascript.  
+  Standalone node example, run with :
+  "node lokiContinuum"
+  
+  Demonstrates:
+  - Autosave/Autoload
+  - using detached loki collections for volatile only use
+  - using collection protos to manage 'classed' objects
+  - Collection Transforms
+  - dot notation
 */
 
 var LokiContinuum = (function() {
@@ -18,13 +18,13 @@ var LokiContinuum = (function() {
 var singletonContinuum = null;
 
 // in unix ms time format, this is April 17, 3026 07:15:33 AM
-var MAX_DATE = 33333333333333;
-var MIN_DATE = 0;
+const MAX_DATE = 33333333333333;
+const MIN_DATE = 0;
 
-var BalanceTypeEnum = Object.freeze({"HistoricalBalance":1, "VolatileBalance":2, "VolatileTransaction":3, "InceptionBalance":4 });
-var FundClassEnum = Object.freeze({"Spending":1, "Debt":2, "DebtEquity":3, "Savings":4 });
-var ActorPeriodicityEnum = Object.freeze({'Daily':1, 'Weekly':2, 'Monthly':3, 'Yearly':4, 'OnceOnly':5 });
-var ActivityTypeEnum = Object.freeze({'Actor': 1, 'FundReconcile': 2});
+const BalanceTypeEnum = Object.freeze({"HistoricalBalance":1, "VolatileBalance":2, "VolatileTransaction":3, "InceptionBalance":4 });
+const FundClassEnum = Object.freeze({"Spending":1, "Debt":2, "DebtEquity":3, "Savings":4 });
+const ActorPeriodicityEnum = Object.freeze({'Daily':1, 'Weekly':2, 'Monthly':3, 'Yearly':4, 'OnceOnly':5 });
+const ActivityTypeEnum = Object.freeze({'Actor': 1, 'FundReconcile': 2});
 
 function AddDate(unixDate, offset, offsetType) {
   var oldDate = new Date();
@@ -99,14 +99,39 @@ function Projector(universeName, dbOptions) {
 
 	this.db = new loki(universeName, dbOptions); 
 	this.vol = null;
-	this.activities = this.db.anonym([]);
+	this.activities = new loki.Collection("activities");
+  
+  // Add a parameterized transform to our disconnected collection to determine set of activities affecting a given fundId (sorted by activityDate ascending)
+
+  // If this were a filter function it would read as :
+  // ( (obj.activityType === ActivityTypeEnum.FundReconcile) && (obj.affectingFund === fundId) ) || 
+  // ( (obj.activityType === ActivityTypeEnum.Actor) && ( (obj.affectingActor.fundPrimary === fundId) || (obj.affectingActor.fundSecondary === fundId) ) )
+  
+  this.activities.addTransform("DoesAffectFund", [
+    { 
+      type: 'find',
+      value : {
+        $or : [
+          { activityType: ActivityTypeEnum.FundReconcile, affectingFund : '[%lktxp]fundId' },
+          { activityType: ActivityTypeEnum.Actor, $or: [{"affectingActor.fundPrimary": '[%lktxp]fundId'}, {"affectingActor.fundSecondary": '[%lktxp]fundId'}] }
+        ]
+      }
+    },
+    {
+      type: 'simplesort',
+      property: 'activityDate',
+      desc: false
+    }
+  ]);
+  
 }
 
 Projector.prototype.initializeDatabase = function()
 {
-  this.db.removeCollection('actors');
-  this.db.removeCollection('funds');
-  this.db.removeCollection('settings');
+  
+//  this.db.removeCollection('actors');
+//  this.db.removeCollection('funds');
+//  this.db.removeCollection('settings');
   this.db.addCollection('actors');
   this.db.addCollection('funds');
   var pm = this.db.addCollection('settings');
@@ -122,16 +147,6 @@ Projector.prototype.initializeDatabase = function()
   }
     
   pm.insert(settings);
-}
-
-Projector.prototype.getFundCollection = function()
-{
-	return this.db.getCollection("funds");
-}
-
-Projector.prototype.getActorCollection = function()
-{
-	return this.db.getCollection("actors");
 }
 
 Projector.prototype.addFund = function(options) 
@@ -154,15 +169,9 @@ Projector.prototype.addActor = function(options)
 
 Projector.prototype.activitiesByFund = function(fundId)
 {
-	var filtered = [];
-    var idx;
-    
-    for(idx=0; idx<this.activities.data.length; idx++)
-    {
-    	if (this.activities.data[idx].doesAffectFund(fundId)) filtered.push(this.activities.data[idx]);
-    }
-    
-    return filtered;
+    var result = this.activities.chain("DoesAffectFund", { fundId: fundId }).data();
+
+    return result;
 }
 
 Projector.prototype.renderUniverse = function(start, end) {
@@ -546,6 +555,7 @@ Activity.prototype.execute = function()
   }
 }
 
+
 Activity.prototype.doesAffectFund = function(fundId)
 {
   if (this.activityType == ActivityTypeEnum.FundReconcile)
@@ -561,6 +571,7 @@ Activity.prototype.doesAffectFund = function(fundId)
 
   return false;
 }
+
 
 return Projector;
 }());
@@ -656,7 +667,7 @@ function addTestData() {
 
 function runProjection() 
 {
-  var funds = continuum.getFundCollection();
+  var funds = continuum.db.getCollection("funds");
 
   funds.find().forEach(function(fund)
   {
@@ -713,14 +724,33 @@ function dbLoaderCallback()
   // and affect the next run.
   setTimeout(function() {
     console.log();
-    console.log("due to autosave timer, you may need to ctrl-c to quit");
-    console.log("wait 5 seconds before quitting to increase checking by 10 on next run");
-    var checkingFund = continuum.getFundCollection().findOne({'name':'checking'});
+    var checkingFund = continuum.db.getCollection("funds").findOne({'name':'checking'});
     console.log("old inceptionBalance: " + checkingFund.inceptionBalance);
     checkingFund.inceptionBalance += 10;
     console.log("new inceptionBalance: " + checkingFund.inceptionBalance);
-    continuum.getFundCollection().update(checkingFund);
+    continuum.db.getCollection("funds").update(checkingFund);
+    console.log("");
+    console.log("activities for checking: ");
+    logActivities(continuum.activitiesByFund(checkingFund.$loki));
+    console.log("");
+    console.log("due to autosave timer, you may need to ctrl-c to quit");
+    console.log("wait 5 seconds before quitting to increase checking by 10 on next run");
   }, 500);
+}
+
+function logActivities(activities) {
+  var fsdesc;
+  
+  activities.forEach(function(obj) {
+    fsdesc = obj.affectingActor.fundSecondary?
+        (" | balance ( " + continuum.db.getCollection("funds").get(obj.affectingActor.fundSecondary).name  + ") : " + obj.renderedBalanceSecondary.amount) : "";
+
+    console.log("description : " + obj.affectingActor.name + 
+      " | amount : " + obj.affectingActor.triggerAmount +
+      " | balance ( " + continuum.db.getCollection("funds").get(obj.affectingActor.fundPrimary).name  + ") : " + obj.renderedBalancePrimary.amount +
+      fsdesc
+      );
+  });
 }
 
 var continuum = new LokiContinuum("LokiContinuum.db", {

@@ -2,6 +2,10 @@ node_modules/
 demos/desktop_app/bower_copmonents/
 demos/desktop_app/log
 demos/desktop_app/demo.json
+examples/quickstart2.db
+examples/quickstart3.db
+examples/quickstart3.db.0
+examples/quickstart3.db.1
 coverage/
 testCollections
 testCollections~

@@ -744,16 +744,16 @@
      * @param {string} filename - name of the file to be saved to
      * @param {object=} options - (Optional) config options object
      * @param {string} options.env - override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'
-     * @param {boolean} options.verbose - enable console output (default is 'false')
-     * @param {boolean} options.autosave - enables autosave
-     * @param {int} options.autosaveInterval - time interval (in milliseconds) between saves (if dirty)
-     * @param {boolean} options.autoload - enables autoload on loki instantiation
+     * @param {boolean} [options.verbose=false] - enable console output
+     * @param {boolean} [options.autosave=false] - enables autosave
+     * @param {int} [options.autosaveInterval=5000] - time interval (in milliseconds) between saves (if dirty)
+     * @param {boolean} [options.autoload=false] - enables autoload on loki instantiation
      * @param {function} options.autoloadCallback - user callback called after database load
      * @param {adapter} options.adapter - an instance of a loki persistence adapter
-     * @param {string} options.serializationMethod - ['normal', 'pretty', 'destructured']
+     * @param {string} [options.serializationMethod='normal'] - ['normal', 'pretty', 'destructured']
      * @param {string} options.destructureDelimiter - string delimiter used for destructured serialization
-     * @param {boolean} options.throttledSaves - if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
-                                                and guaranteeing proper serialization of the calls. Default value is true.
+     * @param {boolean} [options.throttledSaves=true] - debounces multiple calls to to saveDatabase reducing number of disk I/O operations
+                                                and guaranteeing proper serialization of the calls.
      */
     function Loki(filename, options) {
       this.filename = filename || 'loki.db';
@@ -1011,14 +1011,14 @@
      * Adds a collection to the database.
      * @param {string} name - name of collection to add
      * @param {object=} options - (optional) options to configure collection with.
-     * @param {array} options.unique - array of property names to define unique constraints for
-     * @param {array} options.exact - array of property names to define exact constraints for
-     * @param {array} options.indices - array property names to define binary indexes for
-     * @param {boolean} options.asyncListeners - default is false
-     * @param {boolean} options.disableChangesApi - default is true
-     * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
-     * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
-     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow, 'shallow-assign'
+     * @param {array=} [options.unique=[]] - array of property names to define unique constraints for
+     * @param {array=} [options.exact=[]] - array of property names to define exact constraints for
+     * @param {array=} [options.indices=[]] - array property names to define binary indexes for
+     * @param {boolean} [options.asyncListeners=false] - whether listeners are called asynchronously
+     * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes Api
+     * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
+     * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
+     * @param {string} [options.cloneMethod='parse-stringify'] - 'parse-stringify', 'jquery-extend-deep', 'shallow, 'shallow-assign'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @returns {Collection} a reference to the collection which was just added
      * @memberof Loki
@@ -1148,7 +1148,7 @@
     Loki.prototype.toJson = Loki.prototype.serialize;
 
     /**
-     * Destructured JSON serialization routine to allow alternate serialization methods.
+     * Database level destructured JSON serialization routine to allow alternate serialization methods.
      * Internally, Loki supports destructuring via loki "serializationMethod' option and 
      * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
      * your own structured persistence or data exchange.
@@ -1285,11 +1285,11 @@
     };
 
     /**
-     * Utility method to serialize a collection in a 'destructured' format
+     * Collection level utility method to serialize a collection in a 'destructured' format
      *
-     * @param {object} options - used to determine output of method
-     * @param {int=} options.delimited - whether to return single delimited string or an array
-     * @param {string=} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {object=} options - used to determine output of method
+     * @param {int} options.delimited - whether to return single delimited string or an array
+     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
      * @param {int} options.collectionIndex -  specify which collection to serialize data for
      *
      * @returns {string|array} A custom, restructured aggregation of independent serializations for a single collection.
@@ -1332,16 +1332,16 @@
     };
 
     /**
-     * Destructured JSON deserialization routine to minimize memory overhead.
+     * Database level destructured JSON deserialization routine to minimize memory overhead.
      * Internally, Loki supports destructuring via loki "serializationMethod' option and 
      * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
      * your own structured persistence or data exchange.
      *
      * @param {string|array} destructuredSource - destructured json or array to deserialize from
      * @param {object=} options - source format options
-     * @param {bool=} options.partitioned - (default: false) whether db and each collection are separate
+     * @param {bool=} [options.partitioned=false] - whether db and each collection are separate
      * @param {int=} options.partition - can be used to deserialize only a single partition
-     * @param {bool=} options.delimited - (default: true) whether subitems are delimited or subarrays
+     * @param {bool=} [options.delimited=true] - whether subitems are delimited or subarrays
      * @param {string=} options.delimiter - override default delimiter
      *
      * @returns {object|array} An object representation of the deserialized database, not yet applied to 'this' db or document array
@@ -1443,12 +1443,12 @@
     };
 
     /**
-     * Deserializes a destructured collection.
+     * Collection level utility function to deserializes a destructured collection.
      *
      * @param {string|array} destructuredSource - destructured representation of collection to inflate
-     * @param {object} options - used to describe format of destructuredSource input
-     * @param {int} options.delimited - whether source is delimited string or an array
-     * @param {string} options.delimiter - (optional) if delimited, this is delimiter to use
+     * @param {object=} options - used to describe format of destructuredSource input
+     * @param {int=} [options.delimited=false] - whether source is delimited string or an array
+     * @param {string=} options.delimiter - if delimited, this is delimiter to use (if other than default)
      *
      * @returns {array} an array of documents to attach to collection.data.
      * @memberof Loki
@@ -1491,7 +1491,8 @@
      * Inflates a loki database from a serialized JSON string
      *
      * @param {string} serializedDb - a serialized loki database string
-     * @param {object} options - apply or override collection level settings
+     * @param {object=} options - apply or override collection level settings
+     * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
     Loki.prototype.loadJSON = function (serializedDb, options) {
@@ -1515,8 +1516,8 @@
      * Inflates a loki database from a JS object
      *
      * @param {object} dbObject - a serialized loki database string
-     * @param {object} options - apply or override collection level settings
-     * @param {bool?} options.retainDirtyFlags - whether collection dirty flags will be preserved
+     * @param {object=} options - apply or override collection level settings
+     * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -1747,8 +1748,8 @@
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
      * @param {object=} options - memory adapter options
-     * @param {boolean} options.asyncResponses - whether callbacks are invoked asynchronously (default: false)
-     * @param {int} options.asyncTimeout - timeout in ms to queue callbacks (default: 50)
+     * @param {boolean} [options.asyncResponses=false] - whether callbacks are invoked asynchronously
+     * @param {int} [options.asyncTimeout=50] - timeout in ms to queue callbacks
      * @constructor LokiMemoryAdapter
      */
     function LokiMemoryAdapter(options) {
@@ -2417,10 +2418,12 @@
     };
 
     /**
-     * Handles loading from file system, local storage, or adapter (indexeddb)
+     * Handles manually loading from file system, local storage, or adapter (such as indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *    To avoid contention with any throttledSaves, we will drain the save queue first.
+     *
+     * If you are configured with autosave, you do not need to call this method yourself.
      *
      * @param {object} options - if throttling saves and loads, this controls how we drain save queue before loading
      * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued 
@@ -2428,6 +2431,15 @@
      * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
+     * @example
+     * db.loadDatabase({}, function(err) {
+     *   if (err) {
+     *     console.log("error : " + err);
+     *   }
+     *   else {
+     *     console.log("database loaded.");
+     *   }
+     * });
      */
     Loki.prototype.loadDatabase = function (options, callback) {
       var self=this;
@@ -2503,12 +2515,23 @@
     };
 
     /**
-     * Handles saving to file system, local storage, or adapter (indexeddb)
+     * Handles manually saving to file system, local storage, or adapter (such as indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
+     * If you are configured with autosave, you do not need to call this method yourself.
+     *
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
+     * @example
+     * db.saveDatabase(function(err) {
+     *   if (err) {
+     *     console.log("error : " + err);
+     *   }
+     *   else {
+     *     console.log("database saved.");
+     *   }
+     * });
      */
     Loki.prototype.saveDatabase = function (callback) {
       if (!this.throttledSaves) {
@@ -2554,7 +2577,6 @@
      *    This method utilizes loki configuration options (if provided) to determine which
      *    persistence method to use, or environment detection (if configuration was not provided).
      *
-     * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
@@ -2564,6 +2586,12 @@
           throw err;
         }
       };
+      
+      // we aren't even using options, so we will support syntax where
+      // callback is passed as first and only argument
+      if (typeof options === 'function' &amp;&amp; !callback) {
+        cFun = options;
+      }
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
       if (this.persistenceAdapter !== null) {
@@ -2652,10 +2680,6 @@
      *
      * @constructor Resultset
      * @param {Collection} collection - The collection which this Resultset will query against.
-     * @param {Object=} options - Object containing one or more options.
-     * @param {string} options.queryObj - Optional mongo-style query object to initialize resultset with.
-     * @param {function} options.queryFunc - Optional javascript filter function to initialize resultset with.
-     * @param {bool} options.firstOnly - Optional boolean used by collection.findOne().
      */
     function Resultset(collection, options) {
       options = options || {};
@@ -3566,8 +3590,8 @@
      * @param {Collection} collection - A reference to the collection to work against
      * @param {string} name - The name of this dynamic view
      * @param {object=} options - (Optional) Pass in object with 'persistent' and/or 'sortPriority' options.
-     * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
-     * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
+     * @param {boolean} [options.persistent=false] - indicates if view is to main internal results array in 'resultdata'
+     * @param {string} [options.sortPriority='passive'] - 'passive' (sorts performed on call to data) or 'active' (after updates)
      * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
      * @see {@link Collection#addDynamicView} to construct instances of DynamicView
      */
@@ -3619,7 +3643,7 @@
 
 
     /**
-     * rematerialize() - intended for use immediately after deserialization (loading)
+     * rematerialize() - internally used immediately after deserialization (loading)
      *    This will clear out and reapply filterPipeline ops, recreating the view.
      *    Since where filters do not persist correctly, this method allows
      *    restoring the view to state where user can re-apply those where filters.
@@ -4022,17 +4046,23 @@
     /**
      * data() - resolves and pending filtering and sorting, then returns document array as result.
      *
+     * @param {object=} options - optional parameters to pass to resultset.data() if non-persistent
+     * @param {boolean} options.forceClones - Allows forcing the return of cloned objects even when
+     *        the collection is not configured for clone object.
+     * @param {string} options.forceCloneMethod - Allows overriding the default or collection specified cloning method.
+     *        Possible values include 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
+     * @param {bool} options.removeMeta - Will force clones and strip $loki and meta properties from documents
      * @returns {array} An array of documents representing the current DynamicView contents.
      * @memberof DynamicView
      */
-    DynamicView.prototype.data = function () {
+    DynamicView.prototype.data = function (options) {
       // using final sort phase as 'catch all' for a few use cases which require full rebuild
       if (this.sortDirty || this.resultsdirty) {
         this.performSortPhase({
           suppressRebuildEvent: true
         });
       }
-      return (this.options.persistent) ? (this.resultdata) : (this.resultset.data());
+      return (this.options.persistent) ? (this.resultdata) : (this.resultset.data(options));
     };
 
     /**
@@ -4302,16 +4332,16 @@
      * @implements LokiEventEmitter
      * @param {string} name - collection name
      * @param {(array|object)=} options - (optional) array of property names to be indicized OR a configuration object
-     * @param {array} options.unique - array of property names to define unique constraints for
-     * @param {array} options.exact - array of property names to define exact constraints for
-     * @param {array} options.indices - array property names to define binary indexes for
-     * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily (default: true)
-     * @param {boolean} options.asyncListeners - default is false
-     * @param {boolean} options.disableChangesApi - default is true
-     * @param {boolean} options.autoupdate - use Object.observe to update objects automatically (default: false)
-     * @param {boolean} options.clone - specify whether inserts and queries clone to/from user
-     * @param {boolean} options.serializableIndices  - ensures indexed property values are serializable (default: true)
-     * @param {string} options.cloneMethod - 'parse-stringify' (default), 'jquery-extend-deep', 'shallow', 'shallow-assign'
+     * @param {array=} [options.unique=[]] - array of property names to define unique constraints for
+     * @param {array=} [options.exact=[]] - array of property names to define exact constraints for
+     * @param {array=} [options.indices=[]] - array property names to define binary indexes for
+     * @param {boolean} [options.adaptiveBinaryIndices=true] - collection indices will be actively rebuilt rather than lazily
+     * @param {boolean} [options.asyncListeners=false] - whether listeners are invoked asynchronously
+     * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes API
+     * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
+     * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
+     * @param {boolean} [options.serializableIndices=true[]] - converts date values on binary indexed properties to epoch time
+     * @param {string} [options.cloneMethod='parse-stringify' - 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @see {@link Loki#addCollection} for normal creation of collections
      */
@@ -4620,6 +4650,17 @@
      * @param {string} name - name to associate with transform
      * @param {array} transform - an array of transformation 'step' objects to save into the collection
      * @memberof Collection
+     * @example
+     * users.addTransform('progeny', [
+     *   {
+     *     type: 'find',
+     *     value: {
+     *       'age': {'$lte': 40}
+     *     }
+     *   }
+     * ]);
+     * 
+     * var results = users.chain('progeny').data();
      */
     Collection.prototype.addTransform = function (name, transform) {
       if (this.transforms.hasOwnProperty(name)) {
@@ -4627,6 +4668,15 @@
       }
 
       this.transforms[name] = transform;
+    };
+
+    /**
+     * Retrieves a named transform from the collection.
+     * @param {string} name - name of the transform to lookup.
+     * @memberof Collection
+     */
+    Collection.prototype.getTransform = function (name) {
+      return this.transforms[name];
     };
 
     /**
@@ -4877,12 +4927,18 @@
     /**
      * Add a dynamic view to the collection
      * @param {string} name - name of dynamic view to add
-     * @param {object=} options - (optional) options to configure dynamic view with
-     * @param {boolean} options.persistent - indicates if view is to main internal results array in 'resultdata'
-     * @param {string} options.sortPriority - 'passive' (sorts performed on call to data) or 'active' (after updates)
+     * @param {object=} options - options to configure dynamic view with
+     * @param {boolean} [options.persistent=false] - indicates if view is to main internal results array in 'resultdata'
+     * @param {string} [options.sortPriority='passive'] - 'passive' (sorts performed on call to data) or 'active' (after updates)
      * @param {number} options.minRebuildInterval - minimum rebuild interval (need clarification to docs here)
      * @returns {DynamicView} reference to the dynamic view added
      * @memberof Collection
+     * @example
+     * var pview = users.addDynamicView('progeny');
+     * pview.applyFind({'age': {'$lte': 40}});
+     * pview.applySimpleSort('name');
+     *
+     * var results = pview.data();
      **/
 
     Collection.prototype.addDynamicView = function (name, options) {
@@ -4953,6 +5009,15 @@
      * @param {(object|array)} doc - the document (or array of documents) to be inserted
      * @returns {(object|array)} document or documents inserted
      * @memberof Collection
+     * @example
+     * users.insert({
+     *     name: 'Odin',
+     *     age: 50,
+     *     address: 'Asgard'
+     * });
+     * 
+     * // alternatively, insert array of documents
+     * users.insert([{ name: 'Thor', age: 35}, { name: 'Loki', age: 30}]);
      */
     Collection.prototype.insert = function (doc) {
       if (!Array.isArray(doc)) {
@@ -4985,7 +5050,6 @@
      * @param {object} doc - the document to be inserted
      * @param {boolean} bulkInsert - quiet pre-insert and insert event emits
      * @returns {object} document or 'undefined' if there was a problem inserting it
-     * @memberof Collection
      */
     Collection.prototype.insertOne = function (doc, bulkInsert) {
       var err = null;
@@ -5885,8 +5949,8 @@
      * Chain method, used for beginning a series of chained find() and/or view() operations
      * on a collection.
      *
-     * @param {array} transform - Ordered array of transform step objects similar to chain
-     * @param {object} parameters - Object containing properties representing parameters to substitute
+     * @param {array=} transform - Ordered array of transform step objects similar to chain
+     * @param {object=} parameters - Object containing properties representing parameters to substitute
      * @returns {Resultset} (this) resultset, or data array if any map or join functions where called
      * @memberof Collection
      */
@@ -6583,7 +6647,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon May 29 2017 02:02:14 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sat Jun 03 2017 20:17:55 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

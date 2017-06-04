@@ -15,7 +15,7 @@ var users = db.addCollection("users");
 // seed data
 users.insert({ name: "odin", gender: "m", age: 1000, tags : ["woden", "knowlege", "sorcery", "frenzy", "runes"], items: ["gungnir"], attributes: { eyes: 1} });
 users.insert({ name: "frigg", gender: "f", age: 800, tags: ["foreknowlege"], items: ["eski"] });
-users.insert({ name: "thor", gender: "m", age: 35, items: ["mjolnir", "beard"] });
+users.insert({ name: "thor", gender: "m", age: 35, items: ["mjolnir", "beer"] });
 users.insert({ name: "sif", gender: "f", age: 30 });
 users.insert({ name: "loki", gender: "m", age: 29 });
 users.insert({ name: "sigyn", gender: "f", age: 29 });

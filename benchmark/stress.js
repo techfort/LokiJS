@@ -6,20 +6,19 @@
 // One way to limit memory overhead is to serialize smaller objects rather than
 // one large (single) JSON.stringify of the whole database.  
 //
-// The LokiFsStructuredAdapter streams the database in an out as a series
-// of smaller, individual serializations.  It also partitions database into 
-//
-// The native node fs adapter is hands down the most memory efficient and 
-// fastest adapter if you are using node.js.  It accomplishes this by 
-// using io streams to save and load the database to disk rather than saving 
-// the whole database as a single string. 
+// The LokiFsStructuredAdapter streams the database in and out as a series
+// of smaller, individual serializations.  It also partitions the database, 
+// storing each collection separately within its own file.  This adapter is 
+// the most memory efficient and fastest adapter if you are using node.js.  
+// It accomplishes this by using io streams to save and load the database 
+// to disk rather than saving the whole database as a single string. 
 //
 // This stress can be used to analyse memory overhead for saving a loki database.
 // Both stress.js and destress.js need to be configured to use the same serialization 
 // method and adapter.  By default, this is configured to use the 
 // loki-fs-structured-adapter which will stream output and input.
 
-// On my first review i saw no significant benefit to "destructured" format if you
+// On my first review i saw no significant benefit to "fs-structured" format if you
 // are going to save in single file, but subsequent benchmarks show that saves
 // are actually faster.  I wasn't expecting this and if i had to guess at why I would
 // guess that by not doing one huge JSON.stringify, but instead doing many smaller 

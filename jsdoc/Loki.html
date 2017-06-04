@@ -156,7 +156,11 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -181,7 +185,19 @@
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>override environment detection as 'NODEJS', 'BROWSER', 'CORDOVA'</p></td>
@@ -204,10 +220,26 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>enable console output (default is 'false')</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>enable console output</p></td>
         </tr>
 
     
@@ -227,7 +259,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
             
 
             <td class="description last"><p>enables autosave</p></td>
@@ -250,7 +298,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    5000
+                
+                </td>
             
 
             <td class="description last"><p>time interval (in milliseconds) between saves (if dirty)</p></td>
@@ -273,7 +337,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
             
 
             <td class="description last"><p>enables autoload on loki instantiation</p></td>
@@ -296,7 +376,19 @@
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>user callback called after database load</p></td>
@@ -319,7 +411,19 @@
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>an instance of a loki persistence adapter</p></td>
@@ -342,7 +446,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    'normal'
+                
+                </td>
             
 
             <td class="description last"><p>['normal', 'pretty', 'destructured']</p></td>
@@ -365,7 +485,19 @@
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>string delimiter used for destructured serialization</p></td>
@@ -388,11 +520,27 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>if true, it batches multiple calls to to saveDatabase reducing number of disk I/O operations
-                                                and guaranteeing proper serialization of the calls. Default value is true.</p></td>
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>debounces multiple calls to to saveDatabase reducing number of disk I/O operations
+                                                and guaranteeing proper serialization of the calls.</p></td>
         </tr>
 
     
@@ -612,7 +760,11 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -637,7 +789,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    []
+                
+                </td>
             
 
             <td class="description last"><p>array of property names to define unique constraints for</p></td>
@@ -660,7 +828,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    []
+                
+                </td>
             
 
             <td class="description last"><p>array of property names to define exact constraints for</p></td>
@@ -683,7 +867,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    []
+                
+                </td>
             
 
             <td class="description last"><p>array property names to define binary indexes for</p></td>
@@ -706,10 +906,26 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>default is false</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether listeners are called asynchronously</p></td>
         </tr>
 
     
@@ -729,10 +945,26 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>default is true</p></td>
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>set to false to enable Changes Api</p></td>
         </tr>
 
     
@@ -752,10 +984,26 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>use Object.observe to update objects automatically (default: false)</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>use Object.observe to update objects automatically</p></td>
         </tr>
 
     
@@ -775,7 +1023,23 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
             
 
             <td class="description last"><p>specify whether inserts and queries clone to/from user</p></td>
@@ -798,10 +1062,26 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>'parse-stringify' (default), 'jquery-extend-deep', 'shallow, 'shallow-assign'</p></td>
+            
+                <td class="default">
+                
+                    'parse-stringify'
+                
+                </td>
+            
+
+            <td class="description last"><p>'parse-stringify', 'jquery-extend-deep', 'shallow, 'shallow-assign'</p></td>
         </tr>
 
     
@@ -821,7 +1101,19 @@
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>time interval for clearing out 'aged' documents; not set by default.</p></td>
@@ -976,7 +1268,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1699">line 1699</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1700">line 1700</a>
     </li></ul></dd>
     
 
@@ -1120,7 +1412,7 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1635">line 1635</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1636">line 1636</a>
     </li></ul></dd>
     
 
@@ -1718,7 +2010,7 @@ Does not actually destroy the db.</p>
 
     
 
-    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(options, callback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="deleteDatabase"><span class="type-signature"></span>deleteDatabase<span class="signature">(callback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -1762,37 +2054,6 @@ Does not actually destroy the db.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>not currently used (remove or allow overrides?)</p></td>
-        </tr>
-
     
 
         <tr>
@@ -1864,7 +2125,7 @@ Does not actually destroy the db.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2533">line 2533</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2555">line 2555</a>
     </li></ul></dd>
     
 
@@ -1895,14 +2156,14 @@ Does not actually destroy the db.</p>
 
     
 
-    <h4 class="name" id="deserializeCollection"><span class="type-signature"></span>deserializeCollection<span class="signature">(destructuredSource, options)</span><span class="type-signature"> &rarr; {array}</span></h4>
+    <h4 class="name" id="deserializeCollection"><span class="type-signature"></span>deserializeCollection<span class="signature">(destructuredSource, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {array}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Deserializes a destructured collection.</p>
+    <p>Collection level utility function to deserializes a destructured collection.</p>
 </div>
 
 
@@ -1925,6 +2186,8 @@ Does not actually destroy the db.</p>
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -1954,6 +2217,14 @@ Does not actually destroy the db.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -1977,6 +2248,16 @@ Does not actually destroy the db.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -1994,7 +2275,11 @@ Does not actually destroy the db.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -2019,7 +2304,23 @@ Does not actually destroy the db.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
             
 
             <td class="description last"><p>whether source is delimited string or an array</p></td>
@@ -2042,10 +2343,24 @@ Does not actually destroy the db.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) if delimited, this is delimiter to use</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>if delimited, this is delimiter to use (if other than default)</p></td>
         </tr>
 
     
@@ -2153,7 +2468,7 @@ Does not actually destroy the db.</p>
 
 
 <div class="description">
-    <p>Destructured JSON deserialization routine to minimize memory overhead.
+    <p>Database level destructured JSON deserialization routine to minimize memory overhead.
 Internally, Loki supports destructuring via loki &quot;serializationMethod' option and 
 the optional LokiPartitioningAdapter class. It is also available if you wish to do 
 your own structured persistence or data exchange.</p>
@@ -2272,6 +2587,8 @@ your own structured persistence or data exchange.</p>
         
 
         
+        <th>Default</th>
+        
 
         <th class="last">Description</th>
     </tr>
@@ -2307,8 +2624,14 @@ your own structured persistence or data exchange.</p>
             
 
             
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
 
-            <td class="description last"><p>(default: false) whether db and each collection are separate</p></td>
+            <td class="description last"><p>whether db and each collection are separate</p></td>
         </tr>
 
     
@@ -2339,6 +2662,10 @@ your own structured persistence or data exchange.</p>
                 </td>
             
 
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>can be used to deserialize only a single partition</p></td>
@@ -2373,8 +2700,14 @@ your own structured persistence or data exchange.</p>
             
 
             
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
 
-            <td class="description last"><p>(default: true) whether subitems are delimited or subarrays</p></td>
+            <td class="description last"><p>whether subitems are delimited or subarrays</p></td>
         </tr>
 
     
@@ -2405,6 +2738,10 @@ your own structured persistence or data exchange.</p>
                 </td>
             
 
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>override default delimiter</p></td>
@@ -2625,7 +2962,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1671">line 1671</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1672">line 1672</a>
     </li></ul></dd>
     
 
@@ -2845,10 +3182,11 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
 <div class="description">
-    <p>Handles loading from file system, local storage, or adapter (indexeddb)
+    <p>Handles manually loading from file system, local storage, or adapter (such as indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
    persistence method to use, or environment detection (if configuration was not provided).
    To avoid contention with any throttledSaves, we will drain the save queue first.</p>
+<p>If you are configured with autosave, you do not need to call this method yourself.</p>
 </div>
 
 
@@ -3079,7 +3417,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2404">line 2404</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2416">line 2416</a>
     </li></ul></dd>
     
 
@@ -3104,13 +3442,18 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>db.loadDatabase({}, function(err) {  if (err) {    console.log("error : " + err);  }  else {    console.log("database loaded.");  }});</code></pre>
+
+
 
         
             
 
     
 
-    <h4 class="name" id="loadJSON"><span class="type-signature"></span>loadJSON<span class="signature">(serializedDb, options)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="loadJSON"><span class="type-signature"></span>loadJSON<span class="signature">(serializedDb, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -3141,6 +3484,8 @@ of collections is passed then only the included collections will be tracked.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -3166,6 +3511,14 @@ of collections is passed then only the included collections will be tracked.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -3189,159 +3542,15 @@ of collections is passed then only the included collections will be tracked.</p>
             </td>
 
             
-
-            
-
-            <td class="description last"><p>apply or override collection level settings</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1469">line 1469</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="loadJSONObject"><span class="type-signature"></span>loadJSONObject<span class="signature">(dbObject, options)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Inflates a loki database from a JS object</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbObject</code></td>
-            
-
-            <td class="type">
-            
+                <td class="attributes">
                 
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>a serialized loki database string</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
+                    &lt;optional><br>
                 
-<span class="param-type">object</span>
 
+                
 
-            
-            </td>
-
+                
+                </td>
             
 
             
@@ -3359,8 +3568,6 @@ of collections is passed then only the included collections will be tracked.</p>
 
         <th>Type</th>
 
-        
-        <th>Attributes</th>
         
 
         
@@ -3386,16 +3593,6 @@ of collections is passed then only the included collections will be tracked.</p>
             
             </td>
 
-            
-                <td class="attributes">
-                
-
-                
-                    &lt;nullable><br>
-                
-
-                
-                </td>
             
 
             
@@ -3448,7 +3645,230 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1494">line 1494</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1470">line 1470</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="loadJSONObject"><span class="type-signature"></span>loadJSONObject<span class="signature">(dbObject, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Inflates a loki database from a JS object</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>dbObject</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>a serialized loki database string</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>apply or override collection level settings</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>retainDirtyFlags</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>whether collection dirty flags will be preserved</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1495">line 1495</a>
     </li></ul></dd>
     
 
@@ -3617,9 +4037,10 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
 <div class="description">
-    <p>Handles saving to file system, local storage, or adapter (indexeddb)
+    <p>Handles manually saving to file system, local storage, or adapter (such as indexeddb)
    This method utilizes loki configuration options (if provided) to determine which
    persistence method to use, or environment detection (if configuration was not provided).</p>
+<p>If you are configured with autosave, you do not need to call this method yourself.</p>
 </div>
 
 
@@ -3724,7 +4145,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2485">line 2485</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2508">line 2508</a>
     </li></ul></dd>
     
 
@@ -3747,6 +4168,11 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>db.saveDatabase(function(err) {  if (err) {    console.log("error : " + err);  }  else {    console.log("database saved.");  }});</code></pre>
 
 
 
@@ -3910,7 +4336,7 @@ of collections is passed then only the included collections will be tracked.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1691">line 1691</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line1692">line 1692</a>
     </li></ul></dd>
     
 
@@ -3963,14 +4389,14 @@ of collections is passed then only the included collections will be tracked.</p>
 
     
 
-    <h4 class="name" id="serializeCollection"><span class="type-signature"></span>serializeCollection<span class="signature">(options)</span><span class="type-signature"> &rarr; {string|array}</span></h4>
+    <h4 class="name" id="serializeCollection"><span class="type-signature"></span>serializeCollection<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {string|array}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Utility method to serialize a collection in a 'destructured' format</p>
+    <p>Collection level utility method to serialize a collection in a 'destructured' format</p>
 </div>
 
 
@@ -3993,6 +4419,8 @@ of collections is passed then only the included collections will be tracked.</p>
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -4019,6 +4447,16 @@ of collections is passed then only the included collections will be tracked.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -4035,8 +4473,6 @@ of collections is passed then only the included collections will be tracked.</p>
 
         <th>Type</th>
 
-        
-        <th>Attributes</th>
         
 
         
@@ -4063,16 +4499,6 @@ of collections is passed then only the included collections will be tracked.</p>
             </td>
 
             
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
 
             
 
@@ -4096,16 +4522,6 @@ of collections is passed then only the included collections will be tracked.</p>
             </td>
 
             
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
 
             
 
@@ -4128,14 +4544,6 @@ of collections is passed then only the included collections will be tracked.</p>
             
             </td>
 
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
             
 
             
@@ -4251,7 +4659,7 @@ of collections is passed then only the included collections will be tracked.</p>
 
 
 <div class="description">
-    <p>Destructured JSON serialization routine to allow alternate serialization methods.
+    <p>Database level destructured JSON serialization routine to allow alternate serialization methods.
 Internally, Loki supports destructuring via loki &quot;serializationMethod' option and 
 the optional LokiPartitioningAdapter class. It is also available if you wish to do 
 your own structured persistence or data exchange.</p>
@@ -4813,7 +5221,7 @@ your own structured persistence or data exchange.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2285">line 2285</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2286">line 2286</a>
     </li></ul></dd>
     
 
@@ -4861,7 +5269,7 @@ your own structured persistence or data exchange.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon May 29 2017 02:02:14 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sat Jun 03 2017 20:17:55 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

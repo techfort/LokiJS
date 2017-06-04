@@ -207,31 +207,19 @@ describe('testing destructured serialization/deserialization', function () {
 });
 
 describe('testing adapter functionality', function () {
-  it('verify basic memory adapter functionality works', function() {
+  it('verify basic memory adapter functionality works', function(done) {
     var idx, options, result;
 
     var memAdapter = new loki.LokiMemoryAdapter();
     var ddb = new loki("test.db", { adapter: memAdapter });
 
     var coll = ddb.addCollection("testcoll");
-    coll.insert({
-      name : "test1",
-      val: 100
-    });
-    coll.insert({
-      name : "test2",
-      val: 101
-    });
-    coll.insert({
-      name : "test3",
-      val: 102
-    });
+    coll.insert({ name : "test1", val: 100 });
+    coll.insert({ name : "test2", val: 101 });
+    coll.insert({ name : "test3", val: 102 });
 
     var coll2 = ddb.addCollection("another");
-    coll2.insert({
-      a: 1,
-      b: 2
-    });
+    coll2.insert({ a: 1,  b: 2 });
 
     ddb.saveDatabase(function(err) {
       expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(true);
@@ -245,28 +233,21 @@ describe('testing adapter functionality', function () {
         expect(cdb.getCollection("testcoll").findOne({name:"test2"}).val).toEqual(101);
         expect(cdb.collections[0].data.length).toEqual(3);
         expect(cdb.collections[1].data.length).toEqual(1);
+        
+        done();
       });
 
     });
   });
 
-  it('verify loki deleteDatabase works', function () {
-    var memAdapter = new loki.LokiMemoryAdapter();
+  it('verify loki deleteDatabase works', function (done) {
+    var memAdapter = new loki.LokiMemoryAdapter({ asyncResponses: true });
     var ddb = new loki("test.db", { adapter: memAdapter });
 
     var coll = ddb.addCollection("testcoll");
-    coll.insert({
-      name : "test1",
-      val: 100
-    });
-    coll.insert({
-      name : "test2",
-      val: 101
-    });
-    coll.insert({
-      name : "test3",
-      val: 102
-    });
+    coll.insert({ name : "test1", val: 100 });
+    coll.insert({ name : "test2", val: 101 });
+    coll.insert({ name : "test3", val: 102 });
     
     ddb.saveDatabase(function(err) {
       expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(true);
@@ -274,6 +255,7 @@ describe('testing adapter functionality', function () {
       
       ddb.deleteDatabase(function(err) {
         expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(false);
+        done();
       });
     });
 

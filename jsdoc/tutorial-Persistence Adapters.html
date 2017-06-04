@@ -30,6 +30,9 @@
 <article>
     <h1>Overview</h1><p>LokiJS persistence is implemented via an adapter interface.  We support autosave and autoload options, simple key/value adapters as well as 'reference mode' adapters, and now internally support various methods of structured serialization which can ease creation of your own persistence adapters, as well as bulk or streamed data exchange.  </p>
 <p>An important distinction between an in-memory database like lokijs and traditional database systems is that all documents/records are kept in memory and are not loaded as needed.  Persistence is therefore only for saving and restoring the state of this in-memory database.</p>
+<blockquote>
+<p>If your database is small enough and you wish to experiment, you can call db.serialize() to return a full serialization of your database and load it into another database instance such as dbcopy.loadJSON(str).</p>
+</blockquote>
 <h1>Node.js QuickStart</h1><p>If you are using lokijs in a node environment, we will automatically detect and use the built-in LokiFsAdapter without your needing to provide an adapter.</p>
 <h3>No Persistence example (entirely synchronous and in memory) :</h3><pre class="prettyprint source lang-javascript"><code>const loki = require(&quot;lokijs&quot;);
 
@@ -64,7 +67,7 @@ function databaseInitialize() {
 function runProgramLogic() {
   var entryCount = db.getCollection(&quot;entries&quot;).count();
   console.log(&quot;number of entries in database : &quot; + entryCount);
-}</code></pre><p>If you expect your database to grow over 100mb or you experience slow save speeds you might to use our more high-performance LokiFsStructuredAdapter. This adapter utilitizes es6 generator iterators and node streams to stream the database line by line.  It will also save each collection into its own file with a file name derived from the base name.  This database should scale to support databases just under 1 gb on the default node heap allocation of 1.4gb.  Increasing heap allocation, you can push this limit further. </p>
+}</code></pre><p>If you expect your database to grow over 100mb or you experience slow save speeds you might to use our more high-performance LokiFsStructuredAdapter. This adapter utilitizes es6 generator iterators and node streams to stream the database line by line.  It will also save each collection into its own file (partitioned) with a file name derived from the base name.  This database should scale to support databases just under 1 gb on the default node heap allocation of 1.4gb.  Increasing heap allocation, you can push this limit further. </p>
 <h3>An example using fastest and most scalable LokiFsStructuredAdapter (for nodejs) might look like :</h3><pre class="prettyprint source lang-javascript"><code>const loki = require(&quot;lokijs&quot;);
 const lfsa = require('../src/loki-fs-structured-adapter.js');
 
@@ -85,11 +88,9 @@ function databaseInitialize() {
   }
 
   // log some random event data as part of our example
-  log.add({ event: 'dbinit', dt: (new Date()).getTime() });
+  log.insert({ event: 'dbinit', dt: (new Date()).getTime() });
 }</code></pre><h1>Web QuickStart</h1><p>If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5mb so that won't last long but here is how to quickly get started experimenting with lokijs :</p>
-<pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script></code></pre><p>Example constructing loki for in-memory only or manual save/load (with default localStorage adapter) :</p>
-<pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;test.db&quot;);</code></pre><p>Example constructing loki for autoload/autosave (with default localStorage adapter) : </p>
-<pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;quickstart.db&quot;, {
+<pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script></code></pre><h3>Example constructing loki for in-memory only or manual save/load (with default localStorage adapter) :</h3><pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;test.db&quot;);</code></pre><h3>Example constructing loki for autoload/autosave (with default localStorage adapter) :</h3><pre class="prettyprint source lang-javascript"><code>var loki = new loki(&quot;quickstart.db&quot;, {
   autoload: true,
   autoloadCallback : databaseInitialize,
   autosave: true, 
@@ -100,8 +101,8 @@ function databaseInitialize() {
   if (!db.getCollection(&quot;users&quot;)) {
     db.addCollection(&quot;users&quot;);
   }
-}</code></pre><p>If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  More information follows on this adapter but here is how to get started quickly with this adapter :</p>
-<pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
+}</code></pre><p>If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  </p>
+<h3>Example using more scalable LokiIndexedAdapter :</h3><pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
 &lt;script src=&quot;../../src/loki-indexed-adapter.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var idbAdapter = new LokiIndexedAdapter();
 var db = new loki(&quot;test.db&quot;, { 
   adapter: idbAdapter,
@@ -110,9 +111,10 @@ var db = new loki(&quot;test.db&quot;, {
   autosave: true, 
   autosaveInterval: 4000
 });</code></pre><p>If you expect your database to grow over 60megs things start to get browser dependent.  To provide singular guidance and since Chrome is the most popular web browser you will want to employ our LokiPartitioningAdapter in addition to our LokiIndexedAdapter.  To sum up as briefly as possible, this will divide collections into their own files and if a collection exceeds 25megs (customizable) it will subdivide into separate pages(files).  This allows our indexed db adapter to accomplish a single database save/load using many key/value pairs.  This adapter will allow scaling up to around 300mb or so in current testing.  </p>
-<p>An example using the LokiPartitioningAdapter along with LokiIndexedAdapter might appear as :</p>
-<pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
+<h3>An example using the LokiPartitioningAdapter along with LokiIndexedAdapter might appear as :</h3><pre class="prettyprint source"><code>&lt;script src=&quot;../../src/lokijs.js&quot;>&lt;/script>
 &lt;script src=&quot;../../src/loki-indexed-adapter.js&quot;>&lt;/script></code></pre><pre class="prettyprint source lang-javascript"><code>var idbAdapter = new LokiIndexedAdapter();
+
+// use paging only if you expect a single collection to be over 50 megs or so
 var pa = new loki.LokiPartitioningAdapter(idbAdapter, { paging: true });
 
 var db = new loki('test.db', { 
@@ -350,7 +352,7 @@ var db = new loki('test', { adapter: idbAdapter });</code></pre><p>Note the 'fin
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon May 29 2017 02:02:14 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sat Jun 03 2017 20:17:55 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

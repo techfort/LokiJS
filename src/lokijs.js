@@ -628,7 +628,7 @@
      * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
      * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
      * @param {function} listener - callback function of listener to attach
-     * @returns {int} the index of the callback in the array of listeners for a particular event
+     * @returns {int[]} the index of the callback in the array of listeners for a particular event
      * @memberof LokiEventEmitter
      */
     LokiEventEmitter.prototype.on = function (eventName, listener) {
@@ -636,18 +636,18 @@
       var self = this;
 
       if (Array.isArray(eventName)) {
+        var listenerIndex = [];
         eventName.forEach(function(currentEventName) {
-          self.on(currentEventName, listener);
+          listenerIndex.push(self.on(currentEventName, listener)[0]);
         });
-        return listener;
+        return listenerIndex;
       }
 
       event = this.events[eventName];
       if (!event) {
         event = this.events[eventName] = [];
       }
-      event.push(listener);
-      return listener;
+      return [event.push(listener)];
     };
 
     /**

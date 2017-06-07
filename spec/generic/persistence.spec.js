@@ -560,11 +560,8 @@ describe('async adapter tests', function() {
     // The full drain can take one save/callback cycle longer than duration (~100ms).
     db.throttledSaveDrain(function (success) {
       expect(success).toEqual(false);
-    }, { recursiveWaitLimit: true, recursiveWaitLimitDuration: 200 });
-
-    setTimeout(function() {
       done();
-    }, 600);
+    }, { recursiveWaitLimit: true, recursiveWaitLimitDuration: 200 });
   });
 
   it('verify throttled async throttles', function(done) {
@@ -598,7 +595,7 @@ describe('async adapter tests', function() {
     db.saveDatabase();
 
     // give all async saves time to complete and then verify outcome
-    setTimeout(function() {
+    db.throttledSaveDrain(function () {
       // total of 2 saves should have occurred
       expect(mem.hashStore["sandbox.db"].savecount).toEqual(2);
 
@@ -610,7 +607,7 @@ describe('async adapter tests', function() {
         expect(db2.getCollection("items").findOne({name:'draupnir'}).maker).toEqual('dwarves');
         done();
       });
-    }, 200);
+    });
   });
 
   it('verify throttled async works as expected', function(done) {
@@ -740,11 +737,8 @@ describe('async adapter tests', function() {
       expect(db.getCollection('another').findOne({a:1}).b).toEqual(3);
       expect(db.getCollection('items').findOne({name:'tyrfing'}).owner).toEqual('arngrim');
       expect(db.getCollection('items').findOne({name:'draupnir'}).maker).toEqual('dwarves');
-    });
-
-    setTimeout(function() {
       done();
-    }, 600);
+    });
   });
 
 });

@@ -6,6 +6,7 @@ examples/quickstart2.db
 examples/quickstart3.db
 examples/quickstart3.db.0
 examples/quickstart3.db.1
+examples/quickstart4.db
 examples/quickstart-dynview.db
 examples/quickstart-transforms.db
 coverage/

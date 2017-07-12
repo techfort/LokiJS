@@ -202,11 +202,9 @@
         var id = result.id;
 
         if (id !== 0) {
-          adapter.catalog.deleteAppKey(id);
-        }
-
-        if (typeof (callback) === 'function') {
-          callback();
+          adapter.catalog.deleteAppKey(id, callback);
+        } else if (typeof (callback) === 'function') {
+          callback({ success: true });
         }
       });
     };
@@ -516,7 +514,7 @@
       request.onerror = (function(usercallback) {
         return function(evt) {
           if (typeof(usercallback) === 'function') {
-            usercallback(false);
+            usercallback({ success: false });
           }
           else {
             console.error('LokiCatalog.deleteAppKey raised onerror');

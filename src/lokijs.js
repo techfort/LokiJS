@@ -1538,7 +1538,7 @@
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
 
-        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi });
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi, disableDeltaChangesApi: coll.disableDeltaChangesApi });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
@@ -4620,6 +4620,7 @@
 
       this.setChangesApi = function (enabled) {
         self.disableChangesApi = !enabled;
+        if (!enabled) { self.disableDeltaChangesApi = false; }
         setHandlers();
       };
       /**

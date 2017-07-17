@@ -4509,9 +4509,9 @@
       this.getChangeDelta = getChangeDelta;
             
       function getObjectDelta(oldObject, newObject) {
-        var delta = {};
-        var propertyNames = Object.keys(newObject);
+        var propertyNames = newObject !== null && typeof newObject === 'object' ? Object.keys(newObject) : null;
         if (propertyNames && propertyNames.length && ['string', 'boolean', 'number'].indexOf(typeof(newObject)) < 0) {
+          var delta = {};
           for (var i = 0; i < propertyNames.length; i++) {
             var propertyName = propertyNames[i];
             if (newObject.hasOwnProperty(propertyName)) {
@@ -4520,18 +4520,17 @@
               }
               else {
                 var propertyDelta = getObjectDelta(oldObject[propertyName], newObject[propertyName]);
-                if (typeof propertyDelta !== "undefined") {
+                if (typeof propertyDelta !== "undefined" && propertyDelta != {}) {
                   delta[propertyName] = propertyDelta;
                 }
               }
             }
           }
+          return Object.keys(delta).length === 0 ? undefined : delta;
         }
         else {
-          delta = oldObject === newObject ? undefined : newObject;
+          return oldObject === newObject ? undefined : newObject;
         }
-
-        return delta;
       }
 
       this.getObjectDelta = getObjectDelta;
@@ -5206,7 +5205,7 @@
         position = arr[1]; // position in data array
 
         // if configured to clone, do so now... otherwise just use same obj reference
-        newInternal = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
+        newInternal = this.cloneObjects || !this.disableDeltaChangesApi ? clone(doc, this.cloneMethod) : doc;
 
         this.emit('pre-update', doc);
 

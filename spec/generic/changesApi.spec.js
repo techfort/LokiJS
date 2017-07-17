@@ -54,4 +54,43 @@ describe('changesApi', function () {
 
     expect(users.getChanges().length).toEqual(0);
   });
+
+  it('works with delta mode', function () {
+    var db = new loki(),
+    options = {
+      asyncListeners: false,
+      disableChangesApi: false,
+      disableDeltaChangesApi: false
+    },
+    items = db.addCollection('items', options );
+
+    // Add some documents to the collection
+    items.insert({ name : 'mjolnir', owner: 'thor', maker: { name: 'dwarves', count: 1 } });
+    items.insert({ name : 'gungnir', owner: 'odin', maker: { name: 'elves', count: 1 } });
+    items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: { name: 'dwarves', count: 1 } });
+    items.insert({ name : 'draupnir', owner: 'odin', maker: { name: 'elves', count: 1 } });
+
+    // Find and update an existing document
+    var tyrfing = items.findOne({'name': 'tyrfing'});
+    tyrfing.owner = 'arngrim';
+    items.update(tyrfing);
+    tyrfing.maker.count = 4;
+    items.update(tyrfing);
+
+    var changes = db.serializeChanges(['items']);
+    changes = JSON.parse(changes);
+    
+    expect(changes.length).toEqual(6);
+
+    var firstUpdate = changes[4];
+    expect(firstUpdate.operation).toEqual('U');
+    expect(firstUpdate.obj.owner).toEqual('arngrim');
+    expect(firstUpdate.obj.name).toBeUndefined();
+
+    var secondUpdate = changes[5];
+    expect(secondUpdate.operation).toEqual('U');
+    expect(secondUpdate.obj.owner).toBeUndefined();
+    expect(secondUpdate.obj.maker).toEqual({ count: 4 });
+    
+  });
 });

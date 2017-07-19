@@ -658,16 +658,17 @@
      * @param {object=} data - optional object passed with the event
      * @memberof LokiEventEmitter
      */
-    LokiEventEmitter.prototype.emit = function (eventName, data) {
+    LokiEventEmitter.prototype.emit = function (eventName) {
       var self = this;
+      var selfArgs = Array.prototype.slice.call(arguments, 1);
       if (eventName && this.events[eventName]) {
         this.events[eventName].forEach(function (listener) {
           if (self.asyncListeners) {
             setTimeout(function () {
-              listener(data);
+              listener.apply(self, selfArgs);
             }, 1);
           } else {
-            listener(data);
+            listener.apply(self, selfArgs);
           }
 
         });
@@ -1537,7 +1538,7 @@
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
 
-        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi });
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi, disableDeltaChangesApi: coll.disableDeltaChangesApi });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
@@ -3350,6 +3351,12 @@
         options.forceClones = true;
         options.forceCloneMethod = options.forceCloneMethod || 'shallow';
       }
+      
+      // if collection has delta changes active, then force clones and use 'parse-stringify' for effective change tracking of nested objects
+      if (!this.collection.disableDeltaChangesApi) {
+        options.forceClones = true;
+        options.forceCloneMethod = 'parse-stringify';
+      }
 
       // if this has no filters applied, just return collection.data
       if (!this.filterInitialized) {
@@ -4310,6 +4317,7 @@
      * @param {boolean} [options.adaptiveBinaryIndices=true] - collection indices will be actively rebuilt rather than lazily
      * @param {boolean} [options.asyncListeners=false] - whether listeners are invoked asynchronously
      * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes API
+     * @param {boolean} [options.disableDeltaChangesApi=true] - set to false to enable Delta Changes API (requires Changes API, forces cloning)
      * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
      * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
      * @param {boolean} [options.serializableIndices=true[]] - converts date values on binary indexed properties to epoch time
@@ -4390,6 +4398,10 @@
 
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
+
+      // disable delta update object style on changes
+      this.disableDeltaChangesApi = options.hasOwnProperty('disableDeltaChangesApi') ? options.disableDeltaChangesApi : true;
+      if (this.disableChangesApi) { this.disableDeltaChangesApi = true; }
 
       // option to observe objects and update them automatically, ignored if Object.observe is not supported
       this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
@@ -4476,13 +4488,52 @@
        * This method creates a clone of the current status of an object and associates operation and collection name,
        * so the parent db can aggregate and generate a changes object for the entire db
        */
-      function createChange(name, op, obj) {
+      function createChange(name, op, obj, old) {
         self.changes.push({
           name: name,
           operation: op,
-          obj: JSON.parse(JSON.stringify(obj))
+          obj: op == 'U' && !self.disableDeltaChangesApi ? getChangeDelta(obj, old) : JSON.parse(JSON.stringify(obj))
         });
       }
+
+      //Compare changed object (which is a forced clone) with existing object and return the delta
+      function getChangeDelta(obj, old) {
+        if (old) {
+          return getObjectDelta(old, obj);
+        }
+        else {
+          return JSON.parse(JSON.stringify(obj));
+        }
+      }
+
+      this.getChangeDelta = getChangeDelta;
+            
+      function getObjectDelta(oldObject, newObject) {
+        var propertyNames = newObject !== null && typeof newObject === 'object' ? Object.keys(newObject) : null;
+        if (propertyNames && propertyNames.length && ['string', 'boolean', 'number'].indexOf(typeof(newObject)) < 0) {
+          var delta = {};
+          for (var i = 0; i < propertyNames.length; i++) {
+            var propertyName = propertyNames[i];
+            if (newObject.hasOwnProperty(propertyName)) {
+              if (!oldObject.hasOwnProperty(propertyName) || self.uniqueNames.indexOf(propertyName) >= 0 || propertyName == '$loki' || propertyName == 'meta') {
+                delta[propertyName] = newObject[propertyName];
+              }
+              else {
+                var propertyDelta = getObjectDelta(oldObject[propertyName], newObject[propertyName]);
+                if (typeof propertyDelta !== "undefined" && propertyDelta != {}) {
+                  delta[propertyName] = propertyDelta;
+                }
+              }
+            }
+          }
+          return Object.keys(delta).length === 0 ? undefined : delta;
+        }
+        else {
+          return oldObject === newObject ? undefined : newObject;
+        }
+      }
+
+      this.getObjectDelta = getObjectDelta;
 
       // clear all the changes
       function flushChanges() {
@@ -4542,8 +4593,8 @@
         createChange(self.name, 'I', obj);
       }
 
-      function createUpdateChange(obj) {
-        createChange(self.name, 'U', obj);
+      function createUpdateChange(obj, old) {
+        createChange(self.name, 'U', obj, old);
       }
 
       function insertMetaWithChange(obj) {
@@ -4551,9 +4602,9 @@
         createInsertChange(obj);
       }
 
-      function updateMetaWithChange(obj) {
+      function updateMetaWithChange(obj, old) {
         updateMeta(obj);
-        createUpdateChange(obj);
+        createUpdateChange(obj, old);
       }
 
 
@@ -4569,6 +4620,7 @@
 
       this.setChangesApi = function (enabled) {
         self.disableChangesApi = !enabled;
+        if (!enabled) { self.disableDeltaChangesApi = false; }
         setHandlers();
       };
       /**
@@ -4578,8 +4630,8 @@
         insertHandler(obj);
       });
 
-      this.on('update', function updateCallback(obj) {
-        updateHandler(obj);
+      this.on('update', function updateCallback(obj, old) {
+        updateHandler(obj, old);
       });
 
       this.on('delete', function deleteCallback(obj) {
@@ -5154,7 +5206,7 @@
         position = arr[1]; // position in data array
 
         // if configured to clone, do so now... otherwise just use same obj reference
-        newInternal = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
+        newInternal = this.cloneObjects || !this.disableDeltaChangesApi ? clone(doc, this.cloneMethod) : doc;
 
         this.emit('pre-update', doc);
 
@@ -5193,7 +5245,7 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
 
-        this.emit('update', doc, this.cloneObjects ? clone(oldInternal, this.cloneMethod) : null);
+        this.emit('update', doc, this.cloneObjects || !this.disableDeltaChangesApi ? clone(oldInternal, this.cloneMethod) : null);
         return doc;
       } catch (err) {
         this.rollback();

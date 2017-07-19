@@ -198,7 +198,7 @@ describe('cloning behavior', function () {
       });
 
       citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
-
+      
       // we dont have any items so this should return null
       var result = citems.by('name', 'gungnir');
       expect(result).toEqual(null);

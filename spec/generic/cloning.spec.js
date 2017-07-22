@@ -63,7 +63,31 @@ describe('cloning behavior', function () {
       expect(result.name).toBe("mjolnir");
     });
   });
-  
+
+  describe('cloning method "shallow" save prototype', function() {
+    it('works', function() {
+      function Item(name, owner, maker) {
+        this.name = name;
+        this.owner = owner;
+        this.maker = maker;
+      }
+
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true, cloneMethod: "shallow" });
+      var oldObject = new Item('mjolnir', 'thor', 'dwarves');
+      var insObject = citems.insert(oldObject);
+
+      // cant' have either of these polluting our collection
+      oldObject.name = 'mewmew';
+      insObject.name = 'mewmew';
+
+      var result = citems.findOne({'owner': 'thor'});
+
+      expect(result instanceof Item).toBe(true);
+      expect(result.name).toBe("mjolnir");
+    });
+  });
+
   describe('collection find() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');

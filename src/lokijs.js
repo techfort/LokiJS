@@ -1755,16 +1755,18 @@
             callback(self.hashStore[dbname].value);
           }
           else {
-            callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+            // database doesn't exist, return falsy
+            callback (null);
           }
         }, this.options.asyncTimeout);
       }
       else {
         if (this.hashStore.hasOwnProperty(dbname)) {
+          // database doesn't exist, return falsy
           callback(this.hashStore[dbname].value);
         }
         else {
-          callback (new Error("unable to load database, " + dbname + " was not found in memory adapter"));
+          callback (null);
         }
       }
     };
@@ -1892,6 +1894,14 @@
 
       // load the db container (without data)
       this.adapter.loadDatabase(dbname, function(result) {
+        // empty database condition is for inner adapter return null/undefined/falsy
+        if (!result) {
+          // partition 0 not found so new database, no need to try to load other partitions.
+          // return same falsy result to loadDatabase to signify no database exists (yet)
+          callback(result);
+          return;
+        }
+
         if (typeof result !== "string") {
           callback(new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()"));
         }
@@ -2373,15 +2383,28 @@
               self.emit('loaded', 'database ' + self.filename + ' loaded');
             }
           } else {
+            // falsy result means new database
+            if (!dbString) {
+              cFun(null);
+              self.emit('loaded', 'empty database ' + self.filename + ' loaded');
+              return;
+            }
+
+            // instanceof error means load faulted
+            if (dbString instanceof Error) {
+                cFun(dbString);
+                return;
+            }
+
             // if adapter has returned an js object (other than null or error) attempt to load from JSON object
-            if (typeof (dbString) === "object" && dbString !== null && !(dbString instanceof Error)) {
+            if (typeof (dbString) === "object") {
               self.loadJSONObject(dbString, options || {});
               cFun(null); // return null on success
               self.emit('loaded', 'database ' + self.filename + ' loaded');
-            } else {
-              // error from adapter (either null or instance of error), pass on to 'user' callback
-              cFun(dbString);
+              return;
             }
+            
+            cFun("unexpected adapter response : " + dbString);
           }
         });
 

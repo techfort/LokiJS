@@ -172,7 +172,7 @@ coll.addTransform('viewPaging', tx);
 var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();</code></pre><p>The important distinction is that branching (and thus your transform results) reflect only the view at the point in time at which you branch.  These transforms are extracts and not used internally to the view.</p>
 <h2>Adding meta for custom solutions</h2><p>One use for transforms might be to have user driven solutions where you have the user interface constructing, managing, and executing these transforms.  In such situations you might want to add your own metadata to the transforms to further describe the transform, steps, or parameters.</p>
 <ul>
-<li>Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a 'meta' type with properties containing information about author, description, or required parameter description meta data.  </li>
+<li>Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a '$loki_meta' type with properties containing information about author, description, or required parameter description meta data.  </li>
 <li>Each of the steps may also include additional properties above what we have defined as required, so you might have step descriptions, last changed dates, etc embedded within steps.</li>
 </ul>
 <h2>Summary</h2><p>Loki transforms establish (with little additional footprint) a process for automating data transformations on your data.  This is not a required functionality and is not intended to replace method chaining, but it allows you to abstract and organize repetitive querying for cleanliness or dynamic purposes.</p>

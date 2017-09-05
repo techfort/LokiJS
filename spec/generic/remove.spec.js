@@ -62,7 +62,7 @@ describe('remove', function () {
     expect(users.data.length).toEqual(0);
     // test that $loki and meta properties have been removed correctly to allow object re-insertion
     expect(!bar.$loki).toEqual(true);
-    expect(!bar.meta).toEqual(true);
+    expect(!bar.$loki_meta).toEqual(true);
     users.insert(bar);
     expect(users.data.length).toEqual(1);
   });

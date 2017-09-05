@@ -116,13 +116,13 @@ describe('collection', function () {
       };
       
       expect(obj.hasOwnProperty('$loki')).toEqual(true);
-      expect(obj.hasOwnProperty('meta')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
-      expect(obj.meta.revision).toEqual(0);
-      expect(obj.meta.version).toEqual(0);
-      expect(obj.meta.created).toBeGreaterThan(0);
+      expect(obj.hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.$loki_meta.revision).toEqual(0);
+      expect(obj.$loki_meta.version).toEqual(0);
+      expect(obj.$loki_meta.created).toBeGreaterThan(0);
     });
 
     coll.insert({ a:3, b:3 });
@@ -150,13 +150,13 @@ describe('collection', function () {
       };
       
       expect(obj.hasOwnProperty('$loki')).toEqual(true);
-      expect(obj.hasOwnProperty('meta')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
-      expect(obj.meta.revision).toEqual(0);
-      expect(obj.meta.version).toEqual(0);
-      expect(obj.meta.created).toBeGreaterThan(0);
+      expect(obj.hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.$loki_meta.revision).toEqual(0);
+      expect(obj.$loki_meta.version).toEqual(0);
+      expect(obj.$loki_meta.created).toBeGreaterThan(0);
     });
 
     var i1 = coll.insert({ a:3, b:3 });
@@ -192,18 +192,18 @@ describe('collection', function () {
       expect(objs[3].hasOwnProperty('$loki')).toEqual(true);
       expect(objs[4].hasOwnProperty('$loki')).toEqual(true);
 
-      expect(objs[0].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[1].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[2].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[3].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[4].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[0].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[1].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[2].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[3].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[4].hasOwnProperty('$loki_meta')).toEqual(true);
 
-      expect(objs[0].meta.hasOwnProperty('revision')).toEqual(true);
-      expect(objs[0].meta.hasOwnProperty('created')).toEqual(true);
-      expect(objs[0].meta.hasOwnProperty('version')).toEqual(true);
-      expect(objs[0].meta.revision).toEqual(0);
-      expect(objs[0].meta.version).toEqual(0);
-      expect(objs[0].meta.created).toBeGreaterThan(0);
+      expect(objs[0].$loki_meta.hasOwnProperty('revision')).toEqual(true);
+      expect(objs[0].$loki_meta.hasOwnProperty('created')).toEqual(true);
+      expect(objs[0].$loki_meta.hasOwnProperty('version')).toEqual(true);
+      expect(objs[0].$loki_meta.revision).toEqual(0);
+      expect(objs[0].$loki_meta.version).toEqual(0);
+      expect(objs[0].$loki_meta.created).toBeGreaterThan(0);
     });
 
     coll.insert([{ a:3, b:3 },{ a:6, b:7 },{ a:1, b:2 },{ a:7, b:8 },{ a:5, b:4 }]);
@@ -230,18 +230,18 @@ describe('collection', function () {
       expect(objs[3].hasOwnProperty('$loki')).toEqual(true);
       expect(objs[4].hasOwnProperty('$loki')).toEqual(true);
 
-      expect(objs[0].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[1].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[2].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[3].hasOwnProperty('meta')).toEqual(true);
-      expect(objs[4].hasOwnProperty('meta')).toEqual(true);
+      expect(objs[0].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[1].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[2].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[3].hasOwnProperty('$loki_meta')).toEqual(true);
+      expect(objs[4].hasOwnProperty('$loki_meta')).toEqual(true);
 
-      expect(objs[0].meta.hasOwnProperty('revision')).toEqual(true);
-      expect(objs[0].meta.hasOwnProperty('created')).toEqual(true);
-      expect(objs[0].meta.hasOwnProperty('version')).toEqual(true);
-      expect(objs[0].meta.revision).toEqual(0);
-      expect(objs[0].meta.version).toEqual(0);
-      expect(objs[0].meta.created).toBeGreaterThan(0);
+      expect(objs[0].$loki_meta.hasOwnProperty('revision')).toEqual(true);
+      expect(objs[0].$loki_meta.hasOwnProperty('created')).toEqual(true);
+      expect(objs[0].$loki_meta.hasOwnProperty('version')).toEqual(true);
+      expect(objs[0].$loki_meta.revision).toEqual(0);
+      expect(objs[0].$loki_meta.version).toEqual(0);
+      expect(objs[0].$loki_meta.created).toBeGreaterThan(0);
     });
 
     var obj1 = { a:3, b: 3};

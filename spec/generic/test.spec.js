@@ -214,23 +214,23 @@ describe('loki', function () {
 
       // verify single insert return objs have meta set properly
       var obj = coll.insert({a:1, b:2});
-      expect(obj.hasOwnProperty('meta')).toEqual(true);
+      expect(obj.hasOwnProperty('$loki_meta')).toEqual(true);
       expect(obj.hasOwnProperty('$loki')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('version')).toEqual(true);
-      expect(obj.meta.hasOwnProperty('created')).toEqual(true);
-      expect(obj.meta.created).not.toBeLessThan(now);
+      expect(obj.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('version')).toEqual(true);
+      expect(obj.$loki_meta.hasOwnProperty('created')).toEqual(true);
+      expect(obj.$loki_meta.created).not.toBeLessThan(now);
 
       // verify batch insert return objs have meta set properly
       var objs = coll.insert([ { a:2, b:3}, { a:3, b:4}]);
       expect(Array.isArray(objs));
       objs.forEach(function(o) {
-        expect(o.hasOwnProperty('meta')).toEqual(true);
+        expect(o.hasOwnProperty('$loki_meta')).toEqual(true);
         expect(o.hasOwnProperty('$loki')).toEqual(true);
-        expect(o.meta.hasOwnProperty('revision')).toEqual(true);
-        expect(o.meta.hasOwnProperty('version')).toEqual(true);
-        expect(o.meta.hasOwnProperty('created')).toEqual(true);
-        expect(o.meta.created).not.toBeLessThan(now);
+        expect(o.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+        expect(o.$loki_meta.hasOwnProperty('version')).toEqual(true);
+        expect(o.$loki_meta.hasOwnProperty('created')).toEqual(true);
+        expect(o.$loki_meta.created).not.toBeLessThan(now);
       });
     });
 
@@ -242,22 +242,22 @@ describe('loki', function () {
       coll.on('insert', function(o) {
         if (Array.isArray(o)) {
           o.forEach(function(obj) {
-            expect(obj.hasOwnProperty('meta')).toEqual(true);
+            expect(obj.hasOwnProperty('$loki_meta')).toEqual(true);
             expect(obj.hasOwnProperty('$loki')).toEqual(true);
-            expect(obj.meta.hasOwnProperty('revision')).toEqual(true);
-            expect(obj.meta.hasOwnProperty('version')).toEqual(true);
-            expect(obj.meta.hasOwnProperty('created')).toEqual(true);
-            expect(obj.meta.created).not.toBeLessThan(now);
+            expect(obj.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+            expect(obj.$loki_meta.hasOwnProperty('version')).toEqual(true);
+            expect(obj.$loki_meta.hasOwnProperty('created')).toEqual(true);
+            expect(obj.$loki_meta.created).not.toBeLessThan(now);
           });
           done();
         }
         else {
-          expect(o.hasOwnProperty('meta')).toEqual(true);
+          expect(o.hasOwnProperty('$loki_meta')).toEqual(true);
           expect(o.hasOwnProperty('$loki')).toEqual(true);
-          expect(o.meta.hasOwnProperty('revision')).toEqual(true);
-          expect(o.meta.hasOwnProperty('version')).toEqual(true);
-          expect(o.meta.hasOwnProperty('created')).toEqual(true);
-          expect(o.meta.created).not.toBeLessThan(now);
+          expect(o.$loki_meta.hasOwnProperty('revision')).toEqual(true);
+          expect(o.$loki_meta.hasOwnProperty('version')).toEqual(true);
+          expect(o.$loki_meta.hasOwnProperty('created')).toEqual(true);
+          expect(o.$loki_meta.created).not.toBeLessThan(now);
         }
       });
 
@@ -1054,65 +1054,65 @@ describe('loki', function () {
       var result = items.chain().data({removeMeta:true});
       expect(result.length).toEqual(4);
       expect(result[0].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(false);
       expect(result[1].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(false);
       expect(result[2].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[2].hasOwnProperty('meta')).toEqual(false);
+      expect(result[2].hasOwnProperty('$loki_meta')).toEqual(false);
       expect(result[3].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[3].hasOwnProperty('meta')).toEqual(false);
+      expect(result[3].hasOwnProperty('$loki_meta')).toEqual(false);
 
       // indexed sort with strip meta
       result = items.chain().simplesort('owner').limit(2).data({removeMeta:true});
       expect(result.length).toEqual(2);
       expect(result[0].owner).toEqual('odin');
       expect(result[0].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(false);
       expect(result[1].owner).toEqual('odin');
       expect(result[1].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(false);
 
       // unindexed find strip meta
       result = items.chain().find({maker: 'elves'}).data({removeMeta: true});
       expect(result.length).toEqual(2);
       expect(result[0].maker).toEqual('elves');
       expect(result[0].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[0].hasOwnProperty('meta')).toEqual(false);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(false);
       expect(result[1].maker).toEqual('elves');      
       expect(result[1].hasOwnProperty('$loki')).toEqual(false);
-      expect(result[1].hasOwnProperty('meta')).toEqual(false);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(false);
 
       // now try unfiltered without strip meta and ensure loki and meta are present
       result = items.chain().data();
       expect(result.length).toEqual(4);
       expect(result[0].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(true);
       expect(result[1].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[1].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(true);
       expect(result[2].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[2].hasOwnProperty('meta')).toEqual(true);
+      expect(result[2].hasOwnProperty('$loki_meta')).toEqual(true);
       expect(result[3].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[3].hasOwnProperty('meta')).toEqual(true);
+      expect(result[3].hasOwnProperty('$loki_meta')).toEqual(true);
 
       // now try without strip meta and ensure loki and meta are present
       result = items.chain().simplesort('owner').limit(2).data();
       expect(result.length).toEqual(2);
       expect(result[0].owner).toEqual('odin');
       expect(result[0].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(true);
       expect(result[1].owner).toEqual('odin');
       expect(result[1].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[1].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(true);
 
       // unindexed find strip meta
       result = items.chain().find({maker: 'elves'}).data();
       expect(result.length).toEqual(2);
       expect(result[0].maker).toEqual('elves');
       expect(result[0].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[0].hasOwnProperty('meta')).toEqual(true);
+      expect(result[0].hasOwnProperty('$loki_meta')).toEqual(true);
       expect(result[1].maker).toEqual('elves');      
       expect(result[1].hasOwnProperty('$loki')).toEqual(true);
-      expect(result[1].hasOwnProperty('meta')).toEqual(true);
+      expect(result[1].hasOwnProperty('$loki_meta')).toEqual(true);
     });
   });
 
@@ -1195,10 +1195,10 @@ describe('loki', function () {
       var result1 = users.find(query).sort(docCompare);
       var result2 = view.data().sort(docCompare);
       result1.forEach(function (obj) {
-        delete obj.meta
+        delete obj.$loki_meta
       });
       result2.forEach(function (obj) {
-        delete obj.meta
+        delete obj.$loki_meta
       });
 
       it('Result data Equality', function () {

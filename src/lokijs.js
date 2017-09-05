@@ -168,7 +168,7 @@
       // if both are numbers (string encoded or not), compare as numbers
       cv1 = Number(prop1);
       cv2 = Number(prop2);
-      
+
       if (cv1 === cv1 && cv2 === cv2) {
         if (cv1 < cv2) return true;
         if (cv1 > cv2) return false;

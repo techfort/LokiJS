@@ -324,8 +324,10 @@ describe('testing adapter functionality', function () {
   it('verify partioning adapter with paging mode enabled works', function(done) {
     var mem = new loki.LokiMemoryAdapter();
 
-    // we will use an exceptionally low page size (128bytes) to test with small dataset
-    var adapter = new loki.LokiPartitioningAdapter(mem, { paging: true, pageSize: 128});
+    // we will use an exceptionally low page size (64bytes) to test with small dataset.
+    // every object will serialize to over 64bytes so that is not a hard limit but when
+    // we exceed that we will stop adding to page (so for this test 1 doc per page)
+    var adapter = new loki.LokiPartitioningAdapter(mem, { paging: true, pageSize: 64});
 
     var db = new loki('sandbox.db', {adapter: adapter});
 
@@ -342,15 +344,19 @@ describe('testing adapter functionality', function () {
     // for purposes of our memory adapter it is pretty much synchronous
     db.saveDatabase(function(err) {
       // should have partitioned the data
-      expect(Object.keys(mem.hashStore).length).toEqual(4);
+      expect(Object.keys(mem.hashStore).length).toEqual(6);
       expect(mem.hashStore.hasOwnProperty("sandbox.db")).toEqual(true);
       expect(mem.hashStore.hasOwnProperty("sandbox.db.0.0")).toEqual(true);
       expect(mem.hashStore.hasOwnProperty("sandbox.db.0.1")).toEqual(true);
+      expect(mem.hashStore.hasOwnProperty("sandbox.db.0.2")).toEqual(true);
+      expect(mem.hashStore.hasOwnProperty("sandbox.db.0.3")).toEqual(true);
       expect(mem.hashStore.hasOwnProperty("sandbox.db.1.0")).toEqual(true);
       // all partitions should have been saved once each
       expect(mem.hashStore["sandbox.db"].savecount).toEqual(1);
       expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(1);
       expect(mem.hashStore["sandbox.db.0.1"].savecount).toEqual(1);
+      expect(mem.hashStore["sandbox.db.0.2"].savecount).toEqual(1);
+      expect(mem.hashStore["sandbox.db.0.3"].savecount).toEqual(1);
       expect(mem.hashStore["sandbox.db.1.0"].savecount).toEqual(1);
 
       // so let's go ahead and update one of our collections to make it dirty
@@ -363,17 +369,21 @@ describe('testing adapter functionality', function () {
         expect(mem.hashStore["sandbox.db"].savecount).toEqual(2);
         // we didn't change this
         expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(1);
-        expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(1);
+        expect(mem.hashStore["sandbox.db.0.1"].savecount).toEqual(1);
+        expect(mem.hashStore["sandbox.db.0.2"].savecount).toEqual(1);
+        expect(mem.hashStore["sandbox.db.0.3"].savecount).toEqual(1);
         // we updated this collection so it should have been saved again
         expect(mem.hashStore["sandbox.db.1.0"].savecount).toEqual(2);
 
-        // now update a multi page items collection and verify both pages were saved
+        // now update a multi page items collection and verify all pages were saved
         tyr.maker = "elves";
         items.update(tyr);
         db.saveDatabase();
         expect(mem.hashStore["sandbox.db"].savecount).toEqual(3);
         expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
-        expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
+        expect(mem.hashStore["sandbox.db.0.1"].savecount).toEqual(2);
+        expect(mem.hashStore["sandbox.db.0.2"].savecount).toEqual(2);
+        expect(mem.hashStore["sandbox.db.0.3"].savecount).toEqual(2);
         expect(mem.hashStore["sandbox.db.1.0"].savecount).toEqual(2);
 
         // ok now lets load from it
@@ -391,7 +401,9 @@ describe('testing adapter functionality', function () {
         db.saveDatabase(function(err) {
           expect(mem.hashStore["sandbox.db"].savecount).toEqual(4);
           expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
-          expect(mem.hashStore["sandbox.db.0.0"].savecount).toEqual(2);
+          expect(mem.hashStore["sandbox.db.0.1"].savecount).toEqual(2);
+          expect(mem.hashStore["sandbox.db.0.2"].savecount).toEqual(2);
+          expect(mem.hashStore["sandbox.db.0.3"].savecount).toEqual(2);
           expect(mem.hashStore["sandbox.db.1.0"].savecount).toEqual(2);
           expect(mem.hashStore["sandbox.db.2.0"].savecount).toEqual(1);
 
@@ -403,11 +415,11 @@ describe('testing adapter functionality', function () {
           expect(db2.collections[0].data.length).toEqual(4);
           expect(db2.collections[1].data.length).toEqual(1);
           expect(db2.collections[2].data.length).toEqual(0);
+          
+          done();
         });
       });
     });
-    
-    setTimeout(done, 700);
   });
 
   it('verify reference adapters get db reference which is copy and serializable-safe', function(done) {

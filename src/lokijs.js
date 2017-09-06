@@ -294,13 +294,14 @@
      */
     function compoundeval(properties, obj1, obj2) {
       var res = 0;
-      var prop, field, val1, val2;
+      var prop, field, val1, val2, arr;
       for (var i = 0, len = properties.length; i < len; i++) {
         prop = properties[i];
         field = prop[0];
         if (~field.indexOf('.')) {
-          val1 = field.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj1);
-          val2 = field.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj2);
+          arr = field.split('.');
+          val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj1);
+          val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj2);
         } else {
           val1 = obj1[field];
           val2 = obj2[field];
@@ -2928,11 +2929,12 @@
 
       var wrappedComparer =
         (function (prop, desc, data) {
-          var val1, val2;
+          var val1, val2, arr;
           return function (a, b) {
             if (~prop.indexOf('.')) {
-              val1 = prop.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
-              val2 = prop.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+              arr = prop.split('.');
+              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
+              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
             } else {
               val1 = data[a][prop];
               val2 = data[b][prop];
@@ -4878,13 +4880,21 @@
       this.binaryIndices[property] = index;
 
       var wrappedComparer =
-        (function (p, data) {
+        (function (prop, data) {
+          var val1, val2, arr;
           return function (a, b) {
-            var objAp = data[a][p],
-              objBp = data[b][p];
-            if (objAp !== objBp) {
-              if (ltHelper(objAp, objBp, false)) return -1;
-              if (gtHelper(objAp, objBp, false)) return 1;
+            if (~prop.indexOf('.')) {
+              arr = prop.split('.');
+              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
+              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+            } else {
+              val1 = data[a][prop];
+              val2 = data[b][prop];
+            }
+
+            if (val1 !== val2) {
+              if (ltHelper(val1, val2, false)) return -1;
+              if (gtHelper(val1, val2, false)) return 1;
             }
             return 0;
           };

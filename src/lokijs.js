@@ -3393,7 +3393,7 @@
               obj = clone(data[i], method);
               if (options.removeMeta) {
                 delete obj.$loki;
-                delete obj.meta;
+                delete obj.$loki_meta;
               }
               result.push(obj);
             }
@@ -3418,7 +3418,7 @@
           obj = clone(data[fr[i]], method);
           if (options.removeMeta) {
             delete obj.$loki;
-            delete obj.meta;
+            delete obj.$loki_meta;
           }
           result.push(obj);
         }
@@ -4538,7 +4538,7 @@
           for (var i = 0; i < propertyNames.length; i++) {
             var propertyName = propertyNames[i];
             if (newObject.hasOwnProperty(propertyName)) {
-              if (!oldObject.hasOwnProperty(propertyName) || self.uniqueNames.indexOf(propertyName) >= 0 || propertyName == '$loki' || propertyName == 'meta') {
+              if (!oldObject.hasOwnProperty(propertyName) || self.uniqueNames.indexOf(propertyName) >= 0 || propertyName == '$loki' || propertyName == '$loki_meta') {
                 delta[propertyName] = newObject[propertyName];
               }
               else {
@@ -4584,32 +4584,32 @@
           len = obj.length;
 
           for(idx=0; idx<len; idx++) {
-            if (!obj[idx].hasOwnProperty('meta')) {
-              obj[idx].meta = {};
+            if (!obj[idx].hasOwnProperty('$loki_meta')) {
+              obj[idx].$loki_meta = {};
             }
 
-            obj[idx].meta.created = (new Date()).getTime();
-            obj[idx].meta.revision = 0;
+            obj[idx].$loki_meta.created = (new Date()).getTime();
+            obj[idx].$loki_meta.revision = 0;
           }
 
           return;
         }
 
         // single object
-        if (!obj.meta) {
-          obj.meta = {};
+        if (!obj.$loki_meta) {
+          obj.$loki_meta = {};
         }
 
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
+        obj.$loki_meta.created = (new Date()).getTime();
+        obj.$loki_meta.revision = 0;
       }
 
       function updateMeta(obj) {
         if (!obj) {
           return;
         }
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
+        obj.$loki_meta.updated = (new Date()).getTime();
+        obj.$loki_meta.revision += 1;
       }
 
       function createInsertChange(obj) {
@@ -4778,7 +4778,7 @@
       return function ttlDaemon() {
         var now = Date.now();
         var toRemove = collection.chain().where(function daemonFilter(member) {
-          var timestamp = member.meta.updated || member.meta.created;
+          var timestamp = member.$loki_meta.updated || member.$loki_meta.created;
           var diff = now - timestamp;
           return age < diff;
         });
@@ -5116,8 +5116,8 @@
       // if configured to clone, do so now... otherwise just use same obj reference
       var obj = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
 
-      if (typeof obj.meta === 'undefined') {
-        obj.meta = {
+      if (typeof obj.$loki_meta === 'undefined') {
+        obj.$loki_meta = {
           revision: 0,
           created: 0
         };
@@ -5305,7 +5305,7 @@
         }
 
         obj.$loki = this.maxId;
-        obj.meta.version = 0;
+        obj.$loki_meta.version = 0;
 
         var key, constrUnique = this.constraints.unique;
         for (key in constrUnique) {
@@ -5459,7 +5459,7 @@
         this.dirty = true; // for autosave scenarios
         this.emit('delete', arr[0]);
         delete doc.$loki;
-        delete doc.meta;
+        delete doc.$loki_meta;
         return doc;
 
       } catch (err) {

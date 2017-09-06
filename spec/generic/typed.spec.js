@@ -19,7 +19,7 @@ describe('typed', function () {
         "data": [{
           "name": "joe",
           "objType": "users",
-          "meta": {
+          "$loki_meta": {
             "version": 0,
             "created": 1415467401386,
             "revision": 0
@@ -28,7 +28,7 @@ describe('typed', function () {
         }, {
           "name": "jack",
           "objType": "users",
-          "meta": {
+          "$loki_meta": {
             "version": 0,
             "created": 1415467401388,
             "revision": 0
@@ -78,7 +78,7 @@ describe('typed', function () {
         proto: User,
         inflate: function(src, dest) {
           dest.$loki = src.$loki;
-          dest.meta = src.meta;
+          dest.$loki_meta = src.$loki_meta;
           dest.customInflater = true;
         }
       }
@@ -97,7 +97,7 @@ describe('typed', function () {
           var dest = {};
 
           dest.$loki = src.$loki;
-          dest.meta = src.meta;
+          dest.$loki_meta = src.$loki_meta;
           dest.onlyInflater = true;
 
           return dest;

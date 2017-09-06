@@ -272,7 +272,7 @@ Fund.prototype.toJSON = function()
     
   // need loki id to be same as well as meta
   clone.$loki = this.$loki;
-  clone.meta = this.meta;
+  clone.$loki_meta = this.$loki_meta;
     
   return clone;
 }

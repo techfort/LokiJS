@@ -201,7 +201,7 @@ The important distinction is that branching (and thus your transform results) re
 
 One use for transforms might be to have user driven solutions where you have the user interface constructing, managing, and executing these transforms.  In such situations you might want to add your own metadata to the transforms to further describe the transform, steps, or parameters.
 
-- Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a 'meta' type with properties containing information about author, description, or required parameter description meta data.  
+- Any step with a 'type' unknown to loki transforms will be ignored.  You might decide to always have the first step as a '$loki_meta' type with properties containing information about author, description, or required parameter description meta data.  
 - Each of the steps may also include additional properties above what we have defined as required, so you might have step descriptions, last changed dates, etc embedded within steps.
 
 ## Summary

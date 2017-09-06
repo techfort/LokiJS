@@ -59,6 +59,23 @@ describe('sorting and indexing', function () {
     });
   });
 
+  describe('resultset simplesort on nested properties', function() {
+    it('works', function () {
+      var rss = db.addCollection('rssort');
+
+      rss.insert({ foo: { a: 4, b: 2 }});
+      rss.insert({ foo: { a: 7, b: 1 }});
+      rss.insert({ foo: { a: 3, b: 4 }});
+      rss.insert({ foo: { a: 9, b: 5 }});
+
+      var results = rss.chain().simplesort('foo.a').data();
+      expect(results[0].foo.a).toBe(3);
+      expect(results[1].foo.a).toBe(4);
+      expect(results[2].foo.a).toBe(7);
+      expect(results[3].foo.a).toBe(9);
+    });
+  });
+
   describe('resultset simplesort with dates', function() {
     it('works', function() {
       var now = new Date().getTime();

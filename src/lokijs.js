@@ -2928,8 +2928,16 @@
 
       var wrappedComparer =
         (function (prop, desc, data) {
+          var val1, val2;
           return function (a, b) {
-            return sortHelper(data[a][prop], data[b][prop], desc);
+            if (~prop.indexOf('.')) {
+              val1 = prop.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
+              val2 = prop.split('.').reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+            } else {
+              val1 = data[a][prop];
+              val2 = data[b][prop];
+            }
+            return sortHelper(val1, val2, desc);
           };
         })(propname, isdesc, this.collection.data);
 

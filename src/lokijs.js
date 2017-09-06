@@ -168,7 +168,7 @@
       // if both are numbers (string encoded or not), compare as numbers
       cv1 = Number(prop1);
       cv2 = Number(prop2);
-      
+
       if (cv1 === cv1 && cv2 === cv2) {
         if (cv1 < cv2) return true;
         if (cv1 > cv2) return false;
@@ -178,11 +178,11 @@
       if (cv1 === cv1 && cv2 !== cv2) {
         return true;
       }
-      
+
       if (cv2 === cv2 && cv1 !== cv1) {
         return false;
       }
-      
+
       if (prop1 < prop2) return true;
       if (prop1 > prop2) return false;
       if (prop1 == prop2) return equal;
@@ -240,11 +240,11 @@
         if (cv1 < cv2) return false;
         return equal;
       }
-      
+
       if (cv1 === cv1 && cv2 !== cv2) {
         return false;
       }
-      
+
       if (cv2 === cv2 && cv1 !== cv1) {
         return true;
       }
@@ -294,11 +294,19 @@
      */
     function compoundeval(properties, obj1, obj2) {
       var res = 0;
-      var prop, field;
+      var prop, field, val1, val2, arr;
       for (var i = 0, len = properties.length; i < len; i++) {
         prop = properties[i];
         field = prop[0];
-        res = sortHelper(obj1[field], obj2[field], prop[1]);
+        if (~field.indexOf('.')) {
+          arr = field.split('.');
+          val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj1);
+          val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj2);
+        } else {
+          val1 = obj1[field];
+          val2 = obj2[field];
+        }
+        res = sortHelper(val1, val2, prop[1]);
         if (res !== 0) {
           return res;
         }
@@ -976,7 +984,7 @@
           databaseCopy.collections[idx].ttl = null;
         }
       }
-      
+
       return databaseCopy;
     };
 
@@ -1090,7 +1098,7 @@
         return null;
       case 'throttledSavePending':
       case 'throttledCallbacks':
-        return undefined;        
+        return undefined;
       default:
         return value;
       }
@@ -1122,8 +1130,8 @@
 
     /**
      * Database level destructured JSON serialization routine to allow alternate serialization methods.
-     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
-     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
      * your own structured persistence or data exchange.
      *
      * @param {object=} options - output format options for use externally to loki
@@ -1306,8 +1314,8 @@
 
     /**
      * Database level destructured JSON deserialization routine to minimize memory overhead.
-     * Internally, Loki supports destructuring via loki "serializationMethod' option and 
-     * the optional LokiPartitioningAdapter class. It is also available if you wish to do 
+     * Internally, Loki supports destructuring via loki "serializationMethod' option and
+     * the optional LokiPartitioningAdapter class. It is also available if you wish to do
      * your own structured persistence or data exchange.
      *
      * @param {string|array} destructuredSource - destructured json or array to deserialize from
@@ -1593,7 +1601,7 @@
             copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
           }
         }
-        
+
         // in case they are loading a database created before we added dynamic views, handle undefined
         if (typeof (coll.DynamicViews) === 'undefined') continue;
 
@@ -1717,7 +1725,7 @@
      */
 
     /**
-     * In in-memory persistence adapter for an in-memory database.  
+     * In in-memory persistence adapter for an in-memory database.
      * This simple 'key/value' adapter is intended for unit testing and diagnostics.
      *
      * @param {object=} options - memory adapter options
@@ -1790,7 +1798,7 @@
           self.hashStore[dbname] = {
             savecount: saveCount+1,
             lastsave: new Date(),
-            value: dbstring 
+            value: dbstring
           };
 
           callback();
@@ -1802,7 +1810,7 @@
         this.hashStore[dbname] = {
           savecount: saveCount+1,
           lastsave: new Date(),
-          value: dbstring 
+          value: dbstring
         };
 
         callback();
@@ -1820,7 +1828,7 @@
       if (this.hashStore.hasOwnProperty(dbname)) {
         delete this.hashStore[dbname];
       }
-      
+
       if (typeof callback === "function") {
         callback();
       }
@@ -1830,9 +1838,9 @@
      * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
      * only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
-     * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter). 
+     * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter).
      * A dirty collection that spans three pages will save all three pages again
-     * Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a 
+     * Paging mode was added mainly because Chrome has issues saving 'too large' of a string within a
      * single indexeddb row.  If a single document update causes the collection to be flagged as dirty, all
      * of that collection's pages will be written on next save.
      *
@@ -2020,7 +2028,7 @@
      * @param {object} dbref - reference to database which we will partition and save.
      * @param {function} callback - adapter callback to return load result to caller
      *
-     * @memberof LokiPartitioningAdapter     
+     * @memberof LokiPartitioningAdapter
      */
     LokiPartitioningAdapter.prototype.exportDatabase = function(dbname, dbref, callback) {
       var self=this;
@@ -2403,7 +2411,7 @@
               self.emit('loaded', 'database ' + self.filename + ' loaded');
               return;
             }
-            
+
             cFun("unexpected adapter response : " + dbString);
           }
         });
@@ -2422,7 +2430,7 @@
      * If you are configured with autosave, you do not need to call this method yourself.
      *
      * @param {object} options - if throttling saves and loads, this controls how we drain save queue before loading
-     * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued 
+     * @param {boolean} options.recursiveWait - (default: true) wait recursively until no saves are queued
      * @param {bool} options.recursiveWaitLimit - (default: false) limit our recursive waiting to a duration
      * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
      * @param {function=} callback - (Optional) user supplied async callback / error handler
@@ -2582,7 +2590,7 @@
           throw err;
         }
       };
-      
+
       // we aren't even using options, so we will support syntax where
       // callback is passed as first and only argument
       if (typeof options === 'function' && !callback) {
@@ -2921,8 +2929,17 @@
 
       var wrappedComparer =
         (function (prop, desc, data) {
+          var val1, val2, arr;
           return function (a, b) {
-            return sortHelper(data[a][prop], data[b][prop], desc);
+            if (~prop.indexOf('.')) {
+              arr = prop.split('.');
+              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
+              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+            } else {
+              val1 = data[a][prop];
+              val2 = data[b][prop];
+            }
+            return sortHelper(val1, val2, desc);
           };
         })(propname, isdesc, this.collection.data);
 
@@ -3092,7 +3109,7 @@
             queryObjectOp = queryObject[p];
           }
         }
-        // if more than one expression in single query object, 
+        // if more than one expression in single query object,
         // convert implicit $and to explicit $and
         if (filters.length > 1) {
           return this.find({ '$and': filters }, firstOnly);
@@ -3374,7 +3391,7 @@
         options.forceClones = true;
         options.forceCloneMethod = options.forceCloneMethod || 'shallow';
       }
-      
+
       // if collection has delta changes active, then force clones and use 'parse-stringify' for effective change tracking of nested objects
       if (!this.collection.disableDeltaChangesApi) {
         options.forceClones = true;
@@ -4430,10 +4447,10 @@
       this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
       // by default, if you insert a document into a collection with binary indices, if those indexed properties contain
-      // a DateTime we will convert to epoch time format so that (across serializations) its value position will be the 
+      // a DateTime we will convert to epoch time format so that (across serializations) its value position will be the
       // same 'after' serialization as it was 'before'.
       this.serializableIndices = options.hasOwnProperty('serializableIndices') ? options.serializableIndices : true;
-      
+
       //option to activate a cleaner daemon - clears "aged" documents at set intervals.
       this.ttl = {
         age: null,
@@ -4530,7 +4547,7 @@
       }
 
       this.getChangeDelta = getChangeDelta;
-            
+
       function getObjectDelta(oldObject, newObject) {
         var propertyNames = newObject !== null && typeof newObject === 'object' ? Object.keys(newObject) : null;
         if (propertyNames && propertyNames.length && ['string', 'boolean', 'number'].indexOf(typeof(newObject)) < 0) {
@@ -4706,7 +4723,7 @@
      *     }
      *   }
      * ]);
-     * 
+     *
      * var results = users.chain('progeny').data();
      */
     Collection.prototype.addTransform = function (name, transform) {
@@ -4863,13 +4880,21 @@
       this.binaryIndices[property] = index;
 
       var wrappedComparer =
-        (function (p, data) {
+        (function (prop, data) {
+          var val1, val2, arr;
           return function (a, b) {
-            var objAp = data[a][p],
-              objBp = data[b][p];
-            if (objAp !== objBp) {
-              if (ltHelper(objAp, objBp, false)) return -1;
-              if (gtHelper(objAp, objBp, false)) return 1;
+            if (~prop.indexOf('.')) {
+              arr = prop.split('.');
+              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
+              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+            } else {
+              val1 = data[a][prop];
+              val2 = data[b][prop];
+            }
+
+            if (val1 !== val2) {
+              if (ltHelper(val1, val2, false)) return -1;
+              if (gtHelper(val1, val2, false)) return 1;
             }
             return 0;
           };
@@ -5062,7 +5087,7 @@
      *     age: 50,
      *     address: 'Asgard'
      * });
-     * 
+     *
      * // alternatively, insert array of documents
      * users.insert([{ name: 'Thor', age: 35}, { name: 'Loki', age: 30}]);
      */
@@ -5631,14 +5656,14 @@
     };
 
     /**
-     * Internal method used for index maintenance and indexed searching.  
+     * Internal method used for index maintenance and indexed searching.
      * Calculates the beginning of an index range for a given value.
      * For index maintainance (adaptive:true), we will return a valid index position to insert to.
      * For querying (adaptive:false/undefined), we will :
      *    return lower bound/index of range of that value (if found)
      *    return next lower index position if not found (hole)
      * If index is empty it is assumed to be handled at higher level, so
-     * this method assumes there is at least 1 document in index. 
+     * this method assumes there is at least 1 document in index.
      *
      * @param {string} prop - name of property which has binary index
      * @param {any} val - value to find within index
@@ -5650,7 +5675,7 @@
       var min = 0;
       var max = index.length - 1;
       var mid = 0;
-      
+
       if (index.length === 0) {
         return -1;
       }
@@ -5720,12 +5745,12 @@
       if (aeqHelper(val, rcd[index[ubound]][prop])) {
         return ubound;
       }
-      
+
        // if not in index and our value is less than the found one
       if (gtHelper(val, rcd[index[ubound]][prop], false)) {
         return ubound+1;
       }
-      
+
       // either hole or first nonmatch
       if (aeqHelper(val, rcd[index[ubound-1]][prop])) {
         return ubound-1;
@@ -5758,7 +5783,7 @@
       if (rcd.length === 0) {
         return [0, -1];
       }
-      
+
       var minVal = rcd[index[min]][prop];
       var maxVal = rcd[index[max]][prop];
 
@@ -5824,18 +5849,18 @@
         if (ltHelper(val[1], minVal, false)) {
           return [0, -1];
         }
-        
+
         lbound = this.calculateRangeStart(prop, val[0]);
         ubound = this.calculateRangeEnd(prop, val[1]);
 
         if (lbound < 0) lbound++;
         if (ubound > max) ubound--;
-        
+
         if (!gtHelper(rcd[index[lbound]][prop], val[0], true)) lbound++;
         if (!ltHelper(rcd[index[ubound]][prop], val[1], true)) ubound--;
-        
+
         if (ubound < lbound) return [0, -1];
-        
+
         return ([lbound, ubound]);
       case '$in':
         var idxset = [],
@@ -5860,7 +5885,7 @@
         case '$aeq':
         case '$dteq':
         case '$gte':
-        case '$lt': 
+        case '$lt':
           lbound = this.calculateRangeStart(prop, val);
           lval = rcd[index[lbound]][prop];
           break;
@@ -5879,8 +5904,8 @@
           break;
         default: break;
       }
-      
-      
+
+
       switch (op) {
       case '$eq':
       case '$aeq':
@@ -5892,7 +5917,7 @@
         if (!aeqHelper(lval, val)) {
           return [0, -1];
         }
-        
+
         return [lbound, ubound];
 
       //case '$dteq':
@@ -5900,7 +5925,7 @@
       //  if (lval > val || lval < val) {
       //    return [0, -1];
       //  }
-        
+
       //  return [lbound, ubound];
 
       case '$gt':

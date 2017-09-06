@@ -14,7 +14,7 @@ describe('sorting and indexing', function () {
   describe('resultset simplesort', function() {
     it('works', function () {
       var rss = db.addCollection('rssort');
-      
+
       rss.insert({ a: 4, b: 2 });
       rss.insert({ a: 7, b: 1 });
       rss.insert({ a: 3, b: 4 });
@@ -27,11 +27,11 @@ describe('sorting and indexing', function () {
       expect(results[3].a).toBe(9);
     });
   });
-  
+
   describe('resultset simplesort descending', function() {
     it('works', function () {
       var rss = db.addCollection('rssort');
-      
+
       rss.insert({ a: 4, b: 2 });
       rss.insert({ a: 7, b: 1 });
       rss.insert({ a: 3, b: 4 });
@@ -42,10 +42,10 @@ describe('sorting and indexing', function () {
       expect(results[1].a).toBe(7);
       expect(results[2].a).toBe(4);
       expect(results[3].a).toBe(3);
-      
+
       // test when indexed
       var rss2 = db.addCollection('rssort2', { indices: ['a'] });
-      
+
       rss2.insert({ a: 4, b: 2 });
       rss2.insert({ a: 7, b: 1 });
       rss2.insert({ a: 3, b: 4 });
@@ -59,6 +59,23 @@ describe('sorting and indexing', function () {
     });
   });
 
+  describe('resultset simplesort on nested properties', function() {
+    it('works', function () {
+      var rss = db.addCollection('rssort');
+
+      rss.insert({ foo: { a: 4, b: 2 }});
+      rss.insert({ foo: { a: 7, b: 1 }});
+      rss.insert({ foo: { a: 3, b: 4 }});
+      rss.insert({ foo: { a: 9, b: 5 }});
+
+      var results = rss.chain().simplesort('foo.a').data();
+      expect(results[0].foo.a).toBe(3);
+      expect(results[1].foo.a).toBe(4);
+      expect(results[2].foo.a).toBe(7);
+      expect(results[3].foo.a).toBe(9);
+    });
+  });
+
   describe('resultset simplesort with dates', function() {
     it('works', function() {
       var now = new Date().getTime();
@@ -69,7 +86,7 @@ describe('sorting and indexing', function () {
       var dt5 = new Date(now - 3000);
 
       var rss = db.addCollection('rssort');
-      
+
       rss.insert({ a: 1, b: dt1 });
       rss.insert({ a: 2, b: dt2 });
       rss.insert({ a: 3, b: dt3 });
@@ -89,7 +106,7 @@ describe('sorting and indexing', function () {
     it('works', function() {
       var db = new loki('test.db');
       var coll = db.addCollection('coll');
-      
+
       coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
 
       var sortfun = function(obj1, obj2) {
@@ -105,12 +122,12 @@ describe('sorting and indexing', function () {
       expect(result[2].a).toEqual(5);
     });
   });
-  
+
   describe('resultset compoundsort works correctly', function() {
     it('works', function() {
       var db = new loki('test.db');
       var coll = db.addCollection('coll');
-      
+
       coll.insert([{ a: 1, b: 9, c: 'first' }, { a: 5, b: 7, c: 'second' }, { a: 2, b: 9, c: 'third' }]);
 
       var result = coll.chain().compoundsort(['b', 'c']).data();
@@ -123,7 +140,28 @@ describe('sorting and indexing', function () {
       expect(result.length).toEqual(3);
       expect(result[0].a).toEqual(5);
       expect(result[1].a).toEqual(2);
-      expect(result[2].a).toEqual(1);      
+      expect(result[2].a).toEqual(1);
+    });
+  });
+
+  describe('resultset compoundsort on nested properties works correctly', function() {
+    it('works', function() {
+      var db = new loki('test.db');
+      var coll = db.addCollection('coll');
+
+      coll.insert([{ a: 1, z: { y: { b: 9, c: 'first'} } }, { a: 5, z: { y: { b: 7, c: 'second'} } }, { a: 2, z: { y: { b: 9, c: 'third'} } }]);
+
+      var result = coll.chain().compoundsort(['z.y.b', 'z.y.c']).data();
+      expect(result.length).toEqual(3);
+      expect(result[0].a).toEqual(5);
+      expect(result[1].a).toEqual(1);
+      expect(result[2].a).toEqual(2);
+
+      result = coll.chain().compoundsort(['z.y.b', ['z.y.c', true]]).data();
+      expect(result.length).toEqual(3);
+      expect(result[0].a).toEqual(5);
+      expect(result[1].a).toEqual(2);
+      expect(result[2].a).toEqual(1);
     });
   });
 
@@ -143,13 +181,13 @@ describe('sorting and indexing', function () {
       coll.insert({ a: { ack: "object" }, b: 5 });
       coll.insert({ a: 7.5, b: 5 });
       coll.insert({ a: NaN, b: 5 });
-      coll.insert({ a: [8, 1, 15], b: 5}); 
+      coll.insert({ a: [8, 1, 15], b: 5});
       coll.insert({ a: 'asdf', b: 5 });
-      
+
       var indexVals = [];
 
       // make sure unindexed sort is as expected
-      
+
       var result = coll.chain().simplesort("a").data();
       result.forEach(function(obj) {
         indexVals.push(obj.a);
@@ -158,8 +196,8 @@ describe('sorting and indexing', function () {
       expect(indexVals.length).toEqual(14);
 
       // undefined, null, or NaN
-      expect(indexVals[0] !== indexVals[0]).toEqual(true); 
-      expect(indexVals[1] == null).toEqual(true); 
+      expect(indexVals[0] !== indexVals[0]).toEqual(true);
+      expect(indexVals[1] == null).toEqual(true);
       expect(indexVals[2] == null).toEqual(true);
       expect(indexVals[3] == null).toEqual(true);
 
@@ -180,13 +218,13 @@ describe('sorting and indexing', function () {
 
       coll.binaryIndices.a.values.forEach(function(vi) {
         indexVals.push(coll.data[vi].a);
-      }); 
+      });
 
       expect(indexVals.length).toEqual(14);
 
       // undefined, null, or NaN
-      expect(indexVals[0] !== indexVals[0]).toEqual(true); 
-      expect(indexVals[1] == null).toEqual(true); 
+      expect(indexVals[0] !== indexVals[0]).toEqual(true);
+      expect(indexVals[1] == null).toEqual(true);
       expect(indexVals[2] == null).toEqual(true);
       expect(indexVals[3] == null).toEqual(true);
 
@@ -201,7 +239,7 @@ describe('sorting and indexing', function () {
       expect(typeof indexVals[12] === "object").toEqual(true);
       expect(indexVals[13] === "asdf").toEqual(true);
     });
-    
+
     it('works', function() {
       var now = new Date().getTime();
       var dt1 = new Date(now - 1000);
@@ -210,9 +248,9 @@ describe('sorting and indexing', function () {
       var dt4 = new Date(now + 2000);
       var dt5 = new Date(now - 3000);
 
-      
+
       var cidx = db.addCollection('collidx', { indices : ['b']});
-      
+
       cidx.insert({ a: 1, b: dt1 });
       cidx.insert({ a: 2, b: dt2 });
       cidx.insert({ a: 3, b: dt3 });
@@ -226,12 +264,12 @@ describe('sorting and indexing', function () {
       // NOTE :
       // Binary Index imposes loose equality checks to construct its order
       // Strict equality checks would need to be extra filtering phase
-      
+
       var sdt = new Date(now + 5000);
 
       // after refactoring binary indices to be loose equality/ranges everywhere,
       // this unit test passed, meaning the dteq op is not needed if binary index exists
-      
+
       //results = cidx.find({'b': sdt});
       //expect(results.length).toBe(0);
 

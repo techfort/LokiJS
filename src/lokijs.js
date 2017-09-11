@@ -1042,6 +1042,23 @@
       return null;
     };
 
+    /**
+     * Renames an existing loki collection
+     * @param {string} oldName - name of collection to rename
+     * @param {string} newName - new name of collection
+     * @returns {Collection} reference to the newly renamed collection
+     * @memberof Loki
+     */
+    Loki.prototype.renameCollection = function (oldName, newName) {
+      var c = this.getCollection(oldName);
+
+      if (c) {
+        c.name = newName;
+      }
+
+      return c;
+    };
+
     Loki.prototype.listCollections = function () {
 
       var i = this.collections.length,
@@ -4803,6 +4820,12 @@
       };
     };
 
+    /**
+     * Updates or applies collection TTL settings.
+     * @param {int} age - age (in ms) to expire document from collection
+     * @param {int} interval - time (in ms) to clear collection of aged documents.
+     * @memberof Collection
+     */
     Collection.prototype.setTTL = function (age, interval) {
       if (age < 0) {
         clearInterval(this.ttl.daemon);

@@ -1,6 +1,20 @@
 if (typeof(window) === 'undefined') var loki = require('../../src/lokijs.js');
 
 describe('collection', function () {
+  it('collection rename works', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('coll1');
+    
+    var result = db.getCollection('coll1');
+    expect(result.name).toEqual('coll1');
+    
+    db.renameCollection('coll1', 'coll2');
+    result = db.getCollection('coll1');
+    expect(result).toBeNull();
+    result = db.getCollection('coll2');
+    expect(result.name).toEqual('coll2');
+  });
+
   it('works', function () {
     function SubclassedCollection() {
       loki.Collection.apply(this, Array.prototype.slice.call(arguments));

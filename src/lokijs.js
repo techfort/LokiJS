@@ -4378,7 +4378,7 @@
      * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
      * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
      * @param {boolean} [options.serializableIndices=true[]] - converts date values on binary indexed properties to epoch time
-     * @param {string} [options.cloneMethod='parse-stringify' - 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
+     * @param {string} [options.cloneMethod='parse-stringify'] - 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
      * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @see {@link Loki#addCollection} for normal creation of collections
      */

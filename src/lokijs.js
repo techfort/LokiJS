@@ -784,11 +784,7 @@
 
       var getENV = function () {
         if (typeof global !== 'undefined' && (global.android || global.NSObject)) {
-           // If no adapter is set use the default nativescript adapter
-           if (!options.adapter) {
-             //var LokiNativescriptAdapter = require('./loki-nativescript-adapter');
-             //options.adapter=new LokiNativescriptAdapter();
-           }
+           // If no adapter assume nativescript which needs adapter to be passed manually
            return 'NATIVESCRIPT'; //nativescript
         }
 
@@ -824,9 +820,7 @@
         this.ENV = 'NODEJS';
       }
 
-      //if (typeof (options) !== 'undefined') {
       this.configureOptions(options, true);
-      //}
 
       this.on('init', this.clearChanges);
 

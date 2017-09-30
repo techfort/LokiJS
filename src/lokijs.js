@@ -2850,7 +2850,7 @@
           rs = rs.map(step.value);
           break;
         case "eqJoin":
-          rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun);
+          rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun, step.dataOptions);
           break;
           // following cases break chain by returning array data so make any of these last in transform steps
         case "mapReduce":
@@ -3529,14 +3529,15 @@
     /**
      * eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
      * eqJoin expects the right join key values to be unique.  Otherwise left data will be joined on the last joinData object with that key
-     * @param {Array} joinData - Data array to join to.
+     * @param {Array|Resultset|Collection} joinData - Data array to join to.
      * @param {(string|function)} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
      * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
      * @param {function=} mapFun - (Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
+     * @param {object} dataOptions - optional options to apply to data() calls for left and right sides
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      * @memberof Resultset
      */
-    Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun) {
+    Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun, dataOptions) {
 
       var leftData = [],
         leftDataLength,
@@ -3549,12 +3550,14 @@
         joinMap = {};
 
       //get the left data
-      leftData = this.data();
+      leftData = this.data(dataOptions);
       leftDataLength = leftData.length;
 
       //get the right data
-      if (joinData instanceof Resultset) {
-        rightData = joinData.data();
+      if (joinData instanceof Collection) {
+        rightData = joinData.chain().data(dataOptions);
+      } else if (joinData instanceof Resultset) {
+        rightData = joinData.data(dataOptions);
       } else if (Array.isArray(joinData)) {
         rightData = joinData;
       } else {
@@ -6175,16 +6178,17 @@
     /**
      * Join two collections on specified properties
      *
-     * @param {array} joinData - array of documents to 'join' to this collection
+     * @param {array|Resultset|Collection} joinData - array of documents to 'join' to this collection
      * @param {string} leftJoinProp - property name in collection
      * @param {string} rightJoinProp - property name in joinData
      * @param {function=} mapFun - (Optional) map function to use
+     * @param {object} dataOptions - optional options to apply to data() calls for left and right sides
      * @returns {Resultset} Result of the mapping operation
      * @memberof Collection
      */
-    Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun) {
+    Collection.prototype.eqJoin = function (joinData, leftJoinProp, rightJoinProp, mapFun, dataOptions) {
       // logic in Resultset class
-      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun);
+      return new Resultset(this).eqJoin(joinData, leftJoinProp, rightJoinProp, mapFun, dataOptions);
     };
 
     /* ------ STAGING API -------- */

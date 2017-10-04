@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.1
+* added disableDeltaChangesApi (default:true) collection option to store only differences. (#582)
+* loki indexed adapter deleteDatabase method will now wait until complete before callback (#584)
+* fixed clone methods correctly assigning object prototypes (#586)
+* partitioning adapter and memory adapter no longer throw error when database doesn't exist (yet)
+* simplesort and compoundsort now support sorting on nested properties via dot-notation (#574)
+* added support for binary indices on nested properties (#574)
+* fixed jsdoc syntax error causing vscode to crash (#614)
+* fixed error when using partitioning adapter with nativescript adapter (#615)
+* added optional 'dataOptions' to eqJoin (see #618)
+
 ## 1.5.0
 * refactored binary indices sorting order
 * date values in properties with binary index will be converted to epoch time

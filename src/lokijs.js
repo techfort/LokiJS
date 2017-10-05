@@ -2847,7 +2847,7 @@
           rs = rs.offset(step.value);
           break; // offset makes copy so update reference
         case "map":
-          rs = rs.map(step.value);
+          rs = rs.map(step.value, step.dataOptions);
           break;
         case "eqJoin":
           rs = rs.eqJoin(step.joinData, step.leftJoinKey, step.rightJoinKey, step.mapFun, step.dataOptions);
@@ -3533,7 +3533,10 @@
      * @param {(string|function)} leftJoinKey - Property name in this result set to join on or a function to produce a value to join on
      * @param {(string|function)} rightJoinKey - Property name in the joinData to join on or a function to produce a value to join on
      * @param {function=} mapFun - (Optional) A function that receives each matching pair and maps them into output objects - function(left,right){return joinedObject}
-     * @param {object} dataOptions - optional options to apply to data() calls for left and right sides
+     * @param {object=} dataOptions - options to data() before input to your map function
+     * @param {bool} dataOptions.removeMeta - allows removing meta before calling mapFun
+     * @param {boolean} dataOptions.forceClones - forcing the return of cloned objects to your map object
+     * @param {string} dataOptions.forceCloneMethod - Allows overriding the default or collection specified cloning method.
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      * @memberof Resultset
      */
@@ -3596,8 +3599,17 @@
       return this;
     };
 
-    Resultset.prototype.map = function (mapFun) {
-      var data = this.data().map(mapFun);
+    /**
+     * Applies a map function into a new collection for further chaining.
+     * @param {function} mapFun - javascript map function
+     * @param {object=} dataOptions - options to data() before input to your map function
+     * @param {bool} dataOptions.removeMeta - allows removing meta before calling mapFun
+     * @param {boolean} dataOptions.forceClones - forcing the return of cloned objects to your map object
+     * @param {string} dataOptions.forceCloneMethod - Allows overriding the default or collection specified cloning method.
+     * @memberof Resultset
+     */
+    Resultset.prototype.map = function (mapFun, dataOptions) {
+      var data = this.data(dataOptions).map(mapFun);
       //return return a new resultset with no filters
       this.collection = new Collection('mappedData');
       this.collection.insert(data);
@@ -6182,7 +6194,10 @@
      * @param {string} leftJoinProp - property name in collection
      * @param {string} rightJoinProp - property name in joinData
      * @param {function=} mapFun - (Optional) map function to use
-     * @param {object} dataOptions - optional options to apply to data() calls for left and right sides
+     * @param {object=} dataOptions - options to data() before input to your map function
+     * @param {bool} dataOptions.removeMeta - allows removing meta before calling mapFun
+     * @param {boolean} dataOptions.forceClones - forcing the return of cloned objects to your map object
+     * @param {string} dataOptions.forceCloneMethod - Allows overriding the default or collection specified cloning method.
      * @returns {Resultset} Result of the mapping operation
      * @memberof Collection
      */

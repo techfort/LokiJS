@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2>DynamicView</h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>DynamicView<span class="signature">(collection, name, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
         
     
 </header>
@@ -40,7 +40,9 @@
 
     
 
+    
     <h4 class="name" id="DynamicView"><span class="type-signature"></span>new DynamicView<span class="signature">(collection, name, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -366,7 +368,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3613">line 3613</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3622">line 3622</a>
     </li></ul></dd>
     
 
@@ -398,6 +400,8 @@
 
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>var mydv = mycollection.addDynamicView('test');  // default is non-persistentmydv.applyFind({ 'doors' : 4 });mydv.applyWhere(function(obj) { return obj.name === 'Toyota'; });var results = mydv.data();</code></pre>
@@ -413,7 +417,9 @@
 
     
 
-     
+    
+
+    
 
     
 
@@ -427,7 +433,9 @@
 
     
 
+    
     <h4 class="name" id="applyFilter"><span class="type-signature"></span>applyFilter<span class="signature">(filter)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -528,7 +536,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3989">line 3989</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3998">line 3998</a>
     </li></ul></dd>
     
 
@@ -576,12 +584,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="applyFind"><span class="type-signature"></span>applyFind<span class="signature">(query, uid<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -727,7 +739,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4021">line 4021</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4030">line 4030</a>
     </li></ul></dd>
     
 
@@ -775,12 +787,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="applySimpleSort"><span class="type-signature"></span>applySimpleSort<span class="signature">(propname, isdesc<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -923,7 +939,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3846">line 3846</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3855">line 3855</a>
     </li></ul></dd>
     
 
@@ -970,6 +986,8 @@
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>dv.applySimpleSort("name");</code></pre>
@@ -981,7 +999,9 @@
 
     
 
+    
     <h4 class="name" id="applySort"><span class="type-signature"></span>applySort<span class="signature">(comparefun)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -1081,7 +1101,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3827">line 3827</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3836">line 3836</a>
     </li></ul></dd>
     
 
@@ -1128,6 +1148,8 @@
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>dv.applySort(function(obj1, obj2) {  if (obj1.name === obj2.name) return 0;  if (obj1.name > obj2.name) return 1;  if (obj1.name &lt; obj2.name) return -1;});</code></pre>
@@ -1139,7 +1161,9 @@
 
     
 
+    
     <h4 class="name" id="applySortCriteria"><span class="type-signature"></span>applySortCriteria<span class="signature">(properties)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -1239,7 +1263,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3871">line 3871</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3880">line 3880</a>
     </li></ul></dd>
     
 
@@ -1286,6 +1310,8 @@
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>// to sort by age and then name (both ascending)dv.applySortCriteria(['age', 'name']);// to sort by age (ascending) and then by name (descending)dv.applySortCriteria(['age', ['name', true]);// to sort by age (descending) and then by name (descending)dv.applySortCriteria(['age', true], ['name', true]);</code></pre>
@@ -1297,7 +1323,9 @@
 
     
 
+    
     <h4 class="name" id="applyWhere"><span class="type-signature"></span>applyWhere<span class="signature">(fun, uid<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -1443,7 +1471,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4038">line 4038</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4047">line 4047</a>
     </li></ul></dd>
     
 
@@ -1491,12 +1519,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="branchResultset"><span class="type-signature"></span>branchResultset<span class="signature">(transform, parameters<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    
 
     
 
@@ -1644,7 +1676,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3752">line 3752</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3761">line 3761</a>
     </li></ul></dd>
     
 
@@ -1692,12 +1724,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="count"><span class="type-signature"></span>count<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
 
     
 
@@ -1748,7 +1784,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4071">line 4071</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4080">line 4080</a>
     </li></ul></dd>
     
 
@@ -1796,12 +1832,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="data"><span class="type-signature"></span>data<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {array}</span></h4>
+    
 
     
 
@@ -2010,7 +2050,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4094">line 4094</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4103">line 4103</a>
     </li></ul></dd>
     
 
@@ -2058,12 +2098,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="mapReduce"><span class="type-signature"></span>mapReduce<span class="signature">(mapFunction, reduceFunction)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2186,7 +2230,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4356">line 4356</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4365">line 4365</a>
     </li></ul></dd>
     
 
@@ -2222,12 +2266,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="rematerialize"><span class="type-signature"></span>rematerialize<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -2342,7 +2390,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3692">line 3692</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3701">line 3701</a>
     </li></ul></dd>
     
 
@@ -2395,12 +2443,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="removeFilter"><span class="type-signature"></span>removeFilter<span class="signature">(uid)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -2503,7 +2555,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4054">line 4054</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4063">line 4063</a>
     </li></ul></dd>
     
 
@@ -2551,12 +2603,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="removeFilters"><span class="type-signature"></span>removeFilters<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2730,7 +2786,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3790">line 3790</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3799">line 3799</a>
     </li></ul></dd>
     
 
@@ -2740,6 +2796,8 @@
 
     
 </dl>
+
+
 
 
 
@@ -2778,7 +2836,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Sep 11 2017 17:41:18 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Oct 05 2017 05:27:53 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

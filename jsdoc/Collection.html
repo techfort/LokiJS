@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2>Collection</h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Collection<span class="signature">(name, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
         
     
 </header>
@@ -40,7 +40,9 @@
 
     
 
+    
     <h4 class="name" id="Collection"><span class="type-signature"></span>new Collection<span class="signature">(name, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -580,6 +582,8 @@
             
                 <td class="attributes">
                 
+                    &lt;optional><br>
+                
 
                 
 
@@ -685,7 +689,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4365">line 4365</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4374">line 4374</a>
     </li></ul></dd>
     
 
@@ -718,6 +722,8 @@
 
 
 
+
+
     
     </div>
 
@@ -727,7 +733,9 @@
 
     
 
-     
+    
+
+    
 
     
 
@@ -741,7 +749,9 @@
 
     
 
+    
     <h4 class="name" id="addDynamicView"><span class="type-signature"></span>addDynamicView<span class="signature">(name, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -1027,7 +1037,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5039">line 5039</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5048">line 5048</a>
     </li></ul></dd>
     
 
@@ -1074,6 +1084,8 @@
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>var pview = users.addDynamicView('progeny');pview.applyFind({'age': {'$lte': 40}});pview.applySimpleSort('name');var results = pview.data();</code></pre>
@@ -1085,7 +1097,9 @@
 
     
 
+    
     <h4 class="name" id="addTransform"><span class="type-signature"></span>addTransform<span class="signature">(name, transform)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1208,7 +1222,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4746">line 4746</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4755">line 4755</a>
     </li></ul></dd>
     
 
@@ -1218,6 +1232,8 @@
 
     
 </dl>
+
+
 
 
 
@@ -1244,7 +1260,9 @@
 
     
 
+    
     <h4 class="name" id="avg"><span class="type-signature"></span>avg<span class="signature">(field)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
 
     
 
@@ -1344,7 +1362,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6356">line 6356</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6369">line 6369</a>
     </li></ul></dd>
     
 
@@ -1392,12 +1410,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="by"><span class="type-signature"></span>by<span class="signature">(field, value)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    
 
     
 
@@ -1520,7 +1542,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6003">line 6003</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6012">line 6012</a>
     </li></ul></dd>
     
 
@@ -1568,12 +1590,16 @@
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="chain"><span class="type-signature"></span>chain<span class="signature">(transform<span class="signature-attributes">opt</span>, parameters<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    
 
     
 
@@ -1719,7 +1745,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6052">line 6052</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6061">line 6061</a>
     </li></ul></dd>
     
 
@@ -1767,12 +1793,16 @@ on a collection.</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="clear"><span class="type-signature"></span>clear<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1945,7 +1975,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5199">line 5199</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5208">line 5208</a>
     </li></ul></dd>
     
 
@@ -1971,12 +2001,16 @@ on a collection.</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="commitStage"><span class="type-signature"></span>commitStage<span class="signature">(stageName, message)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2100,7 +2134,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6235">line 6235</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6248">line 6248</a>
     </li></ul></dd>
     
 
@@ -2126,12 +2160,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="configureOptions"><span class="type-signature"></span>configureOptions<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2231,7 +2269,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4860">line 4860</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4869">line 4869</a>
     </li></ul></dd>
     
 
@@ -2257,12 +2295,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="count"><span class="type-signature"></span>count<span class="signature">(query<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
 
     
 
@@ -2374,7 +2416,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4992">line 4992</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5001">line 5001</a>
     </li></ul></dd>
     
 
@@ -2422,12 +2464,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="ensureIndex"><span class="type-signature"></span>ensureIndex<span class="signature">(property, force<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2570,7 +2616,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4879">line 4879</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4888">line 4888</a>
     </li></ul></dd>
     
 
@@ -2596,12 +2642,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
-    <h4 class="name" id="eqJoin"><span class="type-signature"></span>eqJoin<span class="signature">(joinData, leftJoinProp, rightJoinProp, mapFun<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    
+    <h4 class="name" id="eqJoin"><span class="type-signature"></span>eqJoin<span class="signature">(joinData, leftJoinProp, rightJoinProp, mapFun<span class="signature-attributes">opt</span>, dataOptions<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    
 
     
 
@@ -2653,6 +2703,12 @@ then create a message to be inserted in the commitlog</p>
             
                 
 <span class="param-type">array</span>
+|
+
+<span class="param-type"><a href="Resultset.html">Resultset</a></span>
+|
+
+<span class="param-type"><a href="Collection.html">Collection</a></span>
 
 
             
@@ -2769,6 +2825,134 @@ then create a message to be inserted in the commitlog</p>
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>dataOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>options to data() before input to your map function</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>removeMeta</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>allows removing meta before calling mapFun</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forceClones</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>forcing the return of cloned objects to your map object</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forceCloneMethod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Allows overriding the default or collection specified cloning method.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -2806,7 +2990,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6191">line 6191</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6204">line 6204</a>
     </li></ul></dd>
     
 
@@ -2854,12 +3038,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="extract"><span class="type-signature"></span>extract<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2906,7 +3094,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6259">line 6259</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6272">line 6272</a>
     </li></ul></dd>
     
 
@@ -2932,12 +3120,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="extractNumerical"><span class="type-signature"></span>extractNumerical<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2984,7 +3176,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6343">line 6343</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6356">line 6356</a>
     </li></ul></dd>
     
 
@@ -3010,12 +3202,16 @@ then create a message to be inserted in the commitlog</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="find"><span class="type-signature"></span>find<span class="signature">(query)</span><span class="type-signature"> &rarr; {array}</span></h4>
+    
 
     
 
@@ -3116,7 +3312,7 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6070">line 6070</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6079">line 6079</a>
     </li></ul></dd>
     
 
@@ -3163,6 +3359,8 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code><a href="tutorial-Query Examples.html">Query Examples</a></code></pre>
@@ -3174,7 +3372,9 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
 
     
 
+    
     <h4 class="name" id="findAndRemove"><span class="type-signature"></span>findAndRemove<span class="signature">(filterObject)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -3274,7 +3474,7 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5098">line 5098</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5107">line 5107</a>
     </li></ul></dd>
     
 
@@ -3300,12 +3500,16 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="findAndUpdate"><span class="type-signature"></span>findAndUpdate<span class="signature">(filterObject, updateFunction)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -3432,7 +3636,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5083">line 5083</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5092">line 5092</a>
     </li></ul></dd>
     
 
@@ -3458,12 +3662,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="findOne"><span class="type-signature"></span>findOne<span class="signature">(query)</span><span class="type-signature"> &rarr; {object|null}</span></h4>
+    
 
     
 
@@ -3563,7 +3771,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6026">line 6026</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6035">line 6035</a>
     </li></ul></dd>
     
 
@@ -3614,12 +3822,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="get"><span class="type-signature"></span>get<span class="signature">(id, returnPosition)</span><span class="type-signature"> &rarr; {object|array|null}</span></h4>
+    
 
     
 
@@ -3742,7 +3954,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5533">line 5533</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5542">line 5542</a>
     </li></ul></dd>
     
 
@@ -3797,12 +4009,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="getDynamicView"><span class="type-signature"></span>getDynamicView<span class="signature">(name)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    
 
     
 
@@ -3902,7 +4118,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5065">line 5065</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5074">line 5074</a>
     </li></ul></dd>
     
 
@@ -3950,12 +4166,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="getStage"><span class="type-signature"></span>getStage<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4006,7 +4226,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6207">line 6207</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6220">line 6220</a>
     </li></ul></dd>
     
 
@@ -4032,12 +4252,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="getTransform"><span class="type-signature"></span>getTransform<span class="signature">(name)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4137,7 +4361,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4759">line 4759</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4768">line 4768</a>
     </li></ul></dd>
     
 
@@ -4163,12 +4387,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="insert"><span class="type-signature"></span>insert<span class="signature">(doc)</span><span class="type-signature"> &rarr; {object|array}</span></h4>
+    
 
     
 
@@ -4271,7 +4499,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5117">line 5117</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5126">line 5126</a>
     </li></ul></dd>
     
 
@@ -4321,6 +4549,8 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>users.insert({    name: 'Odin',    age: 50,    address: 'Asgard'});// alternatively, insert array of documentsusers.insert([{ name: 'Thor', age: 35}, { name: 'Loki', age: 30}]);</code></pre>
@@ -4332,7 +4562,9 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
     
 
+    
     <h4 class="name" id="mapReduce"><span class="type-signature"></span>mapReduce<span class="signature">(mapFunction, reduceFunction)</span><span class="type-signature"> &rarr; {data}</span></h4>
+    
 
     
 
@@ -4455,7 +4687,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6173">line 6173</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6182">line 6182</a>
     </li></ul></dd>
     
 
@@ -4503,12 +4735,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="max"><span class="type-signature"></span>max<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4555,7 +4791,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6273">line 6273</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6286">line 6286</a>
     </li></ul></dd>
     
 
@@ -4581,12 +4817,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="maxRecord"><span class="type-signature"></span>maxRecord<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4633,7 +4873,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6287">line 6287</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6300">line 6300</a>
     </li></ul></dd>
     
 
@@ -4659,12 +4899,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="median"><span class="type-signature"></span>median<span class="signature">(field)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4760,7 +5004,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6402">line 6402</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6415">line 6415</a>
     </li></ul></dd>
     
 
@@ -4786,12 +5030,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="min"><span class="type-signature"></span>min<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4838,7 +5086,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6280">line 6280</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6293">line 6293</a>
     </li></ul></dd>
     
 
@@ -4864,12 +5112,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="minRecord"><span class="type-signature"></span>minRecord<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -4916,7 +5168,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6315">line 6315</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6328">line 6328</a>
     </li></ul></dd>
     
 
@@ -4942,12 +5194,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="mode"><span class="type-signature"></span>mode<span class="signature">(field)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5043,7 +5299,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6373">line 6373</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6386">line 6386</a>
     </li></ul></dd>
     
 
@@ -5069,12 +5325,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="remove"><span class="type-signature"></span>remove<span class="signature">(doc)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5174,7 +5434,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5451">line 5451</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5460">line 5460</a>
     </li></ul></dd>
     
 
@@ -5200,12 +5460,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="removeDynamicView"><span class="type-signature"></span>removeDynamicView<span class="signature">(name)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5305,7 +5569,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5051">line 5051</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5060">line 5060</a>
     </li></ul></dd>
     
 
@@ -5331,12 +5595,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="removeTransform"><span class="type-signature"></span>removeTransform<span class="signature">(name)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5436,7 +5704,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4778">line 4778</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4787">line 4787</a>
     </li></ul></dd>
     
 
@@ -5462,12 +5730,16 @@ For filter function querying you should migrate to <a href="Collection.html#upda
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="removeWhere"><span class="type-signature"></span>removeWhere<span class="signature">(query)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5571,7 +5843,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5432">line 5432</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5441">line 5441</a>
     </li></ul></dd>
     
 
@@ -5597,12 +5869,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="setTransform"><span class="type-signature"></span>setTransform<span class="signature">(name, transform)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5725,7 +6001,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4769">line 4769</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4778">line 4778</a>
     </li></ul></dd>
     
 
@@ -5751,12 +6027,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="setTTL"><span class="type-signature"></span>setTTL<span class="signature">(age, interval)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5879,7 +6159,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4829">line 4829</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4838">line 4838</a>
     </li></ul></dd>
     
 
@@ -5905,12 +6185,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="stage"><span class="type-signature"></span>stage<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -5961,7 +6245,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6222">line 6222</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6235">line 6235</a>
     </li></ul></dd>
     
 
@@ -5987,12 +6271,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="stdDev"><span class="type-signature"></span>stdDev<span class="signature">(field)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -6092,7 +6380,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6365">line 6365</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6378">line 6378</a>
     </li></ul></dd>
     
 
@@ -6118,12 +6406,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="update"><span class="type-signature"></span>update<span class="signature">(doc)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -6223,7 +6515,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5250">line 5250</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5259">line 5259</a>
     </li></ul></dd>
     
 
@@ -6249,12 +6541,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="updateWhere"><span class="type-signature"></span>updateWhere<span class="signature">(filterFunction, updateFunction)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -6377,7 +6673,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5410">line 5410</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5419">line 5419</a>
     </li></ul></dd>
     
 
@@ -6403,12 +6699,16 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="where"><span class="type-signature"></span>where<span class="signature">(fun)</span><span class="type-signature"> &rarr; {array}</span></h4>
+    
 
     
 
@@ -6508,7 +6808,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6161">line 6161</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6170">line 6170</a>
     </li></ul></dd>
     
 
@@ -6555,6 +6855,8 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
 
 
+
+
     <h5>Example</h5>
     
     <pre class="prettyprint"><code>var results = coll.where(function(obj) {  return obj.legs === 8;});</code></pre>
@@ -6583,7 +6885,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Sep 11 2017 17:41:18 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Oct 05 2017 05:27:53 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

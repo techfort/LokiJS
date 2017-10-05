@@ -9,7 +9,7 @@
 * added support for binary indices on nested properties (#574)
 * fixed jsdoc syntax error causing vscode to crash (#614)
 * fixed error when using partitioning adapter with nativescript adapter (#615)
-* added optional 'dataOptions' to eqJoin (see #618)
+* added optional 'dataOptions' to eqJoin and map (chain/transform) (see #618)
 
 ## 1.5.0
 * refactored binary indices sorting order

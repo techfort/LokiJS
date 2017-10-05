@@ -37,10 +37,12 @@
     "benchmark": "node benchmark/benchmark"
   },
   "author": "Joe Minichino <joe.minichino@gmail.com>",
-  "contributors": [{
-    "name": "Dave",
-    "email": "github@obeliskos.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave",
+      "email": "github@obeliskos.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
@@ -49,7 +51,7 @@
   "devDependencies": {
     "istanbul": "^0.4.4",
     "jasmine": "^2.4.1",
-    "jsdoc": "^3.4.0",
+    "jsdoc": "^3.5.5",
     "jshint": "^2.9.2",
     "karma": "^1.1.2",
     "karma-cli": "^1.0.1",

@@ -63,8 +63,8 @@
 
         // iterate all steps in the transform array
         for (idx = 0; idx < transform.length; idx++) {
-          // clone transform so our scan and replace can operate directly on cloned transform
-          clonedStep = JSON.parse(JSON.stringify(transform[idx]));
+          // clone transform so our scan/replace can operate directly on cloned transform
+          clonedStep = clone(transform[idx], "shallow-recurse-objects");
           resolvedTransform.push(Utils.resolveTransformObject(clonedStep, params));
         }
 
@@ -575,6 +575,17 @@
         // should be supported by newer environments/browsers
         cloned = Object.create(data.constructor.prototype);
         Object.assign(cloned, data);
+        break;
+      case "shallow-recurse-objects":
+        // shallow clone top level properties
+        cloned = clone(data, "shallow");
+        var keys = Object.keys(data);
+        // for each of the top level properties which are object literals, recursively shallow copy
+        keys.forEach(function(key) {
+          if (typeof data[key] === "object" && data[key].constructor.name === "Object")  {
+            cloned[key] = clone(data[key], "shallow-recurse-objects");
+          }
+        });
         break;
       default:
         break;

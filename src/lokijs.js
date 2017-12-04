@@ -1010,6 +1010,15 @@
      * @memberof Loki
      */
     Loki.prototype.addCollection = function (name, options) {
+      var i,
+        len = this.collections.length;
+
+      for (i = 0; i < len; i += 1) {
+        if (this.collections[i].name === name) {
+          return this.collections[i];
+        }
+      }
+      
       var collection = new Collection(name, options);
       this.collections.push(collection);
 

@@ -91,7 +91,7 @@ describe('cloning behavior', function () {
   describe('collection find() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true
         //, clonemethod: "parse-stringify"
       });
@@ -115,7 +115,7 @@ describe('cloning behavior', function () {
   describe('collection findOne() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true
         //, clonemethod: "parse-stringify"
       });
@@ -139,7 +139,7 @@ describe('cloning behavior', function () {
   describe('collection where() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true
         //, clonemethod: "parse-stringify"
       });
@@ -167,7 +167,7 @@ describe('cloning behavior', function () {
   describe('collection by() cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true,
         unique: ['name']
         //, clonemethod: "parse-stringify"
@@ -192,7 +192,7 @@ describe('cloning behavior', function () {
   describe('collection by() cloning works with no data', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true,
         unique: ['name']
       });
@@ -210,7 +210,7 @@ describe('cloning behavior', function () {
   describe('resultset data cloning works', function() {
     it('works', function () {
       var cdb = new loki('cloningEnabled');
-      var citems = db.addCollection('items', {
+      var citems = cdb.addCollection('items', {
         clone: true
         //, clonemethod: "parse-stringify"
       });

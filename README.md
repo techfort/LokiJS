@@ -24,13 +24,14 @@ LokiJS supports indexing and views and achieves high-performance through maintai
 ## Demo
 
 The following demos are available:
-- [Sandbox / Playground] (https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
-- a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/'
+- [Sandbox / Playground](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
+- a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/`
 
 ## Wiki
+
 Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki)
 
-### Main Features
+## Main Features
 
 1. Fast performance NoSQL in-memory database, collections with unique index (1.1M ops/s) and binary-index (500k ops/s)
 2. Runs in multiple environments (browser, node, nativescript)
@@ -42,7 +43,8 @@ Example usage can be found on the [wiki](https://github.com/techfort/LokiJS/wiki
 ## Current state
 
 LokiJS is at version 1.3 [Eostre].
-As LokiJS is written in Javascript it can be run on any environment supporting javascript such as browsers, node.js/node-webkit, nativescript mobile framework and hybrid mobile apps (such as phonegap/cordova).
+
+As LokiJS is written in JavaScript it can be run on any environment supporting JavaScript such as browsers, node.js/node-webkit, nativescript mobile framework and hybrid mobile apps (such as phonegap/cordova).
 
 Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. 
 
@@ -57,6 +59,7 @@ You can use bower to install lokijs with `bower install lokijs`
 For node and nativescript environments you can install through `npm install lokijs`.
 
 ## Roadmap
+
 * exactIndex
 * key-value datastore
 * MRU cache

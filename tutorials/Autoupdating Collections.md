@@ -23,9 +23,9 @@ Autoupdate will call `update` at the end of the current event loop cycle and thu
 
 There is one important difference between autoupdate and manual updates. If for example a document change violates a unique key constraint, `update` will synchronously throw an error which can be catched synchronously:
 ```js
-var collection = db.addCollection("test", [
+var collection = db.addCollection("test", {
   unique: ["name"]
-]);
+});
 
 collection.insert({ name: "Peter" });
 
@@ -41,10 +41,10 @@ try {
 
 Since autoupdate calls `update` asynchronously, you cannot catch errors via `try-catch`. Instead you have to use event listeners:
 ```js
-var collection = db.addCollection("test", [
+var collection = db.addCollection("test", {
   unique: ["name"],
   autoupdate: true
-]);
+});
 
 collection.insert({ name: "Peter" });
 

@@ -309,6 +309,54 @@ describe('binary indices', function () {
     });
   });
 
+  describe('adaptiveBinaryIndex batch updates work', function() {
+    it('works', function() {
+      var db = new loki('idxtest');
+      var items = db.addCollection('items', {
+        adaptiveBinaryIndices: true,
+        indices: ['b'] 
+      });
+      
+      // init 4 docs with bool 'b' all false
+      var docs = [{a:8000, b:false}, {a:6000, b:false}, {a:4000, b: false}, {a:2000, b:false}];
+
+      items.insert(docs);
+
+      // update two docs to have 'b' true
+      var results = items.find({a: {$in: [8000, 6000]}});
+      results.forEach(function(obj) {
+        obj.b = true;
+      });
+      items.update(results);
+
+      // should be 2 of each
+      expect(items.find({b: true}).length).toEqual(2);
+      expect(items.find({b: false}).length).toEqual(2);
+
+      // reset all bool 'b' props to false
+      results = items.find({b: true});
+      results.forEach(function(obj) {
+        obj.b = false;
+      });
+      items.update(results);
+
+      // should be no true and 4 false
+      expect(items.find({b: true}).length).toEqual(0);
+      expect(items.find({b: false}).length).toEqual(4);
+
+      // update different 2 to be true
+      results = items.find({a: {$in: [8000, 2000]}});
+      results.forEach(function(obj) {
+        obj.b = true;
+      });
+      items.update(results);
+
+      // should be 2 true and 2 false
+      expect(items.find({b: true}).length).toEqual(2);
+      expect(items.find({b: false}).length).toEqual(2);
+    });
+  });
+
   describe('adaptiveBinaryIndexRemove works', function() {
     it('works', function () {
 

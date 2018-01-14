@@ -5280,9 +5280,25 @@
       if (Array.isArray(doc)) {
         var k = 0,
           len = doc.length;
+
+        // if not cloning, disable adaptive binary indices for the duration of the batch update, 
+        // followed by lazy rebuild and re-enabling adaptive indices after batch update.
+        var adaptiveBatchOverride = 
+          this.adaptiveBinaryIndices && this.adaptiveBinaryIndices && !this.cloneObjects;
+
+        if (adaptiveBatchOverride) {
+          this.adaptiveBinaryIndices = false;
+        }
+
         for (k; k < len; k += 1) {
           this.update(doc[k]);
         }
+
+        if (adaptiveBatchOverride) {
+          this.ensureAllIndexes();
+          this.adaptiveBinaryIndices = true;
+        }
+
         return;
       }
 

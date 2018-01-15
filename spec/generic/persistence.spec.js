@@ -706,6 +706,30 @@ describe('async adapter tests', function() {
     });
   });
 
+  it('verify there is no race condition with dirty-checking', function(done) {
+    var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
+    var db = new loki('sandbox.db', { adapter: mem });
+
+    var items = db.addCollection('items');
+    items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
+    var gungnir = items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
+
+    expect(db.autosaveDirty()).toBe(true);
+
+    db.saveDatabase(function(err) {
+      // this happens *after* gungnir is updated
+      expect(err).toBe(undefined);
+
+      // since an update happened after calling saveDatabase (but before save was commited), db should still be dirty
+      expect(db.autosaveDirty()).toBe(true);
+      done();
+    });
+
+    // this happens immediately after saveDatabase is called
+    gungnir.foo = 'bar'
+    items.update(gungnir)
+  });
+
   it('verify loadDatabase in the middle of throttled saves will wait for queue to drain first', function(done) {
     var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 75 });
     var db = new loki('sandbox.db', { adapter: mem });

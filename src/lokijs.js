@@ -5283,8 +5283,8 @@
 
         // if not cloning, disable adaptive binary indices for the duration of the batch update, 
         // followed by lazy rebuild and re-enabling adaptive indices after batch update.
-        var adaptiveBatchOverride = 
-          this.adaptiveBinaryIndices && this.adaptiveBinaryIndices && !this.cloneObjects;
+        var adaptiveBatchOverride = !this.cloneObjects && 
+          this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
 
         if (adaptiveBatchOverride) {
           this.adaptiveBinaryIndices = false;

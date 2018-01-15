@@ -2539,8 +2539,10 @@
         }
         // otherwise just pass the serialized database to adapter
         else {
+          // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
+          // or autosave won't work if an update occurs between here and the callback
+          self.autosaveClearFlags();
           this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
-            self.autosaveClearFlags();
             cFun(err);
           });
         }

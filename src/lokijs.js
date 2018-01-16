@@ -1001,6 +1001,7 @@
      * @param {array=} [options.exact=[]] - array of property names to define exact constraints for
      * @param {array=} [options.indices=[]] - array property names to define binary indexes for
      * @param {boolean} [options.asyncListeners=false] - whether listeners are called asynchronously
+     * @param {boolean} [options.disableMeta=false] - set to true to disable meta property on documents
      * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes Api
      * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
      * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
@@ -1018,7 +1019,7 @@
           return this.collections[i];
         }
       }
-      
+
       var collection = new Collection(name, options);
       this.collections.push(collection);
 
@@ -1577,7 +1578,7 @@
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
 
-        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi, disableDeltaChangesApi: coll.disableDeltaChangesApi });
+        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi, disableDeltaChangesApi: coll.disableDeltaChangesApi, disableMeta: coll.disableMeta });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
@@ -4484,6 +4485,9 @@
       // option to make event listeners async, default is sync
       this.asyncListeners = options.hasOwnProperty('asyncListeners') ? options.asyncListeners : false;
 
+      // if set to true we will not maintain a meta property for a document
+      this.disableMeta = options.hasOwnProperty('disableMeta') ? options.disableMeta : false;
+
       // disable track changes
       this.disableChangesApi = options.hasOwnProperty('disableChangesApi') ? options.disableChangesApi : true;
 
@@ -4640,7 +4644,7 @@
       function insertMeta(obj) {
         var len, idx;
 
-        if (!obj) {
+        if (self.disableMeta || !obj) {
           return;
         }
 
@@ -4670,7 +4674,7 @@
       }
 
       function updateMeta(obj) {
-        if (!obj) {
+        if (self.disableMeta || !obj) {
           return;
         }
         obj.meta.updated = (new Date()).getTime();
@@ -5195,7 +5199,7 @@
       // if configured to clone, do so now... otherwise just use same obj reference
       var obj = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
 
-      if (typeof obj.meta === 'undefined') {
+      if (!this.disableMeta && typeof obj.meta === 'undefined') {
         obj.meta = {
           revision: 0,
           created: 0
@@ -5283,9 +5287,9 @@
         var k = 0,
           len = doc.length;
 
-        // if not cloning, disable adaptive binary indices for the duration of the batch update, 
+        // if not cloning, disable adaptive binary indices for the duration of the batch update,
         // followed by lazy rebuild and re-enabling adaptive indices after batch update.
-        var adaptiveBatchOverride = !this.cloneObjects && 
+        var adaptiveBatchOverride = !this.cloneObjects &&
           this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
 
         if (adaptiveBatchOverride) {
@@ -5400,7 +5404,10 @@
         }
 
         obj.$loki = this.maxId;
-        obj.meta.version = 0;
+
+        if (!this.disableMeta) {
+          obj.meta.version = 0;
+        }
 
         var key, constrUnique = this.constraints.unique;
         for (key in constrUnique) {

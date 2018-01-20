@@ -1003,16 +1003,30 @@
      * @param {boolean} [options.asyncListeners=false] - whether listeners are called asynchronously
      * @param {boolean} [options.disableMeta=false] - set to true to disable meta property on documents
      * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes Api
+     * @param {boolean} [options.disableDeltaChangesApi=true] - set to false to enable Delta Changes API (requires Changes API, forces cloning)
      * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
      * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
      * @param {string} [options.cloneMethod='parse-stringify'] - 'parse-stringify', 'jquery-extend-deep', 'shallow, 'shallow-assign'
-     * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
+     * @param {int=} options.ttl - age of document (in ms.) before document is considered aged/stale.
+     * @param {int=} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @returns {Collection} a reference to the collection which was just added
      * @memberof Loki
      */
     Loki.prototype.addCollection = function (name, options) {
       var i,
         len = this.collections.length;
+
+      if (options && options.disableMeta === true) {
+        if (options.disableChangesApi === false) {
+          throw new Error("disableMeta option cannot be passed as true when disableChangesApi is passed as false");
+        }
+        if (options.disableDeltaChangesApi === false) {
+          throw new Error("disableMeta option cannot be passed as true when disableDeltaChangesApi is passed as false");
+        }
+        if (typeof options.ttl === "number" && options.ttl > 0) {
+          throw new Error("disableMeta option cannot be passed as true when ttl is enabled");
+        }
+      }
 
       for (i = 0; i < len; i += 1) {
         if (this.collections[i].name === name) {
@@ -1544,12 +1558,6 @@
         collObj;
 
       this.name = dbObject.name;
-
-      // restore database version
-      //this.databaseVersion = 1.0;
-      //if (dbObject.hasOwnProperty('databaseVersion')) {
-      //  this.databaseVersion = dbObject.databaseVersion;
-      //}
 
       // restore save throttled boolean only if not defined in options
       if (dbObject.hasOwnProperty('throttledSaves') && options && !options.hasOwnProperty('throttledSaves')) {
@@ -4405,13 +4413,15 @@
      * @param {array=} [options.indices=[]] - array property names to define binary indexes for
      * @param {boolean} [options.adaptiveBinaryIndices=true] - collection indices will be actively rebuilt rather than lazily
      * @param {boolean} [options.asyncListeners=false] - whether listeners are invoked asynchronously
+     * @param {boolean} [options.disableMeta=false] - set to true to disable meta property on documents
      * @param {boolean} [options.disableChangesApi=true] - set to false to enable Changes API
      * @param {boolean} [options.disableDeltaChangesApi=true] - set to false to enable Delta Changes API (requires Changes API, forces cloning)
      * @param {boolean} [options.autoupdate=false] - use Object.observe to update objects automatically
      * @param {boolean} [options.clone=false] - specify whether inserts and queries clone to/from user
      * @param {boolean} [options.serializableIndices=true[]] - converts date values on binary indexed properties to epoch time
      * @param {string} [options.cloneMethod='parse-stringify'] - 'parse-stringify', 'jquery-extend-deep', 'shallow', 'shallow-assign'
-     * @param {int} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
+     * @param {int=} options.ttl - age of document (in ms.) before document is considered aged/stale.
+     * @param {int=} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
      * @see {@link Loki#addCollection} for normal creation of collections
      */
     function Collection(name, options) {

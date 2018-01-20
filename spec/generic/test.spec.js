@@ -267,6 +267,24 @@ describe('loki', function () {
       // verify batch inserts emit with objs which have meta set properly
       coll.insert([ { a:2, b:3}, { a:3, b:4}]);
     });
+
+    it('meta not set on returned objects', function() {
+      var tdb = new loki('test.db');
+      var coll = tdb.addCollection('tc', { disableMeta: true });
+
+      // verify single insert return objs do not have meta set
+      var obj = coll.insert({ a: 1, b: 2 });
+      expect(obj.hasOwnProperty('meta')).toEqual(false);
+      expect(obj.hasOwnProperty('$loki')).toEqual(true);
+
+      // verify batch insert return objs do not have meta set
+      var objs = coll.insert([{ a: 2, b: 3 }, { a: 3, b: 4 }]);
+      expect(Array.isArray(objs));
+      objs.forEach(function (o) {
+        expect(o.hasOwnProperty('meta')).toEqual(false);
+        expect(o.hasOwnProperty('$loki')).toEqual(true);
+      });
+    });
   });
 
   describe('dot notation', function () {
@@ -415,13 +433,13 @@ describe('loki', function () {
           "ids": [12, 379]
         }
       });
-      
+
       dna.insert({
         "relations" : {
           "ids": [111]
         }
       });
-      
+
       var results = dna.find({
         'relations.ids' : { $contains: 379 }
       });
@@ -1018,7 +1036,7 @@ describe('loki', function () {
       items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
       items.insert({ name : 'tyrfing', owner: 'svafrlami', maker: 'dwarves' });
       items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
-      
+
       // simplesort without filters on prop with index should work
       var results = items.chain().simplesort('name').data();
       expect(results.length).toEqual(4);
@@ -1026,7 +1044,7 @@ describe('loki', function () {
       expect(results[1].name).toEqual('gungnir');
       expect(results[2].name).toEqual('mjolnir');
       expect(results[3].name).toEqual('tyrfing');
-      
+
       // simplesort without filters on prop without index should work
       results = items.chain().simplesort('owner').data();
       expect(results.length).toEqual(4);
@@ -1078,7 +1096,7 @@ describe('loki', function () {
       expect(result[0].maker).toEqual('elves');
       expect(result[0].hasOwnProperty('$loki')).toEqual(false);
       expect(result[0].hasOwnProperty('meta')).toEqual(false);
-      expect(result[1].maker).toEqual('elves');      
+      expect(result[1].maker).toEqual('elves');
       expect(result[1].hasOwnProperty('$loki')).toEqual(false);
       expect(result[1].hasOwnProperty('meta')).toEqual(false);
 
@@ -1110,7 +1128,7 @@ describe('loki', function () {
       expect(result[0].maker).toEqual('elves');
       expect(result[0].hasOwnProperty('$loki')).toEqual(true);
       expect(result[0].hasOwnProperty('meta')).toEqual(true);
-      expect(result[1].maker).toEqual('elves');      
+      expect(result[1].maker).toEqual('elves');
       expect(result[1].hasOwnProperty('$loki')).toEqual(true);
       expect(result[1].hasOwnProperty('meta')).toEqual(true);
     });

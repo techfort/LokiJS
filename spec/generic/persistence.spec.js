@@ -33,6 +33,22 @@ describe('testing unique index serialization', function () {
   });
 });
 
+describe('testing disable meta serialization', function () {
+  var db;
+  beforeEach(function () {
+    db = new loki();
+    users = db.addCollection('users', { disableMeta: true });
+  });
+
+  it('should have meta disabled', function () {
+    var ser = db.serialize();
+    var reloaded = new loki();
+    var loaded = reloaded.loadJSON(ser);
+    var coll = reloaded.getCollection('users');
+    expect(coll.disableMeta).toEqual(true);
+  });
+});
+
 describe('testing destructured serialization/deserialization', function () {
   it('verify default (D) destructuring works as expected', function()  {
     var ddb = new loki("test.db", { serializationMethod: "destructured" });
@@ -152,23 +168,23 @@ describe('testing destructured serialization/deserialization', function () {
 
     // Verify db alone works correctly using NDAA format
     result = ddb.serializeDestructured({
-      partitioned: true, 
+      partitioned: true,
       delimited : false,
       partition: -1 // indicates to get serialized db container only
     });
-    
+
     var cddb = new loki('test');
     cddb.loadJSON(result);
 
     expect(cddb.collections.length).toEqual(2);
-    expect(cddb.collections[0].data.length).toEqual(0);    
-    expect(cddb.collections[1].data.length).toEqual(0);    
+    expect(cddb.collections[0].data.length).toEqual(0);
+    expect(cddb.collections[1].data.length).toEqual(0);
     expect(cddb.collections[0].name).toEqual(ddb.collections[0].name);
     expect(cddb.collections[1].name).toEqual(ddb.collections[1].name);
 
     // Verify collection alone works correctly using NDAA format
     result = ddb.serializeDestructured({
-      partitioned: true, 
+      partitioned: true,
       delimited : false,
       partition: 0 // collection [0] only
     });
@@ -187,7 +203,7 @@ describe('testing destructured serialization/deserialization', function () {
 
     // Verify collection alone works correctly using DA format (the other partitioned format)
     result = ddb.serializeDestructured({
-      partitioned: true, 
+      partitioned: true,
       delimited : true,
       partition: 0 // collection [0] only
     });
@@ -233,7 +249,7 @@ describe('testing adapter functionality', function () {
         expect(cdb.getCollection("testcoll").findOne({name:"test2"}).val).toEqual(101);
         expect(cdb.collections[0].data.length).toEqual(3);
         expect(cdb.collections[1].data.length).toEqual(1);
-        
+
         done();
       });
 
@@ -248,11 +264,11 @@ describe('testing adapter functionality', function () {
     coll.insert({ name : "test1", val: 100 });
     coll.insert({ name : "test2", val: 101 });
     coll.insert({ name : "test3", val: 102 });
-    
+
     ddb.saveDatabase(function(err) {
       expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(true);
       expect(memAdapter.hashStore["test.db"].savecount).toEqual(1);
-      
+
       ddb.deleteDatabase(function(err) {
         expect(memAdapter.hashStore.hasOwnProperty("test.db")).toEqual(false);
         done();
@@ -314,7 +330,7 @@ describe('testing adapter functionality', function () {
           expect(db2.collections[1].data.length).toEqual(1);
           expect(db2.getCollection("items").findOne({ name : 'gungnir'}).owner).toEqual("odin");
           expect(db2.getCollection("another").findOne({ a: 1}).b).toEqual(3);
-          
+
           done();
         });
       });
@@ -415,7 +431,7 @@ describe('testing adapter functionality', function () {
           expect(db2.collections[0].data.length).toEqual(4);
           expect(db2.collections[1].data.length).toEqual(1);
           expect(db2.collections[2].data.length).toEqual(0);
-          
+
           done();
         });
       });
@@ -424,24 +440,24 @@ describe('testing adapter functionality', function () {
 
   it('verify reference adapters get db reference which is copy and serializable-safe', function(done) {
     // Current loki functionality with regards to reference mode adapters:
-    // Since we don't use serializeReplacer on reference mode adapters, we make 
+    // Since we don't use serializeReplacer on reference mode adapters, we make
     // lightweight clone, cloning only db container and collection containers (object refs are same).
-    
+
     function MyFakeReferenceAdapter() { this.mode = "reference" }
-    
+
     MyFakeReferenceAdapter.prototype.loadDatabase = function(dbname, callback) {
       expect(typeof(dbname)).toEqual("string");
       expect(typeof(callback)).toEqual("function");
-      
+
       var result = new loki("new db");
       var n1 = result.addCollection("n1");
       var n2 = result.addCollection("n2");
       n1.insert({m: 9, n: 8});
       n2.insert({m:7, n:6});
-      
+
       callback(result);
     };
-    
+
     MyFakeReferenceAdapter.prototype.exportDatabase = function(dbname, dbref, callback) {
       expect(typeof(dbname)).toEqual("string");
       expect(dbref.constructor.name).toEqual("Loki");
@@ -456,31 +472,31 @@ describe('testing adapter functionality', function () {
       // (accidentally?) updating a document should...
       dbref.collections[0].findOne({a:1}).b=3;
     };
-    
+
     var adapter = new MyFakeReferenceAdapter();
     var db = new loki("rma test", {adapter: adapter});
     var c1 = db.addCollection("c1");
     var c2 = db.addCollection("c2");
     c1.insert({a:1, b:2});
     c2.insert({a:3, b:4});
-    
+
     db.saveDatabase(function() {
       expect(db.persistenceAdapter).toNotEqual(null);
       expect(db.filename).toEqual("rma test");
       expect(db.collections[0].name).toEqual("c1");
       expect(db.getCollection("c1").findOne({a:1}).b).toEqual(3);
     });
-    
+
     var db2 = new loki("other name", { adapter: adapter});
     db2.loadDatabase({}, function() {
       expect(db2.collections.length).toEqual(2);
       expect(db2.collections[0].name).toEqual("n1");
       expect(db2.collections[1].name).toEqual("n2");
       expect(db2.getCollection("n1").findOne({m:9}).n).toEqual(8);
-      
+
       done();
     });
-  });  
+  });
 });
 
 describe('async adapter tests', function() {
@@ -568,7 +584,7 @@ describe('async adapter tests', function() {
     expect(db.throttledSavePending).toEqual(true);
 
     // we want this to fail so above they should be bootstrapping several
-    // saves which take about 400ms to complete.  
+    // saves which take about 400ms to complete.
     // The full drain can take one save/callback cycle longer than duration (~100ms).
     db.throttledSaveDrain(function (success) {
       expect(success).toEqual(false);
@@ -766,7 +782,7 @@ describe('async adapter tests', function() {
     expect(db.throttledSavePending).toEqual(true);
 
     // at this point, several rounds of saves should be triggered...
-    // a load at this scope (possibly simulating script run from different code path) 
+    // a load at this scope (possibly simulating script run from different code path)
     // should wait until any pending saves are complete, then freeze saves (queue them ) while loading,
     // then re-enable saves
     db.loadDatabase({}, function (success) {
@@ -813,7 +829,7 @@ describe('testing changesAPI', function() {
       expect(result[4].name).toEqual("items");
       expect(result[4].operation).toEqual("U");
       expect(result[4].obj.name).toEqual("tyrfing");
-      
+
       done();
     });
   });

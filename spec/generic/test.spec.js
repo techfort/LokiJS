@@ -983,42 +983,32 @@ describe('loki', function () {
       }); //2
 
       // coll.findOne return type
-      it('return type', function () {
-        expect(typeof eic.findOne({
+      expect(typeof eic.findOne({
+        'testid': 1
+      })).toEqual('object');
+
+      // coll.findOne return matches 7.2
+      expect(eic.findOne({
+        'testid': 5
+      }).testFloat).toEqual(7.2);
+
+      // findOne with $and op
+      expect(eic.findOne({
+        '$and': [{
           'testid': 1
-        })).toEqual('object');
-      });
+        }, {
+          'testString': 'bbb'
+        }]
+      }).testFloat, 6.2);
 
-      // coll.findOne return match
-      it('should match 7.2', function () {
-        expect(eic.findOne({
-          'testid': 5
-        }).testFloat).toEqual(7.2);
-
-      });
-
-      // findOne with $and op
-      it('findOne with $and op', function () {
-        expect(eic.findOne({
-          '$and': [{
-            'testid': 1
-          }, {
-            'testString': 'bbb'
-          }]
-        }).testFloat, 6.2);
-      });
-
-      it('findOne with $or op', function () {
-        expect(eic.findOne({
-          '$or': [{
-            'testid': 2
-          }, {
-            'testString': 'zzz'
-          }]
-        }).testFloat).toEqual(7.2);
-
-      });
-      // findOne with $and op
+      // findOne with $or op
+      expect(eic.findOne({
+        '$or': [{
+          'testid': 2
+        }, {
+          'testString': 'zzz'
+        }]
+      }).testFloat).toEqual(7.2);
 
       db.removeCollection('eic');
     })
@@ -1196,18 +1186,18 @@ describe('loki', function () {
       // churn evaluateDocuments() to make sure it works right
       jonas.age = 23;
       users.update(jonas);
-      it('evaluate documents', function () {
-        expect(view.data().length).toEqual(users.data.length - 1);
-        jonas.age = 30;
-        users.update(jonas);
-        expect(view.data().length).toEqual(users.data.length);
-        jonas.age = 23;
-        users.update(jonas);
-        expect(view.data().length).toEqual(users.data.length - 1);
-        jonas.age = 30;
-        users.update(jonas);
-        expect(view.data().length).toEqual(users.data.length);
-      });
+
+      // evaluate documents
+      expect(view.data().length).toEqual(users.data.length - 1);
+      jonas.age = 30;
+      users.update(jonas);
+      expect(view.data().length).toEqual(users.data.length);
+      jonas.age = 23;
+      users.update(jonas);
+      expect(view.data().length).toEqual(users.data.length - 1);
+      jonas.age = 30;
+      users.update(jonas);
+      expect(view.data().length).toEqual(users.data.length);
 
       // assert set equality of docArrays irrelevant of sort/sequence
       var result1 = users.find(query).sort(docCompare);
@@ -1219,22 +1209,17 @@ describe('loki', function () {
         delete obj.meta
       });
 
-      it('Result data Equality', function () {
-        expect(result1).toEqual(result2);
-      });
+      // Result data Equality
+      expect(result1).toEqual(result2);
 
-      it('Strict Equality', function () {
-        expect(users.find(query) === view.data()).toBeTruthy();
-      });
+      // Strict Equality
+      expect(JSON.stringify(users.find(query)) === JSON.stringify(view.data())).toBeTruthy();
 
-      it('View data equality', function () {
-        expect(view.resultset).toEqual(view.resultset.copy());
-      });
+      // View data equality
+      expect(JSON.stringify(view.resultset)).toEqual(JSON.stringify(view.resultset.copy()));
 
-      it('View data copy strict equality', function () {
-        expect(view.resultset === view.resultset.copy()).toBeFalsy();
-      });
-
+      // View data copy strict equality
+      expect(view.resultset === view.resultset.copy()).toBeFalsy();
 
       return view;
     });
@@ -1258,13 +1243,11 @@ describe('loki', function () {
       // the dynamic view depends on an internal resultset
       // the persistent dynamic view also depends on an internal resultdata data array
       // filteredrows should be applied immediately to resultset will be lazily built into resultdata later when data() is called
-      it('dynamic view initialization 1', function () {
-        expect(pview.resultset.filteredrows.length).toEqual(3);
-      })
-      it('dynamic view initialization 2', function () {
-        expect(pview.resultdata.length).toEqual(0);
-      });
 
+      // dynamic view initialization 1
+      expect(pview.resultset.filteredrows.length).toEqual(3);
+      // dynamic view initialization 2
+      expect(pview.resultdata.length).toEqual(0);
 
       // compare how many documents are in results before adding new ones
       var pviewResultsetLenBefore = pview.resultset.filteredrows.length;
@@ -1285,11 +1268,7 @@ describe('loki', function () {
       var pviewResultsetLenAfter = pview.resultset.filteredrows.length;
 
       // only one document should have been added to resultset (1 was filtered out)
-      it('dv resultset is valid',
-        function () {
-          expect(pviewResultsetLenBefore + 1).toEqual(pviewResultsetLenAfter);
-        });
-
+      expect(pviewResultsetLenBefore + 1).toEqual(pviewResultsetLenAfter);
 
       // Test sorting and lazy build of resultdata
 
@@ -1301,14 +1280,11 @@ describe('loki', function () {
 
       // verify filteredrows logically matches resultdata (irrelevant of sort)
       for (var idxFR = 0; idxFR < frcopy2.length; idxFR++) {
-        it('dynamic view resultset/resultdata consistency', function () {
-          expect(pview.resultdata[idxFR]).toEqual(pview.collection.data[frcopy2[idxFR]]);
-        });
+        expect(pview.resultdata[idxFR]).toEqual(pview.collection.data[frcopy2[idxFR]]);
       }
+
       // now verify they are not exactly equal (verify sort moved stuff)
-      it('dynamic view sort', function () {
-        expect(frcopy).toEqual(frcopy2)
-      });
+      expect(JSON.stringify(frcopy) === JSON.stringify(frcopy2)).toBeFalsy();
     });
   });
 
@@ -1324,13 +1300,11 @@ describe('loki', function () {
       var results = test.find({
         index: 'key'
       });
-      it('one result exists', function () {
-        expect(results.length).toEqual(1);
-      });
-      it('the correct result is returned', function () {
-        expect(results[0].a).toEqual(1);
-      });
 
+      // one result exists
+      expect(results.length).toEqual(1);
+      // the correct result is returned
+      expect(results[0].a).toEqual(1);
 
       item.a = 2;
       test.update(item);
@@ -1339,12 +1313,10 @@ describe('loki', function () {
         index: 'key'
       });
 
-      it('one result exists', function () {
-        expect(results.length).toEqual(1);
-      });
-      it('the correct result is returned', function () {
-        expect(results[0].a).toEqual(2);
-      });
+      // one result exists
+      expect(results.length).toEqual(1);
+      // the correct result is returned
+      expect(results[0].a).toEqual(2);
     });
   });
 
@@ -1360,9 +1332,8 @@ describe('loki', function () {
       var resultsWithIndex = itc.find({
         'testindex': 4
       });
-      it('no results found', function () {
-        expect(resultsWithIndex.length).toEqual(0);
-      });
+      // no results found
+      expect(resultsWithIndex.length).toEqual(0);
     });
   });
 
@@ -1372,9 +1343,10 @@ describe('loki', function () {
       var mem = new loki.LokiMemoryAdapter();
       var db = new loki('testCollections', {adapter:mem});
       db.name = 'testCollections';
-      it('DB name', function () {
-        expect(db.getName()).toEqual('testCollections');
-      });
+
+      // DB name
+      expect(db.getName()).toEqual('testCollections');
+
       var t = db.addCollection('test1', {
         transactional: true
       });
@@ -1387,9 +1359,10 @@ describe('loki', function () {
           name: 'joe'
         });
       }, Error);
-      it('List collections', function () {
-        expect(db.listCollections().length).toEqual(2);
-      });
+
+      // List collections
+      expect(db.listCollections().length).toEqual(2);
+
       t.clear();
       var users = [{
         name: 'joe'
@@ -1398,13 +1371,12 @@ describe('loki', function () {
       }];
       t.insert(users);
 
-      it('2 docs after array insert', function () {
-        expect(2).toEqual(t.data.length)
-      });
+      // 2 docs after array insert
+      expect(2).toEqual(t.data.length)
+
       t.remove(users);
-      it('0 docs after array remove', function () {
-        expect(0).toEqual(t.data.length)
-      });
+      // 0 docs after array remove
+      expect(0).toEqual(t.data.length)
 
       function TestError() {}
       TestError.prototype = new Error;

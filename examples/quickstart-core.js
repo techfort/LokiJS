@@ -79,14 +79,13 @@ result = users.find({ items: { $contains: "eski" } });
 console.log("frigg : ");
 console.log(result);
 
-// more array logic : find all users which has 1 element in an 'items' property
+// more array logic : find all users which have 2 elements in an 'items' property
 result = users.find({ items: { $size: 2 } });
 console.log("users with 2 items : ");
 console.log(result);
 
 // filter using a javascript "where" filter
-// filter for users which not only have an 'items' property, but
-// its length is exactly 1
+// filter for users who's age is 400
 result = users.where(function(obj) {
   return obj.age === 400;
 });

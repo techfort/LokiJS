@@ -96,7 +96,7 @@ var loki = new loki("test.db");
 
 ### Example constructing loki for autoload/autosave (with default localStorage adapter) : 
 ```javascript
-var loki = new loki("quickstart.db", {
+var db = new loki("quickstart.db", {
   autoload: true,
   autoloadCallback : databaseInitialize,
   autosave: true, 
@@ -480,4 +480,3 @@ In addition to core loadDatabase and saveDatabase methods, the loki Indexed adap
   adapter.deleteDatabase('UserDatabase');
   adapter.getCatalogSummary(); // gets list of all keys along with their sizes
 ```
-

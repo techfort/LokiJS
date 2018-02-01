@@ -1,10 +1,11 @@
 // quickstart2.js example : 
-// This exmple uses the default persistence adapter for node environment (LokiFsAdapter), to persist its database
-// Since loki is synchronous -except- when dealing with persistence (I/O), 
-//   and this database uses no persistence, this example can deal with loki entirely synchronously.
+// This exmple uses the default persistence adapter for node environment (LokiFsAdapter), to persist its database.
+// To better handle asynchronous adapters and to write code that can handle any adapter, 
+// you can use the following as example for setting up your initialization logic.
 
 const loki = require('../src/lokijs.js');
 
+// We will use autoload (one time load at instantiation), and autosave  with 4 sec interval.
 var db = new loki('quickstart2.db', {
 	autoload: true,
 	autoloadCallback : databaseInitialize,
@@ -26,7 +27,7 @@ function databaseInitialize() {
 }
 
 // While we could have done this in our databaseInitialize function, 
-//   lets go ahead and split out the logic to run 'after' initialization into this 'runProgramLogic' function
+//   lets split out the logic to run 'after' initialization into this 'runProgramLogic' function
 function runProgramLogic() {
   var entries = db.getCollection("entries");
   var entryCount = entries.count();

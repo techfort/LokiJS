@@ -1088,6 +1088,11 @@
       return c;
     };
 
+    /**
+     * Returns a list of collections in the database.
+     * @returns {object[]} array of objects containing 'name', 'type', and 'count' properties.
+     * @memberof Loki
+     */
     Loki.prototype.listCollections = function () {
 
       var i = this.collections.length,

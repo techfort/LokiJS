@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.2
+* fixed error when transform steps have non-serializable parameters (#624)
+* addCollection will return existing collection when collection named already exists (#635)
+* batch updates when not cloning no longer risk invalidating adaptive binary indices (#639)
+* fixed autosave race condition when using async adapter (#643)
+* collection option added to disableMeta if not using changes api or ttl (#644)
+
 ## 1.5.1
 * added disableDeltaChangesApi (default:true) collection option to store only differences. (#582)
 * loki indexed adapter deleteDatabase method will now wait until complete before callback (#584)

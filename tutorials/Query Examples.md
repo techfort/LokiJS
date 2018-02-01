@@ -1,3 +1,12 @@
+### Note: we now have several quickstart examples in the 'examples' subfolder of this repository.
+
+> https://github.com/techfort/LokiJS/blob/master/examples/quickstart-core.js and
+> https://github.com/techfort/LokiJS/blob/master/examples/quickstart-chaining.js
+> https://github.com/techfort/LokiJS/blob/master/examples/quickstart-transforms.js
+> https://github.com/techfort/LokiJS/blob/master/examples/quickstart-dynview.js
+
+> For persistence examples we have numbered node quickstarts in the [examples folder](https://github.com/techfort/LokiJS/tree/master/examples) and web quickstart gists available within [Loki Sandbox](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm).
+
 ### Designing Queries
 
 LokiJS has evolved several mechanisms for querying the database.  At the highest level of abstraction, let us divide the methods into these categories : 
@@ -83,7 +92,7 @@ var results = coll.find({'age': {'$lte': 40}});
 **$between** - filter for documents(s) with property between provided vals
 ```javascript
 // match users with count value between 50 and 75
-var results = users.find({ count : { '$between': [50, 75] });
+var results = users.find({ count : { '$between': [50, 75] }});
 ```
 **$regex** - filter for document(s) with property matching provided regular expression
 >_If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well._
@@ -101,7 +110,7 @@ results = coll.find({'Name': { '$regex': ['din', 'i'] }});
 
 ```
 
-**$in** - filter for document(s) with property matching any of the provided array values.
+**$in** - filter for document(s) with property matching any of the provided array values. Your property should not be an array but your compare values should be.
 ```javascript
 users.insert({ name : 'odin' });
 users.insert({ name : 'thor' });
@@ -150,8 +159,9 @@ items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
 // returns mjolnir and tyrfing where the 'dwarves' val is not a property on our passed object
 var results = items.find({maker: { $undefinedin: { elves: 'rule' } } });
 ```
-**$contains** - filter for document(s) with property containing the provided value. ( [commit](https://github.com/techfort/LokiJS/pull/120/commits/1f08433203554ccf00b381cbea4e72e25e62d5da), [#205](https://github.com/techfort/LokiJS/issues/205) )
->When typepof property is : 
+**$contains** - filter for document(s) with property containing the provided value. ( [commit](https://github.com/techfort/LokiJS/pull/120/commits/1f08433203554ccf00b381cbea4e72e25e62d5da), [#205](https://github.com/techfort/LokiJS/issues/205) ).  Use this when your property contains an array but your 
+compare value is not an array.
+>When typeof property is : 
 >- string: it will do a substring match for your string (indexOf)
 >- array:  it will check for 'value' existence in that array (indexOf) 
 >- object: it will check to see if your 'value' is a defined property of that object
@@ -165,7 +175,12 @@ users.insert({ name : 'arngrim', weapons : ['tyrfing']});
 // returns 'svafrlami' and 'arngrim' documents
 var results = users.find({ 'weapons' : { '$contains' : 'tyrfing' } });
 ```
-**$containsAny** - filter for document(s) with property containing any of the provided values
+**$containsAny** - filter for document(s) with property containing any of the provided values. 
+Use this when your property contains an array -and- your compare value is an array.
+>When typeof property is : 
+>- string: it will do a substring match for your string (indexOf)
+>- array:  it will check for 'value' existence in that array (indexOf) 
+>- object: it will check to see if your 'value' is a defined property of that object
 ```javascript
 users.insert({ name : 'odin', weapons : ['gungnir', 'draupnir']});
 users.insert({ name : 'thor', weapons : ['mjolnir']});

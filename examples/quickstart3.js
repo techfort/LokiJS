@@ -25,7 +25,7 @@ process.on('SIGINT', function() {
   db.close();
 });
 
-// Now let's implement the autoloadback referenced in loki constructor
+// Now let's implement the autoload callback referenced in loki constructor
 function databaseInitialize() {
   var entries = db.getCollection("entries");
   var messages = db.getCollection("messages");

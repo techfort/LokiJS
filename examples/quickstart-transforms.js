@@ -66,7 +66,7 @@ function databaseInitialize() {
     seedData();
   }
   
-  // at this point all collections and dynamic view should exist 
+  // at this point all collections, transforms and dynamic view should exist 
   // so go ahead and run your program logic
   runProgramLogic();
 }
@@ -126,6 +126,13 @@ function runProgramLogic() {
   console.log(result);
   console.log("");
 
+  // if the 'females' transform filtered the results better, we might re-word this query as :
+  result = users.chain("females").find({age: { $between: [300,700] } }).data();
+  console.log("females between 300-700 (empty initially) : ");
+  console.log(result);
+  console.log("");
+  
+  
   // now let's use the transform as an extract for our dynamic view
   result = ov500.branchResultset("females").data();
   console.log("over 500 females : ");

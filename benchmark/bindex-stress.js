@@ -47,7 +47,7 @@ console.log("");
 // perform random permutations
 console.log("performing " + ITERATION_COUNT + " random permutations (inserts/updates/removes)...");
 
-var results, rnd, len;
+var result, rnd, len;
 
 for(idx=0;idx<ITERATION_COUNT;idx++) {
   // randomly determine if this permutation will be insert/update/remove
@@ -82,43 +82,15 @@ console.log("b index length : " + coll.binaryIndices['b'].values.length);
 console.log("c index length : " + coll.binaryIndices['c'].values.length);
 console.log("");
 
-// verify index ordering
-var aIsValid=true, bIsValid=true, cIsValid=true;
-
+// perform full index verification
 console.log("verifying 'a' index ordering...");
-results = coll.chain().simplesort("a").data();
-len = results.length;
-for(idx=0; idx<len-1; idx++) {
-  if (!loki.LokiOps.$lte(results[idx]['a'], results[idx+1]['a'])) {
-    aIsValid=false;
-    console.err("@idx:"+idx+ ": " + results[idx]['a'] + " is not $lte " + results[idx+1]['a']);
-  }
-}
+result = coll.checkIndex('a');
+console.log("'a' index validation " + result?"SUCCESSFUL":"-FAILED-");
 
 console.log("verifying 'b' index ordering...");
-results = coll.chain().simplesort("b").data();
-len = results.length;
-for(idx=0; idx<len-1; idx++) {
-  if (!loki.LokiOps.$lte(results[idx]['b'], results[idx+1]['b'])) {
-    bIsValid=false;
-    console.err("@idx:"+idx+ ": " + results[idx]['b'] + " is not $lte " + results[idx+1]['b']);
-  }
-}
+result = coll.checkIndex('b');
+console.log("'c' index validation " + result?"SUCCESSFUL":"-FAILED-");
 
 console.log("verifying 'c' index ordering...");
-results = coll.chain().simplesort("c").data();
-len = results.length;
-for(idx=0; idx<len-1; idx++) {
-  if (!loki.LokiOps.$lte(results[idx]['c'], results[idx+1]['c'])) {
-    cIsValid=false;
-    console.err("@idx:"+idx+ ": " + results[idx]['c'] + " is not $lte " + results[idx+1]['c']);
-  }
-}
-
-console.log("");
-if (!aIsValid || !bIsValid || !cIsValid) {
-  console.log("binary index order validation -FAILED-");
-}
-else {
-  console.log("binary index order validation SUCCESSFUL");
-}
+result = coll.checkIndex('c');
+console.log("'c' index validation " + result?"SUCCESSFUL":"-FAILED-");

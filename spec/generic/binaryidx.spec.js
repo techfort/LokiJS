@@ -552,6 +552,14 @@ describe('binary indices', function () {
       // verify out index is now invalid
       expect(coll.checkIndex('a')).toBe(false);
 
+      // also verify our test of all indices reports false
+      var result = coll.checkAllIndexes();
+      expect(result.length).toBe(1);
+      expect(result[0]).toBe('a');
+
+      // let's just make sure that random sampling doesn't throw error
+      coll.checkIndex('a', { randomSampling: true, randomSamplingFactor: .5 });
+
       // now have checkindex repair the index
       // also expect it to report that it was invalid before fixing
       expect(coll.checkIndex('a', { repair: true })).toBe(false);
@@ -571,6 +579,9 @@ describe('binary indices', function () {
 
       // now expect it to report that the index is valid
       expect(coll.checkIndex('a')).toBe(true);
+
+      // verify the check all indexes function returns empty array
+      expect(coll.checkAllIndexes().length).toBe(0);
     });
   });
 });

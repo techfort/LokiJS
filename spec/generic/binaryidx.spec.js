@@ -537,4 +537,40 @@ describe('binary indices', function () {
     });
   });
 
+  describe('checkIndex works', function() {
+    it('works', function () {
+      var db = new loki('bitest.db');
+      var coll = db.addCollection('bitest', { indices: ['a'] });
+      coll.insert([{ a: 9 }, { a: 3 }, { a: 7}, { a: 0 }, { a: 1 }]);
+
+      // verify our initial order is valid
+      expect(coll.checkIndex('a')).toBe(true);
+
+      // now force index corruption by tampering with it
+      coll.binaryIndices['a'].values.reverse();
+
+      // verify out index is now invalid
+      expect(coll.checkIndex('a')).toBe(false);
+
+      // now have checkindex repair the index
+      // also expect it to report that it was invalid before fixing
+      expect(coll.checkIndex('a', { repair: true })).toBe(false);
+
+      // now expect it to report that the index is valid
+      expect(coll.checkIndex('a')).toBe(true);
+
+      // now leave index ordering valid but remove the last value (from index)
+      coll.binaryIndices['a'].values.pop();
+
+      // expect checkIndex to report index to be invalid
+      expect(coll.checkIndex('a')).toBe(false);
+
+      // now have checkindex repair the index
+      // also expect it to report that it was invalid before fixing
+      expect(coll.checkIndex('a', { repair: true })).toBe(false);
+
+      // now expect it to report that the index is valid
+      expect(coll.checkIndex('a')).toBe(true);
+    });
+  });
 });

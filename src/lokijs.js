@@ -2943,13 +2943,55 @@
      *    Sorting based on the same lt/gt helper functions used for binary indices.
      *
      * @param {string} propname - name of property to sort by.
-     * @param {bool=} isdesc - (Optional) If true, the property will be sorted in descending order
+     * @param {object|bool=} options - boolean to specify if isdescending, or options object
+     * @param {boolean} [options.desc=false] - whether to sort descending
+     * @param {boolean} [options.disableIndexIntersect=false] - whether we should explicity not use array intersection.
+     * @param {boolean} [options.forceIndexIntersect=false] - force array intersection (if binary index exists).
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      * @memberof Resultset
      */
-    Resultset.prototype.simplesort = function (propname, isdesc) {
-      if (typeof (isdesc) === 'undefined') {
-        isdesc = false;
+    Resultset.prototype.simplesort = function (propname, options) {
+      var dc, frl, eff;
+
+      if (typeof (options) === 'undefined') {
+        options = { desc: false };
+      }
+      if (options === true) {
+        options = { desc: true };
+      }
+      if (options === false) {
+        options = { desc: false };
+      }
+
+      // If already filtered, but we want to leverage binary index on sort.
+      // This will use custom array intection algorithm.
+      if (!options.disableIndexIntersect && this.collection.binaryIndices.hasOwnProperty(propname) && this.filterInitialized) {
+
+        dc = this.collection.data.length;
+        frl = this.filteredrows.length;
+        eff = dc/frl;
+
+        // anything more than ratio of 10:1 (total documents/current results) should use old sort code path
+        // So we will only use array intersection if you have more than 10% of total docs in your current resultset.
+        if (eff <= 10 || options.forceIndexIntersect) {
+          var idx, len=this.filteredrows.length, fr=this.filteredrows;
+          var io = {};
+          // set up hashobject for simple 'inclusion test' with existing (filtered) results
+          for(idx=0; idx<len; idx++) {
+            io[fr[idx]] = true;
+          }
+          // grab full sorted binary index array
+          var pv = this.collection.binaryIndices[propname].values;
+
+          // filter by existing results
+          this.filteredrows = pv.filter(function(n) { return io[n]; });
+
+          if (options.desc) {
+            this.filteredrows.reverse();
+          }
+
+          return this;
+        }
       }
 
       // if this has no filters applied, just we need to populate filteredrows first
@@ -2961,7 +3003,7 @@
           // copy index values into filteredrows
           this.filteredrows = this.collection.binaryIndices[propname].values.slice(0);
 
-          if (isdesc) {
+          if (options.desc) {
             this.filteredrows.reverse();
           }
 
@@ -2988,7 +3030,7 @@
             }
             return sortHelper(val1, val2, desc);
           };
-        })(propname, isdesc, this.collection.data);
+        })(propname, options.desc, this.collection.data);
 
       this.filteredrows.sort(wrappedComparer);
 
@@ -4979,12 +5021,61 @@
       this.dirty = true; // for autosave scenarios
     };
 
-    Collection.prototype.getSequencedIndexValues = function (property) {
+    /**
+     * Perform checks to determine validity/consistency of a binary index
+     * @param {string} property - name of the binary-indexed property to check
+     * @param {object=} options - optional configuration object
+     * @param {boolean} [options.repair=false] - whether to fix problems if they are encountered
+     * @returns {boolean} whether the index was found to be incorrect (before optional correcting).
+     * @memberof Collection
+     */
+    Collection.prototype.checkIndex = function (property, options) {
+      options = options || {};
+
+      var valid=true, idx, len, biv;
+
+      // make sure we are passed a valid binary index name
+      if (!this.binaryIndices.hasOwnProperty(property)) {
+        throw new Error("called checkIndex on property without an index: " + property);
+      }
+
+      // if lazy indexing, rebuild only if flagged as dirty
+      if (!this.adaptiveBinaryIndices) {
+        this.ensureIndex(property);
+      }
+
+      biv = this.binaryIndices[property].values;
+      len = biv.length;
+
+      // if the index has an incorrect number of values
+      if (len !== this.data.length) {
+        if (options.repair) {
+          this.ensureIndex(property, true);
+        }
+        return false;
+      }
+
+      // validate that the binary index is sequenced properly
+      for(idx=0; idx<len-1; idx++) {
+        if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
+          valid=false;
+        }
+      }
+
+      // if incorrectly sequenced and we are to fix problems, rebuild index
+      if (!valid && options.repair) {
+        this.ensureIndex(property, true);
+      }
+
+      return valid;
+    };
+
+    Collection.prototype.getBinaryIndexValues = function (property) {
       var idx, idxvals = this.binaryIndices[property].values;
-      var result = "";
+      var result = [];
 
       for (idx = 0; idx < idxvals.length; idx++) {
-        result += " [" + idx + "] " + this.data[idxvals[idx]][property];
+        result.push(this.data[idxvals[idx]][property]);
       }
 
       return result;

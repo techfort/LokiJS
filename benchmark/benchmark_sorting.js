@@ -32,7 +32,7 @@
  * invokes either the old 'sort' codepath or the new index intersect algorithm.
  */
  
-var loki = require('./lokijs-experimental-simplesort.js');
+var loki = require('../src/lokijs.js');
 
 // Total document count to seed database with
 var DOCUMENT_COUNT = 60000;
@@ -99,7 +99,7 @@ function profile1() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("unfiltered, unindexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' unfiltered, 'b' unindexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function sortfun(obj1, obj2) {
@@ -134,7 +134,7 @@ function profile1a() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("unfiltered, unindexed (minimal sort function) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' unfiltered, 'b' unindexed (minimal sort function) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function profile2() {
@@ -164,7 +164,7 @@ function profile2() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("unfiltered, indexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' unfiltered, 'b' indexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 // filtered, unindexed
@@ -195,7 +195,7 @@ function profile3() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("filtered, unindexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' filtered, 'b' unindexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 // filtered, unindexed (minimal sort function)
@@ -226,10 +226,72 @@ function profile3b() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("filtered, unindexed (minimal sort function) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' filtered, 'b' unindexed (minimal sort function) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function profile4() {
+  var start, end;
+  var totalTimes = [];
+  var totalMS = 0;
+  var loopIterations = P4_ITER;
+  var idx, compare, results;
+  
+  createDatabase(true);
+  
+  for(idx=0; idx < loopIterations; idx++) {
+    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
+    
+    start = process.hrtime();
+
+    results = coll.chain().find({a:compare}).simplesort("b", { disableIndexIntersect: true }).data();
+
+    end = process.hrtime(start);
+    totalTimes.push(end);
+  }
+  
+  for (var idx = 0; idx < totalTimes.length; idx++) {
+    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
+  }
+
+  totalMS = totalMS.toFixed(2);
+  var rate = loopIterations * 1000 / totalMS;
+  rate = rate.toFixed(2);
+  console.log("'a' filtered, 'b' indexed (old simplesort) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+}
+ 
+function profile5() {
+  var start, end;
+  var totalTimes = [];
+  var totalMS = 0;
+  var loopIterations = P4_ITER;
+  var idx, compare, results;
+  
+  createDatabase(true);
+  
+  for(idx=0; idx < loopIterations; idx++) {
+    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
+    
+    start = process.hrtime();
+
+    results = coll.chain().find({a:compare}).simplesort("b", { forceIndexIntersect: true}).data();
+
+    end = process.hrtime(start);
+    totalTimes.push(end);
+  }
+  
+  for (var idx = 0; idx < totalTimes.length; idx++) {
+    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
+  }
+
+  totalMS = totalMS.toFixed(2);
+  var rate = loopIterations * 1000 / totalMS;
+  rate = rate.toFixed(2);
+  console.log("'a' filtered, 'b' indexed (x-sect): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+}
+ 
+// using 'smart?' simplesort3 which attempts to determine whether
+// array intersect or array sort would be more efficient.
+function profile6() {
   var start, end;
   var totalTimes = [];
   var totalMS = 0;
@@ -256,69 +318,7 @@ function profile4() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("filtered, indexed (old simplesort) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
-}
- 
-function profile5() {
-  var start, end;
-  var totalTimes = [];
-  var totalMS = 0;
-  var loopIterations = P4_ITER;
-  var idx, compare, results;
-  
-  createDatabase(true);
-  
-  for(idx=0; idx < loopIterations; idx++) {
-    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
-    
-    start = process.hrtime();
-
-    results = coll.chain().find({a:compare}).simplesort2("b").data();
-
-    end = process.hrtime(start);
-    totalTimes.push(end);
-  }
-  
-  for (var idx = 0; idx < totalTimes.length; idx++) {
-    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
-  }
-
-  totalMS = totalMS.toFixed(2);
-  var rate = loopIterations * 1000 / totalMS;
-  rate = rate.toFixed(2);
-  console.log("filtered, indexed (set x-sect): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
-}
- 
-// using 'smart?' simplesort3 which attempts to determine whether
-// array intersect or array sort would be more efficient.
-function profile6() {
-  var start, end;
-  var totalTimes = [];
-  var totalMS = 0;
-  var loopIterations = P4_ITER;
-  var idx, compare, results;
-  
-  createDatabase(true);
-  
-  for(idx=0; idx < loopIterations; idx++) {
-    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
-    
-    start = process.hrtime();
-
-    results = coll.chain().find({a:compare}).simplesort3("b").data();
-
-    end = process.hrtime(start);
-    totalTimes.push(end);
-  }
-  
-  for (var idx = 0; idx < totalTimes.length; idx++) {
-    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
-  }
-
-  totalMS = totalMS.toFixed(2);
-  var rate = loopIterations * 1000 / totalMS;
-  rate = rate.toFixed(2);
-  console.log("filtered, indexed (smart?): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' filtered, 'b' indexed (smart?): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
  
 console.log("loki sorting benchmark diagnostic");

@@ -288,4 +288,43 @@ describe('sorting and indexing', function () {
     });
   });
 
+  describe('simplesort index intersect works correctly', function () {
+    it('works', function () {
+      var db = new loki('rss.db');
+      var rss = db.addCollection('rssort');
+
+      rss.insert({ a: 4, b: 1 });
+      rss.insert({ a: 7, b: 1 });
+      rss.insert({ a: 3, b: 1 });
+      rss.insert({ a: 9, b: 5 });
+      rss.insert({ a: 14, b: 1 });
+      rss.insert({ a: 17, b: 1 });
+      rss.insert({ a: 13, b: 1 });
+      rss.insert({ a: 19, b: 5 });
+
+      // test explicit force index intercept simplesort code path
+      var results = rss.chain().find({b:1}).simplesort('a', { forceIndexIntercept: true }).data();
+      var len = results.length;
+      var idx, valid;
+
+      expect(len).toBe(6);
+      for (idx=0; idx<len-1; idx++) {
+        expect(loki.LokiOps.$lte(results[idx]["a"], results[idx+1]["a"]));
+      }
+
+      // test explicit disable index intercept simplesort code path
+      results = rss.chain().find({b:1}).simplesort('a', { disableIndexIntercept: true }).data();
+      expect(len).toBe(6);
+      for (idx=0; idx<len-1; idx++) {
+        expect(loki.LokiOps.$lte(results[idx]["a"], results[idx+1]["a"]));
+      }
+
+      // test 'smart' simplesort
+      results = rss.chain().find({b:1}).simplesort('a').data();
+      expect(len).toBe(6);
+      for (idx=0; idx<len-1; idx++) {
+        expect(loki.LokiOps.$lte(results[idx]["a"], results[idx+1]["a"]));
+      }
+    });
+  });
 });

@@ -108,7 +108,7 @@ function sortfun(obj1, obj2) {
   if (obj1.b < obj2.b) return -1;
 }
 
-// unindexed, unfiltered, basic sort function (unsafe for mixed types)
+// unindexed, unfiltered, minimal sort function (pre-jitted)
 function profile1a() {
   var start, end;
   var totalTimes = [];
@@ -198,8 +198,8 @@ function profile3() {
   console.log("'a' filtered, 'b' unindexed : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
-// filtered, unindexed (minimal sort function)
-function profile3b() {
+// filtered, unindexed, minimal sort function (pre-jitted)
+function profile3a() {
   var start, end;
   var totalTimes = [];
   var totalMS = 0;
@@ -227,6 +227,38 @@ function profile3b() {
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
   console.log("'a' filtered, 'b' unindexed (minimal sort function) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+}
+
+// filtered, unindexed useJavascriptSorting (runtime jit)
+function profile3b() {
+  var start, end;
+  var totalTimes = [];
+  var totalMS = 0;
+  var loopIterations = P2_ITER;
+  var idx, compare, results;
+  
+  createDatabase(false);
+  
+  for(idx=0; idx<loopIterations; idx++) {
+    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
+    
+    start = process.hrtime();
+
+    // if we had enabled an index but wanted to force js sorting we would also pass 'disableIndexItercept:true'
+    results = coll.chain().find({a:compare}).simplesort('b', { useJavascriptSorting: true }).data();
+
+    end = process.hrtime(start);
+    totalTimes.push(end);
+  }
+  
+  for (var idx = 0; idx < totalTimes.length; idx++) {
+    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
+  }
+
+  totalMS = totalMS.toFixed(2);
+  var rate = loopIterations * 1000 / totalMS;
+  rate = rate.toFixed(2);
+  console.log("'a' filtered, 'b' unindexed (useJavascriptSorting) : " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
 
 function profile4() {
@@ -289,8 +321,9 @@ function profile5() {
   console.log("'a' filtered, 'b' indexed (x-sect): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
  
-// using 'smart?' simplesort3 which attempts to determine whether
+// using 'smart?' simplesort which attempts to determine whether
 // array intersect or array sort would be more efficient.
+// by default the fallback is to loki sorting (same order as indexes)
 function profile6() {
   var start, end;
   var totalTimes = [];
@@ -318,7 +351,38 @@ function profile6() {
   totalMS = totalMS.toFixed(2);
   var rate = loopIterations * 1000 / totalMS;
   rate = rate.toFixed(2);
-  console.log("'a' filtered, 'b' indexed (smart?): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+  console.log("'a' filtered, 'b' indexed (smart): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
+}
+ 
+// using 'smart' simplesort with fallback to 'useJavascriptSorting' if filtering
+function profile7() {
+  var start, end;
+  var totalTimes = [];
+  var totalMS = 0;
+  var loopIterations = P4_ITER;
+  var idx, compare, results;
+  
+  createDatabase(true);
+  
+  for(idx=0; idx < loopIterations; idx++) {
+    compare = Math.floor(Math.random() * QUERY_INDEX_RANGE);
+    
+    start = process.hrtime();
+
+    results = coll.chain().find({a:compare}).simplesort("b", { useJavascriptSorting: true }).data();
+
+    end = process.hrtime(start);
+    totalTimes.push(end);
+  }
+  
+  for (var idx = 0; idx < totalTimes.length; idx++) {
+    totalMS += totalTimes[idx][0] * 1e3 + totalTimes[idx][1] / 1e6;
+  }
+
+  totalMS = totalMS.toFixed(2);
+  var rate = loopIterations * 1000 / totalMS;
+  rate = rate.toFixed(2);
+  console.log("'a' filtered, 'b' indexed (smart w/js fallback): " + totalMS + "ms (" + rate + " ops/s) " + loopIterations + " iterations");
 }
  
 console.log("loki sorting benchmark diagnostic");
@@ -337,7 +401,9 @@ profile1();
 profile1a();
 profile2();
 profile3();
+profile3a();
 profile3b();
 profile4();
 profile5();
 profile6();
+profile7();

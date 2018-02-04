@@ -2868,7 +2868,7 @@
           rs.where(step.value);
           break;
         case "simplesort":
-          rs.simplesort(step.property, step.desc);
+          rs.simplesort(step.property, step.desc || step.options);
           break;
         case "compoundsort":
           rs.compoundsort(step.value);
@@ -2947,6 +2947,7 @@
      * @param {boolean} [options.desc=false] - whether to sort descending
      * @param {boolean} [options.disableIndexIntersect=false] - whether we should explicity not use array intersection.
      * @param {boolean} [options.forceIndexIntersect=false] - force array intersection (if binary index exists).
+     * @param {boolean} [options.useJavascriptSorting=false] - whether results are sorted via basic javascript sort.
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      * @memberof Resultset
      */
@@ -2992,6 +2993,14 @@
 
           return this;
         }
+      }
+
+      if (options.useJavascriptSorting) {
+        return this.sort(function(obj1, obj2) {
+          if (obj1[propname] === obj2[propname]) return 0;
+          if (obj1[propname] > obj2[propname]) return 1;
+          if (obj1[propname] < obj2[propname]) return -1;
+        });
       }
 
       // if this has no filters applied, just we need to populate filteredrows first
@@ -3926,13 +3935,17 @@
      * dv.applySimpleSort("name");
      *
      * @param {string} propname - Name of property by which to sort.
-     * @param {boolean=} isdesc - (Optional) If true, the sort will be in descending order.
+     * @param {object|boolean=} options - boolean for sort descending or options object
+     * @param {boolean} [options.desc=false] - whether we should sort descending.
+     * @param {boolean} [options.disableIndexIntersect=false] - whether we should explicity not use array intersection.
+     * @param {boolean} [options.forceIndexIntersect=false] - force array intersection (if binary index exists).
+     * @param {boolean} [options.useJavascriptSorting=false] - whether results are sorted via basic javascript sort.
      * @returns {DynamicView} this DynamicView object, for further chain ops.
      * @memberof DynamicView
      */
-    DynamicView.prototype.applySimpleSort = function (propname, isdesc) {
+    DynamicView.prototype.applySimpleSort = function (propname, options) {
       this.sortCriteria = [
-        [propname, isdesc || false]
+        [propname, options || false]
       ];
       this.sortFunction = null;
 

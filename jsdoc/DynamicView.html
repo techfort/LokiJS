@@ -368,7 +368,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3658">line 3658</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3800">line 3800</a>
     </li></ul></dd>
     
 
@@ -536,7 +536,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4034">line 4034</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4199">line 4199</a>
     </li></ul></dd>
     
 
@@ -739,7 +739,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4066">line 4066</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4231">line 4231</a>
     </li></ul></dd>
     
 
@@ -795,7 +795,7 @@
     
 
     
-    <h4 class="name" id="applySimpleSort"><span class="type-signature"></span>applySimpleSort<span class="signature">(propname, isdesc<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
+    <h4 class="name" id="applySimpleSort"><span class="type-signature"></span>applySimpleSort<span class="signature">(propname, options)</span><span class="type-signature"> &rarr; {<a href="DynamicView.html">DynamicView</a>}</span></h4>
     
 
     
@@ -827,8 +827,6 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -854,14 +852,6 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
@@ -872,7 +862,56 @@
 
         <tr>
             
-                <td class="name"><code>isdesc</code></td>
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+|
+
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>boolean for sort descending or options object</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>desc</code></td>
             
 
             <td class="type">
@@ -897,8 +936,138 @@
             
 
             
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
 
-            <td class="description last"><p>(Optional) If true, the sort will be in descending order.</p></td>
+            <td class="description last"><p>whether we should sort descending.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>disableIndexIntersect</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether we should explicity not use array intersection.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forceIndexIntersect</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>force array intersection (if binary index exists).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>useJavascriptSorting</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether results are sorted via basic javascript sort.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -939,7 +1108,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3891">line 3891</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4056">line 4056</a>
     </li></ul></dd>
     
 
@@ -1101,7 +1270,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3872">line 3872</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4033">line 4033</a>
     </li></ul></dd>
     
 
@@ -1263,7 +1432,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3916">line 3916</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4081">line 4081</a>
     </li></ul></dd>
     
 
@@ -1471,7 +1640,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4083">line 4083</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4248">line 4248</a>
     </li></ul></dd>
     
 
@@ -1676,7 +1845,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3797">line 3797</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3958">line 3958</a>
     </li></ul></dd>
     
 
@@ -1723,6 +1892,11 @@
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var db = new loki('test');var coll = db.addCollection('mydocs');var dv = coll.addDynamicView('myview');var tx = [  {    type: 'offset',    value: '[%lktxp]pageStart'  },  {    type: 'limit',    value: '[%lktxp]pageSize'  }];coll.addTransform('viewPaging', tx);// add some recordsvar results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();     </code></pre>
 
 
 
@@ -1784,7 +1958,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4116">line 4116</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4281">line 4281</a>
     </li></ul></dd>
     
 
@@ -2050,7 +2224,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4139">line 4139</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4304">line 4304</a>
     </li></ul></dd>
     
 
@@ -2230,7 +2404,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4401">line 4401</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4566">line 4566</a>
     </li></ul></dd>
     
 
@@ -2390,7 +2564,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3737">line 3737</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3879">line 3879</a>
     </li></ul></dd>
     
 
@@ -2555,7 +2729,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4099">line 4099</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4264">line 4264</a>
     </li></ul></dd>
     
 
@@ -2786,7 +2960,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3835">line 3835</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3996">line 3996</a>
     </li></ul></dd>
     
 
@@ -2836,7 +3010,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Feb 01 2018 05:14:59 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Feb 05 2018 19:44:05 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

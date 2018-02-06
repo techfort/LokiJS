@@ -240,7 +240,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2829">line 2829</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2833">line 2833</a>
     </li></ul></dd>
     
 
@@ -369,7 +369,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3010">line 3010</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3082">line 3082</a>
     </li></ul></dd>
     
 
@@ -482,7 +482,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2814">line 2814</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2818">line 2818</a>
     </li></ul></dd>
     
 
@@ -590,7 +590,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3406">line 3406</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3484">line 3484</a>
     </li></ul></dd>
     
 
@@ -637,6 +637,11 @@
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var over30Count = users.chain().find({ age: { $gte: 30 } }).count();</code></pre>
 
 
 
@@ -856,7 +861,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3426">line 3426</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3506">line 3506</a>
     </li></ul></dd>
     
 
@@ -903,6 +908,11 @@
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var resutls = users.chain().find({ age: 34 }).data();</code></pre>
 
 
 
@@ -1259,7 +1269,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3579">line 3579</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3713">line 3713</a>
     </li></ul></dd>
     
 
@@ -1306,6 +1316,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var db = new loki('sandbox.db');var products = db.addCollection('products');var orders = db.addCollection('orders');products.insert({ productId: "100234", name: "flywheel energy storage", unitCost: 19999.99 });products.insert({ productId: "140491", name: "300F super capacitor", unitCost: 129.99 });products.insert({ productId: "271941", name: "fuel cell", unitCost: 3999.99 });products.insert({ productId: "174592", name: "390V 3AH lithium bank", unitCost: 4999.99 });orders.insert({ orderDate : new Date("12/1/2017").getTime(), prodId: "174592", qty: 2, customerId: 2 });orders.insert({ orderDate : new Date("4/15/2016").getTime(), prodId: "271941", qty: 1, customerId: 1 });orders.insert({ orderDate : new Date("3/12/2017").getTime(), prodId: "140491", qty: 4, customerId: 4 });orders.insert({ orderDate : new Date("7/31/2017").getTime(), prodId: "100234", qty: 7, customerId: 3 });orders.insert({ orderDate : new Date("8/3/2016").getTime(), prodId: "174592", qty: 3, customerId: 5 });var mapfun = function(left, right) {  return {    orderId: left.$loki,    orderDate: new Date(left.orderDate) + '',    customerId: left.customerId,    qty: left.qty,    productId: left.prodId,    prodName: right.name,    prodCost: right.unitCost,    orderTotal: +((right.unitCost * left.qty).toFixed(2))  };};// join orders with relevant product info via eqJoinvar orderSummary = orders.chain().eqJoin(products, "prodId", "productId", mapfun).data();console.log(orderSummary);     </code></pre>
 
 
 
@@ -1459,7 +1474,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3125">line 3125</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3199">line 3199</a>
     </li></ul></dd>
     
 
@@ -1508,162 +1523,9 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
-
-        
-            
-
+    <h5>Example</h5>
     
-
-    
-    <h4 class="name" id="limit"><span class="type-signature"></span>limit<span class="signature">(qty)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Allows you to limit the number of documents passed to next chain operation.
-   A resultset copy() is made to avoid altering original resultset.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>qty</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">int</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The number of documents to return.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2777">line 2777</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Returns a copy of the resultset, limited by qty, for subsequent chain ops.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Resultset.html">Resultset</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
+    <pre class="prettyprint"><code>var over30 = users.chain().find({ age: { $gte: 30 } }).data();</code></pre>
 
 
 
@@ -1912,7 +1774,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3647">line 3647</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3789">line 3789</a>
     </li></ul></dd>
     
 
@@ -1937,6 +1799,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var orders.chain().find({ productId: 32 }).map(function(obj) {  return {    orderId: $loki,    productId: productId,    quantity: qty  };});</code></pre>
 
 
 
@@ -2070,7 +1937,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3557">line 3557</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3657">line 3657</a>
     </li></ul></dd>
     
 
@@ -2119,161 +1986,9 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
-
-        
-            
-
+    <h5>Example</h5>
     
-
-    
-    <h4 class="name" id="offset"><span class="type-signature"></span>offset<span class="signature">(pos)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Used for skipping 'pos' number of documents in the resultset.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>pos</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">int</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Number of documents to skip; all preceding documents are filtered out.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2796">line 2796</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Resultset.html">Resultset</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
+    <pre class="prettyprint"><code>var db = new loki("order.db");var orders = db.addCollection("orders");orders.insert([{ qty: 4, unitCost: 100.00 }, { qty: 10, unitCost: 999.99 }, { qty: 2, unitCost: 49.99 }]);function mapfun (obj) { return obj.qty*obj.unitCost };function reducefun(array) {  var grandTotal=0;  array.forEach(function(orderTotal) { grandTotal += orderTotal; });  return grandTotal;}var grandOrderTotal = orders.chain().mapReduce(mapfun, reducefun);console.log(grandOrderTotal);</code></pre>
 
 
 
@@ -2335,7 +2050,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3535">line 3535</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3622">line 3622</a>
     </li></ul></dd>
     
 
@@ -2384,6 +2099,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// remove users inactive since 1/1/2001users.chain().find({ lastActive: { $lte: new Date("1/1/2001").getTime() } }).remove();</code></pre>
+
+
 
         
             
@@ -2391,7 +2111,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
 
     
-    <h4 class="name" id="simplesort"><span class="type-signature"></span>simplesort<span class="signature">(propname, isdesc<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    <h4 class="name" id="simplesort"><span class="type-signature"></span>simplesort<span class="signature">(propname, options)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
     
 
     
@@ -2424,8 +2144,6 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -2451,14 +2169,6 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
@@ -2469,13 +2179,62 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
         <tr>
             
-                <td class="name"><code>isdesc</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
             
                 
+<span class="param-type">object</span>
+|
+
 <span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>boolean to specify if isdescending, or options object</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>desc</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
 
 
             
@@ -2494,8 +2253,138 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
             
 
             
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
 
-            <td class="description last"><p>(Optional) If true, the property will be sorted in descending order</p></td>
+            <td class="description last"><p>whether to sort descending</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>disableIndexIntersect</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether we should explicity not use array intersection.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forceIndexIntersect</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>force array intersection (if binary index exists).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>useJavascriptSorting</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether results are sorted via basic javascript sort.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2536,7 +2425,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2950">line 2950</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2975">line 2975</a>
     </li></ul></dd>
     
 
@@ -2583,6 +2472,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var results = users.chain().simplesort('age').data();</code></pre>
 
 
 
@@ -2693,7 +2587,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2923">line 2923</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2942">line 2942</a>
     </li></ul></dd>
     
 
@@ -2901,7 +2795,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2839">line 2839</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line2858">line 2858</a>
     </li></ul></dd>
     
 
@@ -2948,6 +2842,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>users.addTransform('CountryFilter', [  {    type: 'find',    value: {      'country': { $eq: '[%lktxp]Country' }    }  },  {    type: 'simplesort',    property: 'age',    options: { desc: false}  }]);var results = users.chain().transform("CountryFilter", { Country: 'fr' }).data();</code></pre>
 
 
 
@@ -3058,7 +2957,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3504">line 3504</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3588">line 3588</a>
     </li></ul></dd>
     
 
@@ -3105,6 +3004,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>users.chain().find({ country: 'de' }).update(function(user) {  user.phoneFormat = "+49 AAAA BBBBBB";});</code></pre>
 
 
 
@@ -3215,7 +3119,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3356">line 3356</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line3432">line 3432</a>
     </li></ul></dd>
     
 
@@ -3264,6 +3168,11 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var over30 = users.chain().where(function(obj) { return obj.age >= 30; }.data();</code></pre>
+
+
 
         
     
@@ -3287,7 +3196,7 @@ eqJoin expects the right join key values to be unique.  Otherwise left data will
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Feb 01 2018 05:14:59 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Feb 05 2018 19:44:06 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

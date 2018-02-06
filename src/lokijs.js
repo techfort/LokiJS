@@ -2773,6 +2773,8 @@
      * @param {int} qty - The number of documents to return.
      * @returns {Resultset} Returns a copy of the resultset, limited by qty, for subsequent chain ops.
      * @memberof Resultset
+     * // find the two oldest users
+     * var result = users.chain().simplesort("age", true).limit(2).data();
      */
     Resultset.prototype.limit = function (qty) {
       // if this has no filters applied, we need to populate filteredrows first
@@ -2792,6 +2794,8 @@
      * @param {int} pos - Number of documents to skip; all preceding documents are filtered out.
      * @returns {Resultset} Returns a copy of the resultset, containing docs starting at 'pos' for subsequent chain ops.
      * @memberof Resultset
+     * // find everyone but the two oldest users
+     * var result = users.chain().simplesort("age", true).offset(2).data();
      */
     Resultset.prototype.offset = function (pos) {
       // if this has no filters applied, we need to populate filteredrows first
@@ -2835,6 +2839,21 @@
      * @param parameters {object=} - (Optional) object property hash of parameters, if the transform requires them.
      * @returns {Resultset} either (this) resultset or a clone of of this resultset (depending on steps)
      * @memberof Resultset
+     * @example
+     * users.addTransform('CountryFilter', [
+     *   {
+     *     type: 'find',
+     *     value: {
+     *       'country': { $eq: '[%lktxp]Country' }
+     *     }
+     *   },
+     *   {
+     *     type: 'simplesort',
+     *     property: 'age',
+     *     options: { desc: false}
+     *   }
+     * ]);
+     * var results = users.chain().transform("CountryFilter", { Country: 'fr' }).data();
      */
     Resultset.prototype.transform = function (transform, parameters) {
       var idx,
@@ -2950,6 +2969,8 @@
      * @param {boolean} [options.useJavascriptSorting=false] - whether results are sorted via basic javascript sort.
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.
      * @memberof Resultset
+     * @example
+     * var results = users.chain().simplesort('age').data();
      */
     Resultset.prototype.simplesort = function (propname, options) {
       var dc, frl, eff;
@@ -3172,6 +3193,8 @@
      * @param {boolean=} firstOnly - (Optional) Used by collection.findOne()
      * @returns {Resultset} this resultset for further chain ops.
      * @memberof Resultset
+     * @example
+     * var over30 = users.chain().find({ age: { $gte: 30 } }).data();
      */
     Resultset.prototype.find = function (query, firstOnly) {
       if (this.collection.data.length === 0) {
@@ -3403,6 +3426,8 @@
      * @param {function} fun - A javascript function used for filtering current results by.
      * @returns {Resultset} this resultset for further chain ops.
      * @memberof Resultset
+     * @example
+     * var over30 = users.chain().where(function(obj) { return obj.age >= 30; }.data();
      */
     Resultset.prototype.where = function (fun) {
       var viewFunction,
@@ -3453,6 +3478,8 @@
      *
      * @returns {number} The number of documents in the resultset.
      * @memberof Resultset
+     * @example
+     * var over30Count = users.chain().find({ age: { $gte: 30 } }).count();
      */
     Resultset.prototype.count = function () {
       if (this.filterInitialized) {
@@ -3473,6 +3500,8 @@
      *
      * @returns {array} Array of documents in the resultset
      * @memberof Resultset
+     * @example
+     * var resutls = users.chain().find({ age: 34 }).data();
      */
     Resultset.prototype.data = function (options) {
       var result = [],
@@ -3551,6 +3580,10 @@
      * @param {function} updateFunction - User supplied updateFunction(obj) will be executed for each document object.
      * @returns {Resultset} this resultset for further chain ops.
      * @memberof Resultset
+     * @example
+     * users.chain().find({ country: 'de' }).update(function(user) {
+     *   user.phoneFormat = "+49 AAAA BBBBBB";
+     * });
      */
     Resultset.prototype.update = function (updateFunction) {
 
@@ -3582,6 +3615,9 @@
      *
      * @returns {Resultset} this (empty) resultset for further chain ops.
      * @memberof Resultset
+     * @example
+     * // remove users inactive since 1/1/2001
+     * users.chain().find({ lastActive: { $lte: new Date("1/1/2001").getTime() } }).remove();
      */
     Resultset.prototype.remove = function () {
 
@@ -3604,6 +3640,19 @@
      * @param {function} reduceFunction - this function accepts many (array of map outputs) and returns single value
      * @returns {value} The output of your reduceFunction
      * @memberof Resultset
+     * @example
+     * var db = new loki("order.db");
+     * var orders = db.addCollection("orders");
+     * orders.insert([{ qty: 4, unitCost: 100.00 }, { qty: 10, unitCost: 999.99 }, { qty: 2, unitCost: 49.99 }]);
+     *
+     * function mapfun (obj) { return obj.qty*obj.unitCost };
+     * function reducefun(array) {
+     *   var grandTotal=0;
+     *   array.forEach(function(orderTotal) { grandTotal += orderTotal; });
+     *   return grandTotal;
+     * }
+     * var grandOrderTotal = orders.chain().mapReduce(mapfun, reducefun);
+     * console.log(grandOrderTotal);
      */
     Resultset.prototype.mapReduce = function (mapFunction, reduceFunction) {
       try {
@@ -3626,6 +3675,40 @@
      * @param {string} dataOptions.forceCloneMethod - Allows overriding the default or collection specified cloning method.
      * @returns {Resultset} A resultset with data in the format [{left: leftObj, right: rightObj}]
      * @memberof Resultset
+     * @example
+     * var db = new loki('sandbox.db');
+     *
+     * var products = db.addCollection('products');
+     * var orders = db.addCollection('orders');
+     *
+     * products.insert({ productId: "100234", name: "flywheel energy storage", unitCost: 19999.99 });
+     * products.insert({ productId: "140491", name: "300F super capacitor", unitCost: 129.99 });
+     * products.insert({ productId: "271941", name: "fuel cell", unitCost: 3999.99 });
+     * products.insert({ productId: "174592", name: "390V 3AH lithium bank", unitCost: 4999.99 });
+     *
+     * orders.insert({ orderDate : new Date("12/1/2017").getTime(), prodId: "174592", qty: 2, customerId: 2 });
+     * orders.insert({ orderDate : new Date("4/15/2016").getTime(), prodId: "271941", qty: 1, customerId: 1 });
+     * orders.insert({ orderDate : new Date("3/12/2017").getTime(), prodId: "140491", qty: 4, customerId: 4 });
+     * orders.insert({ orderDate : new Date("7/31/2017").getTime(), prodId: "100234", qty: 7, customerId: 3 });
+     * orders.insert({ orderDate : new Date("8/3/2016").getTime(), prodId: "174592", qty: 3, customerId: 5 });
+     *
+     * var mapfun = function(left, right) {
+     *   return {
+     *     orderId: left.$loki,
+     *     orderDate: new Date(left.orderDate) + '',
+     *     customerId: left.customerId,
+     *     qty: left.qty,
+     *     productId: left.prodId,
+     *     prodName: right.name,
+     *     prodCost: right.unitCost,
+     *     orderTotal: +((right.unitCost * left.qty).toFixed(2))
+     *   };
+     * };
+     *
+     * // join orders with relevant product info via eqJoin
+     * var orderSummary = orders.chain().eqJoin(products, "prodId", "productId", mapfun).data();
+     * 
+     * console.log(orderSummary);     
      */
     Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun, dataOptions) {
 
@@ -3694,6 +3777,14 @@
      * @param {boolean} dataOptions.forceClones - forcing the return of cloned objects to your map object
      * @param {string} dataOptions.forceCloneMethod - Allows overriding the default or collection specified cloning method.
      * @memberof Resultset
+     * @example
+     * var orders.chain().find({ productId: 32 }).map(function(obj) {
+     *   return {
+     *     orderId: $loki,
+     *     productId: productId,
+     *     quantity: qty
+     *   };
+     * });
      */
     Resultset.prototype.map = function (mapFun, dataOptions) {
       var data = this.data(dataOptions).map(mapFun);
@@ -3844,6 +3935,25 @@
      * @param {object=} parameters - optional parameters (if optional transform requires them)
      * @returns {Resultset} A copy of the internal resultset for branched queries.
      * @memberof DynamicView
+     * @example
+     * var db = new loki('test');
+     * var coll = db.addCollection('mydocs');
+     * var dv = coll.addDynamicView('myview');
+     * var tx = [
+     *   {
+     *     type: 'offset',
+     *     value: '[%lktxp]pageStart'
+     *   },
+     *   {
+     *     type: 'limit',
+     *     value: '[%lktxp]pageSize'
+     *   }
+     * ];
+     * coll.addTransform('viewPaging', tx);
+     * 
+     * // add some records
+     * 
+     * var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();     
      */
     DynamicView.prototype.branchResultset = function (transform, parameters) {
       var rs = this.resultset.branch();
@@ -5042,6 +5152,13 @@
      * @param {boolean} [options.repair=false] - whether to fix problems if they are encountered
      * @returns {string[]} array of index names where problems were found.
      * @memberof Collection
+     * // check all indices on a collection, returns array of invalid index names
+     * var result = coll.checkAllIndexes({ repair: true, randomSampling: true, randomSamplingFactor: 0.15 });
+     * if (result.length > 0) {
+     *   results.forEach(function(name) { 
+     *     console.log('problem encountered with index : ' + name); 
+     *   });
+     * }     
      */
     Collection.prototype.checkAllIndexes = function (options) {
       var key, bIndices = this.binaryIndices;
@@ -5068,6 +5185,19 @@
      * @param {boolean} [options.repair=false] - whether to fix problems if they are encountered
      * @returns {boolean} whether the index was found to be valid (before optional correcting).
      * @memberof Collection
+     * @example
+     * // full test
+     * var valid = coll.checkIndex('name');
+     * // full test with repair (if issues found)
+     * valid = coll.checkIndex('name', { repair: true });
+     * // random sampling (default is 10% of total document count)
+     * valid = coll.checkIndex('name', { randomSampling: true });
+     * // random sampling (sample 20% of total document count)
+     * valid = coll.checkIndex('name', { randomSampling: true, randomSamplingFactor: 0.20 });
+     * // random sampling (implied boolean)
+     * valid = coll.checkIndex('name', { randomSamplingFactor: 0.20 });
+     * // random sampling with repair (if issues found)
+     * valid = coll.checkIndex('name', { repair: true, randomSampling: true });
      */
     Collection.prototype.checkIndex = function (property, options) {
       options = options || {};
@@ -5186,6 +5316,8 @@
 
     /**
      * Ensure all binary indices
+     * @param {boolean} force - whether to force rebuild of existing lazy binary indices
+     * @memberof Collection
      */
     Collection.prototype.ensureAllIndexes = function (force) {
       var key, bIndices = this.binaryIndices;
@@ -5196,6 +5328,9 @@
       }
     };
 
+    /**
+     * Internal method used to flag all lazy index as dirty
+     */
     Collection.prototype.flagBinaryIndexesDirty = function () {
       var key, bIndices = this.binaryIndices;
       for (key in bIndices) {
@@ -5205,6 +5340,9 @@
       }
     };
 
+    /**
+     * Internal method used to flag a lazy index as dirty
+     */
     Collection.prototype.flagBinaryIndexDirty = function (index) {
       if (this.binaryIndices[index])
         this.binaryIndices[index].dirty = true;
@@ -5420,7 +5558,7 @@
     /**
      * Empties the collection.
      * @param {object=} options - configure clear behavior
-     * @param {bool=} options.removeIndices - (default: false)
+     * @param {bool=} [options.removeIndices=false] - whether to remove indices in addition to data
      * @memberof Collection
      */
     Collection.prototype.clear = function (options) {
@@ -6290,7 +6428,7 @@
      * Chain method, used for beginning a series of chained find() and/or view() operations
      * on a collection.
      *
-     * @param {array=} transform - Ordered array of transform step objects similar to chain
+     * @param {string|array=} transform - named transform or array of transform steps
      * @param {object=} parameters - Object containing properties representing parameters to substitute
      * @returns {Resultset} (this) resultset, or data array if any map or join functions where called
      * @memberof Collection

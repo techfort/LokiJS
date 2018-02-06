@@ -767,7 +767,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4410">line 4410</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4575">line 4575</a>
     </li></ul></dd>
     
 
@@ -1115,7 +1115,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5089">line 5089</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5404">line 5404</a>
     </li></ul></dd>
     
 
@@ -1300,7 +1300,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4796">line 4796</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4961">line 4961</a>
     </li></ul></dd>
     
 
@@ -1440,7 +1440,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6429">line 6429</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6744">line 6744</a>
     </li></ul></dd>
     
 
@@ -1620,7 +1620,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6072">line 6072</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6387">line 6387</a>
     </li></ul></dd>
     
 
@@ -1676,7 +1676,7 @@
     
 
     
-    <h4 class="name" id="chain"><span class="type-signature"></span>chain<span class="signature">(transform<span class="signature-attributes">opt</span>, parameters<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
+    <h4 class="name" id="chain"><span class="type-signature"></span>chain<span class="signature">(transform, parameters<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Resultset.html">Resultset</a>}</span></h4>
     
 
     
@@ -1729,6 +1729,9 @@ on a collection.</p>
             <td class="type">
             
                 
+<span class="param-type">string</span>
+|
+
 <span class="param-type">array</span>
 
 
@@ -1737,8 +1740,6 @@ on a collection.</p>
 
             
                 <td class="attributes">
-                
-                    &lt;optional><br>
                 
 
                 
@@ -1749,7 +1750,7 @@ on a collection.</p>
 
             
 
-            <td class="description last"><p>Ordered array of transform step objects similar to chain</p></td>
+            <td class="description last"><p>named transform or array of transform steps</p></td>
         </tr>
 
     
@@ -1823,7 +1824,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6121">line 6121</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6436">line 6436</a>
     </li></ul></dd>
     
 
@@ -1870,6 +1871,358 @@ on a collection.</p>
     
 
 
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="checkIndex"><span class="type-signature"></span>checkIndex<span class="signature">(property, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Perform checks to determine validity/consistency of a binary index</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>property</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>name of the binary-indexed property to check</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>optional configuration object</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>randomSampling</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether (faster) random sampling should be used</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>randomSamplingFactor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0.10
+                
+                </td>
+            
+
+            <td class="description last"><p>percentage of total rows to randomly sample</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>repair</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>whether to fix problems if they are encountered</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5202">line 5202</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>whether the index was found to be valid (before optional correcting).</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// full testvar valid = coll.checkIndex('name');// full test with repair (if issues found)valid = coll.checkIndex('name', { repair: true });// random sampling (default is 10% of total document count)valid = coll.checkIndex('name', { randomSampling: true });// random sampling (sample 20% of total document count)valid = coll.checkIndex('name', { randomSampling: true, randomSamplingFactor: 0.20 });// random sampling (implied boolean)valid = coll.checkIndex('name', { randomSamplingFactor: 0.20 });// random sampling with repair (if issues found)valid = coll.checkIndex('name', { repair: true, randomSampling: true });</code></pre>
 
 
 
@@ -1969,6 +2322,8 @@ on a collection.</p>
         
 
         
+        <th>Default</th>
+        
 
         <th class="last">Description</th>
     </tr>
@@ -2004,8 +2359,14 @@ on a collection.</p>
             
 
             
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
 
-            <td class="description last"><p>(default: false)</p></td>
+            <td class="description last"><p>whether to remove indices in addition to data</p></td>
         </tr>
 
     
@@ -2053,7 +2414,7 @@ on a collection.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5249">line 5249</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5564">line 5564</a>
     </li></ul></dd>
     
 
@@ -2212,7 +2573,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6308">line 6308</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6623">line 6623</a>
     </li></ul></dd>
     
 
@@ -2347,7 +2708,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4910">line 4910</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5075">line 5075</a>
     </li></ul></dd>
     
 
@@ -2494,7 +2855,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5042">line 5042</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5357">line 5357</a>
     </li></ul></dd>
     
 
@@ -2539,6 +2900,141 @@ then create a message to be inserted in the commitlog</p>
 </dl>
 
     
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="ensureAllIndexes"><span class="type-signature"></span>ensureAllIndexes<span class="signature">(force)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Ensure all binary indices</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>force</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>whether to force rebuild of existing lazy binary indices</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5322">line 5322</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2694,7 +3190,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4929">line 4929</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5094">line 5094</a>
     </li></ul></dd>
     
 
@@ -3068,7 +3564,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6264">line 6264</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6579">line 6579</a>
     </li></ul></dd>
     
 
@@ -3172,7 +3668,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6332">line 6332</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6647">line 6647</a>
     </li></ul></dd>
     
 
@@ -3254,7 +3750,7 @@ then create a message to be inserted in the commitlog</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6416">line 6416</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6731">line 6731</a>
     </li></ul></dd>
     
 
@@ -3390,7 +3886,7 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6139">line 6139</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6454">line 6454</a>
     </li></ul></dd>
     
 
@@ -3552,7 +4048,7 @@ for more complex queries use <a href="Collection.html#chain">chain()</a> or <a h
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5148">line 5148</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5463">line 5463</a>
     </li></ul></dd>
     
 
@@ -3714,7 +4210,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5133">line 5133</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5448">line 5448</a>
     </li></ul></dd>
     
 
@@ -3849,7 +4345,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6095">line 6095</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6410">line 6410</a>
     </li></ul></dd>
     
 
@@ -4032,7 +4528,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5602">line 5602</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5917">line 5917</a>
     </li></ul></dd>
     
 
@@ -4196,7 +4692,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5115">line 5115</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5430">line 5430</a>
     </li></ul></dd>
     
 
@@ -4304,7 +4800,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6280">line 6280</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6595">line 6595</a>
     </li></ul></dd>
     
 
@@ -4439,7 +4935,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4809">line 4809</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4974">line 4974</a>
     </li></ul></dd>
     
 
@@ -4577,7 +5073,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5167">line 5167</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5482">line 5482</a>
     </li></ul></dd>
     
 
@@ -4765,7 +5261,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6242">line 6242</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6557">line 6557</a>
     </li></ul></dd>
     
 
@@ -4869,7 +5365,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6346">line 6346</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6661">line 6661</a>
     </li></ul></dd>
     
 
@@ -4951,7 +5447,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6360">line 6360</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6675">line 6675</a>
     </li></ul></dd>
     
 
@@ -5082,7 +5578,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6475">line 6475</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6790">line 6790</a>
     </li></ul></dd>
     
 
@@ -5164,7 +5660,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6353">line 6353</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6668">line 6668</a>
     </li></ul></dd>
     
 
@@ -5246,7 +5742,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6388">line 6388</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6703">line 6703</a>
     </li></ul></dd>
     
 
@@ -5377,7 +5873,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6446">line 6446</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6761">line 6761</a>
     </li></ul></dd>
     
 
@@ -5512,7 +6008,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5520">line 5520</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5835">line 5835</a>
     </li></ul></dd>
     
 
@@ -5647,7 +6143,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5101">line 5101</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5416">line 5416</a>
     </li></ul></dd>
     
 
@@ -5782,7 +6278,7 @@ For filter function querying you should migrate to <a href="Collection.html#upda
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4828">line 4828</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4993">line 4993</a>
     </li></ul></dd>
     
 
@@ -5921,7 +6417,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5501">line 5501</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5816">line 5816</a>
     </li></ul></dd>
     
 
@@ -6079,7 +6575,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4819">line 4819</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4984">line 4984</a>
     </li></ul></dd>
     
 
@@ -6237,7 +6733,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line4879">line 4879</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5044">line 5044</a>
     </li></ul></dd>
     
 
@@ -6323,7 +6819,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6295">line 6295</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6610">line 6610</a>
     </li></ul></dd>
     
 
@@ -6458,7 +6954,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6438">line 6438</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6753">line 6753</a>
     </li></ul></dd>
     
 
@@ -6593,7 +7089,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5300">line 5300</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5615">line 5615</a>
     </li></ul></dd>
     
 
@@ -6751,7 +7247,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5479">line 5479</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line5794">line 5794</a>
     </li></ul></dd>
     
 
@@ -6886,7 +7382,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6230">line 6230</a>
+        <a href="lokijs.js.html">lokijs.js</a>, <a href="lokijs.js.html#line6545">line 6545</a>
     </li></ul></dd>
     
 
@@ -6963,7 +7459,7 @@ For 'mongo-like' querying you should migrate to <a href="Collection.html#findAnd
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Feb 01 2018 05:14:59 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Feb 05 2018 19:44:05 GMT-0500 (Eastern Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

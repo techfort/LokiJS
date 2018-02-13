@@ -89,6 +89,30 @@ var results = coll.find({'age': {'$lt': 40}});
 ```javascript
 var results = coll.find({'age': {'$lte': 40}});
 ```
+>
+> Note : the above $gt, $gte, $lt, and $lte ops use 'loki' sorting which provides a unified range actoss mixed types 
+> and which return the same results whether the property is indexed or not. This is needed for binary indexes and
+> for guarantees of results equality between indexed and non-indexed comparisons.
+>
+> If you do not expect to utilize a binary index and you expect that simple javascript comparisons are acceptable, 
+> we provide the following ops which (due to their simplified comparisons) may provide more optimal execution speeds.
+>
+> **$jgt** - filter (using simplified javascript comparison) for docs with property greater than provided value
+> ```javascript
+> var results = coll.find({'age': {'$jgt': 40}});
+> ```
+> **$jgte** - filter (using simplified javascript comparison) for docs with property greater than or equal to provided value
+> ```javascript
+> var results = coll.find({'age': {'$jgte': 40}});
+> ```
+> **$jlt** - filter (using simplified javascript comparison) for docs with property less than provided value
+> ```javascript
+> var results = coll.find({'age': {'$jlt': 40}});
+> ```
+> **$jlte** - filter (using simplified javascript comparison) for docs with property less than or equal to provided value
+> ```javascript
+> var results = coll.find({'age': {'$jlte': 40}});
+> ```
 **$between** - filter for documents(s) with property between provided vals
 ```javascript
 // match users with count value between 50 and 75

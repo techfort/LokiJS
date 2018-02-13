@@ -399,6 +399,7 @@
         return aeqHelper(a, b);
       },
 
+      // loki comparisons: return identical unindexed results as indexed comparisons
       $gt: function (a, b) {
         return gtHelper(a, b, false);
       },
@@ -413,6 +414,23 @@
 
       $lte: function (a, b) {
         return ltHelper(a, b, true);
+      },
+
+      // lightweight javascript comparisons
+      $jgt: function (a, b) {
+        return a > b;
+      },
+
+      $jgte: function (a, b) {
+        return a >= b;
+      },
+
+      $jlt: function (a, b) {
+        return a < b;
+      },
+
+      $jlte: function (a, b) {
+        return a <= b;
       },
 
       // ex : coll.find({'orderCount': {$between: [10, 50]}});
@@ -2973,60 +2991,28 @@
      * var results = users.chain().simplesort('age').data();
      */
     Resultset.prototype.simplesort = function (propname, options) {
-      var dc, frl, eff;
+      var eff, 
+        dc = this.collection.data.length, 
+        frl = this.filteredrows.length,
+        hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
 
-      if (typeof (options) === 'undefined') {
+      if (typeof (options) === 'undefined' || options === false) {
         options = { desc: false };
       }
       if (options === true) {
         options = { desc: true };
       }
-      if (options === false) {
-        options = { desc: false };
-      }
 
-      // If already filtered, but we want to leverage binary index on sort.
-      // This will use custom array intection algorithm.
-      if (!options.disableIndexIntersect && this.collection.binaryIndices.hasOwnProperty(propname) && this.filterInitialized) {
-
-        dc = this.collection.data.length;
-        frl = this.filteredrows.length;
-        eff = dc/frl;
-
-        // anything more than ratio of 10:1 (total documents/current results) should use old sort code path
-        // So we will only use array intersection if you have more than 10% of total docs in your current resultset.
-        if (eff <= 10 || options.forceIndexIntersect) {
-          var idx, len=this.filteredrows.length, fr=this.filteredrows;
-          var io = {};
-          // set up hashobject for simple 'inclusion test' with existing (filtered) results
-          for(idx=0; idx<len; idx++) {
-            io[fr[idx]] = true;
-          }
-          // grab full sorted binary index array
-          var pv = this.collection.binaryIndices[propname].values;
-
-          // filter by existing results
-          this.filteredrows = pv.filter(function(n) { return io[n]; });
-
-          if (options.desc) {
-            this.filteredrows.reverse();
-          }
-
+      // if nothing in filtered rows array...
+      if (frl === 0) {
+        // if the filter is initialized to be empty resultset, do nothing
+        if (this.filterInitialized) {
           return this;
         }
-      }
-
-      if (options.useJavascriptSorting) {
-        return this.sort(function(obj1, obj2) {
-          if (obj1[propname] === obj2[propname]) return 0;
-          if (obj1[propname] > obj2[propname]) return 1;
-          if (obj1[propname] < obj2[propname]) return -1;
-        });
-      }
-
-      // if this has no filters applied, just we need to populate filteredrows first
-      if (!this.filterInitialized && this.filteredrows.length === 0) {
-        // if we have a binary index and no other filters applied, we can use that instead of sorting (again)
+        
+        // otherwise no filters applied implies all documents, so we need to populate filteredrows first
+        
+        // if we have a binary index, we can just use that instead of sorting (again)
         if (this.collection.binaryIndices.hasOwnProperty(propname)) {
           // make sure index is up-to-date
           this.collection.ensureIndex(propname);
@@ -3042,10 +3028,56 @@
         }
         // otherwise initialize array for sort below
         else {
+          // build full document index (to be sorted subsequently)
           this.filteredrows = this.collection.prepareFullDocIndex();
         }
       }
+      // otherwise we had results to begin with, see if we qualify for index intercept optimization
+      else {
 
+        // If already filtered, but we want to leverage binary index on sort.
+        // This will use custom array intection algorithm.
+        if (!options.disableIndexIntersect && hasBinaryIndex) {
+
+          // calculate filter efficiency
+          eff = dc/frl;
+
+          // anything more than ratio of 10:1 (total documents/current results) should use old sort code path
+          // So we will only use array intersection if you have more than 10% of total docs in your current resultset.
+          if (eff <= 10 || options.forceIndexIntersect) {
+            var idx, fr=this.filteredrows;
+            var io = {};
+            // set up hashobject for simple 'inclusion test' with existing (filtered) results
+            for(idx=0; idx<frl; idx++) {
+              io[fr[idx]] = true;
+            }
+            // grab full sorted binary index array
+            var pv = this.collection.binaryIndices[propname].values;
+
+            // filter by existing results
+            this.filteredrows = pv.filter(function(n) { return io[n]; });
+
+            if (options.desc) {
+              this.filteredrows.reverse();
+            }
+
+            return this;
+          }
+        }
+      }
+
+      // at this point, we will not be able to leverage binary index so we will have to do an array sort
+      
+      // if we have opted to use simplified javascript comparison function...
+      if (options.useJavascriptSorting) {
+        return this.sort(function(obj1, obj2) {
+          if (obj1[propname] === obj2[propname]) return 0;
+          if (obj1[propname] > obj2[propname]) return 1;
+          if (obj1[propname] < obj2[propname]) return -1;
+        });
+      }
+
+      // otherwise use loki sort which will return same results if column is indexed or not
       var wrappedComparer =
         (function (prop, desc, data) {
           var val1, val2, arr;

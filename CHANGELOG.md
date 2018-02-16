@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.3
+* simplesort can leverage binary index (via index intersect) when weakly filtered (#645)
+* the simplesort 'descending' param is now multipurposed (with bw-compat) see jsdocs
+* added new simplified js comparison ops for unindexed optimizations (commit bb011d)
+* added collection.checkIndex() and collection.checkIndexes() for diagnostics (#654,#47)
+
 ## 1.5.2
 * fixed error when transform steps have non-serializable parameters (#624)
 * addCollection will return existing collection when collection named already exists (#635)

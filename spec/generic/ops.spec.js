@@ -282,4 +282,24 @@ describe("Individual operator tests", function() {
     
   });
 
+  it('js range ops work as expected', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+    
+    coll.insert({ a: null, b: 5});
+    coll.insert({ a: "11", b: 5});
+    coll.insert({ a: 2, b: 5});
+    coll.insert({ a: "1", b: 5});
+    coll.insert({ a: "4", b: 5});
+    coll.insert({ a: 7.2, b: 5});
+    coll.insert({ a: "5", b: 5});
+    coll.insert({ a: 4, b: 5});
+    coll.insert({ a: "18.1", b: 5});
+    
+    expect(coll.find({ a: { $jgt: 5 } }).length).toEqual(3);
+    expect(coll.find({ a: { $jgte: 5 } }).length).toEqual(4);
+    expect(coll.find({ a: { $jlt: 7.2 } }).length).toEqual(6);
+    expect(coll.find({ a: { $jlte: 7.2 } }).length).toEqual(7);
+    expect(coll.find({ a: { $jbetween: [3.2, 7.8] } }).length).toEqual(4);
+  });
 });

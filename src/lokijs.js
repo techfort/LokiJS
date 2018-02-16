@@ -439,6 +439,11 @@
         return (gtHelper(a, vals[0], true) && ltHelper(a, vals[1], true));
       },
 
+      $jbetween: function (a, vals) {
+        if (a === undefined || a === null) return false;
+        return (a >= vals[0] && a <= vals[1]);
+      },
+
       $in: function (a, b) {
         return b.indexOf(a) !== -1;
       },

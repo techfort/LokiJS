@@ -89,10 +89,15 @@ var results = coll.find({'age': {'$lt': 40}});
 ```javascript
 var results = coll.find({'age': {'$lte': 40}});
 ```
+**$between** - filter for documents(s) with property between provided vals
+```javascript
+// match users with count value between 50 and 75
+var results = users.find({ count : { '$between': [50, 75] }});
+```
 >
-> Note : the above $gt, $gte, $lt, and $lte ops use 'loki' sorting which provides a unified range actoss mixed types 
-> and which return the same results whether the property is indexed or not. This is needed for binary indexes and
-> for guarantees of results equality between indexed and non-indexed comparisons.
+> Note : the above $gt, $gte, $lt, $lte, and $between ops use 'loki' sorting which provides a unified range actoss 
+> mixed types and which return the same results whether the property is indexed or not. This is needed for binary 
+> indexes and for guarantees of results equality between indexed and non-indexed comparisons.
 >
 > If you do not expect to utilize a binary index and you expect that simple javascript comparisons are acceptable, 
 > we provide the following ops which (due to their simplified comparisons) may provide more optimal execution speeds.
@@ -113,11 +118,10 @@ var results = coll.find({'age': {'$lte': 40}});
 > ```javascript
 > var results = coll.find({'age': {'$jlte': 40}});
 > ```
-**$between** - filter for documents(s) with property between provided vals
-```javascript
-// match users with count value between 50 and 75
-var results = users.find({ count : { '$between': [50, 75] }});
-```
+> **$jbetween** - filter (using simplified javascript comparison) for docs with property between provided vals
+> ```javasscript
+> var results = users.find({ count : { '$jbetween': [50, 75] }});
+> ```
 **$regex** - filter for document(s) with property matching provided regular expression
 >_If using regex operator within a named transform or dynamic view filter, it is best to use the latter two examples since raw regex does not seem to serialize/deserialize well._
 

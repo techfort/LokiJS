@@ -2997,6 +2997,7 @@
      */
     Resultset.prototype.simplesort = function (propname, options) {
       var eff, 
+        targetEff = 10,
         dc = this.collection.data.length, 
         frl = this.filteredrows.length,
         hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
@@ -3047,9 +3048,15 @@
           // calculate filter efficiency
           eff = dc/frl;
 
+          // when javascript sort fallback is enabled, you generally need more than ~17% of total docs in resultset
+          // before array intersect is determined to be the faster algorithm, otherwise leave at 10% for loki sort.
+          if (options.useJavascriptSorting) {
+            targetEff = 6;
+          }
+
           // anything more than ratio of 10:1 (total documents/current results) should use old sort code path
           // So we will only use array intersection if you have more than 10% of total docs in your current resultset.
-          if (eff <= 10 || options.forceIndexIntersect) {
+          if (eff <= targetEff || options.forceIndexIntersect) {
             var idx, fr=this.filteredrows;
             var io = {};
             // set up hashobject for simple 'inclusion test' with existing (filtered) results

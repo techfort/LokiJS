@@ -5196,6 +5196,7 @@
      * @param {boolean} [options.repair=false] - whether to fix problems if they are encountered
      * @returns {string[]} array of index names where problems were found.
      * @memberof Collection
+     * @example
      * // check all indices on a collection, returns array of invalid index names
      * var result = coll.checkAllIndexes({ repair: true, randomSampling: true, randomSamplingFactor: 0.15 });
      * if (result.length > 0) {

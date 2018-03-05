@@ -5285,40 +5285,41 @@
       if (len === 1) {
         valid = (biv[0] === 0);
       }
+      else {
+        if (options.randomSampling) {
+          // validate first and last
+          if (!LokiOps.$lte(this.data[biv[0]][property], this.data[biv[1]][property])) {
+            valid=false;
+          }
+          if (!LokiOps.$lte(this.data[biv[len-2]][property], this.data[biv[len-1]][property])) {
+            valid=false;
+          }
 
-      if (options.randomSampling) {
-        // validate first and last
-        if (!LokiOps.$lte(this.data[biv[0]][property], this.data[biv[1]][property])) {
-          valid=false;
-        }
-        if (!LokiOps.$lte(this.data[biv[len-2]][property], this.data[biv[len-1]][property])) {
-          valid=false;
-        }
+          // if first and last positions are sorted correctly with their nearest neighbor,
+          // continue onto random sampling phase...
+          if (valid) {
+            // # random samplings = total count * sampling factor
+            iter = Math.floor((len-1) * options.randomSamplingFactor);
 
-        // if first and last positions are sorted correctly with their nearest neighbor,
-        // continue onto random sampling phase...
-        if (valid) {
-          // # random samplings = total count * sampling factor
-          iter = Math.floor((len-1) * options.randomSamplingFactor);
-
-          // for each random sampling, validate that the binary index is sequenced properly
-          // with next higher value.
-          for(idx=0; idx<len-1; idx++) {
-            // calculate random position
-            pos = Math.floor(Math.random() * (len-1));
-            if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {
-              valid=false;
-              break;
+            // for each random sampling, validate that the binary index is sequenced properly
+            // with next higher value.
+            for(idx=0; idx<len-1; idx++) {
+              // calculate random position
+              pos = Math.floor(Math.random() * (len-1));
+              if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {
+                valid=false;
+                break;
+              }
             }
           }
         }
-      }
-      else {
-        // validate that the binary index is sequenced properly
-        for(idx=0; idx<len-1; idx++) {
-          if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
-            valid=false;
-            break;
+        else {
+          // validate that the binary index is sequenced properly
+          for(idx=0; idx<len-1; idx++) {
+            if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
+              valid=false;
+              break;
+            }
           }
         }
       }

@@ -291,7 +291,7 @@ describe('sorting and indexing', function () {
   describe('simplesort index intersect works correctly', function () {
     it('works', function () {
       var db = new loki('rss.db');
-      var rss = db.addCollection('rssort');
+      var rss = db.addCollection('rssort', { indices: ['a'] });
 
       rss.insert({ a: 4, b: 1 });
       rss.insert({ a: 7, b: 1 });

@@ -3896,6 +3896,7 @@
       // we only support one active search, applied using applySort() or applySimpleSort()
       this.sortFunction = null;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
       this.sortDirty = false;
 
       // for now just have 1 event for when we finally rebuilt lazy view
@@ -3931,7 +3932,7 @@
       this.resultsdirty = true;
       this.resultset = new Resultset(this.collection);
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.sortDirty = true;
       }
 
@@ -4022,6 +4023,7 @@
       copy.filterPipeline = this.filterPipeline;
       copy.sortFunction = this.sortFunction;
       copy.sortCriteria = this.sortCriteria;
+      copy.sortCriteriaSimple = this.sortCriteriaSimple || null;
       copy.sortDirty = this.sortDirty;
 
       // avoid circular reference, reapply in db.loadJSON()
@@ -4054,6 +4056,7 @@
       // we only support one active search, applied using applySort() or applySimpleSort()
       this.sortFunction = null;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
       this.sortDirty = false;
 
       if (options.queueSortPhase === true) {
@@ -4077,6 +4080,7 @@
     DynamicView.prototype.applySort = function (comparefun) {
       this.sortFunction = comparefun;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
 
       this.queueSortPhase();
 
@@ -4098,9 +4102,8 @@
      * @memberof DynamicView
      */
     DynamicView.prototype.applySimpleSort = function (propname, options) {
-      this.sortCriteria = [
-        [propname, options || false]
-      ];
+      this.sortCriteriaSimple = { propname: propname, options: options || false };
+      this.sortCriteria = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
@@ -4124,6 +4127,7 @@
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
       this.sortCriteria = criteria;
+      this.sortCriteriaSimple = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
@@ -4223,7 +4227,7 @@
         this._addFilter(filters[idx]);
       }
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.queueSortPhase();
       } else {
         this.queueRebuildEvent();
@@ -4255,7 +4259,7 @@
 
       this._addFilter(filter);
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.queueSortPhase();
       } else {
         this.queueRebuildEvent();
@@ -4416,6 +4420,8 @@
           this.resultset.sort(this.sortFunction);
         } else if (this.sortCriteria) {
           this.resultset.compoundsort(this.sortCriteria);
+        } else if (this.sortCriteriaSimple) {
+          this.resultset.simplesort(this.sortCriteriaSimple.propname, this.sortCriteriaSimple.options);
         }
 
         this.sortDirty = false;
@@ -4446,7 +4452,7 @@
           this.resultdata = this.resultset.data();
         }
         // need to re-sort to sort new document
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4484,7 +4490,7 @@
         }
 
         // need to re-sort to sort new document
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4510,7 +4516,7 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4527,7 +4533,7 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4547,7 +4553,7 @@
           this.resultdata = this.resultset.data();
         }
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4581,7 +4587,7 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -5303,7 +5309,7 @@
 
             // for each random sampling, validate that the binary index is sequenced properly
             // with next higher value.
-            for(idx=0; idx<len-1; idx++) {
+            for(idx=0; idx<iter-1; idx++) {
               // calculate random position
               pos = Math.floor(Math.random() * (len-1));
               if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {

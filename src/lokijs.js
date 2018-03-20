@@ -5895,7 +5895,7 @@
       if (Array.isArray(doc)) {
         var k = 0,
           len = doc.length;
-        for (k; k < len; k += 1) {
+        for (k=len-1; k >= 0; k--) {
           this.remove(doc[k]);
         }
         return;

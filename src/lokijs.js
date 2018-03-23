@@ -3670,7 +3670,7 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      this.collection.remove(this.data());
+      this.collection.removeBatchByPositions(this.filteredrows);
 
       this.filteredrows = [];
 
@@ -5877,6 +5877,81 @@
 
     Collection.prototype.removeDataOnly = function () {
       this.remove(this.data.slice());
+    };
+
+    /**
+     * Internal method to remove a batch of documents from the collection.
+     * @param {number[]} positions - data/idIndex positions to remove
+     */
+    Collection.prototype.removeBatchByPositions = function(positions) {
+      var len = positions.length;
+      var xo = {};
+      var dlen, didx, idx;
+      var bic=Object.keys(this.binaryIndices).length;
+
+      try {
+        this.startTransaction();
+
+        // create hashobject for positional removal inclusion tests...
+        // all keys defined in this hashobject represent $loki ids of the documents to remove.
+        for(idx=0; idx < len; idx++) {
+          xo[this.idIndex[positions[idx]]] = true;
+        }
+
+        // if we will need to notify dynamic views and/or binary indices to update themselves...
+        dlen = this.DynamicViews.length;
+        if ((dlen > 0) || (bic > 0)) {
+          if (dlen > 0) {
+            // notify dynamic views to remove relevant documents at data positions
+            for (didx = 0; idx < dlen; idx++) {
+              for(idx=0; idx<len; didx++) {
+                this.DynamicViews[idx].removeDocument(positions[idx]);
+              }
+            }
+          }
+
+          // notify binary indices to update
+          if (this.adaptiveBinaryIndices) {
+            // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
+            var key, bIndices = this.binaryIndices;
+            for (key in bIndices) {
+              for(idx=0; idx<len; idx++) {
+                this.adaptiveBinaryIndexRemove(positions[idx], key);
+              }
+            }
+          }
+          else {
+            this.flagBinaryIndexesDirty();
+          }
+        }
+
+        // not sure i want to emit any events
+        // would like to emit single event as  below but that might break existing code
+        // this.emit('delete', {})
+
+        // remove from data[] :
+        // filter collection data for items not in inclusion hashobject
+        this.data = this.data.filter(function(obj) {
+          return !xo[obj.$loki];
+        });
+
+        // remove from idIndex[] :
+        // filter idIndex for items not in inclusion hashobject
+        this.idIndex = this.idIndex.filter(function(id) {
+            return !xo[id];
+        });
+
+        this.commit();
+
+        // flag collection as dirty for autosave
+        this.dirty = true;
+      } 
+      catch (err) {
+        this.rollback();
+        this.console.error(err.message);
+        this.emit('error', err);
+        return null;
+      }      
     };
 
     /**

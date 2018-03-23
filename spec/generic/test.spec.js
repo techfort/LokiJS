@@ -1171,6 +1171,32 @@ describe('loki', function () {
     })
   });
 
+  describe('batches removes work', function () {
+    it('works', function() {
+      var rrs = db.addCollection('rrs');
+      var idx, count=100;
+      var r1, r2, c1, c2;
+
+      for (idx=0; idx<count; idx++) {
+        rrs.insert({ a: Math.floor(Math.random()*5), b: idx });
+      }
+
+      r1 = rrs.find({ a: 2 });
+      r2 = rrs.find({ a: 4 });
+
+      c1 = r1?r1.length:0;
+      c2 = r2?r2.length:0;
+
+      // on initial insert, loki ids will always be one greater than data position
+      rrs.chain().find({a: 2}).remove();
+      // so not that data positions have shifted we will do another
+      rrs.chain().find({a: 4}).remove();
+
+      // verify that leftover count matches total count minus deleted counts
+      expect(rrs.count()).toEqual(count-c1-c2);
+    });
+  });
+
   /* Dynamic View Tests */
   describe('stepEvaluateDocument', function () {
     it('works', function () {

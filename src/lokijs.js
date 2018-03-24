@@ -5925,9 +5925,12 @@
           }
         }
 
-        // not sure i want to emit any events
-        // would like to emit single event as  below but that might break existing code
-        // this.emit('delete', {})
+        // emit 'delete' events only of listeners are attached
+        if (!this.disableChangesApi || this.events.delete.length > 1) {
+          for(idx=0; idx < len; idx++) {
+            this.emit('delete', this.data[positions[idx]]);
+          }
+        }
 
         // remove from data[] :
         // filter collection data for items not in inclusion hashobject
@@ -5955,6 +5958,35 @@
     };
 
     /**
+     *  Internal method called by remove()
+     * @param {object[]|number[]} batch - array of documents or $loki ids to remove
+     */
+    Collection.prototype.removeBatch = function(batch) {
+      var len = batch.length, 
+        dlen=this.data.length, 
+        idx;
+      var xlt = {};
+      var posx = [];
+      
+      // create lookup hashobject to translate $loki id to position
+      for (idx=0; idx < dlen; idx++) {
+        xlt[this.data[idx].$loki] = idx;
+      }
+
+      // iterate the batch
+      for (idx=0; idx < len; idx++) {
+        if (typeof(batch[idx]) === 'object') {
+          posx.push(xlt[batch[idx].$loki]);
+        }
+        else {
+          posx.push(xlt[batch[idx]]);
+        }
+      }
+
+      this.removeBatchByPositions(posx);
+    };
+
+    /**
      * Remove a document from the collection
      * @param {object} doc - document to remove from collection
      * @memberof Collection
@@ -5968,11 +6000,7 @@
         throw new Error('Parameter is not an object');
       }
       if (Array.isArray(doc)) {
-        var k = 0,
-          len = doc.length;
-        for (k=len-1; k >= 0; k--) {
-          this.remove(doc[k]);
-        }
+        this.removeBatch(doc);
         return;
       }
 

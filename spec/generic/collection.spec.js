@@ -82,6 +82,37 @@ describe('collection', function () {
     expect(result[2].b).toEqual(8);
   });
 
+  it('removeBatch works', function() {
+    var db = new loki('test.db');
+    var coll = db.addCollection('testcoll');
+    coll.insert([{ a:3, b:3 }, { a:6, b:7 }, { a:1, b:2 }, { a:7, b:8 }, { a:6, b: 4}]);
+
+    // remove by sending array of docs to remove()
+    var results = coll.find({ a: 6});
+    expect(results.length).toEqual(2);
+
+    coll.remove(results);
+    expect(coll.data.length).toEqual(3);
+    
+    results = coll.chain().find().simplesort("b").data();
+    expect(results.length).toEqual(3);
+    expect(results[0].b).toEqual(2);
+    expect(results[1].b).toEqual(3);
+    expect(results[2].b).toEqual(8);
+
+    // now repeat but send $loki id array to remove()
+    coll.clear();
+    coll.insert([{ a:3, b:3 }, { a:6, b:7 }, { a:1, b:2 }, { a:7, b:8 }, { a:6, b: 4}]);
+    results = coll.find({a: 6}).map(function (obj) { return obj.$loki });
+    expect(results.length).toEqual(2);
+    coll.remove(results);
+    results = coll.chain().find().simplesort("b").data();
+    expect(results.length).toEqual(3);
+    expect(results[0].b).toEqual(2);
+    expect(results[1].b).toEqual(3);
+    expect(results[2].b).toEqual(8);
+  });
+
   it('updateWhere works', function() {
     var db = new loki('test.db');
     var coll = db.addCollection('testcoll');

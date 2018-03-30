@@ -33,6 +33,100 @@ describe('dynamicviews', function () {
     });
   });
 
+  describe('dynamic view batch removes work as expected', function() {
+    it('works', function() {
+      var db = new loki('dvtest');
+      var items = db.addCollection('users');
+      var dv = items.addDynamicView('dv');
+      dv.applyFind({a:1});
+
+      items.insert([
+        { a: 0, b:1 },
+        { a: 1, b:2 },
+        { a: 0, b:3 },
+        { a: 1, b:4 },
+        { a: 0, b:5 },
+        { a: 1, b:6 },
+        { a: 1, b:7 },
+        { a: 1, b:8 },
+        { a: 0, b:9 }
+      ]);
+
+      expect(dv.data().length).toEqual(5);
+
+      items.findAndRemove({b: {$lt: 7}});
+
+      expect(dv.data().length).toEqual(2);
+
+      var results = dv.branchResultset().simplesort('b').data();
+
+      expect(results[0].b).toEqual(7);
+      expect(results[1].b).toEqual(8);
+    });
+  });
+
+  describe('dynamic (persistent/sorted) view batch removes work as expected', function() {
+    it('works', function() {
+      var db = new loki('dvtest');
+      var items = db.addCollection('users');
+      var dv = items.addDynamicView('dv', { persistent: true });
+      dv.applyFind({a:1});
+      dv.applySimpleSort('b');
+
+      items.insert([
+        { a: 0, b:1 },
+        { a: 1, b:2 },
+        { a: 0, b:3 },
+        { a: 1, b:4 },
+        { a: 0, b:5 },
+        { a: 1, b:6 },
+        { a: 1, b:7 },
+        { a: 1, b:8 },
+        { a: 0, b:9 }
+      ]);
+
+      expect(dv.data().length).toEqual(5);
+
+      items.findAndRemove({b: {$lt: 7}});
+
+      var results = dv.data();
+      expect(results.length).toEqual(2);
+      expect(results[0].b).toEqual(7);
+      expect(results[1].b).toEqual(8);
+    });
+  });
+
+  describe('dynamic (persistent/sorted/indexed) view batch removes work as expected', function() {
+    it('works', function() {
+      var db = new loki('dvtest');
+      var items = db.addCollection('users', { indices: ['b'] });
+      var dv = items.addDynamicView('dv', { persistent: true });
+      dv.applyFind({a:1});
+      dv.applySimpleSort('b');
+
+      items.insert([
+        { a: 0, b:1 },
+        { a: 1, b:2 },
+        { a: 0, b:3 },
+        { a: 1, b:4 },
+        { a: 0, b:5 },
+        { a: 1, b:6 },
+        { a: 1, b:7 },
+        { a: 1, b:8 },
+        { a: 0, b:9 }
+      ]);
+
+      expect(dv.data().length).toEqual(5);
+
+      items.findAndRemove({b: {$lt: 7}});
+
+      var results = dv.data();
+      expect(results.length).toEqual(2);
+      expect(results[0].b).toEqual(7);
+      expect(results[1].b).toEqual(8);
+    });
+  });
+
   describe('dynamic view rematerialize works as expected', function () {
     it('works', function() {
       var db = new loki('dvtest');

@@ -4545,8 +4545,15 @@
 
     /**
      * removeDocument() - internal function called on collection.delete()
+     * @param {number|number[]} objIndex - index of document to (re)run through filter pipeline.
      */
     DynamicView.prototype.removeDocument = function (objIndex) {
+      var idx, rmidx, rmlen, rxo = {}, fxo = {};
+      var adjels = [];
+      var drs = this.resultset;
+      var fr = this.resultset.filteredrows;
+      var frlen = fr.length;
+
       // if no filter applied yet, the result 'set' should remain 'everything'
       if (!this.resultset.filterInitialized) {
         if (this.options.persistent) {
@@ -4561,32 +4568,33 @@
         return;
       }
 
-      var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(+objIndex);
-      var oldlen = ofr.length;
-      var idx;
+      // if passed single index, wrap in array
+      if (!Array.isArray(objIndex)) {
+        objIndex = [objIndex];
+      }
 
-      if (oldPos !== -1) {
-        // if not last row in resultdata, swap last to hole and truncate last row
-        if (oldPos < oldlen - 1) {
-          ofr[oldPos] = ofr[oldlen - 1];
-          ofr.length = oldlen - 1;
+      rmlen = objIndex.length;
+      // create intersection object of data indices to remove
+      for(rmidx=0;rmidx<rmlen; rmidx++) {
+        rxo[objIndex[rmidx]] = true;
+      }
 
-          if (this.options.persistent) {
-            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-            this.resultdata.length = oldlen - 1;
-          }
+      // pivot remove data indices into remove filteredrows indices and dump in hashobject
+      for (idx=0; idx<frlen; idx++) {
+        if (rxo[fr[idx]]) fxo[idx] = true;
+      }
+
+      // if any of the removed items were in our filteredrows...
+      if (Object.keys(fxo).length > 0) {
+        // remove them from filtered rows
+        this.resultset.filteredrows = this.resultset.filteredrows.filter(function(di, idx) { return !fxo[idx]; });
+        // if persistent...
+        if (this.options.persistent) {
+          // remove from resultdata
+          this.resultdata = this.resultdata.filter(function(obj, idx) { return !fxo[idx]; });
         }
-        // last row, so just truncate last row
-        else {
-          ofr.length = oldlen - 1;
 
-          if (this.options.persistent) {
-            this.resultdata.length = oldlen - 1;
-          }
-        }
-
-        // in case changes to data altered a sort column
+        // and queue sorts 
         if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
@@ -4594,14 +4602,15 @@
         }
       }
 
-      // since we are using filteredrows to store data array positions
-      // if they remove a document (whether in our view or not),
-      // we need to adjust array positions -1 for all document array references after that position
-      oldlen = ofr.length;
-      for (idx = 0; idx < oldlen; idx++) {
-        if (ofr[idx] > objIndex) {
-          ofr[idx]--;
-        }
+      // to remove holes, we need to 'shift down' indices, this filter function finds number of positions to shift
+      var filt = function(idx) { return function(di) { return di < drs.filteredrows[idx]; }; };
+
+      frlen = drs.filteredrows.length;
+      for (idx = 0; idx < frlen; idx++) {
+        // grab subset of removed elements where data index is less than current filtered row data index;
+        // use this to determine how many positions iterated remaining data index needs to be 'shifted down'
+        adjels = objIndex.filter(filt(idx));
+        drs.filteredrows[idx] -= adjels.length;
       }
     };
 
@@ -5903,10 +5912,9 @@
         if ((dlen > 0) || (bic > 0)) {
           if (dlen > 0) {
             // notify dynamic views to remove relevant documents at data positions
-            for (didx = 0; idx < dlen; idx++) {
-              for(idx=0; idx<len; didx++) {
-                this.DynamicViews[idx].removeDocument(positions[idx]);
-              }
+            for (didx = 0; didx < dlen; didx++) {
+              // notify dv of remove (passing batch/array of positions)
+              this.DynamicViews[didx].removeDocument(positions);
             }
           }
 

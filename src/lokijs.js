@@ -6196,8 +6196,7 @@
     Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
       var bi = this.binaryIndices[binaryIndexName];
       var len, idx, rmidx, rmlen, rxo = {};
-      var filt = function(idx) { return function(di) { return di < bi.values[idx]; }; };
-      var adjels;
+      var curr, shift;
 
       if (!Array.isArray(dataPosition)) {
         dataPosition = [dataPosition];
@@ -6210,7 +6209,6 @@
       }
 
       // remove document from index
-      //this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
       bi.values = bi.values.filter(function(di) { return !rxo[di]; });
 
       // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
@@ -6219,13 +6217,19 @@
         return;
       }
 
-      // to remove holes, we need to 'shift down' indices, this filter function finds number of positions to shift
+      // to remove holes, we need to 'shift down' the index's data array positions
+      // we need to adjust array positions -1 for each index data positions greater than removed positions
       len = bi.values.length;
-      for (idx = 0; idx < len; idx++) {
-        // grab subset of removed elements where data index is less than current filtered row data index;
-        // use this to determine how many positions iterated remaining data index needs to be 'shifted down'
-        adjels = dataPosition.filter(filt(idx));
-        bi.values[idx] -= adjels.length;
+      for (idx=0; idx<len; idx++) {
+        curr=bi.values[idx];
+        shift=0;
+
+        for(rmidx=0; rmidx<rmlen; rmidx++) {
+          if (curr > dataPosition[rmidx]) {
+            shift++;
+          }
+        }
+        bi.values[idx]-=shift;
       }
     };
 

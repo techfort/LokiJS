@@ -5923,9 +5923,7 @@
             // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
             var key, bIndices = this.binaryIndices;
             for (key in bIndices) {
-              for(idx=0; idx<len; idx++) {
-                this.adaptiveBinaryIndexRemove(positions[idx], key);
-              }
+              this.adaptiveBinaryIndexRemove(positions, key);
             }
           }
           else {
@@ -6192,22 +6190,28 @@
 
     /**
      * Adaptively remove a selected item from the index.
-     * @param {int} dataPosition : coll.data array index/position
+     * @param {number|number[]} dataPosition : coll.data array index/position
      * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
-      var idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
-      var index = this.binaryIndices[binaryIndexName].values;
-      var len,
-        idx;
+      var bi = this.binaryIndices[binaryIndexName];
+      var len, idx, rmidx, rmlen, rxo = {};
+      var filt = function(idx) { return function(di) { return di < bi.values[idx]; }; };
+      var adjels;
 
-      if (idxPos === null) {
-        // throw new Error('unable to determine binary index position');
-        return null;
+      if (!Array.isArray(dataPosition)) {
+        dataPosition = [dataPosition];
+      }
+
+      rmlen = dataPosition.length;
+      // create intersection object of data indices to remove
+      for(rmidx=0;rmidx<rmlen; rmidx++) {
+        rxo[dataPosition[rmidx]] = true;
       }
 
       // remove document from index
-      this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
+      //this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
+      bi.values = bi.values.filter(function(di) { return !rxo[di]; });
 
       // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
       // in which case data positions stay the same.
@@ -6215,13 +6219,13 @@
         return;
       }
 
-      // since index stores data array positions, if we remove a document
-      // we need to adjust array positions -1 for all document positions greater than removed position
-      len = index.length;
+      // to remove holes, we need to 'shift down' indices, this filter function finds number of positions to shift
+      len = bi.values.length;
       for (idx = 0; idx < len; idx++) {
-        if (index[idx] > dataPosition) {
-          index[idx]--;
-        }
+        // grab subset of removed elements where data index is less than current filtered row data index;
+        // use this to determine how many positions iterated remaining data index needs to be 'shifted down'
+        adjels = dataPosition.filter(filt(idx));
+        bi.values[idx] -= adjels.length;
       }
     };
 

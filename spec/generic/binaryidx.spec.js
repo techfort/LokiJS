@@ -118,6 +118,27 @@ describe('binary indices', function () {
     });
   });
 
+  describe('index maintained across batch removes', function() {
+    it('works', function() {
+      var db = new loki('batch-removes');
+      var items = db.addCollection('items', { indices: ['b'] });
+      
+      for(idx=0;idx<100;idx++) {
+        a = Math.floor(Math.random() * 1000);
+        b = Math.floor(Math.random() * 1000);
+        items.insert({ "a": a, "b": b });
+      }
+      
+      var result = items.find({ a: { $between: [300, 700] } });
+
+      items.findAndRemove({ a: { $between: [300, 700] } });
+      
+      expect(items.checkIndex('b')).toEqual(true);
+
+      expect(items.find().length).toEqual(100-result.length);
+    });
+  });
+
   describe('index maintained across updates', function() {
     it('works', function () {
 

@@ -5897,6 +5897,7 @@
       var xo = {};
       var dlen, didx, idx;
       var bic=Object.keys(this.binaryIndices).length;
+      var adaptiveOverride = true;
 
       try {
         this.startTransaction();
@@ -5919,9 +5920,10 @@
           }
 
           // notify binary indices to update
-          if (this.adaptiveBinaryIndices) {
+          if (this.adaptiveBinaryIndices && !adaptiveOverride) {
             // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
             var key, bIndices = this.binaryIndices;
+
             for (key in bIndices) {
               this.adaptiveBinaryIndexRemove(positions, key);
             }
@@ -5949,6 +5951,12 @@
         this.idIndex = this.idIndex.filter(function(id) {
             return !xo[id];
         });
+
+        if (this.adaptiveBinaryIndices && adaptiveOverride) {
+          this.adaptiveBinaryIndices = false;
+          this.ensureAllIndexes(true);
+          this.adaptiveBinaryIndices = true;
+        }
 
         this.commit();
 
@@ -6217,17 +6225,17 @@
         return;
       }
 
+      var sortedPositions = dataPosition.slice();
+      sortedPositions.sort(function (a, b) { return a-b; });
+
       // to remove holes, we need to 'shift down' the index's data array positions
       // we need to adjust array positions -1 for each index data positions greater than removed positions
       len = bi.values.length;
       for (idx=0; idx<len; idx++) {
         curr=bi.values[idx];
         shift=0;
-
-        for(rmidx=0; rmidx<rmlen; rmidx++) {
-          if (curr > dataPosition[rmidx]) {
+        for(rmidx=0; rmidx<rmlen && curr > sortedPositions[rmidx]; rmidx++) {
             shift++;
-          }
         }
         bi.values[idx]-=shift;
       }

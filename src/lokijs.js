@@ -5674,26 +5674,30 @@
      * @memberof Collection
      */
     Collection.prototype.update = function (doc) {
+      var adaptiveBatchOverride, k, len;
+
       if (Array.isArray(doc)) {
-        var k = 0,
-          len = doc.length;
+        len = doc.length;
 
         // if not cloning, disable adaptive binary indices for the duration of the batch update,
         // followed by lazy rebuild and re-enabling adaptive indices after batch update.
-        var adaptiveBatchOverride = !this.cloneObjects &&
+        adaptiveBatchOverride = !this.cloneObjects &&
           this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
 
         if (adaptiveBatchOverride) {
           this.adaptiveBinaryIndices = false;
         }
 
-        for (k; k < len; k += 1) {
-          this.update(doc[k]);
+        try {
+          for (k=0; k < len; k += 1) {
+            this.update(doc[k]);
+          }
         }
-
-        if (adaptiveBatchOverride) {
-          this.ensureAllIndexes();
-          this.adaptiveBinaryIndices = true;
+        finally {
+          if (adaptiveBatchOverride) {
+            this.ensureAllIndexes();
+            this.adaptiveBinaryIndices = true;
+          }
         }
 
         return;
@@ -5897,7 +5901,7 @@
       var xo = {};
       var dlen, didx, idx;
       var bic=Object.keys(this.binaryIndices).length;
-      var adaptiveOverride = true;
+      var adaptiveOverride = this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
 
       try {
         this.startTransaction();
@@ -5933,7 +5937,9 @@
           }
         }
 
-        // emit 'delete' events only of listeners are attached
+        // emit 'delete' events only of listeners are attached.
+        // since data not removed yet, in future we can emit single delete event with array...
+        // for now that might be breaking change to put in potential 1.6 or LokiDB (lokijs2) version
         if (!this.disableChangesApi || this.events.delete.length > 1) {
           for(idx=0; idx < len; idx++) {
             this.emit('delete', this.data[positions[idx]]);
@@ -5965,6 +5971,9 @@
       } 
       catch (err) {
         this.rollback();
+        if (adaptiveOverride) {
+          this.adaptiveBinaryIndices = true;
+        }
         this.console.error(err.message);
         this.emit('error', err);
         return null;
@@ -6204,20 +6213,61 @@
     Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
       var bi = this.binaryIndices[binaryIndexName];
       var len, idx, rmidx, rmlen, rxo = {};
-      var curr, shift;
+      var curr, shift, idxPos;
 
-      if (!Array.isArray(dataPosition)) {
-        dataPosition = [dataPosition];
+      if (Array.isArray(dataPosition)) {
+        // when called from chained remove, and only one document in array,
+        // it will be faster to use old algorithm
+        rmlen = dataPosition.length;
+        if (rmlen === 1) {
+          dataPosition = dataPosition[0];
+        }
+        // we were passed an array (batch) of documents so use this 'batch optimized' algorithm
+        else {
+          for(rmidx=0;rmidx<rmlen; rmidx++) {
+            rxo[dataPosition[rmidx]] = true;
+          }
+    
+          // remove document from index (with filter function)
+          bi.values = bi.values.filter(function(di) { return !rxo[di]; });
+    
+          // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
+          // in which case data positions stay the same.
+          if (removedFromIndexOnly === true) {
+            return;
+          }
+    
+          var sortedPositions = dataPosition.slice();
+          sortedPositions.sort(function (a, b) { return a-b; });
+    
+          // to remove holes, we need to 'shift down' the index's data array positions
+          // we need to adjust array positions -1 for each index data positions greater than removed positions
+          len = bi.values.length;
+          for (idx=0; idx<len; idx++) {
+            curr=bi.values[idx];
+            shift=0;
+            for(rmidx=0; rmidx<rmlen && curr > sortedPositions[rmidx]; rmidx++) {
+                shift++;
+            }
+            bi.values[idx]-=shift;
+          }
+
+          // batch processed, bail out
+          return;
+        }
+
+        // not a batch so continue...
       }
 
-      rmlen = dataPosition.length;
-      // create intersection object of data indices to remove
-      for(rmidx=0;rmidx<rmlen; rmidx++) {
-        rxo[dataPosition[rmidx]] = true;
+      idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
+
+      if (idxPos === null) {
+        // throw new Error('unable to determine binary index position');
+        return null;
       }
 
-      // remove document from index
-      bi.values = bi.values.filter(function(di) { return !rxo[di]; });
+      // remove document from index (with splice)
+      bi.values.splice(idxPos, 1);
 
       // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
       // in which case data positions stay the same.
@@ -6225,19 +6275,13 @@
         return;
       }
 
-      var sortedPositions = dataPosition.slice();
-      sortedPositions.sort(function (a, b) { return a-b; });
-
-      // to remove holes, we need to 'shift down' the index's data array positions
-      // we need to adjust array positions -1 for each index data positions greater than removed positions
+      // since index stores data array positions, if we remove a document
+      // we need to adjust array positions -1 for all document positions greater than removed position
       len = bi.values.length;
-      for (idx=0; idx<len; idx++) {
-        curr=bi.values[idx];
-        shift=0;
-        for(rmidx=0; rmidx<rmlen && curr > sortedPositions[rmidx]; rmidx++) {
-            shift++;
+      for (idx = 0; idx < len; idx++) {
+        if (bi.values[idx] > dataPosition) {
+          bi.values[idx]--;
         }
-        bi.values[idx]-=shift;
       }
     };
 

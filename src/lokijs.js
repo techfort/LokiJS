@@ -3640,15 +3640,22 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var len = this.filteredrows.length,
+      var obj, len = this.filteredrows.length,
         rcd = this.collection.data;
 
+      // pass in each document object currently in resultset to user supplied updateFunction
       for (var idx = 0; idx < len; idx++) {
-        // pass in each document object currently in resultset to user supplied updateFunction
-        updateFunction(rcd[this.filteredrows[idx]]);
-
-        // notify collection we have changed this object so it can update meta and allow DynamicViews to re-evaluate
-        this.collection.update(rcd[this.filteredrows[idx]]);
+        // if we have cloning option specified or are doing differential delta changes, clone object first
+        if (this.collection.cloneObjects || !this.disableDeltaChangesApi) {
+          obj = clone(rcd[this.filteredrows[idx]], this.collection.cloneMethod);
+          updateFunction(obj);
+          this.collection.update(obj);
+        }
+        else {
+          // no need to clone, so just perform update on collection data object instance
+          updateFunction(rcd[this.filteredrows[idx]]);
+          this.collection.update(rcd[this.filteredrows[idx]]);
+        }
       }
 
       return this;
@@ -4815,18 +4822,6 @@
 
       this.observerCallback = observerCallback;
 
-      /*
-       * This method creates a clone of the current status of an object and associates operation and collection name,
-       * so the parent db can aggregate and generate a changes object for the entire db
-       */
-      function createChange(name, op, obj, old) {
-        self.changes.push({
-          name: name,
-          operation: op,
-          obj: op == 'U' && !self.disableDeltaChangesApi ? getChangeDelta(obj, old) : JSON.parse(JSON.stringify(obj))
-        });
-      }
-
       //Compare changed object (which is a forced clone) with existing object and return the delta
       function getChangeDelta(obj, old) {
         if (old) {
@@ -4877,97 +4872,14 @@
 
       this.flushChanges = flushChanges;
 
-      /**
-       * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
-       */
-      function insertMeta(obj) {
-        var len, idx;
-
-        if (self.disableMeta || !obj) {
-          return;
-        }
-
-        // if batch insert
-        if (Array.isArray(obj)) {
-          len = obj.length;
-
-          for(idx=0; idx<len; idx++) {
-            if (!obj[idx].hasOwnProperty('meta')) {
-              obj[idx].meta = {};
-            }
-
-            obj[idx].meta.created = (new Date()).getTime();
-            obj[idx].meta.revision = 0;
-          }
-
-          return;
-        }
-
-        // single object
-        if (!obj.meta) {
-          obj.meta = {};
-        }
-
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
-      }
-
-      function updateMeta(obj) {
-        if (self.disableMeta || !obj) {
-          return;
-        }
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
-      }
-
-      function createInsertChange(obj) {
-        createChange(self.name, 'I', obj);
-      }
-
-      function createUpdateChange(obj, old) {
-        createChange(self.name, 'U', obj, old);
-      }
-
-      function insertMetaWithChange(obj) {
-        insertMeta(obj);
-        createInsertChange(obj);
-      }
-
-      function updateMetaWithChange(obj, old) {
-        updateMeta(obj);
-        createUpdateChange(obj, old);
-      }
-
-
-      /* assign correct handler based on ChangesAPI flag */
-      var insertHandler, updateHandler;
-
-      function setHandlers() {
-        insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange;
-        updateHandler = self.disableChangesApi ? updateMeta : updateMetaWithChange;
-      }
-
-      setHandlers();
-
       this.setChangesApi = function (enabled) {
         self.disableChangesApi = !enabled;
         if (!enabled) { self.disableDeltaChangesApi = false; }
-        setHandlers();
       };
-      /**
-       * built-in events
-       */
-      this.on('insert', function insertCallback(obj) {
-        insertHandler(obj);
-      });
-
-      this.on('update', function updateCallback(obj, old) {
-        updateHandler(obj, old);
-      });
 
       this.on('delete', function deleteCallback(obj) {
         if (!self.disableChangesApi) {
-          createChange(self.name, 'R', obj);
+          self.createChange(self.name, 'R', obj);
         }
       });
 
@@ -4979,6 +4891,75 @@
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    /*
+      * For ChangeAPI default to clone entire object, for delta changes create object with only differences (+ $loki and meta)
+      */
+    Collection.prototype.createChange = function(name, op, obj, old) {
+      this.changes.push({
+        name: name,
+        operation: op,
+        obj: op == 'U' && !this.disableDeltaChangesApi ? this.getChangeDelta(obj, old) : JSON.parse(JSON.stringify(obj))
+      });
+    };
+
+    Collection.prototype.insertMeta = function(obj) {
+      var len, idx;
+
+      if (this.disableMeta || !obj) {
+        return;
+      }
+
+      // if batch insert
+      if (Array.isArray(obj)) {
+        len = obj.length;
+
+        for(idx=0; idx<len; idx++) {
+          if (!obj[idx].hasOwnProperty('meta')) {
+            obj[idx].meta = {};
+          }
+
+          obj[idx].meta.created = (new Date()).getTime();
+          obj[idx].meta.revision = 0;
+        }
+
+        return;
+      }
+
+      // single object
+      if (!obj.meta) {
+        obj.meta = {};
+      }
+
+      obj.meta.created = (new Date()).getTime();
+      obj.meta.revision = 0;
+    };
+
+    Collection.prototype.updateMeta = function(obj) {
+      if (this.disableMeta || !obj) {
+        return;
+      }
+      obj.meta.updated = (new Date()).getTime();
+      obj.meta.revision += 1;
+    };
+
+    Collection.prototype.createInsertChange = function(obj) {
+      this.createChange(this.name, 'I', obj);
+    };
+
+    Collection.prototype.createUpdateChange = function(obj, old) {
+      this.createChange(this.name, 'U', obj, old);
+    };
+
+    Collection.prototype.insertMetaWithChange = function(obj) {
+      this.insertMeta(obj);
+      this.createInsertChange(obj);
+    };
+
+    Collection.prototype.updateMetaWithChange = function(obj, old) {
+      this.updateMeta(obj);
+      this.createUpdateChange(obj, old);
+    };
 
     Collection.prototype.console = {
       log: function () {},
@@ -5557,6 +5538,7 @@
         }
         results.push(obj);
       }
+
       // at the 'batch' level, if clone option is true then emitted docs are clones
       this.emit('insert', results);
 
@@ -5606,10 +5588,19 @@
         return undefined;
       }
 
-      returnObj = obj;
+      // update meta and store changes if ChangesAPI is enabled
+      // (moved from "insert" event listener to allow internal reference to be used)
+      if (this.disableChangesApi) {
+        this.insertMeta(obj);
+      }
+      else {
+        this.insertMetaWithChange(obj);
+      }
+
+      // if cloning is enabled, emit insert event with clone of new object
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
       if (!bulkInsert) {
-        this.emit('insert', obj);
-        returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+        this.emit('insert', returnObj);
       }
 
       this.addAutoUpdateObserver(returnObj);
@@ -5762,8 +5753,26 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
 
-        this.emit('update', doc, this.cloneObjects || !this.disableDeltaChangesApi ? clone(oldInternal, this.cloneMethod) : null);
-        return doc;
+        // update meta and store changes if ChangesAPI is enabled
+        if (this.disableChangesApi) {
+          this.updateMeta(newInternal, null);
+        }
+        else {
+          this.updateMetaWithChange(newInternal, oldInternal);
+        }
+
+        var returnObj;
+
+        // if cloning is enabled, emit 'update' event and return with clone of new object
+        if (this.cloneObjects) {
+          returnObj = clone(newInternal, this.cloneMethod);
+        }
+        else {
+          returnObj = newInternal;
+        }
+
+        this.emit('update', returnObj, oldInternal);
+        return returnObj;
       } catch (err) {
         this.rollback();
         this.console.error(err.message);

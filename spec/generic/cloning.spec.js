@@ -44,6 +44,30 @@ describe('cloning behavior', function () {
     });
   });
 
+  describe('cloning insert events emit cloned object', function() {
+    it('works', function() {
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true });
+
+      citems.on("insert", function(obj) {
+        /// attempt to tamper with name
+        obj.name = "zzz";
+      });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves', count:0 });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves', count:0 });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves', count:0 });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves', count:0 });
+
+      var results = citems.find();
+      expect(results.length).toEqual(4);
+
+      results.forEach(function(obj) {
+        expect(obj.name === 'zzz').toEqual(false);
+      });
+    });
+  });  
+
   describe('cloning updates are immutable', function() {
     it('works', function() {
       var cdb = new loki('clonetest');
@@ -61,6 +85,38 @@ describe('cloning behavior', function () {
       var result = citems.findOne({'owner': 'thor'});
 
       expect(result.name).toBe("mjolnir");
+    });
+  });
+
+  describe('cloning updates events emit cloned object', function() {
+    it('works', function() {
+      var cdb = new loki('clonetest');
+      var citems = cdb.addCollection('items', { clone: true });
+
+      citems.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves', count:0 });
+      citems.insert({ name : 'gungnir', owner: 'odin', maker: 'elves', count:0 });
+      citems.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves', count:0 });
+      citems.insert({ name : 'draupnir', owner: 'odin', maker: 'elves', count:0 });
+
+      citems.on("update", function(obj) {
+        /// attempt to tamper with name
+        obj.name = "zzz";
+      });
+
+      citems.findAndUpdate({ name: "mjolnir" }, function(o) {
+        // make an approved modification
+        o.count++;
+      });
+
+      var results = citems.find();
+      expect(results.length).toEqual(4);
+
+      results.forEach(function(obj) {
+        expect(obj.name === 'zzz').toEqual(false);
+      });
+
+      var mj=citems.findOne({name: "mjolnir"});
+      expect(mj.count).toEqual(1);
     });
   });
 

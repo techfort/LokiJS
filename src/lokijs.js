@@ -72,6 +72,15 @@
       }
     };
 
+    // wrapping in object to expose to default export for potential user override.
+    // warning: overriding these methods will override behavior for all loki db instances in memory.
+    // warning: if you use binary indices these comparators should be the same for all inserts/updates/removes.
+    var Comparators = {
+      aeq: aeqHelper,
+      lt: ltHelper,
+      gt: gtHelper
+    };
+
     /** Helper function for determining 'loki' abstract equality which is a little more abstract than ==
      *     aeqHelper(5, '5') === true
      *     aeqHelper(5.0, '5') === true
@@ -270,13 +279,13 @@
     }
 
     function sortHelper(prop1, prop2, desc) {
-      if (aeqHelper(prop1, prop2)) return 0;
+      if (Comparators.aeq(prop1, prop2)) return 0;
 
-      if (ltHelper(prop1, prop2, false)) {
+      if (Comparators.lt(prop1, prop2, false)) {
         return (desc) ? (1) : (-1);
       }
 
-      if (gtHelper(prop1, prop2, false)) {
+      if (Comparators.gt(prop1, prop2, false)) {
         return (desc) ? (-1) : (1);
       }
 
@@ -396,24 +405,24 @@
       },
       // date equality / loki abstract equality test
       $dteq: function (a, b) {
-        return aeqHelper(a, b);
+        return Comparators.aeq(a, b);
       },
 
       // loki comparisons: return identical unindexed results as indexed comparisons
       $gt: function (a, b) {
-        return gtHelper(a, b, false);
+        return Comparators.gt(a, b, false);
       },
 
       $gte: function (a, b) {
-        return gtHelper(a, b, true);
+        return Comparators.gt(a, b, true);
       },
 
       $lt: function (a, b) {
-        return ltHelper(a, b, false);
+        return Comparators.lt(a, b, false);
       },
 
       $lte: function (a, b) {
-        return ltHelper(a, b, true);
+        return Comparators.lt(a, b, true);
       },
 
       // lightweight javascript comparisons
@@ -436,7 +445,7 @@
       // ex : coll.find({'orderCount': {$between: [10, 50]}});
       $between: function (a, vals) {
         if (a === undefined || a === null) return false;
-        return (gtHelper(a, vals[0], true) && ltHelper(a, vals[1], true));
+        return (Comparators.gt(a, vals[0], true) && Comparators.lt(a, vals[1], true));
       },
 
       $jbetween: function (a, vals) {
@@ -5171,8 +5180,8 @@
             }
 
             if (val1 !== val2) {
-              if (ltHelper(val1, val2, false)) return -1;
-              if (gtHelper(val1, val2, false)) return 1;
+              if (Comparators.lt(val1, val2, false)) return -1;
+              if (Comparators.gt(val1, val2, false)) return 1;
             }
             return 0;
           };
@@ -6147,7 +6156,6 @@
 
       // i think calculateRange can probably be moved to collection
       // as it doesn't seem to need resultset.  need to verify
-      //var rs = new Resultset(this, null, null);
       var range = this.calculateRange("$eq", binaryIndexName, val);
 
       if (range[0] === 0 && range[1] === -1) {
@@ -6326,7 +6334,7 @@
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+        if (Comparators.lt(rcd[index[mid]][prop], val, false)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -6336,12 +6344,12 @@
       var lbound = min;
 
       // found it... return it
-      if (aeqHelper(val, rcd[index[lbound]][prop])) {
+      if (Comparators.aeq(val, rcd[index[lbound]][prop])) {
         return lbound;
       }
 
       // if not in index and our value is less than the found one
-      if (ltHelper(val, rcd[index[lbound]][prop], false)) {
+      if (Comparators.lt(val, rcd[index[lbound]][prop], false)) {
         return adaptive?lbound:lbound-1;
       }
 
@@ -6371,7 +6379,7 @@
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+        if (Comparators.lt(val, rcd[index[mid]][prop], false)) {
           max = mid;
         } else {
           min = mid + 1;
@@ -6381,17 +6389,17 @@
       var ubound = max;
 
       // only eq if last element in array is our val
-      if (aeqHelper(val, rcd[index[ubound]][prop])) {
+      if (Comparators.aeq(val, rcd[index[ubound]][prop])) {
         return ubound;
       }
 
        // if not in index and our value is less than the found one
-      if (gtHelper(val, rcd[index[ubound]][prop], false)) {
+      if (Comparators.gt(val, rcd[index[ubound]][prop], false)) {
         return ubound+1;
       }
 
       // either hole or first nonmatch
-      if (aeqHelper(val, rcd[index[ubound-1]][prop])) {
+      if (Comparators.aeq(val, rcd[index[ubound-1]][prop])) {
         return ubound-1;
       }
 
@@ -6430,62 +6438,62 @@
       switch (op) {
       case '$eq':
       case '$aeq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+        if (Comparators.lt(val, minVal, false) || Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         break;
       case '$dteq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+        if (Comparators.lt(val, minVal, false) || Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         break;
       case '$gt':
         // none are within range
-        if (gtHelper(val, maxVal, true)) {
+        if (Comparators.gt(val, maxVal, true)) {
           return [0, -1];
         }
         // all are within range
-        if (gtHelper(minVal, val, false)) {
+        if (Comparators.gt(minVal, val, false)) {
           return [min, max];
         }
         break;
       case '$gte':
         // none are within range
-        if (gtHelper(val, maxVal, false)) {
+        if (Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         // all are within range
-        if (gtHelper(minVal, val, true)) {
+        if (Comparators.gt(minVal, val, true)) {
             return [min, max];
         }
         break;
       case '$lt':
         // none are within range
-        if (ltHelper(val, minVal, true)) {
+        if (Comparators.lt(val, minVal, true)) {
           return [0, -1];
         }
         // all are within range
-        if (ltHelper(maxVal, val, false)) {
+        if (Comparators.lt(maxVal, val, false)) {
           return [min, max];
         }
         break;
       case '$lte':
         // none are within range
-        if (ltHelper(val, minVal, false)) {
+        if (Comparators.lt(val, minVal, false)) {
           return [0, -1];
         }
         // all are within range
-        if (ltHelper(maxVal, val, true)) {
+        if (Comparators.lt(maxVal, val, true)) {
           return [min, max];
         }
         break;
       case '$between':
         // none are within range (low range is greater)
-        if (gtHelper(val[0], maxVal, false)) {
+        if (Comparators.gt(val[0], maxVal, false)) {
           return [0, -1];
         }
         // none are within range (high range lower)
-        if (ltHelper(val[1], minVal, false)) {
+        if (Comparators.lt(val[1], minVal, false)) {
           return [0, -1];
         }
 
@@ -6495,8 +6503,8 @@
         if (lbound < 0) lbound++;
         if (ubound > max) ubound--;
 
-        if (!gtHelper(rcd[index[lbound]][prop], val[0], true)) lbound++;
-        if (!ltHelper(rcd[index[ubound]][prop], val[1], true)) ubound--;
+        if (!Comparators.gt(rcd[index[lbound]][prop], val[0], true)) lbound++;
+        if (!Comparators.lt(rcd[index[ubound]][prop], val[1], true)) ubound--;
 
         if (ubound < lbound) return [0, -1];
 
@@ -6550,28 +6558,15 @@
       case '$aeq':
       case '$dteq':
         // if hole (not found)
-        //if (ltHelper(lval, val, false) || gtHelper(lval, val, false)) {
-        //  return [0, -1];
-        //}
-        if (!aeqHelper(lval, val)) {
+        if (!Comparators.aeq(lval, val)) {
           return [0, -1];
         }
 
         return [lbound, ubound];
 
-      //case '$dteq':
-        // if hole (not found)
-      //  if (lval > val || lval < val) {
-      //    return [0, -1];
-      //  }
-
-      //  return [lbound, ubound];
-
       case '$gt':
-        // (an eqHelper would probably be better test)
         // if hole (not found) ub position is already greater
-        if (!aeqHelper(rcd[index[ubound]][prop], val)) {
-        //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
           return [ubound, max];
         }
         // otherwise (found) so ubound is still equal, get next
@@ -6579,8 +6574,7 @@
 
       case '$gte':
         // if hole (not found) lb position marks left outside of range
-        if (!aeqHelper(rcd[index[lbound]][prop], val)) {
-        //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
           return [lbound+1, max];
         }
         // otherwise (found) so lb is first position where its equal
@@ -6588,8 +6582,7 @@
 
       case '$lt':
         // if hole (not found) position already is less than
-        if (!aeqHelper(rcd[index[lbound]][prop], val)) {
-        //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
           return [min, lbound];
         }
         // otherwise (found) so lb marks left inside of eq range, get previous
@@ -6597,8 +6590,7 @@
 
       case '$lte':
         // if hole (not found) ub position marks right outside so get previous
-        if (!aeqHelper(rcd[index[ubound]][prop], val)) {
-        //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
           return [min, ubound-1];
         }
         // otherwise (found) so ub is last position where its still equal
@@ -7342,6 +7334,7 @@
     Loki.aeq = aeqHelper;
     Loki.lt = ltHelper;
     Loki.gt = gtHelper;
+    Loki.Comparators = Comparators;
     return Loki;
   }());
 

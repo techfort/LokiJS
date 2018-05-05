@@ -2250,7 +2250,11 @@
      * @constructor LokiFsAdapter
      */
     function LokiFsAdapter() {
-      this.fs = require('fs');
+      try {
+        this.fs = require('fs');
+      }catch(e) {
+        this.fs = null;
+      }
     }
 
     /**

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.4
+* fixes to checkIndex maintenance fn (#654, #661)
+* bulk remove optimizations (#663)
+* fix to meta when cloning (#666)
+* AWS S3 sync adapter added (#670)
+* fix for browser project: fs not found (#674)
+* added comparators to default export (#672)
+
 ## 1.5.3
 * simplesort can leverage binary index (via index intersect) when weakly filtered (#645)
 * the simplesort 'descending' param is now multipurposed (with bw-compat) see jsdocs

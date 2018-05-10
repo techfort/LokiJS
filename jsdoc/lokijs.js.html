@@ -100,6 +100,15 @@
       }
     };
 
+    // wrapping in object to expose to default export for potential user override.
+    // warning: overriding these methods will override behavior for all loki db instances in memory.
+    // warning: if you use binary indices these comparators should be the same for all inserts/updates/removes.
+    var Comparators = {
+      aeq: aeqHelper,
+      lt: ltHelper,
+      gt: gtHelper
+    };
+
     /** Helper function for determining 'loki' abstract equality which is a little more abstract than ==
      *     aeqHelper(5, '5') === true
      *     aeqHelper(5.0, '5') === true
@@ -298,13 +307,13 @@
     }
 
     function sortHelper(prop1, prop2, desc) {
-      if (aeqHelper(prop1, prop2)) return 0;
+      if (Comparators.aeq(prop1, prop2)) return 0;
 
-      if (ltHelper(prop1, prop2, false)) {
+      if (Comparators.lt(prop1, prop2, false)) {
         return (desc) ? (1) : (-1);
       }
 
-      if (gtHelper(prop1, prop2, false)) {
+      if (Comparators.gt(prop1, prop2, false)) {
         return (desc) ? (-1) : (1);
       }
 
@@ -424,24 +433,24 @@
       },
       // date equality / loki abstract equality test
       $dteq: function (a, b) {
-        return aeqHelper(a, b);
+        return Comparators.aeq(a, b);
       },
 
       // loki comparisons: return identical unindexed results as indexed comparisons
       $gt: function (a, b) {
-        return gtHelper(a, b, false);
+        return Comparators.gt(a, b, false);
       },
 
       $gte: function (a, b) {
-        return gtHelper(a, b, true);
+        return Comparators.gt(a, b, true);
       },
 
       $lt: function (a, b) {
-        return ltHelper(a, b, false);
+        return Comparators.lt(a, b, false);
       },
 
       $lte: function (a, b) {
-        return ltHelper(a, b, true);
+        return Comparators.lt(a, b, true);
       },
 
       // lightweight javascript comparisons
@@ -464,7 +473,7 @@
       // ex : coll.find({'orderCount': {$between: [10, 50]}});
       $between: function (a, vals) {
         if (a === undefined || a === null) return false;
-        return (gtHelper(a, vals[0], true) &amp;&amp; ltHelper(a, vals[1], true));
+        return (Comparators.gt(a, vals[0], true) &amp;&amp; Comparators.lt(a, vals[1], true));
       },
 
       $jbetween: function (a, vals) {
@@ -854,7 +863,7 @@
           return 'NODEJS';
         }
 
-        if (typeof global !== 'undefined' &amp;&amp; global.window) {
+        if (typeof global !== 'undefined' &amp;&amp; global.window &amp;&amp; process) {
           return 'NODEJS'; //node-webkit
         }
 
@@ -2269,7 +2278,11 @@
      * @constructor LokiFsAdapter
      */
     function LokiFsAdapter() {
-      this.fs = require('fs');
+      try {
+        this.fs = require('fs');
+      }catch(e) {
+        this.fs = null;
+      }
     }
 
     /**
@@ -3668,15 +3681,22 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      var len = this.filteredrows.length,
+      var obj, len = this.filteredrows.length,
         rcd = this.collection.data;
 
+      // pass in each document object currently in resultset to user supplied updateFunction
       for (var idx = 0; idx &lt; len; idx++) {
-        // pass in each document object currently in resultset to user supplied updateFunction
-        updateFunction(rcd[this.filteredrows[idx]]);
-
-        // notify collection we have changed this object so it can update meta and allow DynamicViews to re-evaluate
-        this.collection.update(rcd[this.filteredrows[idx]]);
+        // if we have cloning option specified or are doing differential delta changes, clone object first
+        if (this.collection.cloneObjects || !this.collection.disableDeltaChangesApi) {
+          obj = clone(rcd[this.filteredrows[idx]], this.collection.cloneMethod);
+          updateFunction(obj);
+          this.collection.update(obj);
+        }
+        else {
+          // no need to clone, so just perform update on collection data object instance
+          updateFunction(rcd[this.filteredrows[idx]]);
+          this.collection.update(rcd[this.filteredrows[idx]]);
+        }
       }
 
       return this;
@@ -3698,7 +3718,7 @@
         this.filteredrows = this.collection.prepareFullDocIndex();
       }
 
-      this.collection.remove(this.data());
+      this.collection.removeBatchByPositions(this.filteredrows);
 
       this.filteredrows = [];
 
@@ -3924,6 +3944,7 @@
       // we only support one active search, applied using applySort() or applySimpleSort()
       this.sortFunction = null;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
       this.sortDirty = false;
 
       // for now just have 1 event for when we finally rebuilt lazy view
@@ -3959,7 +3980,7 @@
       this.resultsdirty = true;
       this.resultset = new Resultset(this.collection);
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.sortDirty = true;
       }
 
@@ -4050,6 +4071,7 @@
       copy.filterPipeline = this.filterPipeline;
       copy.sortFunction = this.sortFunction;
       copy.sortCriteria = this.sortCriteria;
+      copy.sortCriteriaSimple = this.sortCriteriaSimple || null;
       copy.sortDirty = this.sortDirty;
 
       // avoid circular reference, reapply in db.loadJSON()
@@ -4082,6 +4104,7 @@
       // we only support one active search, applied using applySort() or applySimpleSort()
       this.sortFunction = null;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
       this.sortDirty = false;
 
       if (options.queueSortPhase === true) {
@@ -4105,6 +4128,7 @@
     DynamicView.prototype.applySort = function (comparefun) {
       this.sortFunction = comparefun;
       this.sortCriteria = null;
+      this.sortCriteriaSimple = null;
 
       this.queueSortPhase();
 
@@ -4126,9 +4150,8 @@
      * @memberof DynamicView
      */
     DynamicView.prototype.applySimpleSort = function (propname, options) {
-      this.sortCriteria = [
-        [propname, options || false]
-      ];
+      this.sortCriteriaSimple = { propname: propname, options: options || false };
+      this.sortCriteria = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
@@ -4152,6 +4175,7 @@
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
       this.sortCriteria = criteria;
+      this.sortCriteriaSimple = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
@@ -4251,7 +4275,7 @@
         this._addFilter(filters[idx]);
       }
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.queueSortPhase();
       } else {
         this.queueRebuildEvent();
@@ -4283,7 +4307,7 @@
 
       this._addFilter(filter);
 
-      if (this.sortFunction || this.sortCriteria) {
+      if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
         this.queueSortPhase();
       } else {
         this.queueRebuildEvent();
@@ -4444,6 +4468,8 @@
           this.resultset.sort(this.sortFunction);
         } else if (this.sortCriteria) {
           this.resultset.compoundsort(this.sortCriteria);
+        } else if (this.sortCriteriaSimple) {
+          this.resultset.simplesort(this.sortCriteriaSimple.propname, this.sortCriteriaSimple.options);
         }
 
         this.sortDirty = false;
@@ -4474,7 +4500,7 @@
           this.resultdata = this.resultset.data();
         }
         // need to re-sort to sort new document
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4512,7 +4538,7 @@
         }
 
         // need to re-sort to sort new document
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4538,7 +4564,7 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4555,7 +4581,7 @@
         }
 
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4567,15 +4593,22 @@
 
     /**
      * removeDocument() - internal function called on collection.delete()
+     * @param {number|number[]} objIndex - index of document to (re)run through filter pipeline.
      */
     DynamicView.prototype.removeDocument = function (objIndex) {
+      var idx, rmidx, rmlen, rxo = {}, fxo = {};
+      var adjels = [];
+      var drs = this.resultset;
+      var fr = this.resultset.filteredrows;
+      var frlen = fr.length;
+
       // if no filter applied yet, the result 'set' should remain 'everything'
       if (!this.resultset.filterInitialized) {
         if (this.options.persistent) {
           this.resultdata = this.resultset.data();
         }
         // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
@@ -4583,47 +4616,49 @@
         return;
       }
 
-      var ofr = this.resultset.filteredrows;
-      var oldPos = ofr.indexOf(+objIndex);
-      var oldlen = ofr.length;
-      var idx;
+      // if passed single index, wrap in array
+      if (!Array.isArray(objIndex)) {
+        objIndex = [objIndex];
+      }
 
-      if (oldPos !== -1) {
-        // if not last row in resultdata, swap last to hole and truncate last row
-        if (oldPos &lt; oldlen - 1) {
-          ofr[oldPos] = ofr[oldlen - 1];
-          ofr.length = oldlen - 1;
+      rmlen = objIndex.length;
+      // create intersection object of data indices to remove
+      for(rmidx=0;rmidx&lt;rmlen; rmidx++) {
+        rxo[objIndex[rmidx]] = true;
+      }
 
-          if (this.options.persistent) {
-            this.resultdata[oldPos] = this.resultdata[oldlen - 1];
-            this.resultdata.length = oldlen - 1;
-          }
+      // pivot remove data indices into remove filteredrows indices and dump in hashobject
+      for (idx=0; idx&lt;frlen; idx++) {
+        if (rxo[fr[idx]]) fxo[idx] = true;
+      }
+
+      // if any of the removed items were in our filteredrows...
+      if (Object.keys(fxo).length > 0) {
+        // remove them from filtered rows
+        this.resultset.filteredrows = this.resultset.filteredrows.filter(function(di, idx) { return !fxo[idx]; });
+        // if persistent...
+        if (this.options.persistent) {
+          // remove from resultdata
+          this.resultdata = this.resultdata.filter(function(obj, idx) { return !fxo[idx]; });
         }
-        // last row, so just truncate last row
-        else {
-          ofr.length = oldlen - 1;
 
-          if (this.options.persistent) {
-            this.resultdata.length = oldlen - 1;
-          }
-        }
-
-        // in case changes to data altered a sort column
-        if (this.sortFunction || this.sortCriteria) {
+        // and queue sorts 
+        if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
           this.queueRebuildEvent();
         }
       }
 
-      // since we are using filteredrows to store data array positions
-      // if they remove a document (whether in our view or not),
-      // we need to adjust array positions -1 for all document array references after that position
-      oldlen = ofr.length;
-      for (idx = 0; idx &lt; oldlen; idx++) {
-        if (ofr[idx] > objIndex) {
-          ofr[idx]--;
-        }
+      // to remove holes, we need to 'shift down' indices, this filter function finds number of positions to shift
+      var filt = function(idx) { return function(di) { return di &lt; drs.filteredrows[idx]; }; };
+
+      frlen = drs.filteredrows.length;
+      for (idx = 0; idx &lt; frlen; idx++) {
+        // grab subset of removed elements where data index is less than current filtered row data index;
+        // use this to determine how many positions iterated remaining data index needs to be 'shifted down'
+        adjels = objIndex.filter(filt(idx));
+        drs.filteredrows[idx] -= adjels.length;
       }
     };
 
@@ -4828,18 +4863,6 @@
 
       this.observerCallback = observerCallback;
 
-      /*
-       * This method creates a clone of the current status of an object and associates operation and collection name,
-       * so the parent db can aggregate and generate a changes object for the entire db
-       */
-      function createChange(name, op, obj, old) {
-        self.changes.push({
-          name: name,
-          operation: op,
-          obj: op == 'U' &amp;&amp; !self.disableDeltaChangesApi ? getChangeDelta(obj, old) : JSON.parse(JSON.stringify(obj))
-        });
-      }
-
       //Compare changed object (which is a forced clone) with existing object and return the delta
       function getChangeDelta(obj, old) {
         if (old) {
@@ -4890,97 +4913,14 @@
 
       this.flushChanges = flushChanges;
 
-      /**
-       * If the changes API is disabled make sure only metadata is added without re-evaluating everytime if the changesApi is enabled
-       */
-      function insertMeta(obj) {
-        var len, idx;
-
-        if (self.disableMeta || !obj) {
-          return;
-        }
-
-        // if batch insert
-        if (Array.isArray(obj)) {
-          len = obj.length;
-
-          for(idx=0; idx&lt;len; idx++) {
-            if (!obj[idx].hasOwnProperty('meta')) {
-              obj[idx].meta = {};
-            }
-
-            obj[idx].meta.created = (new Date()).getTime();
-            obj[idx].meta.revision = 0;
-          }
-
-          return;
-        }
-
-        // single object
-        if (!obj.meta) {
-          obj.meta = {};
-        }
-
-        obj.meta.created = (new Date()).getTime();
-        obj.meta.revision = 0;
-      }
-
-      function updateMeta(obj) {
-        if (self.disableMeta || !obj) {
-          return;
-        }
-        obj.meta.updated = (new Date()).getTime();
-        obj.meta.revision += 1;
-      }
-
-      function createInsertChange(obj) {
-        createChange(self.name, 'I', obj);
-      }
-
-      function createUpdateChange(obj, old) {
-        createChange(self.name, 'U', obj, old);
-      }
-
-      function insertMetaWithChange(obj) {
-        insertMeta(obj);
-        createInsertChange(obj);
-      }
-
-      function updateMetaWithChange(obj, old) {
-        updateMeta(obj);
-        createUpdateChange(obj, old);
-      }
-
-
-      /* assign correct handler based on ChangesAPI flag */
-      var insertHandler, updateHandler;
-
-      function setHandlers() {
-        insertHandler = self.disableChangesApi ? insertMeta : insertMetaWithChange;
-        updateHandler = self.disableChangesApi ? updateMeta : updateMetaWithChange;
-      }
-
-      setHandlers();
-
       this.setChangesApi = function (enabled) {
         self.disableChangesApi = !enabled;
         if (!enabled) { self.disableDeltaChangesApi = false; }
-        setHandlers();
       };
-      /**
-       * built-in events
-       */
-      this.on('insert', function insertCallback(obj) {
-        insertHandler(obj);
-      });
-
-      this.on('update', function updateCallback(obj, old) {
-        updateHandler(obj, old);
-      });
 
       this.on('delete', function deleteCallback(obj) {
         if (!self.disableChangesApi) {
-          createChange(self.name, 'R', obj);
+          self.createChange(self.name, 'R', obj);
         }
       });
 
@@ -4992,6 +4932,75 @@
     }
 
     Collection.prototype = new LokiEventEmitter();
+
+    /*
+      * For ChangeAPI default to clone entire object, for delta changes create object with only differences (+ $loki and meta)
+      */
+    Collection.prototype.createChange = function(name, op, obj, old) {
+      this.changes.push({
+        name: name,
+        operation: op,
+        obj: op == 'U' &amp;&amp; !this.disableDeltaChangesApi ? this.getChangeDelta(obj, old) : JSON.parse(JSON.stringify(obj))
+      });
+    };
+
+    Collection.prototype.insertMeta = function(obj) {
+      var len, idx;
+
+      if (this.disableMeta || !obj) {
+        return;
+      }
+
+      // if batch insert
+      if (Array.isArray(obj)) {
+        len = obj.length;
+
+        for(idx=0; idx&lt;len; idx++) {
+          if (!obj[idx].hasOwnProperty('meta')) {
+            obj[idx].meta = {};
+          }
+
+          obj[idx].meta.created = (new Date()).getTime();
+          obj[idx].meta.revision = 0;
+        }
+
+        return;
+      }
+
+      // single object
+      if (!obj.meta) {
+        obj.meta = {};
+      }
+
+      obj.meta.created = (new Date()).getTime();
+      obj.meta.revision = 0;
+    };
+
+    Collection.prototype.updateMeta = function(obj) {
+      if (this.disableMeta || !obj) {
+        return;
+      }
+      obj.meta.updated = (new Date()).getTime();
+      obj.meta.revision += 1;
+    };
+
+    Collection.prototype.createInsertChange = function(obj) {
+      this.createChange(this.name, 'I', obj);
+    };
+
+    Collection.prototype.createUpdateChange = function(obj, old) {
+      this.createChange(this.name, 'U', obj, old);
+    };
+
+    Collection.prototype.insertMetaWithChange = function(obj) {
+      this.insertMeta(obj);
+      this.createInsertChange(obj);
+    };
+
+    Collection.prototype.updateMetaWithChange = function(obj, old) {
+      this.updateMeta(obj);
+      this.createUpdateChange(obj, old);
+    };
 
     Collection.prototype.console = {
       log: function () {},
@@ -5203,8 +5212,8 @@
             }
 
             if (val1 !== val2) {
-              if (ltHelper(val1, val2, false)) return -1;
-              if (gtHelper(val1, val2, false)) return 1;
+              if (Comparators.lt(val1, val2, false)) return -1;
+              if (Comparators.gt(val1, val2, false)) return 1;
             }
             return 0;
           };
@@ -5313,40 +5322,41 @@
       if (len === 1) {
         valid = (biv[0] === 0);
       }
+      else {
+        if (options.randomSampling) {
+          // validate first and last
+          if (!LokiOps.$lte(this.data[biv[0]][property], this.data[biv[1]][property])) {
+            valid=false;
+          }
+          if (!LokiOps.$lte(this.data[biv[len-2]][property], this.data[biv[len-1]][property])) {
+            valid=false;
+          }
 
-      if (options.randomSampling) {
-        // validate first and last
-        if (!LokiOps.$lte(this.data[biv[0]][property], this.data[biv[1]][property])) {
-          valid=false;
-        }
-        if (!LokiOps.$lte(this.data[biv[len-2]][property], this.data[biv[len-1]][property])) {
-          valid=false;
-        }
+          // if first and last positions are sorted correctly with their nearest neighbor,
+          // continue onto random sampling phase...
+          if (valid) {
+            // # random samplings = total count * sampling factor
+            iter = Math.floor((len-1) * options.randomSamplingFactor);
 
-        // if first and last positions are sorted correctly with their nearest neighbor,
-        // continue onto random sampling phase...
-        if (valid) {
-          // # random samplings = total count * sampling factor
-          iter = Math.floor((len-1) * options.randomSamplingFactor);
-
-          // for each random sampling, validate that the binary index is sequenced properly
-          // with next higher value.
-          for(idx=0; idx&lt;len-1; idx++) {
-            // calculate random position
-            pos = Math.floor(Math.random() * (len-1));
-            if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {
-              valid=false;
-              break;
+            // for each random sampling, validate that the binary index is sequenced properly
+            // with next higher value.
+            for(idx=0; idx&lt;iter-1; idx++) {
+              // calculate random position
+              pos = Math.floor(Math.random() * (len-1));
+              if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {
+                valid=false;
+                break;
+              }
             }
           }
         }
-      }
-      else {
-        // validate that the binary index is sequenced properly
-        for(idx=0; idx&lt;len-1; idx++) {
-          if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
-            valid=false;
-            break;
+        else {
+          // validate that the binary index is sequenced properly
+          for(idx=0; idx&lt;len-1; idx++) {
+            if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
+              valid=false;
+              break;
+            }
           }
         }
       }
@@ -5569,6 +5579,7 @@
         }
         results.push(obj);
       }
+
       // at the 'batch' level, if clone option is true then emitted docs are clones
       this.emit('insert', results);
 
@@ -5618,10 +5629,19 @@
         return undefined;
       }
 
-      returnObj = obj;
+      // update meta and store changes if ChangesAPI is enabled
+      // (moved from "insert" event listener to allow internal reference to be used)
+      if (this.disableChangesApi) {
+        this.insertMeta(obj);
+      }
+      else {
+        this.insertMetaWithChange(obj);
+      }
+
+      // if cloning is enabled, emit insert event with clone of new object
+      returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
       if (!bulkInsert) {
-        this.emit('insert', obj);
-        returnObj = this.cloneObjects ? clone(obj, this.cloneMethod) : obj;
+        this.emit('insert', returnObj);
       }
 
       this.addAutoUpdateObserver(returnObj);
@@ -5686,26 +5706,30 @@
      * @memberof Collection
      */
     Collection.prototype.update = function (doc) {
+      var adaptiveBatchOverride, k, len;
+
       if (Array.isArray(doc)) {
-        var k = 0,
-          len = doc.length;
+        len = doc.length;
 
         // if not cloning, disable adaptive binary indices for the duration of the batch update,
         // followed by lazy rebuild and re-enabling adaptive indices after batch update.
-        var adaptiveBatchOverride = !this.cloneObjects &amp;&amp;
+        adaptiveBatchOverride = !this.cloneObjects &amp;&amp;
           this.adaptiveBinaryIndices &amp;&amp; Object.keys(this.binaryIndices).length > 0;
 
         if (adaptiveBatchOverride) {
           this.adaptiveBinaryIndices = false;
         }
 
-        for (k; k &lt; len; k += 1) {
-          this.update(doc[k]);
+        try {
+          for (k=0; k &lt; len; k += 1) {
+            this.update(doc[k]);
+          }
         }
-
-        if (adaptiveBatchOverride) {
-          this.ensureAllIndexes();
-          this.adaptiveBinaryIndices = true;
+        finally {
+          if (adaptiveBatchOverride) {
+            this.ensureAllIndexes();
+            this.adaptiveBinaryIndices = true;
+          }
         }
 
         return;
@@ -5770,8 +5794,26 @@
         this.commit();
         this.dirty = true; // for autosave scenarios
 
-        this.emit('update', doc, this.cloneObjects || !this.disableDeltaChangesApi ? clone(oldInternal, this.cloneMethod) : null);
-        return doc;
+        // update meta and store changes if ChangesAPI is enabled
+        if (this.disableChangesApi) {
+          this.updateMeta(newInternal, null);
+        }
+        else {
+          this.updateMetaWithChange(newInternal, oldInternal);
+        }
+
+        var returnObj;
+
+        // if cloning is enabled, emit 'update' event and return with clone of new object
+        if (this.cloneObjects) {
+          returnObj = clone(newInternal, this.cloneMethod);
+        }
+        else {
+          returnObj = newInternal;
+        }
+
+        this.emit('update', returnObj, oldInternal);
+        return returnObj;
       } catch (err) {
         this.rollback();
         this.console.error(err.message);
@@ -5901,6 +5943,123 @@
     };
 
     /**
+     * Internal method to remove a batch of documents from the collection.
+     * @param {number[]} positions - data/idIndex positions to remove
+     */
+    Collection.prototype.removeBatchByPositions = function(positions) {
+      var len = positions.length;
+      var xo = {};
+      var dlen, didx, idx;
+      var bic=Object.keys(this.binaryIndices).length;
+      var adaptiveOverride = this.adaptiveBinaryIndices &amp;&amp; Object.keys(this.binaryIndices).length > 0;
+
+      try {
+        this.startTransaction();
+
+        // create hashobject for positional removal inclusion tests...
+        // all keys defined in this hashobject represent $loki ids of the documents to remove.
+        for(idx=0; idx &lt; len; idx++) {
+          xo[this.idIndex[positions[idx]]] = true;
+        }
+
+        // if we will need to notify dynamic views and/or binary indices to update themselves...
+        dlen = this.DynamicViews.length;
+        if ((dlen > 0) || (bic > 0)) {
+          if (dlen > 0) {
+            // notify dynamic views to remove relevant documents at data positions
+            for (didx = 0; didx &lt; dlen; didx++) {
+              // notify dv of remove (passing batch/array of positions)
+              this.DynamicViews[didx].removeDocument(positions);
+            }
+          }
+
+          // notify binary indices to update
+          if (this.adaptiveBinaryIndices &amp;&amp; !adaptiveOverride) {
+            // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
+            var key, bIndices = this.binaryIndices;
+
+            for (key in bIndices) {
+              this.adaptiveBinaryIndexRemove(positions, key);
+            }
+          }
+          else {
+            this.flagBinaryIndexesDirty();
+          }
+        }
+
+        // emit 'delete' events only of listeners are attached.
+        // since data not removed yet, in future we can emit single delete event with array...
+        // for now that might be breaking change to put in potential 1.6 or LokiDB (lokijs2) version
+        if (!this.disableChangesApi || this.events.delete.length > 1) {
+          for(idx=0; idx &lt; len; idx++) {
+            this.emit('delete', this.data[positions[idx]]);
+          }
+        }
+
+        // remove from data[] :
+        // filter collection data for items not in inclusion hashobject
+        this.data = this.data.filter(function(obj) {
+          return !xo[obj.$loki];
+        });
+
+        // remove from idIndex[] :
+        // filter idIndex for items not in inclusion hashobject
+        this.idIndex = this.idIndex.filter(function(id) {
+            return !xo[id];
+        });
+
+        if (this.adaptiveBinaryIndices &amp;&amp; adaptiveOverride) {
+          this.adaptiveBinaryIndices = false;
+          this.ensureAllIndexes(true);
+          this.adaptiveBinaryIndices = true;
+        }
+
+        this.commit();
+
+        // flag collection as dirty for autosave
+        this.dirty = true;
+      } 
+      catch (err) {
+        this.rollback();
+        if (adaptiveOverride) {
+          this.adaptiveBinaryIndices = true;
+        }
+        this.console.error(err.message);
+        this.emit('error', err);
+        return null;
+      }      
+    };
+
+    /**
+     *  Internal method called by remove()
+     * @param {object[]|number[]} batch - array of documents or $loki ids to remove
+     */
+    Collection.prototype.removeBatch = function(batch) {
+      var len = batch.length, 
+        dlen=this.data.length, 
+        idx;
+      var xlt = {};
+      var posx = [];
+      
+      // create lookup hashobject to translate $loki id to position
+      for (idx=0; idx &lt; dlen; idx++) {
+        xlt[this.data[idx].$loki] = idx;
+      }
+
+      // iterate the batch
+      for (idx=0; idx &lt; len; idx++) {
+        if (typeof(batch[idx]) === 'object') {
+          posx.push(xlt[batch[idx].$loki]);
+        }
+        else {
+          posx.push(xlt[batch[idx]]);
+        }
+      }
+
+      this.removeBatchByPositions(posx);
+    };
+
+    /**
      * Remove a document from the collection
      * @param {object} doc - document to remove from collection
      * @memberof Collection
@@ -5914,11 +6073,7 @@
         throw new Error('Parameter is not an object');
       }
       if (Array.isArray(doc)) {
-        var k = 0,
-          len = doc.length;
-        for (k; k &lt; len; k += 1) {
-          this.remove(doc[k]);
-        }
+        this.removeBatch(doc);
         return;
       }
 
@@ -6033,7 +6188,6 @@
 
       // i think calculateRange can probably be moved to collection
       // as it doesn't seem to need resultset.  need to verify
-      //var rs = new Resultset(this, null, null);
       var range = this.calculateRange("$eq", binaryIndexName, val);
 
       if (range[0] === 0 &amp;&amp; range[1] === -1) {
@@ -6102,22 +6256,67 @@
 
     /**
      * Adaptively remove a selected item from the index.
-     * @param {int} dataPosition : coll.data array index/position
+     * @param {number|number[]} dataPosition : coll.data array index/position
      * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexRemove = function(dataPosition, binaryIndexName, removedFromIndexOnly) {
-      var idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
-      var index = this.binaryIndices[binaryIndexName].values;
-      var len,
-        idx;
+      var bi = this.binaryIndices[binaryIndexName];
+      var len, idx, rmidx, rmlen, rxo = {};
+      var curr, shift, idxPos;
+
+      if (Array.isArray(dataPosition)) {
+        // when called from chained remove, and only one document in array,
+        // it will be faster to use old algorithm
+        rmlen = dataPosition.length;
+        if (rmlen === 1) {
+          dataPosition = dataPosition[0];
+        }
+        // we were passed an array (batch) of documents so use this 'batch optimized' algorithm
+        else {
+          for(rmidx=0;rmidx&lt;rmlen; rmidx++) {
+            rxo[dataPosition[rmidx]] = true;
+          }
+    
+          // remove document from index (with filter function)
+          bi.values = bi.values.filter(function(di) { return !rxo[di]; });
+    
+          // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
+          // in which case data positions stay the same.
+          if (removedFromIndexOnly === true) {
+            return;
+          }
+    
+          var sortedPositions = dataPosition.slice();
+          sortedPositions.sort(function (a, b) { return a-b; });
+    
+          // to remove holes, we need to 'shift down' the index's data array positions
+          // we need to adjust array positions -1 for each index data positions greater than removed positions
+          len = bi.values.length;
+          for (idx=0; idx&lt;len; idx++) {
+            curr=bi.values[idx];
+            shift=0;
+            for(rmidx=0; rmidx&lt;rmlen &amp;&amp; curr > sortedPositions[rmidx]; rmidx++) {
+                shift++;
+            }
+            bi.values[idx]-=shift;
+          }
+
+          // batch processed, bail out
+          return;
+        }
+
+        // not a batch so continue...
+      }
+
+      idxPos = this.getBinaryIndexPosition(dataPosition, binaryIndexName);
 
       if (idxPos === null) {
         // throw new Error('unable to determine binary index position');
         return null;
       }
 
-      // remove document from index
-      this.binaryIndices[binaryIndexName].values.splice(idxPos, 1);
+      // remove document from index (with splice)
+      bi.values.splice(idxPos, 1);
 
       // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
       // in which case data positions stay the same.
@@ -6127,10 +6326,10 @@
 
       // since index stores data array positions, if we remove a document
       // we need to adjust array positions -1 for all document positions greater than removed position
-      len = index.length;
+      len = bi.values.length;
       for (idx = 0; idx &lt; len; idx++) {
-        if (index[idx] > dataPosition) {
-          index[idx]--;
+        if (bi.values[idx] > dataPosition) {
+          bi.values[idx]--;
         }
       }
     };
@@ -6167,7 +6366,7 @@
       while (min &lt; max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(rcd[index[mid]][prop], val, false)) {
+        if (Comparators.lt(rcd[index[mid]][prop], val, false)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -6177,12 +6376,12 @@
       var lbound = min;
 
       // found it... return it
-      if (aeqHelper(val, rcd[index[lbound]][prop])) {
+      if (Comparators.aeq(val, rcd[index[lbound]][prop])) {
         return lbound;
       }
 
       // if not in index and our value is less than the found one
-      if (ltHelper(val, rcd[index[lbound]][prop], false)) {
+      if (Comparators.lt(val, rcd[index[lbound]][prop], false)) {
         return adaptive?lbound:lbound-1;
       }
 
@@ -6212,7 +6411,7 @@
       while (min &lt; max) {
         mid = (min + max) >> 1;
 
-        if (ltHelper(val, rcd[index[mid]][prop], false)) {
+        if (Comparators.lt(val, rcd[index[mid]][prop], false)) {
           max = mid;
         } else {
           min = mid + 1;
@@ -6222,17 +6421,17 @@
       var ubound = max;
 
       // only eq if last element in array is our val
-      if (aeqHelper(val, rcd[index[ubound]][prop])) {
+      if (Comparators.aeq(val, rcd[index[ubound]][prop])) {
         return ubound;
       }
 
        // if not in index and our value is less than the found one
-      if (gtHelper(val, rcd[index[ubound]][prop], false)) {
+      if (Comparators.gt(val, rcd[index[ubound]][prop], false)) {
         return ubound+1;
       }
 
       // either hole or first nonmatch
-      if (aeqHelper(val, rcd[index[ubound-1]][prop])) {
+      if (Comparators.aeq(val, rcd[index[ubound-1]][prop])) {
         return ubound-1;
       }
 
@@ -6271,62 +6470,62 @@
       switch (op) {
       case '$eq':
       case '$aeq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+        if (Comparators.lt(val, minVal, false) || Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         break;
       case '$dteq':
-        if (ltHelper(val, minVal, false) || gtHelper(val, maxVal, false)) {
+        if (Comparators.lt(val, minVal, false) || Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         break;
       case '$gt':
         // none are within range
-        if (gtHelper(val, maxVal, true)) {
+        if (Comparators.gt(val, maxVal, true)) {
           return [0, -1];
         }
         // all are within range
-        if (gtHelper(minVal, val, false)) {
+        if (Comparators.gt(minVal, val, false)) {
           return [min, max];
         }
         break;
       case '$gte':
         // none are within range
-        if (gtHelper(val, maxVal, false)) {
+        if (Comparators.gt(val, maxVal, false)) {
           return [0, -1];
         }
         // all are within range
-        if (gtHelper(minVal, val, true)) {
+        if (Comparators.gt(minVal, val, true)) {
             return [min, max];
         }
         break;
       case '$lt':
         // none are within range
-        if (ltHelper(val, minVal, true)) {
+        if (Comparators.lt(val, minVal, true)) {
           return [0, -1];
         }
         // all are within range
-        if (ltHelper(maxVal, val, false)) {
+        if (Comparators.lt(maxVal, val, false)) {
           return [min, max];
         }
         break;
       case '$lte':
         // none are within range
-        if (ltHelper(val, minVal, false)) {
+        if (Comparators.lt(val, minVal, false)) {
           return [0, -1];
         }
         // all are within range
-        if (ltHelper(maxVal, val, true)) {
+        if (Comparators.lt(maxVal, val, true)) {
           return [min, max];
         }
         break;
       case '$between':
         // none are within range (low range is greater)
-        if (gtHelper(val[0], maxVal, false)) {
+        if (Comparators.gt(val[0], maxVal, false)) {
           return [0, -1];
         }
         // none are within range (high range lower)
-        if (ltHelper(val[1], minVal, false)) {
+        if (Comparators.lt(val[1], minVal, false)) {
           return [0, -1];
         }
 
@@ -6336,8 +6535,8 @@
         if (lbound &lt; 0) lbound++;
         if (ubound > max) ubound--;
 
-        if (!gtHelper(rcd[index[lbound]][prop], val[0], true)) lbound++;
-        if (!ltHelper(rcd[index[ubound]][prop], val[1], true)) ubound--;
+        if (!Comparators.gt(rcd[index[lbound]][prop], val[0], true)) lbound++;
+        if (!Comparators.lt(rcd[index[ubound]][prop], val[1], true)) ubound--;
 
         if (ubound &lt; lbound) return [0, -1];
 
@@ -6391,28 +6590,15 @@
       case '$aeq':
       case '$dteq':
         // if hole (not found)
-        //if (ltHelper(lval, val, false) || gtHelper(lval, val, false)) {
-        //  return [0, -1];
-        //}
-        if (!aeqHelper(lval, val)) {
+        if (!Comparators.aeq(lval, val)) {
           return [0, -1];
         }
 
         return [lbound, ubound];
 
-      //case '$dteq':
-        // if hole (not found)
-      //  if (lval > val || lval &lt; val) {
-      //    return [0, -1];
-      //  }
-
-      //  return [lbound, ubound];
-
       case '$gt':
-        // (an eqHelper would probably be better test)
         // if hole (not found) ub position is already greater
-        if (!aeqHelper(rcd[index[ubound]][prop], val)) {
-        //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
           return [ubound, max];
         }
         // otherwise (found) so ubound is still equal, get next
@@ -6420,8 +6606,7 @@
 
       case '$gte':
         // if hole (not found) lb position marks left outside of range
-        if (!aeqHelper(rcd[index[lbound]][prop], val)) {
-        //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
           return [lbound+1, max];
         }
         // otherwise (found) so lb is first position where its equal
@@ -6429,8 +6614,7 @@
 
       case '$lt':
         // if hole (not found) position already is less than
-        if (!aeqHelper(rcd[index[lbound]][prop], val)) {
-        //if (ltHelper(rcd[index[lbound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
           return [min, lbound];
         }
         // otherwise (found) so lb marks left inside of eq range, get previous
@@ -6438,8 +6622,7 @@
 
       case '$lte':
         // if hole (not found) ub position marks right outside so get previous
-        if (!aeqHelper(rcd[index[ubound]][prop], val)) {
-        //if (gtHelper(rcd[index[ubound]][prop], val, false)) {
+        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
           return [min, ubound-1];
         }
         // otherwise (found) so ub is last position where its still equal
@@ -7183,6 +7366,7 @@
     Loki.aeq = aeqHelper;
     Loki.lt = ltHelper;
     Loki.gt = gtHelper;
+    Loki.Comparators = Comparators;
     return Loki;
   }());
 
@@ -7203,7 +7387,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Feb 21 2018 17:36:50 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu May 10 2018 03:42:33 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

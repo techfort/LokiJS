@@ -115,4 +115,104 @@ describe('Constraints', function () {
     expect(coll.constraints.unique.hasOwnProperty('username')).toEqual(false);
     expect(coll.uniqueNames.length).toEqual(0);
   });
+
+  it('batch removes should update unique contraints', function() {
+    var data = [
+      {name:'Sleipnir', legs: 8},
+      {name:'Jormungandr', legs: 0},
+      {name:'Hel', legs: 2}
+    ];
+  
+    var db = new loki('test.db');
+    var collection = db.addCollection("children", {
+      unique: ["name"]
+    });
+  
+    data.forEach(function(c) {
+      collection.insert(JSON.parse(JSON.stringify(c)));
+    });
+
+    collection.findAndRemove();
+  
+    // implicitly 'expecting' that this will not throw exception on Duplicate key for property name: Sleipnir
+    collection.insert(JSON.parse(JSON.stringify(data[0])));
+
+    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    expect(keys.length).toEqual(3);
+    keys.sort();
+    expect(keys[0]).toEqual('Hel');
+    expect(keys[1]).toEqual('Jormungandr');
+    expect(keys[2]).toEqual('Sleipnir');
+  });
+
+  it('chained batch updates should update constraints', function() {
+    var data = [
+      {name:'Sleipnir', legs: 8},
+      {name:'Jormungandr', legs: 0},
+      {name:'Hel', legs: 2}
+    ];
+  
+    var db = new loki('test.db');
+    var collection = db.addCollection("children", {
+      unique: ["name"]
+    });
+  
+    data.forEach(function(c) {
+      collection.insert(JSON.parse(JSON.stringify(c)));
+    });
+
+    collection.chain().update(function(obj) {
+      obj.name = obj.name + '2';
+    });
+  
+    // implicitly 'expecting' that this will not throw exception on Duplicate key for property name: Sleipnir
+    data.forEach(function(c) {
+      collection.insert(JSON.parse(JSON.stringify(c)));
+    });
+
+    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    expect(keys.length).toEqual(6);
+    keys.sort();
+    expect(keys[0]).toEqual('Hel');
+    expect(keys[1]).toEqual('Hel2');
+    expect(keys[2]).toEqual('Jormungandr');
+    expect(keys[3]).toEqual('Jormungandr2');
+    expect(keys[4]).toEqual('Sleipnir');
+    expect(keys[5]).toEqual('Sleipnir2');
+  });
+
+  it('batch updates should update constraints', function() {
+    var data = [
+      {name:'Sleipnir', legs: 8},
+      {name:'Jormungandr', legs: 0},
+      {name:'Hel', legs: 2}
+    ];
+
+    var db = new loki('test.db');
+    var collection = db.addCollection("children", {
+      unique: ["name"]
+    });
+
+    // batch insert docs
+    var docs = collection.insert(JSON.parse(JSON.stringify(data)));
+
+    // batch update docs (by passing array to collection.update())
+    docs.forEach(function(obj) {
+      obj.name = obj.name + '2';
+    });
+    collection.update(docs);
+
+    // reinsert originals (implicitly 'expecting' that this will not throw exception on Duplicate key)
+    collection.insert(data);
+
+    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    expect(keys.length).toEqual(6);
+    keys.sort();
+    expect(keys[0]).toEqual('Hel');
+    expect(keys[1]).toEqual('Hel2');
+    expect(keys[2]).toEqual('Jormungandr');
+    expect(keys[3]).toEqual('Jormungandr2');
+    expect(keys[4]).toEqual('Sleipnir');
+    expect(keys[5]).toEqual('Sleipnir2');
+  });
 });

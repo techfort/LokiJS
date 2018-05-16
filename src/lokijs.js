@@ -5923,7 +5923,9 @@
       var xo = {};
       var dlen, didx, idx;
       var bic=Object.keys(this.binaryIndices).length;
+      var uic=Object.keys(this.constraints.unique).length;
       var adaptiveOverride = this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
+      var doc, self=this;
 
       try {
         this.startTransaction();
@@ -5936,7 +5938,7 @@
 
         // if we will need to notify dynamic views and/or binary indices to update themselves...
         dlen = this.DynamicViews.length;
-        if ((dlen > 0) || (bic > 0)) {
+        if ((dlen > 0) || (bic > 0) || (uic > 0)) {
           if (dlen > 0) {
             // notify dynamic views to remove relevant documents at data positions
             for (didx = 0; didx < dlen; didx++) {
@@ -5956,6 +5958,17 @@
           }
           else {
             this.flagBinaryIndexesDirty();
+          }
+
+          if (uic) {
+            Object.keys(this.constraints.unique).forEach(function (key) {
+              for(idx=0; idx < len; idx++) {
+                doc = self.data[positions[idx]];
+                if (doc[key] !== null && doc[key] !== undefined) {
+                  self.constraints.unique[key].remove(doc[key]);
+                }
+              }
+            });
           }
         }
 

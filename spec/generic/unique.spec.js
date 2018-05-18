@@ -134,15 +134,22 @@ describe('Constraints', function () {
 
     collection.findAndRemove();
   
-    // implicitly 'expecting' that this will not throw exception on Duplicate key for property name: Sleipnir
+    // reinsert 2 of the 3 original docs
+    // implicitly 'expecting' that this will not throw exception on Duplicate key for property name(s)
     collection.insert(JSON.parse(JSON.stringify(data[0])));
+    collection.insert(JSON.parse(JSON.stringify(data[1])));
 
     var keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(3);
     keys.sort();
+    // seems we don't delete the key but set its value to undefined
     expect(keys[0]).toEqual('Hel');
+    expect(typeof collection.constraints.unique["name"].keyMap['Hel'] === 'undefined').toEqual(true);
+    // the rest were re-added so they should not only exist but be undefined
     expect(keys[1]).toEqual('Jormungandr');
+    expect(typeof collection.constraints.unique["name"].keyMap['Jormungandr'] === 'undefined').toEqual(false);
     expect(keys[2]).toEqual('Sleipnir');
+    expect(typeof collection.constraints.unique["name"].keyMap['Sleipnir'] === 'undefined').toEqual(false);
   });
 
   it('chained batch updates should update constraints', function() {

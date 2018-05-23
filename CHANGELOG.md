@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.5
+* fixed issue where batch removes did not update unique index (#677)
+
 ## 1.5.4
 * fixes to checkIndex maintenance fn (#654, #661)
 * bulk remove optimizations (#663)

@@ -64,7 +64,7 @@
         // iterate all steps in the transform array
         for (idx = 0; idx < transform.length; idx++) {
           // clone transform so our scan/replace can operate directly on cloned transform
-          clonedStep = clone(transform[idx], "shallow-recurse-objects");
+          clonedStep = clone(transform[idx], "parse-stringify");
           resolvedTransform.push(Utils.resolveTransformObject(clonedStep, params));
         }
 

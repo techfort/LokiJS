@@ -3130,7 +3130,7 @@
      * // to sort by age and then name (both ascending)
      * rs.compoundsort(['age', 'name']);
      * // to sort by age (ascending) and then by name (descending)
-     * rs.compoundsort(['age', ['name', true]);
+     * rs.compoundsort(['age', ['name', true]]);
      *
      * @param {array} properties - array of property names or subarray of [propertyname, isdesc] used evaluate sort order
      * @returns {Resultset} Reference to this resultset, sorted, for future chain operations.

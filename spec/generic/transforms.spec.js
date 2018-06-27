@@ -75,6 +75,70 @@ describe('transforms', function () {
     });
   });
 
+  describe('parameterized find with $and/$or', function() {
+    it('works', function () {
+
+      var txor = [
+        {
+          type: 'find',
+          value: {
+            $or: [
+              {owner: '[%lktxp]OwnerName'},
+              {owner: '[%lktxp]OwnerNameOther'},
+            ]
+          }
+        }
+      ];
+
+      var txand = [
+        {
+          type: 'find',
+          value: {
+            $and: [
+              {owner: '[%lktxp]OwnerName'},
+              {name: '[%lktxp]Name'},
+            ]
+          }
+        }
+      ];
+
+      var paramsor = {
+        OwnerName: 'thor',
+        OwnerNameOther: 'thor'
+      }
+
+      var resultsor = items.chain(txor, paramsor).data();
+
+      expect(resultsor.length).toBe(1);
+
+      paramsor = {
+        OwnerName1: 'odin',
+        OwnerNameOther: 'odin'
+      }
+
+      resultsor = items.chain(txor, paramsor).data();
+
+      expect(resultsor.length).toBe(2);
+
+      var paramsand = {
+        Name: 'mjolnir',
+        OwnerName: 'thor'
+      }
+
+      var resultsand = items.chain(txand, paramsand).data();
+      expect(resultsand.length).toBe(1);
+
+      paramsand = {
+        Name: 'gungnir',
+        OwnerName: 'odin'
+      }
+
+      resultsand = items.chain(txand, paramsand).data();
+      expect(resultsand.length).toBe(1);
+
+    });
+  });
+
   describe('parameterized transform with non-serializable non-params', function() {
     it('works', function () {
 

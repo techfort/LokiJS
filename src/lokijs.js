@@ -616,6 +616,8 @@
         keys.forEach(function(key) {
           if (typeof data[key] === "object" && data[key].constructor.name === "Object")  {
             cloned[key] = clone(data[key], "shallow-recurse-objects");
+          }else if(Array.isArray(data[key])){
+            cloned[key] = cloneObjectArray(data[key], "shallow-recurse-objects");
           }
         });
         break;
@@ -627,19 +629,13 @@
     }
 
     function cloneObjectArray(objarray, method) {
-      var i,
-        result = [];
-
       if (method == "parse-stringify") {
         return clone(objarray, method);
       }
-
-      i = objarray.length - 1;
-
-      for (; i <= 0; i--) {
-        result.push(clone(objarray[i], method));
+      var result = [];
+      for (var i = 0, len = objarray.length; i < len; i++) {
+        result[i] = clone(objarray[i], method);
       }
-
       return result;
     }
 

@@ -5465,11 +5465,8 @@
      * @memberof Collection
      **/
     Collection.prototype.removeDynamicView = function (name) {
-      for (var idx = 0; idx < this.DynamicViews.length; idx++) {
-        if (this.DynamicViews[idx].name === name) {
-          this.DynamicViews.splice(idx, 1);
-        }
-      }
+      this.DynamicViews = 
+        this.DynamicViews.filter(function(dv) { return dv.name !== name; });
     };
 
     /**

@@ -200,6 +200,28 @@ describe('dynamicviews', function () {
     });
   });
 
+  describe('removeDynamicView works correctly (2)', function () {
+    it("works", function() {
+      var db = new loki('test.db');
+      var coll = db.addCollection('coll');
+      coll.addDynamicView('dv1');
+      coll.addDynamicView('dv2');
+      coll.addDynamicView('dv3');
+      coll.addDynamicView('dv4');
+      coll.addDynamicView('dv5');
+  
+      expect (coll.DynamicViews.length).toEqual(5);
+      coll.removeDynamicView('dv3');
+      expect(coll.DynamicViews.length).toEqual(4);
+
+      expect(coll.getDynamicView("dv1").name).toEqual("dv1");
+      expect(coll.getDynamicView("dv2").name).toEqual("dv2");
+      expect(coll.getDynamicView("dv3")).toEqual(null);
+      expect(coll.getDynamicView("dv4").name).toEqual("dv4");
+      expect(coll.getDynamicView("dv5").name).toEqual("dv5");
+    });
+  });
+
   describe('dynamic view simplesort options work correctly', function () {
     it('works', function() {
       var db = new loki('dvtest.db');
@@ -268,4 +290,5 @@ describe('dynamicviews', function () {
       }
     });
   });
+
 });

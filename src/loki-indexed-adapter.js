@@ -37,10 +37,13 @@
      * @constructor LokiIndexedAdapter
      *
      * @param {string} appname - (Optional) Application name context can be used to distinguish subdomains, 'loki' by default
+     * @param {object=} options Configuration options for the adapter
+     * @param {boolean} options.closeAfterSave Whether the indexedDB database should be closed after saving.
      */
-    function LokiIndexedAdapter(appname)
+    function LokiIndexedAdapter(appname, options)
     {
       this.app = 'loki';
+      this.options = options || {};
 
       if (typeof (appname) !== 'undefined')
       {
@@ -54,6 +57,17 @@
         throw new Error('indexedDB does not seem to be supported for your environment');
       }
     }
+
+    /**
+     * Used for closing the indexeddb database.
+     */
+    LokiIndexedAdapter.prototype.closeDatabase = function ()
+    {
+      if (this.catalog && this.catalog.db) {
+        this.catalog.db.close();
+        this.catalog.db = null;
+      }
+    };
 
     /**
      * Used to check if adapter is available
@@ -146,15 +160,16 @@
         else {
           callback(new Error("Error saving database"));
         }
+
+        if (adapter.options.closeAfterSave) {
+          adapter.closeDatabase();
+        }
       }
 
       // lazy open/create db reference so dont -need- callback in constructor
       if (this.catalog === null || this.catalog.db === null) {
         this.catalog = new LokiCatalog(function(cat) {
-          adapter.catalog = cat;
-
-          // now that catalog has been initialized, set (add/update) the AKV entry
-          cat.setAppKey(appName, dbname, dbstring, saveCallback);
+          adapter.saveDatabase(dbname, dbstring, saveCallback);
         });
 
         return;

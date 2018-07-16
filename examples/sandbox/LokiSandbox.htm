@@ -122,7 +122,7 @@
 
 <body style="background-color:#444; color:#fff">
 
-  <h1 style="font-family:'Segoe UI', 'sans-serif'">Loki Sandbox</h3>
+  <h1 style="font-family:'Segoe UI', 'sans-serif'">Loki Sandbox</h1>
 
   <div id="divLokiCode">
   </div>
@@ -242,7 +242,7 @@
     // we will store scripts instead of serialized loki databases in our 'sandbox' 'app'
     var sandboxAdapter = null;
     if (window && window.indexedDB) {
-      sandboxAdapter = new LokiIndexedAdapter('sandbox');
+      sandboxAdapter = new LokiIndexedAdapter('sandbox', { closeAfterSave: true });
     }
 
     var sbv = {

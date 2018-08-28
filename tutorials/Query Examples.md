@@ -60,7 +60,7 @@ var results = coll.find({'legs': { '$ne' : 8 }});
 **$aeq** - filter for document(s) with property of abstract (loose) equality
 ```javascript
 // will match documents with age of '20' or 20
-var results = coll.find(age: {$aeq: 20});
+var results = coll.find({age: {$aeq: 20}});
 ```
 **$dteq** - filter for document(s) with date property equal to provided date value
 ```javascript

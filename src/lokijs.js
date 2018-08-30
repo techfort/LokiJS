@@ -831,7 +831,7 @@
           return 'NODEJS';
         }
 
-        if (typeof global !== 'undefined' && global.window && process) {
+        if (typeof global !== 'undefined' && global.window && global.process) {
           return 'NODEJS'; //node-webkit
         }
 

@@ -336,7 +336,9 @@
       var pathOffset = poffset || 0;
       var path = paths[pathOffset];
       if (root === undefined || root === null || !hasOwnProperty.call(root, path)) {
-        return false;
+        if (pathOffset + 1 < paths.length) {
+          return false;
+        }
       }
 
       var valueFound = false;

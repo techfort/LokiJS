@@ -565,6 +565,14 @@
           }
         }
         return false;
+      },
+
+      $exists: function (a, b) {
+        if (b) {
+          return a !== undefined;
+        } else {
+          return a === undefined;
+        }
       }
     };
 

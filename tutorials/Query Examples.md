@@ -309,6 +309,16 @@ var results = coll.find({
 });
 ```
 
+**$exists** - filter for documents which contain (even when the value is null) this field or not
+```javascript
+// fetch documents which do not have this field. Use '$exists': true for documents which have this field (it may be null)
+var results = coll.find({
+  'age': {
+    '$exists': false
+  }
+});
+```
+
 ### Features which support 'find' queries
 These operators can be used to compose find filter objects which can be used within : 
 * Collection find()

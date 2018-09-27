@@ -302,4 +302,45 @@ describe("Individual operator tests", function() {
     expect(coll.find({ a: { $jlte: 7.2 } }).length).toEqual(7);
     expect(coll.find({ a: { $jbetween: [3.2, 7.8] } }).length).toEqual(4);
   });
+
+  it('query nested documents', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ a: null, b: 5, c: { a: 1 }});
+    coll.insert({ a: "11", b: 5, c: { a: 1 }});
+    coll.insert({ a: 2, b: 5, c: { a: 1 }});
+    coll.insert({ a: "1", b: 5, c: { b: 1 }});
+    coll.insert({ a: "4", b: 5, c: { b: 1 }});
+    coll.insert({ a: 7.2, b: 5});
+    coll.insert({ a: "5", b: 5});
+    coll.insert({ a: 4, b: 5});
+    coll.insert({ a: "18.1", b: 5});
+
+    expect(coll.find({ "c.a": { $eq: 1 } }).length).toEqual(3);
+    expect(coll.find({ "c.a": { $eq: undefined } }).length).toEqual(6);
+    expect(coll.find({ "c": { $eq: undefined } }).length).toEqual(4);
+  });
+
+  it('$exists ops work as expected', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ a: null, b: 5, c: { a: 1 }});
+    coll.insert({ a: "11", b: 5, c: { a: 1 }});
+    coll.insert({ a: 2, b: 5, c: { a: 1 }});
+    coll.insert({ a: "1", b: 5, c: { b: 1 }});
+    coll.insert({ a: "4", b: 5, c: { b: 1 }});
+    coll.insert({ a: 7.2, b: 5});
+    coll.insert({ a: "5", b: 5});
+    coll.insert({ a: 4, b: 5});
+    coll.insert({ a: "18.1", b: 5});
+
+    expect(coll.find({ "c.a": { $exists: true } }).length).toEqual(3);
+    expect(coll.find({ "c.a": { $exists: false } }).length).toEqual(6);
+    expect(coll.find({ "c.a.b": { $exists: true } }).length).toEqual(0);
+    expect(coll.find({ "c.a.b": { $exists: false } }).length).toEqual(9);
+    expect(coll.find({ "c": { $exists: true } }).length).toEqual(5);
+    expect(coll.find({ "c": { $exists: false } }).length).toEqual(4);
+  });
 });

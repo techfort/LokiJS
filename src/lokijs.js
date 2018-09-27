@@ -335,14 +335,12 @@
     function dotSubScan(root, paths, fun, value, poffset) {
       var pathOffset = poffset || 0;
       var path = paths[pathOffset];
-      if (root === undefined || root === null || !hasOwnProperty.call(root, path)) {
-        if (pathOffset + 1 < paths.length) {
-          return false;
-        }
-      }
 
       var valueFound = false;
-      var element = root[path];
+      var element;
+      if (typeof root === 'object' && path in root) {
+        element = root[path];
+      }
       if (pathOffset + 1 >= paths.length) {
         // if we have already expanded out the dot notation,
         // then just evaluate the test function and value on the element

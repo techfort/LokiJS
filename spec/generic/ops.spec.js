@@ -302,4 +302,24 @@ describe("Individual operator tests", function() {
     expect(coll.find({ a: { $jlte: 7.2 } }).length).toEqual(7);
     expect(coll.find({ a: { $jbetween: [3.2, 7.8] } }).length).toEqual(4);
   });
+
+  it('$regex ops work as expected', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ name : 'mjolnir', count: 73 });
+    coll.insert({ name : 'gungnir', count: 5 });
+    coll.insert({ name : 'tyrfing', count: 15 });
+    coll.insert({ name : 'draupnir', count: 132 });
+
+    expect(coll.find({ name: { $regex: 'nir' } }).length).toEqual(3);
+    expect(coll.find({ name: { $not: { $regex: 'nir' } } }).length).toEqual(1);
+
+    expect(coll.find({ name: { $regex: 'NIR' } }).length).toEqual(0);
+    expect(coll.find({ name: { $regex: [ 'NIR', 'i' ] } }).length).toEqual(3);
+    expect(coll.find({ name: { $not: { $regex: [ 'NIR', 'i' ] } } }).length).toEqual(1);
+
+    expect(coll.find({ name: { $regex: /NIR/i } }).length).toEqual(3);
+    expect(coll.find({ name: { $not: { $regex: /NIR/i } } }).length).toEqual(1);
+  });
 });

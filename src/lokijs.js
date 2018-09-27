@@ -3328,14 +3328,27 @@
         throw new Error('Do not know what you want to do.');
       }
 
-      // for regex ops, precompile
-      if (operator === '$regex') {
-        if (Array.isArray(value)) {
-          value = new RegExp(value[0], value[1]);
-        } else if (!(value instanceof RegExp)) {
-          value = new RegExp(value);
+      // precompile recursively
+      function precompile (operator, value) {
+        // for regex ops, precompile
+        if (operator === '$regex') {
+          if (Array.isArray(value)) {
+            value = new RegExp(value[0], value[1]);
+          } else if (!(value instanceof RegExp)) {
+            value = new RegExp(value);
+          }
         }
+
+        if (typeof value === 'object') {
+          for (var key in value) {
+            value[key] = precompile(key, value[key]);
+          }
+        }
+
+        return value;
       }
+
+      value = precompile(operator, value);
 
       // if user is deep querying the object such as find('name.first': 'odin')
       var usingDotNotation = (property.indexOf('.') !== -1);

@@ -232,7 +232,15 @@ var results = coll.find({
     },{
       'name' : 'Thor'
     }]
-});</code></pre><h3>Features which support 'find' queries</h3><p>These operators can be used to compose find filter objects which can be used within : </p>
+});</code></pre>
+<p><strong>$exists</strong> - filter for documents which contain (even when the value is null) this field or not<p>
+<pre class="prettyprint source lang-javascript"><code>// fetch documents which do not have this field. Use '$exists': true for documents which have this field (it may be null)
+var results = coll.find({
+  'age': {
+    '$exists': false
+  }
+});</code></pre>
+<h3>Features which support 'find' queries</h3><p>These operators can be used to compose find filter objects which can be used within : </p>
 <ul>
 <li>Collection find()</li>
 <li>Collection findOne()</li>

@@ -3225,6 +3225,27 @@
     };
     Resultset.prototype.$or = Resultset.prototype.findOr;
 
+    // precompile recursively
+    function precompileQuery (operator, value) {
+      // for regex ops, precompile
+      if (operator === '$regex') {
+        if (Array.isArray(value)) {
+          value = new RegExp(value[0], value[1]);
+        } else if (!(value instanceof RegExp)) {
+          value = new RegExp(value);
+        }
+      }
+      else if (typeof value === 'object') {
+        for (var key in value) {
+          if (key === '$regex' || typeof value[key] === 'object') {
+            value[key] = precompileQuery(key, value[key]);
+          }
+        }
+      }
+
+      return value;
+    }
+
     /**
      * findAnd() - oversee the operation of AND'ed query expressions.
      *    AND'ed expression evaluation runs each expression progressively against the full collection,
@@ -3336,13 +3357,8 @@
         throw new Error('Do not know what you want to do.');
       }
 
-      // for regex ops, precompile
-      if (operator === '$regex') {
-        if (Array.isArray(value)) {
-          value = new RegExp(value[0], value[1]);
-        } else if (!(value instanceof RegExp)) {
-          value = new RegExp(value);
-        }
+      if (operator === '$regex' || typeof value === 'object') {
+        value = precompileQuery(operator, value);
       }
 
       // if user is deep querying the object such as find('name.first': 'odin')

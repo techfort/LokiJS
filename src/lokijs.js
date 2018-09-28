@@ -3227,10 +3227,11 @@
           value = new RegExp(value);
         }
       }
-
-      if (typeof value === 'object') {
+      else if (typeof value === 'object') {
         for (var key in value) {
-          value[key] = precompileQuery(key, value[key]);
+          if (key === '$regex' || typeof value[key] === 'object') {
+            value[key] = precompileQuery(key, value[key]);
+          }
         }
       }
 
@@ -3348,7 +3349,9 @@
         throw new Error('Do not know what you want to do.');
       }
 
-      value = precompileQuery(operator, value);
+      if (operator === '$regex' || typeof value === 'object') {
+        value = precompileQuery(operator, value);
+      }
 
       // if user is deep querying the object such as find('name.first': 'odin')
       var usingDotNotation = (property.indexOf('.') !== -1);

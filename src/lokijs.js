@@ -71,15 +71,6 @@
         return resolvedTransform;
       },
 
-      // Converts a string path to an array path.
-      // E.g "foo.bar" => ["foo", "bar"]
-      castPath: function (value) {
-        if (Array.isArray(value)) {
-          return value;
-        } 
-        return value.split(".");
-      },
-
       // By default (if usingDotNotation is false), looks up path in
       // object via `object[path]`
       //

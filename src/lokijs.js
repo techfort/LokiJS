@@ -56,7 +56,7 @@
       // top level utility to resolve an entire (single) transform (array of steps) for parameter substitution
       resolveTransformParams: function (transform, params) {
         var idx,
-            clonedStep,
+          clonedStep,
           resolvedTransform = [];
 
         if (typeof params === 'undefined') return transform;
@@ -71,6 +71,8 @@
         return resolvedTransform;
       },
 
+      // Converts a string path to an array path.
+      // E.g "foo.bar" => ["foo", "bar"]
       castPath: function (value) {
         if (Array.isArray(value)) {
           return value;
@@ -78,6 +80,22 @@
         return value.split(".");
       },
 
+      // Gets the value of (possibly nested) path in object. Path can
+      // either be a string or an array of nested field names. The
+      // function will look up the value of object[path[0]], and then
+      // call result[path[1]] on the result, etc etc.
+      //
+      // path can be an array of field names, or a period delimited
+      // path. The latter will be converted into an array before
+      // processing
+      //
+      // If path isn't navigable, or value is null, then defaultValue
+      // is returned
+      //
+      // examples:
+      // getIn({a: 1}, "a") => 1
+      // getIn({a: {b: 1}}, ["a", "b"]) => 1
+      // getIn({a: {b: 1}}, "a.b") => 1
       getIn: function (object, path, defaultValue) {
         if (object == null) {
           return undefined;
@@ -3042,7 +3060,7 @@
         targetEff = 10,
         dc = this.collection.data.length, 
         frl = this.filteredrows.length,
-          hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
+        hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
 
       if (typeof (options) === 'undefined' || options === false) {
         options = { desc: false };
@@ -3062,7 +3080,6 @@
         
         // if we have a binary index, we can just use that instead of sorting (again)
         if (this.collection.binaryIndices.hasOwnProperty(propname)) {
-
           // make sure index is up-to-date
           this.collection.ensureIndex(propname);
           // copy index values into filteredrows

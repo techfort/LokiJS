@@ -97,15 +97,15 @@
           return undefined;
         }
         if (!usingDotNotation) {
-          return object[path]
+          return object[path];
         }
 
         if (typeof(path) === "string") {
-          path = path.split(".")
+          path = path.split(".");
         }
 
         if (!Array.isArray(path)) {
-          throw new Error("path must be a string or array. Found " + typeof(path))
+          throw new Error("path must be a string or array. Found " + typeof(path));
         }
 
         var index = 0,

@@ -80,22 +80,27 @@
         return value.split(".");
       },
 
-      // Gets the value of (possibly nested) path in object. Path can
-      // either be a string or an array of nested field names. The
-      // function will look up the value of object[path[0]], and then
-      // call result[path[1]] on the result, etc etc.
+      // By default (if usingDotNotation is false), looks up path in
+      // object via `object[path]`
       //
-      // path can be an array of field names, or a period delimited
-      // path. The latter will be converted into an array before
-      // processing
+      // If `usingDotNotation` is true, then the path is assumed to
+      // represent a nested path. It can be in the form of an array of
+      // field names, or a period delimited string. The function will
+      // look up the value of object[path[0]], and then call
+      // result[path[1]] on the result, etc etc.
       //
-      // If path isn't navigable, or value is null, then defaultValue
-      // is returned
+      // If `usingDotNotation` is true, this function still supports
+      // non nested fields.
+      //
+      // `usingDotNotation` is a performance optimization. The caller
+      // may know that a path is *not* nested. In which case, this
+      // function avoids a costly string.split('.')
       //
       // examples:
       // getIn({a: 1}, "a") => 1
-      // getIn({a: {b: 1}}, ["a", "b"]) => 1
-      // getIn({a: {b: 1}}, "a.b") => 1
+      // getIn({a: 1}, "a", true) => 1
+      // getIn({a: {b: 1}}, ["a", "b"], true) => 1
+      // getIn({a: {b: 1}}, "a.b", true) => 1
       getIn: function (object, path, usingDotNotation) {
         if (object == null) {
           return undefined;

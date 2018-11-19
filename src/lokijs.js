@@ -69,6 +69,52 @@
         }
 
         return resolvedTransform;
+      },
+
+      // By default (if usingDotNotation is false), looks up path in
+      // object via `object[path]`
+      //
+      // If `usingDotNotation` is true, then the path is assumed to
+      // represent a nested path. It can be in the form of an array of
+      // field names, or a period delimited string. The function will
+      // look up the value of object[path[0]], and then call
+      // result[path[1]] on the result, etc etc.
+      //
+      // If `usingDotNotation` is true, this function still supports
+      // non nested fields.
+      //
+      // `usingDotNotation` is a performance optimization. The caller
+      // may know that a path is *not* nested. In which case, this
+      // function avoids a costly string.split('.')
+      //
+      // examples:
+      // getIn({a: 1}, "a") => 1
+      // getIn({a: 1}, "a", true) => 1
+      // getIn({a: {b: 1}}, ["a", "b"], true) => 1
+      // getIn({a: {b: 1}}, "a.b", true) => 1
+      getIn: function (object, path, usingDotNotation) {
+        if (object == null) {
+          return undefined;
+        }
+        if (!usingDotNotation) {
+          return object[path];
+        }
+
+        if (typeof(path) === "string") {
+          path = path.split(".");
+        }
+
+        if (!Array.isArray(path)) {
+          throw new Error("path must be a string or array. Found " + typeof(path));
+        }
+
+        var index = 0,
+          length = path.length;
+
+        while (object != null && index < length) {
+          object = object[path[index++]];
+        }
+        return (index && index == length) ? object : undefined;
       }
     };
 
@@ -303,14 +349,14 @@
      */
     function compoundeval(properties, obj1, obj2) {
       var res = 0;
-      var prop, field, val1, val2, arr;
+      var prop, field, val1, val2, arr, path;
       for (var i = 0, len = properties.length; i < len; i++) {
         prop = properties[i];
         field = prop[0];
         if (~field.indexOf('.')) {
           arr = field.split('.');
-          val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj1);
-          val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, obj2);
+          val1 = Utils.getIn(obj1, arr, true);
+          val2 = Utils.getIn(obj2, arr, true);
         } else {
           val1 = obj1[field];
           val2 = obj2[field];
@@ -3113,8 +3159,8 @@
           return function (a, b) {
             if (~prop.indexOf('.')) {
               arr = prop.split('.');
-              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
-              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+              val1 = Utils.getIn(data[a], arr, true);
+              val2 = Utils.getIn(data[b], arr, true);
             } else {
               val1 = data[a][prop];
               val2 = data[b][prop];
@@ -3366,7 +3412,7 @@
 
       // if an index exists for the property being queried against, use it
       // for now only enabling where it is the first filter applied and prop is indexed
-      var doIndexCheck = !usingDotNotation && !this.filterInitialized;
+      var doIndexCheck = !this.filterInitialized;
 
       if (doIndexCheck && this.collection.binaryIndices[property] && indexedOps[operator]) {
         // this is where our lazy index rebuilding will take place
@@ -3459,7 +3505,7 @@
             for (i = segm[0]; i <= segm[1]; i++) {
               if (indexedOps[operator] !== true) {
                 // must be a function, implying 2nd phase filtering of results from calculateRange
-                if (indexedOps[operator](t[index.values[i]][property], value)) {
+                if (indexedOps[operator](Utils.getIn(t[index.values[i]], property, usingDotNotation), value)) {
                   result.push(index.values[i]);
                   if (firstOnly) {
                     this.filteredrows = result;
@@ -5196,8 +5242,8 @@
           return function (a, b) {
             if (~prop.indexOf('.')) {
               arr = prop.split('.');
-              val1 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[a]);
-              val2 = arr.reduce(function(obj, i) { return obj && obj[i] || undefined; }, data[b]);
+              val1 = Utils.getIn(data[a], arr, true);
+              val2 = Utils.getIn(data[b], arr, true);
             } else {
               val1 = data[a][prop];
               val2 = data[b][prop];
@@ -5311,16 +5357,20 @@
         return true;
       }
 
+      var usingDotNotation = (property.indexOf('.') !== -1);
+
       if (len === 1) {
         valid = (biv[0] === 0);
       }
       else {
         if (options.randomSampling) {
           // validate first and last
-          if (!LokiOps.$lte(this.data[biv[0]][property], this.data[biv[1]][property])) {
+          if (!LokiOps.$lte(Utils.getIn(this.data[biv[0]], property, usingDotNotation),
+                            Utils.getIn(this.data[biv[1]], property, usingDotNotation))) {
             valid=false;
           }
-          if (!LokiOps.$lte(this.data[biv[len-2]][property], this.data[biv[len-1]][property])) {
+          if (!LokiOps.$lte(Utils.getIn(this.data[biv[len-2]], property, usingDotNotation),
+                            Utils.getIn(this.data[biv[len-1]], property, usingDotNotation))) {
             valid=false;
           }
 
@@ -5335,7 +5385,8 @@
             for(idx=0; idx<iter-1; idx++) {
               // calculate random position
               pos = Math.floor(Math.random() * (len-1));
-              if (!LokiOps.$lte(this.data[biv[pos]][property], this.data[biv[pos+1]][property])) {
+              if (!LokiOps.$lte(Utils.getIn(this.data[biv[pos]], property, usingDotNotation),
+                                Utils.getIn(this.data[biv[pos+1]], property, usingDotNotation))) {
                 valid=false;
                 break;
               }
@@ -5345,7 +5396,8 @@
         else {
           // validate that the binary index is sequenced properly
           for(idx=0; idx<len-1; idx++) {
-            if (!LokiOps.$lte(this.data[biv[idx]][property], this.data[biv[idx+1]][property])) {
+            if (!LokiOps.$lte(Utils.getIn(this.data[biv[idx]], property, usingDotNotation),
+                              Utils.getIn(this.data[biv[idx+1]], property, usingDotNotation))) {
               valid=false;
               break;
             }
@@ -5366,7 +5418,7 @@
       var result = [];
 
       for (idx = 0; idx < idxvals.length; idx++) {
-        result.push(this.data[idxvals[idx]][property]);
+        result.push(Utils.getIn(this.data[idxvals[idx]], property, true));
       }
 
       return result;
@@ -6185,7 +6237,7 @@
      * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.getBinaryIndexPosition = function(dataPosition, binaryIndexName) {
-      var val = this.data[dataPosition][binaryIndexName];
+      var val = Utils.getIn(this.data[dataPosition], binaryIndexName, true);
       var index = this.binaryIndices[binaryIndexName].values;
 
       // i think calculateRange can probably be moved to collection
@@ -6217,16 +6269,17 @@
      * @param {string} binaryIndexName : index to search for dataPosition in
      */
     Collection.prototype.adaptiveBinaryIndexInsert = function(dataPosition, binaryIndexName) {
+      var usingDotNotation = (binaryIndexName.indexOf('.') !== -1);
       var index = this.binaryIndices[binaryIndexName].values;
-      var val = this.data[dataPosition][binaryIndexName];
+      var val = Utils.getIn(this.data[dataPosition], binaryIndexName, usingDotNotation);
 
       // If you are inserting a javascript Date value into a binary index, convert to epoch time
       if (this.serializableIndices === true && val instanceof Date) {
         this.data[dataPosition][binaryIndexName] = val.getTime();
-        val = this.data[dataPosition][binaryIndexName];
+        val = Utils.getIn(this.data[dataPosition], binaryIndexName);
       }
 
-      var idxPos = (index.length === 0)?0:this.calculateRangeStart(binaryIndexName, val, true);
+      var idxPos = (index.length === 0)?0:this.calculateRangeStart(binaryIndexName, val, true, usingDotNotation);
 
       // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
       // doing this after adjusting dataPositions so no clash with previous item at that position.
@@ -6350,7 +6403,7 @@
      * @param {any} val - value to find within index
      * @param {bool?} adaptive - if true, we will return insert position
      */
-    Collection.prototype.calculateRangeStart = function (prop, val, adaptive) {
+    Collection.prototype.calculateRangeStart = function (prop, val, adaptive, usingDotNotation) {
       var rcd = this.data;
       var index = this.binaryIndices[prop].values;
       var min = 0;
@@ -6361,14 +6414,14 @@
         return -1;
       }
 
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
+      var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+      var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
 
       // hone in on start position of value
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (Comparators.lt(rcd[index[mid]][prop], val, false)) {
+        if (Comparators.lt(Utils.getIn(rcd[index[mid]], prop, usingDotNotation), val, false)) {
           min = mid + 1;
         } else {
           max = mid;
@@ -6378,12 +6431,12 @@
       var lbound = min;
 
       // found it... return it
-      if (Comparators.aeq(val, rcd[index[lbound]][prop])) {
+      if (Comparators.aeq(val, Utils.getIn(rcd[index[lbound]], prop, usingDotNotation))) {
         return lbound;
       }
 
       // if not in index and our value is less than the found one
-      if (Comparators.lt(val, rcd[index[lbound]][prop], false)) {
+      if (Comparators.lt(val, Utils.getIn(rcd[index[lbound]], prop, usingDotNotation), false)) {
         return adaptive?lbound:lbound-1;
       }
 
@@ -6395,7 +6448,7 @@
      * Internal method used for indexed $between.  Given a prop (index name), and a value
      * (which may or may not yet exist) this will find the final position of that upper range value.
      */
-    Collection.prototype.calculateRangeEnd = function (prop, val) {
+    Collection.prototype.calculateRangeEnd = function (prop, val, usingDotNotation) {
       var rcd = this.data;
       var index = this.binaryIndices[prop].values;
       var min = 0;
@@ -6406,14 +6459,14 @@
         return -1;
       }
 
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
+      var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+      var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
 
       // hone in on start position of value
       while (min < max) {
         mid = (min + max) >> 1;
 
-        if (Comparators.lt(val, rcd[index[mid]][prop], false)) {
+        if (Comparators.lt(val, Utils.getIn(rcd[index[mid]], prop, usingDotNotation), false)) {
           max = mid;
         } else {
           min = mid + 1;
@@ -6423,17 +6476,17 @@
       var ubound = max;
 
       // only eq if last element in array is our val
-      if (Comparators.aeq(val, rcd[index[ubound]][prop])) {
+      if (Comparators.aeq(val, Utils.getIn(rcd[index[ubound]], prop, usingDotNotation))) {
         return ubound;
       }
 
        // if not in index and our value is less than the found one
-      if (Comparators.gt(val, rcd[index[ubound]][prop], false)) {
+      if (Comparators.gt(val, Utils.getIn(rcd[index[ubound]], prop, usingDotNotation), false)) {
         return ubound+1;
       }
 
       // either hole or first nonmatch
-      if (Comparators.aeq(val, rcd[index[ubound-1]][prop])) {
+      if (Comparators.aeq(val, Utils.getIn(rcd[index[ubound-1]], prop, usingDotNotation))) {
         return ubound-1;
       }
 
@@ -6465,8 +6518,10 @@
         return [0, -1];
       }
 
-      var minVal = rcd[index[min]][prop];
-      var maxVal = rcd[index[max]][prop];
+      var usingDotNotation = (prop.indexOf('.') !== -1);
+
+      var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+      var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
 
       // if value falls outside of our range return [0, -1] to designate no results
       switch (op) {
@@ -6531,14 +6586,14 @@
           return [0, -1];
         }
 
-        lbound = this.calculateRangeStart(prop, val[0]);
-        ubound = this.calculateRangeEnd(prop, val[1]);
+        lbound = this.calculateRangeStart(prop, val[0], false, usingDotNotation);
+        ubound = this.calculateRangeEnd(prop, val[1], usingDotNotation);
 
         if (lbound < 0) lbound++;
         if (ubound > max) ubound--;
 
-        if (!Comparators.gt(rcd[index[lbound]][prop], val[0], true)) lbound++;
-        if (!Comparators.lt(rcd[index[ubound]][prop], val[1], true)) ubound--;
+        if (!Comparators.gt(Utils.getIn(rcd[index[lbound]], prop, usingDotNotation), val[0], true)) lbound++;
+        if (!Comparators.lt(Utils.getIn(rcd[index[ubound]], prop, usingDotNotation), val[1], true)) ubound--;
 
         if (ubound < lbound) return [0, -1];
 
@@ -6567,8 +6622,8 @@
         case '$dteq':
         case '$gte':
         case '$lt':
-          lbound = this.calculateRangeStart(prop, val);
-          lval = rcd[index[lbound]][prop];
+        lbound = this.calculateRangeStart(prop, val, false, usingDotNotation);
+        lval = Utils.getIn(rcd[index[lbound]], prop, usingDotNotation);
           break;
         default: break;
       }
@@ -6581,7 +6636,7 @@
         case '$lte':
         case '$gt':
           ubound = this.calculateRangeEnd(prop, val);
-          uval = rcd[index[ubound]][prop];
+        uval = Utils.getIn(rcd[index[ubound]], prop, usingDotNotation);
           break;
         default: break;
       }
@@ -6600,7 +6655,7 @@
 
       case '$gt':
         // if hole (not found) ub position is already greater
-        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
+        if (!Comparators.aeq(Utils.getIn(rcd[index[ubound]], prop, usingDotNotation), val)) {
           return [ubound, max];
         }
         // otherwise (found) so ubound is still equal, get next
@@ -6608,7 +6663,7 @@
 
       case '$gte':
         // if hole (not found) lb position marks left outside of range
-        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
+        if (!Comparators.aeq(Utils.getIn(rcd[index[lbound]], prop, usingDotNotation), val)) {
           return [lbound+1, max];
         }
         // otherwise (found) so lb is first position where its equal
@@ -6616,7 +6671,7 @@
 
       case '$lt':
         // if hole (not found) position already is less than
-        if (!Comparators.aeq(rcd[index[lbound]][prop], val)) {
+        if (!Comparators.aeq(Utils.getIn(rcd[index[lbound]], prop, usingDotNotation), val)) {
           return [min, lbound];
         }
         // otherwise (found) so lb marks left inside of eq range, get previous
@@ -6624,7 +6679,7 @@
 
       case '$lte':
         // if hole (not found) ub position marks right outside so get previous
-        if (!Comparators.aeq(rcd[index[ubound]][prop], val)) {
+        if (!Comparators.aeq(Utils.getIn(rcd[index[ubound]], prop, usingDotNotation), val)) {
           return [min, ubound-1];
         }
         // otherwise (found) so ub is last position where its still equal
@@ -6721,7 +6776,7 @@
       var i = this.data.length,
         doc;
       while (i--) {
-        if (this.data[i][prop] === value) {
+        if (Utils.getIn(this.data[i], prop, true) === value) {
           doc = this.data[i];
           return doc;
         }

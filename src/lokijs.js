@@ -6635,8 +6635,8 @@
         case '$dteq':
         case '$lte':
         case '$gt':
-          ubound = this.calculateRangeEnd(prop, val);
-        uval = Utils.getIn(rcd[index[ubound]], prop, usingDotNotation);
+          ubound = this.calculateRangeEnd(prop, val, usingDotNotation);
+          uval = Utils.getIn(rcd[index[ubound]], prop, usingDotNotation);
           break;
         default: break;
       }

@@ -240,6 +240,23 @@ describe("Individual operator tests", function() {
     expect(results[1].count).toEqual(73);
   });
   
+  it('nested indexed $in find works as expected', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll', { indices: ['nested.count'] });
+    coll.insert({ name : 'mjolnir', nested: { count: 73 } });
+    coll.insert({ name : 'gungnir', nested: { count: 5 } });
+    coll.insert({ name : 'tyrfing', nested: { count: 15 } });
+    coll.insert({ name : 'draupnir', nested: { count: 132 } });
+
+    var results = coll.chain().find(
+      { 'nested.count': { $in: [15, 73] } }
+    ).simplesort('nested.count').data();
+
+    expect(results.length).toEqual(2);
+    expect(results[0].nested.count).toEqual(15);
+    expect(results[1].nested.count).toEqual(73);
+  });
+
   it('ops work with mixed datatypes', function() {
     var db = new loki('db');
     var coll = db.addCollection('coll');

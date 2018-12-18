@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.6
+* added support for indexes on nested properties (#718)
+* more robust environment detection (#717)
+* precompile $regex filters recursively (#710)
+* Corrected $aeq example in Query Examples (#706)
+* change 'shallow-recurse-objects' clone to support deep array clone (#692)
+* jsdoc fixes for compoundsort example (#691)
+
 ## 1.5.5
 * fixed issue where batch removes did not update unique index (#677)
 

@@ -6131,7 +6131,7 @@
         return;
       }
 
-      if (!hasOwnProperty.call(doc, '$loki')) {
+      if (doc === null || !hasOwnProperty.call(doc, '$loki')) {
         throw new Error('Object is not a document stored in the collection');
       }
 

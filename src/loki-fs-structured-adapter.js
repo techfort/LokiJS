@@ -158,7 +158,11 @@
 
       rl.on('line', function (line) {
         if (line !== "") {
-          obj = JSON.parse(line);
+          try {
+            obj = JSON.parse(line);
+          } catch(e) {
+            callback(e);
+          }
           self.dbref.collections[collectionIndex].data.push(obj);
         }
       });

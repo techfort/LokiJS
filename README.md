@@ -4,6 +4,7 @@
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
 [![npm version](https://badge.fury.io/js/lokijs.svg)](http://badge.fury.io/js/lokijs)
 [![alt packagequality](http://npm.packagequality.com/shield/lokijs.svg)](http://packagequality.com/#?package=lokijs)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/lokijs.svg)
 
 ## Overview
 

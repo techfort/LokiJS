@@ -3059,9 +3059,9 @@
      * var results = users.chain().simplesort('age').data();
      */
     Resultset.prototype.simplesort = function (propname, options) {
-      var eff, 
+      var eff,
         targetEff = 10,
-        dc = this.collection.data.length, 
+        dc = this.collection.data.length,
         frl = this.filteredrows.length,
         hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
 
@@ -3078,9 +3078,9 @@
         if (this.filterInitialized) {
           return this;
         }
-        
+
         // otherwise no filters applied implies all documents, so we need to populate filteredrows first
-        
+
         // if we have a binary index, we can just use that instead of sorting (again)
         if (this.collection.binaryIndices.hasOwnProperty(propname)) {
           // make sure index is up-to-date
@@ -3142,7 +3142,7 @@
       }
 
       // at this point, we will not be able to leverage binary index so we will have to do an array sort
-      
+
       // if we have opted to use simplified javascript comparison function...
       if (options.useJavascriptSorting) {
         return this.sort(function(obj1, obj2) {
@@ -3368,8 +3368,12 @@
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
         if (firstOnly) {
-          this.filteredrows = (this.collection.data.length > 0)?[0]: [];
-          this.filterInitialized = true;
+          if (this.filterInitialized) {
+            this.filteredrows = this.filteredrows.slice(0, 1);
+          } else {
+            this.filteredrows = (this.collection.data.length > 0) ? [0] : [];
+            this.filterInitialized = true;
+          }
         }
 
         return this;
@@ -3456,6 +3460,10 @@
             rowIdx = filter[i];
             if (dotSubScan(t[rowIdx], property, fun, value)) {
               result.push(rowIdx);
+              if (firstOnly) {
+                this.filteredrows = result;
+                return this;
+              }
             }
           }
         } else {
@@ -3463,6 +3471,10 @@
             rowIdx = filter[i];
             if (fun(t[rowIdx][property], value)) {
               result.push(rowIdx);
+              if (firstOnly) {
+                this.filteredrows = result;
+                return this;
+              }
             }
           }
         }
@@ -3837,8 +3849,8 @@
      *
      * // join orders with relevant product info via eqJoin
      * var orderSummary = orders.chain().eqJoin(products, "prodId", "productId", mapfun).data();
-     * 
-     * console.log(orderSummary);     
+     *
+     * console.log(orderSummary);
      */
     Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun, dataOptions) {
 
@@ -4081,10 +4093,10 @@
      *   }
      * ];
      * coll.addTransform('viewPaging', tx);
-     * 
+     *
      * // add some records
-     * 
-     * var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();     
+     *
+     * var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();
      */
     DynamicView.prototype.branchResultset = function (transform, parameters) {
       var rs = this.resultset.branch();
@@ -4680,7 +4692,7 @@
           this.resultdata = this.resultdata.filter(function(obj, idx) { return !fxo[idx]; });
         }
 
-        // and queue sorts 
+        // and queue sorts
         if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
           this.queueSortPhase();
         } else {
@@ -5275,10 +5287,10 @@
      * // check all indices on a collection, returns array of invalid index names
      * var result = coll.checkAllIndexes({ repair: true, randomSampling: true, randomSamplingFactor: 0.15 });
      * if (result.length > 0) {
-     *   results.forEach(function(name) { 
-     *     console.log('problem encountered with index : ' + name); 
+     *   results.forEach(function(name) {
+     *     console.log('problem encountered with index : ' + name);
      *   });
-     * }     
+     * }
      */
     Collection.prototype.checkAllIndexes = function (options) {
       var key, bIndices = this.binaryIndices;
@@ -5541,7 +5553,7 @@
      * @memberof Collection
      **/
     Collection.prototype.removeDynamicView = function (name) {
-      this.DynamicViews = 
+      this.DynamicViews =
         this.DynamicViews.filter(function(dv) { return dv.name !== name; });
     };
 
@@ -6072,7 +6084,7 @@
 
         // flag collection as dirty for autosave
         this.dirty = true;
-      } 
+      }
       catch (err) {
         this.rollback();
         if (adaptiveOverride) {
@@ -6081,7 +6093,7 @@
         this.console.error(err.message);
         this.emit('error', err);
         return null;
-      }      
+      }
     };
 
     /**
@@ -6089,12 +6101,12 @@
      * @param {object[]|number[]} batch - array of documents or $loki ids to remove
      */
     Collection.prototype.removeBatch = function(batch) {
-      var len = batch.length, 
-        dlen=this.data.length, 
+      var len = batch.length,
+        dlen=this.data.length,
         idx;
       var xlt = {};
       var posx = [];
-      
+
       // create lookup hashobject to translate $loki id to position
       for (idx=0; idx < dlen; idx++) {
         xlt[this.data[idx].$loki] = idx;
@@ -6331,19 +6343,19 @@
           for(rmidx=0;rmidx<rmlen; rmidx++) {
             rxo[dataPosition[rmidx]] = true;
           }
-    
+
           // remove document from index (with filter function)
           bi.values = bi.values.filter(function(di) { return !rxo[di]; });
-    
+
           // if we passed this optional flag parameter, we are calling from adaptiveBinaryIndexUpdate,
           // in which case data positions stay the same.
           if (removedFromIndexOnly === true) {
             return;
           }
-    
+
           var sortedPositions = dataPosition.slice();
           sortedPositions.sort(function (a, b) { return a-b; });
-    
+
           // to remove holes, we need to 'shift down' the index's data array positions
           // we need to adjust array positions -1 for each index data positions greater than removed positions
           len = bi.values.length;

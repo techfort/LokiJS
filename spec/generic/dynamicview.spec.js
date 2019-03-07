@@ -291,9 +291,9 @@ describe('dynamicviews', function () {
     });
   });
 
-  describe('querying branched result set', () => {
+  describe('querying branched result set', function () {
     var elves;
-    beforeAll(() => {
+    beforeAll(function () {
       var db = new loki('firstonly.db');
       var items = db.addCollection('items');
       items.insert({ name: 'mjolnir', owner: 'thor', maker: 'dwarves' });
@@ -305,14 +305,14 @@ describe('dynamicviews', function () {
       elves.applyFind({ maker: 'elves' });
     });
 
-    it('finds first result with firstOnly: true', () => {
+    it('finds first result with firstOnly: true', function () {
       var resultset = elves.branchResultset();
       var result = resultset.find({ name: { $ne: 'thor' } }, true).data();
       expect(result.length).toBe(1);
       expect(result[0].name).toBe('gungnir');
     });
 
-    it('finds first result with firstOnly: true and empty query', () => {
+    it('finds first result with firstOnly: true and empty query', function () {
       var resultset = elves.branchResultset();
       var result = resultset.find({}, true).data();
       expect(result.length).toBe(1);

@@ -154,7 +154,7 @@ describe('dynamicviews', function () {
       var items = db.addCollection('users');
       items.insert(testRecords);
       var dv = items.addDynamicView();
-      
+
       var obj = dv.toJSON();
       expect (obj.collection).toEqual(null);
     });
@@ -166,12 +166,12 @@ describe('dynamicviews', function () {
       var items = db.addCollection('users');
       items.insert(testRecords);
       var dv = items.addDynamicView("ownr");
-      
+
       dv.applyFind({'owner': 'odin'});
       dv.applyWhere(function(obj) {
         return (obj.maker === 'elves');
       });
-     
+
      expect(dv.filterPipeline.length).toEqual(2);
      expect(dv.data().length).toEqual(2);
 
@@ -209,7 +209,7 @@ describe('dynamicviews', function () {
       coll.addDynamicView('dv3');
       coll.addDynamicView('dv4');
       coll.addDynamicView('dv5');
-  
+
       expect (coll.DynamicViews.length).toEqual(5);
       coll.removeDynamicView('dv3');
       expect(coll.DynamicViews.length).toEqual(4);
@@ -226,7 +226,7 @@ describe('dynamicviews', function () {
     it('works', function() {
       var db = new loki('dvtest.db');
       var coll = db.addCollection('colltest', { indices : ['a', 'b'] });
-      
+
       // add basic dv with filter on a and basic simplesort on b
       var dv = coll.addDynamicView('dvtest');
       dv.applyFind({a: { $lte: 20 }});
@@ -235,7 +235,7 @@ describe('dynamicviews', function () {
       // data only needs to be inserted once since we are leaving collection intact while
       // building up and tearing down dynamic views within it
       coll.insert([{a:1, b:11}, {a:2, b:9}, {a:8, b:3}, {a:6, b: 7}, {a:2, b:14}, {a:22, b: 1}]);
-      
+
       // test whether results are valid
       var results = dv.data();
       expect(results.length).toBe(5);
@@ -245,12 +245,12 @@ describe('dynamicviews', function () {
 
       // remove dynamic view
       coll.removeDynamicView("dvtest");
-      
+
       // add basic dv with filter on a and simplesort (with js fallback) on b
       dv = coll.addDynamicView('dvtest');
       dv.applyFind({a: { $lte: 20 }});
       dv.applySimpleSort("b", { useJavascriptSorting: true });
-      
+
       // test whether results are valid
       // for our simple integer datatypes javascript sorting is same as loki sorting
       var results = dv.data();
@@ -261,12 +261,12 @@ describe('dynamicviews', function () {
 
       // remove dynamic view
       coll.removeDynamicView("dvtest");
-      
+
       // add basic dv with filter on a and simplesort (forced js sort) on b
       dv = coll.addDynamicView('dvtest');
       dv.applyFind({a: { $lte: 20 }});
       dv.applySimpleSort("b", { disableIndexIntersect: true, useJavascriptSorting: true });
-      
+
       // test whether results are valid
       var results = dv.data();
       expect(results.length).toBe(5);
@@ -276,12 +276,12 @@ describe('dynamicviews', function () {
 
       // remove dynamic view
       coll.removeDynamicView("dvtest");
-      
+
       // add basic dv with filter on a and simplesort (forced loki sort) on b
       dv = coll.addDynamicView('dvtest');
       dv.applyFind({a: { $lte: 20 }});
       dv.applySimpleSort("b", { forceIndexIntersect: true });
-      
+
       // test whether results are valid
       var results = dv.data();
       expect(results.length).toBe(5);
@@ -291,4 +291,32 @@ describe('dynamicviews', function () {
     });
   });
 
+  describe('querying branched result set', function () {
+    var elves;
+    beforeAll(function () {
+      var db = new loki('firstonly.db');
+      var items = db.addCollection('items');
+      items.insert({ name: 'mjolnir', owner: 'thor', maker: 'dwarves' });
+      items.insert({ name: 'gungnir', owner: 'odin', maker: 'elves' });
+      items.insert({ name: 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
+      items.insert({ name: 'draupnir', owner: 'odin', maker: 'elves' });
+
+      elves = items.addDynamicView('elves');
+      elves.applyFind({ maker: 'elves' });
+    });
+
+    it('finds first result with firstOnly: true', function () {
+      var resultset = elves.branchResultset();
+      var result = resultset.find({ name: { $ne: 'thor' } }, true).data();
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe('gungnir');
+    });
+
+    it('finds first result with firstOnly: true and empty query', function () {
+      var resultset = elves.branchResultset();
+      var result = resultset.find({}, true).data();
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe('gungnir');
+    });
+  });
 });

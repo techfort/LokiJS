@@ -3387,8 +3387,12 @@
       // apply no filters if they want all
       if (!property || queryObject === 'getAll') {
         if (firstOnly) {
-          this.filteredrows = (this.collection.data.length > 0)?[0]: [];
-          this.filterInitialized = true;
+          if (this.filterInitialized) {
+            this.filteredrows = this.filteredrows.slice(0, 1);
+          } else {
+            this.filteredrows = (this.collection.data.length > 0) ? [0] : [];
+            this.filterInitialized = true;
+          }
         }
 
         return this;
@@ -3475,6 +3479,10 @@
             rowIdx = filter[i];
             if (dotSubScan(t[rowIdx], property, fun, value)) {
               result.push(rowIdx);
+              if (firstOnly) {
+                this.filteredrows = result;
+                return this;
+              }
             }
           }
         } else {
@@ -3482,6 +3490,10 @@
             rowIdx = filter[i];
             if (fun(t[rowIdx][property], value)) {
               result.push(rowIdx);
+              if (firstOnly) {
+                this.filteredrows = result;
+                return this;
+              }
             }
           }
         }

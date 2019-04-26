@@ -31,6 +31,51 @@ describe('Constraints', function () {
     expect(byUsername('jim')).toEqual(joe);
   });
 
+  it('should support nested unique properties', function () {
+    var db = new loki();
+    var coll = db.addCollection('users', {
+      unique: ['nested.id']
+    });
+    coll.insert({
+      name: 'Joe',
+      nested: {
+        id: 'joe'
+      }
+    });
+    coll.insert({
+      name: 'Jack',
+      nested: {
+        id: 'jack'
+      }
+    });
+    expect(coll.by('nested.id', 'jack').name).toEqual('Jack');
+
+    var byUsername = coll.by('nested.id');
+    expect(byUsername('jack').name).toEqual('Jack');
+
+    var joe = coll.by('nested.id', 'joe');
+    joe.nested.id = 'jack';
+    expect(function () {
+      coll.update(joe);
+    }).toThrow(new Error('Duplicate key for property nested.id: ' + joe.nested.id));
+    joe.nested.id = 'jim';
+    coll.update(joe);
+    expect(byUsername('jim')).toEqual(joe);
+  });
+
+  it('should not throw if nested unique properties are missing', function() {
+    var db = new loki();
+    var coll = db.addCollection('users', {
+      unique: ['nested.id']
+    });
+    expect(function () {
+      coll.insert({
+        name: 'Joe',
+      });
+    }).not.toThrow();
+    expect(coll.find().length).toEqual(1);
+  });
+
   it('should create a unique index', function () {
     var db = new loki();
     var coll2 = db.addCollection('moreusers');
@@ -57,6 +102,7 @@ describe('Constraints', function () {
       name: 'Jack'
     });
 
+    expect(coll3.find().length).toEqual(2);
     expect(Object.keys(coll3.constraints.unique.username.keyMap).length).toEqual(1);
   });
 

@@ -7265,13 +7265,14 @@
 
     function UniqueIndex(uniqueField) {
       this.field = uniqueField;
+      this.isNested = uniqueField.indexOf('.') >= 0;
       this.keyMap = {};
       this.lokiMap = {};
     }
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
     UniqueIndex.prototype.set = function (obj) {
-      var fieldValue = obj[this.field];
+      var fieldValue = Utils.getIn(obj, this.field, this.isNested);
       if (fieldValue !== null && typeof (fieldValue) !== 'undefined') {
         if (this.keyMap[fieldValue]) {
           throw new Error('Duplicate key for property ' + this.field + ': ' + fieldValue);
@@ -7294,13 +7295,14 @@
      * @param  {Object} doc New document object (likely the same as obj)
      */
     UniqueIndex.prototype.update = function (obj, doc) {
-      if (this.lokiMap[obj.$loki] !== doc[this.field]) {
+      var keyValue = Utils.getIn(obj, this.field, this.isNested);
+      if (this.lokiMap[obj.$loki] !== keyValue) {
         var old = this.lokiMap[obj.$loki];
         this.set(doc);
         // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
         this.keyMap[old] = undefined;
       } else {
-        this.keyMap[obj[this.field]] = doc;
+        this.keyMap[keyValue] = doc;
       }
     };
     UniqueIndex.prototype.remove = function (key) {

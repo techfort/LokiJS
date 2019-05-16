@@ -3268,10 +3268,6 @@
         // we need to branch existing query to run each filter separately and combine results
         fr = this.branch().find(expressionArray[ei]).filteredrows;
         frlen = fr.length;
-        // if the find operation did not reduce the initial set, then the initial set is the actual result
-        if (frlen === origCount) {
-          return this;
-        }
 
         // add any document 'hits'
         for (fri = 0; fri < frlen; fri++) {

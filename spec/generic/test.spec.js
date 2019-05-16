@@ -962,6 +962,34 @@ describe('loki', function () {
     });
   });
 
+  // test for issue #747
+  describe('nestedOrExpressions', function() {
+    it('works', function () {
+      const queryFails = {'$or': [{'state': 'STATE_FAILED'}, {'$or': [{'state': 'STATE_DEGRADED'}, {'state': 'STATE_NORMAL'}]}]};
+      const queryWorks = {'$or': [{'state': 'STATE_NORMAL'}, {'$or': [{'state': 'STATE_DEGRADED'}, {'state': 'STATE_FAILED'}]}]};
+      const superSlim = [{
+      "uri": "/api/v3/disks/bfe8c919c2a3df669b9e0291795e488f",
+      "state": "STATE_NORMAL"
+      }, {
+      "uri": "/api/v3/disks/bc3f751ee02ae613ed42c667fb57de75",
+      "state": "STATE_NORMAL"
+      }, {
+      "uri": "/api/v3/disks/710466edfdc6609ea23e17eb0719ea74",
+      "state": "STATE_NORMAL"
+      }];
+      const db = new loki('ssmc.db');
+      const lokiTable = db.addCollection('bobTest', {unique: ['uri']});
+      lokiTable.clear();
+      lokiTable.insert(superSlim);
+      const resultsSet = lokiTable.chain();
+      const result = resultsSet.find(queryWorks).data({removeMeta: true});
+      expect(result.length).toEqual(3);
+      const resultsSet2 = lokiTable.chain();
+      const result2 = resultsSet2.find(queryFails).data({removeMeta: true});
+      expect(result2.length).toEqual(3); //<<=== THIS FAILS WITH result2.length actually 0
+    });
+  });
+
   describe('findOne', function () {
     it('works', function () {
       var eic = db.addCollection('eic');

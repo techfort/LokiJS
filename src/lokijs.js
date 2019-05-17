@@ -1139,7 +1139,7 @@
       this.collections.push(collection);
 
       if (this.verbose)
-        collection.console = console;
+        collection.lokiConsoleWrapper = console;
 
       return collection;
     };
@@ -1251,6 +1251,8 @@
       case 'throttledSavePending':
       case 'throttledCallbacks':
         return undefined;
+      case 'lokiConsoleWrapper':
+        return null;
       default:
         return value;
       }
@@ -4990,7 +4992,7 @@
       });
 
       this.on('warning', function (warning) {
-        self.console.warn(warning);
+        self.lokiConsoleWrapper.warn(warning);
       });
       // for de-serialization purposes
       flushChanges();
@@ -5067,7 +5069,7 @@
       this.createUpdateChange(obj, old);
     };
 
-    Collection.prototype.console = {
+    Collection.prototype.lokiConsoleWrapper = {
       log: function () {},
       warn: function () {},
       error: function () {},
@@ -5884,7 +5886,7 @@
         return returnObj;
       } catch (err) {
         this.rollback();
-        this.console.error(err.message);
+        this.lokiConsoleWrapper.error(err.message);
         this.emit('error', err);
         throw (err); // re-throw error so user does not think it succeeded
       }
@@ -5961,7 +5963,7 @@
         return (this.cloneObjects) ? (clone(obj, this.cloneMethod)) : (obj);
       } catch (err) {
         this.rollback();
-        this.console.error(err.message);
+        this.lokiConsoleWrapper.error(err.message);
         this.emit('error', err);
         throw (err); // re-throw error so user does not think it succeeded
       }
@@ -5986,7 +5988,7 @@
 
       } catch (err) {
         this.rollback();
-        this.console.error(err.message);
+        this.lokiConsoleWrapper.error(err.message);
       }
     };
 
@@ -6105,7 +6107,7 @@
         if (adaptiveOverride) {
           this.adaptiveBinaryIndices = true;
         }
-        this.console.error(err.message);
+        this.lokiConsoleWrapper.error(err.message);
         this.emit('error', err);
         return null;
       }
@@ -6205,7 +6207,7 @@
 
       } catch (err) {
         this.rollback();
-        this.console.error(err.message);
+        this.lokiConsoleWrapper.error(err.message);
         this.emit('error', err);
         return null;
       }

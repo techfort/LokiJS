@@ -834,3 +834,27 @@ describe('testing changesAPI', function() {
     });
   });
 });
+
+describe('verify serializereplacer', function() {
+  it('verify verbose console is replaced', function() {
+    var sdb = new loki("test.db", { verbose: true });
+
+    sdb.addCollection('test').insert({a:1, b:2});
+    expect (sdb.collections[0].lokiConsoleWrapper === null).toEqual(false);
+    
+    // serialized string/object should have nulled out that property
+    var result = sdb.serialize();
+    var obj = JSON.parse(result);
+
+    expect(result.length).toBeGreaterThan(0);
+    expect(obj.collections[0].lokiConsoleWrapper).toBeNull();
+
+    // now let's make sure that reloaded databasecollections 
+    // with 'verbose' option set get the console reattached.
+    var ndb = new loki("test.db", { verbose: true });
+    ndb.loadJSONObject(obj);
+    
+    expect(ndb.collections[0].lokiConsoleWrapper === null).toEqual(false);
+    expect(typeof ndb.collections[0].lokiConsoleWrapper.log).toEqual("function");
+  });
+});

@@ -6237,7 +6237,6 @@
         }
 
         this.data.splice(position, 1);
-        this.removeAutoUpdateObserver(doc);
 
         // remove id from idIndex
         this.idIndex.splice(position, 1);
@@ -6247,6 +6246,8 @@
         this.emit('delete', arr[0]);
         delete doc.$loki;
         delete doc.meta;
+        if (doc.__isProxy)
+          doc.revoke();
         return doc;
 
       } catch (err) {

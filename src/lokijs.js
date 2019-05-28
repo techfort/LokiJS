@@ -4904,32 +4904,6 @@
         this.ensureIndex(indices[idx]);
       }
 
-      /*function observerCallback(changes) {
-
-        var changedObjects = typeof Set === 'function' ? new Set() : [];
-
-        if (!changedObjects.add)
-          changedObjects.add = function (object) {
-            if (this.indexOf(object) === -1)
-              this.push(object);
-            return this;
-          };
-
-        changes.forEach(function (change) {
-          changedObjects.add(change.object);
-        });
-
-        changedObjects.forEach(function (object) {
-          if (!hasOwnProperty.call(object, '$loki'))
-            return self.removeAutoUpdateObserver(object);
-          try {
-            self.update(object);
-          } catch (err) {}
-        });
-      }
-
-      this.observerCallback = observerCallback;*/
-
       //Compare changed object (which is a forced clone) with existing object and return the delta
       function getChangeDelta(obj, old) {
         if (old) {
@@ -5116,21 +5090,6 @@
 
       return Proxy.revocable(object, handler);
     };
-
-    /*
-    Collection.prototype.addAutoUpdateObserver = function (object) {
-      if (!this.autoupdate || typeof Object.observe !== 'function')
-        return;
-
-      Object.observe(object, this.observerCallback, ['add', 'update', 'delete', 'reconfigure', 'setPrototype']);
-    };
-
-    Collection.prototype.removeAutoUpdateObserver = function (object) {
-      if (!this.autoupdate || typeof Object.observe !== 'function')
-        return;
-
-      Object.unobserve(object, this.observerCallback);
-    };*/
 
     /**
      * Adds a named collection transform to the collection

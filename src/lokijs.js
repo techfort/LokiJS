@@ -1720,13 +1720,13 @@
           for (j; j < clen; j++) {
             collObj = loader(coll.data[j]);
             copyColl.data[j] = collObj;
-            copyColl.addAutoUpdateObserver(collObj);
+            collObj = copyColl.autoUpdateProxification(collObj);
           }
         } else {
 
           for (j; j < clen; j++) {
             copyColl.data[j] = coll.data[j];
-            copyColl.addAutoUpdateObserver(copyColl.data[j]);
+            copyColl.data[j] = copyColl.autoUpdateProxification(copyColl.data[j]);
           }
         }
 
@@ -4849,7 +4849,7 @@
       this.disableDeltaChangesApi = options.hasOwnProperty('disableDeltaChangesApi') ? options.disableDeltaChangesApi : true;
       if (this.disableChangesApi) { this.disableDeltaChangesApi = true; }
 
-      // option to observe objects and update them automatically, ignored if Object.observe is not supported
+      // option to observe objects and update them automatically, ignored if Proxies aren't supported
       this.autoupdate = options.hasOwnProperty('autoupdate') ? options.autoupdate : false;
 
       // by default, if you insert a document into a collection with binary indices, if those indexed properties contain
@@ -4904,7 +4904,7 @@
         this.ensureIndex(indices[idx]);
       }
 
-      function observerCallback(changes) {
+      /*function observerCallback(changes) {
 
         var changedObjects = typeof Set === 'function' ? new Set() : [];
 
@@ -4928,7 +4928,7 @@
         });
       }
 
-      this.observerCallback = observerCallback;
+      this.observerCallback = observerCallback;*/
 
       //Compare changed object (which is a forced clone) with existing object and return the delta
       function getChangeDelta(obj, old) {
@@ -5075,6 +5075,49 @@
       error: function () {},
     };
 
+    Collection.prototype.autoUpdateProxification = function (object) {
+      if (!this.autoupdate || typeof Proxy !== 'object')
+        return object;
+
+      var handler = {
+        set: function (obj, prop, value) {
+          obj[prop] = value;
+
+          try {
+            self.update(obj);
+          } catch(err) {
+            return false;
+          } finally { return true; }
+        },
+        deleteProperty: function (obj, prop) {
+          delete obj[prop];
+
+          try {
+            self.update(obj);
+          } catch (err) {
+            return false;
+          } finally { return true; }
+        },
+        defineProperty: function (obj, prop, value) {
+          Object.defineProperty(obj, prop, value);
+
+          try {
+            self.update(obj);
+          } catch (err) {
+            return false;
+          } finally { return true; }
+        },
+        get: function (obj, key) {
+          // courtesy of: https://stackoverflow.com/questions/36372611/how-to-test-if-an-object-is-a-proxy
+          if (key !== "__isProxy") { return obj[key]; }
+          return true;
+        }
+      };
+
+      return Proxy.revocable(object, handler);
+    };
+
+    /*
     Collection.prototype.addAutoUpdateObserver = function (object) {
       if (!this.autoupdate || typeof Object.observe !== 'function')
         return;
@@ -5087,7 +5130,7 @@
         return;
 
       Object.unobserve(object, this.observerCallback);
-    };
+    };*/
 
     /**
      * Adds a named collection transform to the collection
@@ -5714,7 +5757,8 @@
         this.emit('insert', returnObj);
       }
 
-      this.addAutoUpdateObserver(returnObj);
+      returnObj = this.autoUpdateProxification(returnObj);
+
       return returnObj;
     };
 
@@ -5837,7 +5881,7 @@
         this.data[position] = newInternal;
 
         if (newInternal !== doc) {
-          this.addAutoUpdateObserver(doc);
+          doc = this.autoUpdateProxification(doc);
         }
 
         // now that we can efficiently determine the data[] position of newly added document,

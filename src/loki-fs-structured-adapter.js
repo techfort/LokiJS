@@ -110,33 +110,55 @@
       this.dbref = null;
 
       // make sure file exists
-      fs.stat(dbname, function (err, stats) {
-        if (!err && stats.isFile()) {
-          instream = fs.createReadStream(dbname);
-          outstream = new stream();
-          rl = readline.createInterface(instream, outstream);
+      fs.stat(dbname, function (fileErr, stats) {
+        var jsonErr;
 
-          // first, load db container component
-          rl.on('line', function(line) {
-            // it should single JSON object (a one line file)
-            if (self.dbref === null && line !== "") {
+        if (fileErr) {
+          if (fileErr.code === "ENOENT") {
+            // file does not exist, so callback with null
+            callback(null);
+            return;
+          }
+          else {
+            // some other file system error.
+            callback(fileErr);
+            return;
+          }
+        }
+        else if (!stats.isFile()) {
+          // something exists at this path but it isn't a file.
+          callback(new Error(dbname + " is not a valid file."));
+          return;
+        }
+
+        instream = fs.createReadStream(dbname);
+        outstream = new stream();
+        rl = readline.createInterface(instream, outstream);
+
+        // first, load db container component
+        rl.on('line', function(line) {
+          // it should single JSON object (a one line file)
+          if (self.dbref === null && line !== "") {              
+            try {                
               self.dbref = JSON.parse(line);
+            } catch (e) {
+              jsonErr = e;
             }
-          });
+          }
+        });
 
-          // when that is done, examine its collection array to sequence loading each
-          rl.on('close', function() {
-            if (self.dbref.collections.length > 0) {
-              self.loadNextCollection(dbname, 0, function() {
-                callback(self.dbref);
-              });
-            }
-          });
-        }
-        else {
-          // file does not exist, so callback with null
-          callback(null);
-        }
+        // when that is done, examine its collection array to sequence loading each
+        rl.on('close', function() {
+          if (jsonErr) {
+            // a json error was encountered reading the container file.
+            callback(jsonErr);
+          } 
+          else if (self.dbref.collections.length > 0) {
+            self.loadNextCollection(dbname, 0, function() {
+              callback(self.dbref);
+            });
+          }
+        });
       });
     };
 

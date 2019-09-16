@@ -219,7 +219,7 @@
         if (id !== 0) {
           adapter.catalog.deleteAppKey(id, callback);
         } else if (typeof (callback) === 'function') {
-          callback({ success: true });
+          callback(null, { success: true });
         }
       });
     };

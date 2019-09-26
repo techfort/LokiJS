@@ -112,5 +112,100 @@
     })
   }
 
-  start()
+  function createIDB() {
+      console.time('saveIDB')
+      indexedDB.deleteDatabase("IDBTest2")
+    let openRequest = indexedDB.open('IDBTest2', 1);
+    openRequest.onupgradeneeded = e => {
+      var thisDB = e.target.result;
+
+      let objectStore = thisDB.createObjectStore('TestStore2', { keyPath: 'key' });
+    }
+    openRequest.onsuccess = e => {
+      let db = e.target.result
+
+      let tx = db.transaction(['TestStore2'], 'readwrite')
+
+      tx.oncomplete = () => {
+      console.timeEnd('saveIDB')
+      }
+
+      let store = tx.objectStore('TestStore2')
+      store.add({ key: 'metadata', val: { collections: {} } })
+
+
+      console.time('addmany')
+      for (let i = 0; i < 650; i++) {
+        let bsObject = Array(100).fill(null).map(() => ({ foo: 'asdasdasd', bar: 123, b: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' }))
+
+        store.add({ key: 'achunk.blah.' + i, val: JSON.stringify(bsObject) })
+      }
+      console.timeEnd('addmany')
+
+    }
+  }
+
+  function modifyIDB() {
+    console.time('modifyIDB')
+    let openRequest = indexedDB.open('IDBTest2', 1);
+    openRequest.onupgradeneeded = e => {
+      throw new Error('idb doesnt exist')
+    }
+    openRequest.onsuccess = e => {
+    console.time('sync-lock-time')
+      let db = e.target.result
+
+      let tx = db.transaction(['TestStore2'], 'readwrite')
+
+      tx.oncomplete = () => {
+      console.timeEnd('modifyIDB')
+      }
+
+      let store = tx.objectStore('TestStore2')
+
+      let bsObject = Array(100).fill(null).map(() => ({ foo: 'asdasdasd', bar: 123, b: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' }))
+
+      store.put({ key: 'achunk.blah.0', val: JSON.stringify(bsObject) })
+    console.timeEnd('sync-lock-time')
+
+    }
+  }
+
+  function createIDBBigBlob() {
+      console.time('saveIDBBlob')
+      indexedDB.deleteDatabase("IDBTestBlob")
+    let openRequest = indexedDB.open('IDBTestBlob', 1);
+    openRequest.onupgradeneeded = e => {
+      var thisDB = e.target.result;
+
+      let objectStore = thisDB.createObjectStore('TestStore2', { keyPath: 'key' });
+    }
+    openRequest.onsuccess = e => {
+      let db = e.target.result
+
+      let tx = db.transaction(['TestStore2'], 'readwrite')
+      let store = tx.objectStore('TestStore2')
+
+      let loki = { chunks: [] }
+      console.time('addmany')
+      for (let i = 0; i < 65000; i++) {
+        let bsObject = { foo: 'asdasdasd', bar: 123, b: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' }
+
+        loki.chunks.push({ key: 'chunk.blah.' + i, val: bsObject })
+      }
+      console.timeEnd('addmany')
+
+
+      store.add({ key: 'db', val: JSON.stringify(loki) })
+
+      tx.oncomplete = () => {
+      console.timeEnd('saveIDBBlob')
+      }
+    }
+  }
+
+  // start()
+  // createIDB() // takes 250-300ms in Safari to insert 650 chunks, 100 elements each
+  // modifyIDB() // ~12-20ms for saving one 100-el chunk
+  // createIDBBigBlob() // 360ms - 65000 elements in one big JSON chunk
 </script>

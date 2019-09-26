@@ -1707,6 +1707,7 @@
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
         copyColl.changes = coll.changes;
+        copyColl.lokiIdChanges = coll.lokiIdChanges;
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;
@@ -2649,30 +2650,30 @@
             throw err;
           }
           return;
-        },
-        self = this;
+        };
 
       // the persistenceAdapter should be present if all is ok, but check to be sure.
-      if (this.persistenceAdapter !== null) {
-        // check if the adapter is requesting (and supports) a 'reference' mode export
-        if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
-          // filename may seem redundant but loadDatabase will need to expect this same filename
-          this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
-            self.autosaveClearFlags();
-            cFun(err);
-          });
-        }
-        // otherwise just pass the serialized database to adapter
-        else {
-          // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
-          // or autosave won't work if an update occurs between here and the callback
-          self.autosaveClearFlags();
-          this.persistenceAdapter.saveDatabase(this.filename, self.serialize(), function saveDatabasecallback(err) {
-            cFun(err);
-          });
-        }
-      } else {
+      if (!this.persistenceAdapter) {
         cFun(new Error('persistenceAdapter not configured'));
+        return;
+      }
+
+      // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
+      // or autosave won't work if an update occurs between here and the callback
+      this.autosaveClearFlags();
+
+      // check if the adapter is requesting (and supports) a 'reference' mode export
+      if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+        // filename may seem redundant but loadDatabase will need to expect this same filename
+        this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
+          cFun(err);
+        });
+      }
+      // otherwise just pass the serialized database to adapter
+      else {
+        this.persistenceAdapter.saveDatabase(this.filename, this.serialize(), function saveDatabasecallback(err) {
+          cFun(err);
+        });
       }
     };
 

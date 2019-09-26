@@ -7,8 +7,76 @@
 <script>
   var db
 
+  function IncremenentalAdapter() {
+    this.mode = 'reference'
+  }
+
+  IncremenentalAdapter.prototype.exportDatabase = function(dbname, loki, callback) {
+    console.warn(`Begin export!`)
+    console.log(loki.collections[0].lokiIdChanges)
+
+    let chunksToSave = []
+    let chunkIdsToRemove = []
+
+    loki.collections.forEach(collection => {
+      const changes = collection.lokiIdChanges
+
+      // TODO: do we need to separate inserted and updated?
+      // get deduplicated ids
+      const idsToSave = new Set(changes.inserted.concat(changes.updated))
+      const idsToRemove = new Set(changes.removed)
+      idsToRemove.forEach(id => {
+        idsToSave.delete(id)
+      })
+
+      collection.lokiIdChanges = null
+
+      // prepare chunks to save and remove
+      idsToSave.forEach(id => {
+        // TODO: error handling on get
+        chunksToSave.push([collection.name + '.' + id, collection.get(id)])
+      })
+      idsToRemove.forEach(id => {
+        chunkIdsToRemove.push(collection.name + '.' + id)
+      })
+
+      // clear out data as we won't be saving it
+      collection.data = []
+    })
+
+    const serializedMetadata = JSON.stringify(loki)
+    loki = null
+
+    console.log(chunksToSave)
+    console.log(chunkIdsToRemove)
+    console.log(JSON.parse(serializedMetadata))
+
+
+    // TODO: Clear out lokiChangedIds flags on original database
+
+
+
+    // if (success) {
+    //   callback(null);
+    // }
+    // else {
+    //   callback(new Error("some error occurred."));
+    // }
+  }
+
+  IncremenentalAdapter.prototype.loadDatabase = function(dbname, callback) {
+    console.log(`Begin load!`)
+    // if (success) {
+    //   callback(newSerialized);
+    // }
+    // else {
+    //   callback(new Error("some error"));
+    // }
+  }
+
   function start() {
-    db = new loki('indexed_tests');
+    let adapter = new IncremenentalAdapter()
+    db = new loki('indexed_tests', { adapter: adapter });
 
     let col = db.addCollection('test_collection')
 
@@ -23,15 +91,25 @@
     col.update(h2)
 
     h3.val = 'UPDATED'
+    col.update(h3)
     h3.val2 = 'added!'
     col.update(h3)
 
     col.remove(h4)
 
+    let h6 = col.insert({  customId: 6,  val: 'hello6' });
+
     console.log(db)
     console.log(col)
 
     console.log(JSON.parse(db.serialize()))
+
+    console.log(col.lokiIdChanges)
+
+    db.saveDatabase((e) => {
+      e && console.error(e)
+      console.log('Database saved!')
+    })
   }
 
   start()

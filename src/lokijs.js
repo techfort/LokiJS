@@ -1694,7 +1694,11 @@
       for (i; i < len; i += 1) {
         coll = dbObject.collections[i];
 
-        copyColl = this.addCollection(coll.name, { disableChangesApi: coll.disableChangesApi, disableDeltaChangesApi: coll.disableDeltaChangesApi, disableMeta: coll.disableMeta });
+        copyColl = this.addCollection(coll.name, {
+          disableChangesApi: coll.disableChangesApi,
+          disableDeltaChangesApi: coll.disableDeltaChangesApi,
+          disableMeta: coll.disableMeta
+        });
 
         copyColl.adaptiveBinaryIndices = coll.hasOwnProperty('adaptiveBinaryIndices')?(coll.adaptiveBinaryIndices === true): false;
         copyColl.transactional = coll.transactional;
@@ -4886,6 +4890,13 @@
       // changes are tracked by collection and aggregated by the db
       this.changes = [];
 
+      // lightweight changes tracking (loki IDs only) for optimized db saving
+      this.lokiIdChanges = {
+        inserted: [],
+        updated: [],
+        removed: [],
+      };
+
       // initialize the id index
       this.ensureId();
       var indices = [];
@@ -5861,6 +5872,8 @@
         this.idIndex[position] = newInternal.$loki;
         //this.flagBinaryIndexesDirty();
 
+        this.lokiIdChanges.updated.push(newInternal.$loki);
+
         this.commit();
         this.dirty = true; // for autosave scenarios
 
@@ -5933,6 +5946,7 @@
 
         // add new obj id to idIndex
         this.idIndex.push(obj.$loki);
+        this.lokiIdChanges.inserted.push(obj.$loki);
 
         // add the object
         this.data.push(obj);
@@ -6197,6 +6211,8 @@
 
         // remove id from idIndex
         this.idIndex.splice(position, 1);
+
+        this.lokiIdChanges.removed.push(doc.$loki);
 
         this.commit();
         this.dirty = true; // for autosave scenarios

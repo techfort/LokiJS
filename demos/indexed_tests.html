@@ -1,0 +1,38 @@
+<!doctype html>
+<head>
+  <script type="text/javascript" src="../src/lokijs.js"></script>
+</head>
+<h2>Hi!</h2>
+
+<script>
+  var db
+
+  function start() {
+    db = new loki('indexed_tests');
+
+    let col = db.addCollection('test_collection')
+
+    col.insert({  customId: 0,  val: 'hello', constraints: 100 });
+    col.insert({  customId: 1,  val: 'hello1' });
+    let h2 = col.insert({  customId: 2,  val: 'hello2' });
+    let h3 = col.insert({  customId: 3,  val: 'hello3' });
+    let h4 = col.insert({  customId: 4,  val: 'hello4' });
+    let h5 = col.insert({  customId: 5,  val: 'hello5' });
+
+    h2.val = 'UPDATED'
+    col.update(h2)
+
+    h3.val = 'UPDATED'
+    h3.val2 = 'added!'
+    col.update(h3)
+
+    col.remove(h4)
+
+    console.log(db)
+    console.log(col)
+
+    console.log(JSON.parse(db.serialize()))
+  }
+
+  start()
+</script>

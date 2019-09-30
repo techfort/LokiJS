@@ -112,14 +112,19 @@
     })
   }
 
-  function createIDB() {
+  function modifyEntireIDB(create = false) {
       console.time('saveIDB')
-      indexedDB.deleteDatabase("IDBTest2")
+      create && indexedDB.deleteDatabase("IDBTest2")
     let openRequest = indexedDB.open('IDBTest2', 1);
     openRequest.onupgradeneeded = e => {
-      var thisDB = e.target.result;
+      if (create) {
 
-      let objectStore = thisDB.createObjectStore('TestStore2', { keyPath: 'key' });
+        var thisDB = e.target.result;
+
+        let objectStore = thisDB.createObjectStore('TestStore2', { keyPath: 'key' });
+      } else {
+        throw new Error('idb doesnt exist')
+      }
     }
     openRequest.onsuccess = e => {
       let db = e.target.result
@@ -131,18 +136,25 @@
       }
 
       let store = tx.objectStore('TestStore2')
-      store.add({ key: 'metadata', val: { collections: {} } })
+
+      const method = create ? 'add' : 'put'
+
+      store[method]({ key: 'metadata', val: { collections: {} } })
 
 
       console.time('addmany')
       for (let i = 0; i < 650; i++) {
         let bsObject = Array(100).fill(null).map(() => ({ foo: 'asdasdasd', bar: 123, b: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' }))
 
-        store.add({ key: 'achunk.blah.' + i, val: JSON.stringify(bsObject) })
+        store[method]({ key: 'bchunk.blah.' + i, val: JSON.stringify(bsObject) })
       }
       console.timeEnd('addmany')
 
     }
+  }
+
+  function createIDB() {
+    modifyEntireIDB(true)
   }
 
   function modifyIDB() {
@@ -165,7 +177,7 @@
 
       let bsObject = Array(100).fill(null).map(() => ({ foo: 'asdasdasd', bar: 123, b: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' }))
 
-      store.put({ key: 'achunk.blah.0', val: JSON.stringify(bsObject) })
+      store.put({ key: 'bchunk.blah.0', val: JSON.stringify(bsObject) })
     console.timeEnd('sync-lock-time')
 
     }
@@ -205,7 +217,8 @@
   }
 
   // start()
-  // createIDB() // takes 250-300ms in Safari to insert 650 chunks, 100 elements each
-  // modifyIDB() // ~12-20ms for saving one 100-el chunk
-  // createIDBBigBlob() // 360ms - 65000 elements in one big JSON chunk
+  // createIDB() // takes 250-300ms in Safari to insert 650 chunks, 100 elements each; chrome: 350; firefox: 125
+  // modifyIDB() // ~12-20ms for saving one 100-el chunk; chrome: 10ms; ff: 15
+  // modifyEntireIDB() // worst case scenario: 210-240ms; ff: 100-150
+  // createIDBBigBlob() // 360ms - 65000 elements in one big JSON chunk; chrome: 360-400; ff: 350-400
 </script>

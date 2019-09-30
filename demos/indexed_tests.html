@@ -9,6 +9,62 @@
 
   function IncremenentalAdapter() {
     this.mode = 'reference'
+    // this.chunkSize = 100
+    this.chunkSize = 5
+  }
+
+  // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
+  IncremenentalAdapter.prototype._getChunk = function(collection, chunkId) {
+    // 0-99, 100-199, etc.
+    // (loki starts $loki ids with 1, but that could change so just to be safe…)
+    const minId = chunkId * this.chunkSize
+    const maxId = minId + this.chunkSize - 1
+
+    // use idIndex to find first collection.data position within the $loki range
+    // const idIndex = collection.idIndex
+    // let firstDataPosition = null
+    // for (let i = 0; i < idIndex.length; i++) {
+    //   // doing this by binary search would be faster but probably not necessary
+    //   const lokiId = idIndex[i]
+    //   if (lokiId >= minId && lokiId <= maxId) {
+    //     firstDataPosition = idIndex
+    //   }
+    // }
+    const firstDataPosition = collection.idIndex.findIndex(lokiId => lokiId >= minId && lokiId <= maxId)
+    if (firstDataPosition === -1) {
+      // no elements in this chunk
+      return []
+    }
+
+    // sanity check
+    // TODO: remove me
+    const firstElement = collection.data[firstDataPosition]
+    if (!(firstElement && firstElement.$loki >= minId && firstElement.$loki <= maxId)) {
+      throw new Error('broken invariant firstelement')
+    }
+
+    // this will have *up to* `this.chunkSize` elements (might have less, because $loki ids
+    // will have holes when data is deleted)
+    const chunkData = []
+    for (let i = firstDataPosition; true; i++) {
+      const element = collection.data[i]
+      // TODO: Remove sanity check
+      if (element && element.$loki < minId) {
+        throw new Error('broken invariant minid')
+      }
+      if (element && element.$loki <= maxId) {
+        chunkData.push(element)
+      } else {
+        break
+      }
+    }
+
+    // TODO: Remove sanity check
+    if (chunkData.length > this.chunkSize) {
+      throw new Error('broken invariant - chunk size')
+    }
+
+    return chunkData
   }
 
   IncremenentalAdapter.prototype.exportDatabase = function(dbname, loki, callback) {
@@ -16,28 +72,41 @@
     console.log(loki.collections[0].lokiIdChanges)
 
     let chunksToSave = []
-    let chunkIdsToRemove = []
 
     loki.collections.forEach(collection => {
-      const changes = collection.lokiIdChanges
-
       // TODO: do we need to separate inserted and updated?
       // get deduplicated ids
-      const idsToSave = new Set(changes.inserted.concat(changes.updated))
-      const idsToRemove = new Set(changes.removed)
-      idsToRemove.forEach(id => {
-        idsToSave.delete(id)
-      })
+      // const idsToSave = new Set(changes.inserted.concat(changes.updated))
+      // const idsToRemove = new Set(changes.removed)
+      // idsToRemove.forEach(id => {
+        //   idsToSave.delete(id)
+        // })
+      // const changes = collection.lokiIdChanges
+      // const dirtyLokiIds = new Set(changes.inserted.concat(changes.updated).concat(changes.removed))
+      // collection.lokiIdChanges = null
 
+      // // prepare chunks to save and remove
+      // idsToSave.forEach(id => {
+      //   // TODO: error handling on get
+      //   chunksToSave.push([collection.name + '.' + id, collection.get(id)])
+      // })
+      // idsToRemove.forEach(id => {
+      //   chunkIdsToRemove.push(collection.name + '.' + id)
+      // })
+
+      const dirtyChunks = new Set()
+
+      const changes = collection.lokiIdChanges
+      changes.inserted.concat(changes.updated).concat(changes.removed).forEach(lokiId => {
+        const chunkId = lokiId / this.chunkSize | 0
+        dirtyChunks.add(chunkId)
+      })
       collection.lokiIdChanges = null
 
-      // prepare chunks to save and remove
-      idsToSave.forEach(id => {
-        // TODO: error handling on get
-        chunksToSave.push([collection.name + '.' + id, collection.get(id)])
-      })
-      idsToRemove.forEach(id => {
-        chunkIdsToRemove.push(collection.name + '.' + id)
+      dirtyChunks.forEach(chunkId => {
+        const chunkData = this._getChunk(collection, chunkId)
+        const chunkJSON = JSON.stringify(chunkData)
+        chunksToSave.push([collection.name + '.chunk.' + chunkId, chunkJSON])
       })
 
       // clear out data as we won't be saving it
@@ -45,10 +114,10 @@
     })
 
     const serializedMetadata = JSON.stringify(loki)
-    loki = null
+    loki = null // allow GC of the DB copy
 
     console.log(chunksToSave)
-    console.log(chunkIdsToRemove)
+    // console.log(chunkIdsToRemove)
     console.log(JSON.parse(serializedMetadata))
 
 
@@ -106,11 +175,18 @@
 
     console.log(col.lokiIdChanges)
 
+
+
     db.saveDatabase((e) => {
       e && console.error(e)
       console.log('Database saved!')
     })
   }
+
+  // ------ IndexedDB performance tests -------
+
+
+
 
   function modifyEntireIDB(create = false) {
       console.time('saveIDB')
@@ -216,7 +292,7 @@
     }
   }
 
-  // start()
+  start()
   // createIDB() // takes 250-300ms in Safari to insert 650 chunks, 100 elements each; chrome: 350; firefox: 125
   // modifyIDB() // ~12-20ms for saving one 100-el chunk; chrome: 10ms; ff: 15
   // modifyEntireIDB() // worst case scenario: 210-240ms; ff: 100-150

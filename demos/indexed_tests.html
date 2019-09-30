@@ -108,6 +108,7 @@
 
       dirtyChunks.forEach(chunkId => {
         const chunkData = this._getChunk(collection, chunkId)
+        // we must stringify, because IDB is asynchronous, and underlying objects are mutable
         const chunkJSON = JSON.stringify(chunkData)
         chunksToSave.push([collection.name + '.chunk.' + chunkId, chunkJSON])
       })
@@ -137,6 +138,102 @@
     // }
     // else {
     //   callback(new Error("some error occurred."));
+    // }
+  }
+
+
+
+  IncremenentalAdapter.prototype.loadDatabase = function(dbname, callback) {
+    console.warn(`-- loadDatabase - begin`)
+    console.time('loadDatabase')
+    this._getAllChunks(chunks => {
+
+      if (!chunks.length) {
+        console.log(`No chunks`)
+        callback(null)
+        return
+      }
+
+      console.log(`Found chunks:`, chunks)
+
+      // sort chunks in place to load data in the right order (ascending loki ids)
+      // TODO: Maybe not necessary if IDB provides certain sort guarantees?
+      chunks.sort(function(a, b){
+        if(a.key < b.key) return -1;
+        if(a.key > b.key) return 1;
+        return 0;
+      });
+      console.log(`Sorted chunks`, chunks)
+
+      // repack chunks into a map
+      let loki
+      let collections = {}
+
+      chunks.forEach(({ key, value }) => {
+        if (key === 'loki') {
+          loki = value
+        } else if (key.includes('.')) {
+          const keySegments = key.split('.')
+          if (keySegments.length === 3 && keySegments[1] === 'chunk') {
+            const colName = keySegments[0]
+            if (collections[colName]) {
+              collections[colName].push(value)
+            } else {
+              collections[colName] = [value]
+            }
+          } else {
+            throw new Error('unknown chunk')
+          }
+        } else {
+          throw new Error('unknown chunk')
+        }
+      })
+      chunks = null
+      console.log(`Collections`, collections)
+
+      // TODO: Validate collection chunks?
+      if (!loki) {
+        throw new Error('missing loki…')
+      }
+
+      // parse Loki object
+      loki = JSON.parse(loki)
+      console.log(`Parsed loki object`, loki)
+
+      // populate collections with data
+      loki.collections.forEach(collection => {
+        const dataChunks = collections[collection.name]
+
+        if (dataChunks) {
+          console.log(`Importing ${dataChunks.length} chunks into ${collection.name}`)
+
+          dataChunks.forEach((chunkObj, i) => {
+            const chunk = JSON.parse(chunkObj)
+            chunkObj = null
+            dataChunks[i] = null
+
+            chunk.forEach(doc => {
+              collection.data.push(doc)
+            })
+          })
+        } else {
+          console.log(`No chunks available for ${collection.name}`)
+        }
+      })
+      collections = null
+
+      // instantiate actual Loki object
+      console.timeEnd('loadDatabase')
+      console.log(`Loaded Loki database!`, loki)
+      callback(loki)
+    })
+
+
+    // if (success) {
+    //   callback(newSerialized);
+    // }
+    // else {
+    //   callback(new Error("some error"));
     // }
   }
 
@@ -193,19 +290,32 @@
     console.timeEnd('put')
   }
 
-  IncremenentalAdapter.prototype.loadDatabase = function(dbname, callback) {
-    console.log(`Begin load!`)
-    // if (success) {
-    //   callback(newSerialized);
-    // }
-    // else {
-    //   callback(new Error("some error"));
-    // }
+  IncremenentalAdapter.prototype._getAllChunks = function(callback) {
+    if (!this.idb) {
+      this._initializeIDB(() => {
+        this._getAllChunks(callback)
+      })
+      return
+    }
+
+    console.warn(`--- _getAllChunks`)
+    console.time('getChunks')
+
+    let tx = this.idb.transaction(['Store'], 'readonly')
+
+    // TODO: Error handling
+
+    const request = tx.objectStore('Store').getAll()
+    request.onsuccess = e => {
+      let chunks = e.target.result
+      console.timeEnd('getChunks')
+      callback(chunks)
+    }
   }
 
   function start() {
     let adapter = new IncremenentalAdapter()
-    db = new loki('indexed_tests', { adapter: adapter });
+    db = new loki('indexed_tests', { adapter: adapter, verbose: true });
 
     let col = db.addCollection('test_collection')
 
@@ -240,6 +350,9 @@
     db.saveDatabase((e) => {
       e && console.error(e)
       console.log('Database saved!')
+
+      // test loading
+      let db2 = new loki('indexed_tests', { adapter: new IncremenentalAdapter(), autoload: true, verbose: true });
     })
   }
 

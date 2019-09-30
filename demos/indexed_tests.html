@@ -7,10 +7,13 @@
 <script>
   var db
 
+
+
   function IncremenentalAdapter() {
     this.mode = 'reference'
     // this.chunkSize = 100
     this.chunkSize = 5
+    this.idb = null // will be lazily loaded on first operation that needs it
   }
 
   // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
@@ -68,7 +71,7 @@
   }
 
   IncremenentalAdapter.prototype.exportDatabase = function(dbname, loki, callback) {
-    console.warn(`Begin export!`)
+    console.warn(`-- exportDatabase - begin`)
     console.log(loki.collections[0].lokiIdChanges)
 
     let chunksToSave = []
@@ -120,8 +123,12 @@
     // console.log(chunkIdsToRemove)
     console.log(JSON.parse(serializedMetadata))
 
+    chunksToSave.push(['loki', serializedMetadata])
 
     // TODO: Clear out lokiChangedIds flags on original database
+
+    this._saveChunks(chunksToSave, callback)
+
 
 
 
@@ -131,6 +138,59 @@
     // else {
     //   callback(new Error("some error occurred."));
     // }
+  }
+
+  IncremenentalAdapter.prototype._initializeIDB = function(callback) {
+    console.time('initializeIDB')
+    const openRequest = indexedDB.open('IncrementalAdapterIDB', 1);
+
+    openRequest.onupgradeneeded = e => {
+      const db = e.target.result
+      if (db.objectStoreNames.contains('Store')) {
+        throw new Error('todo')
+        // TODO: Finish this
+      }
+
+      const store = db.createObjectStore('Store', { keyPath: 'key' })
+    }
+
+    openRequest.onsuccess = e => {
+      console.timeEnd('initializeIDB')
+      this.idb = e.target.result
+      callback()
+    }
+
+    openRequest.onerror = e => {
+      throw e
+    }
+  }
+
+  IncremenentalAdapter.prototype._saveChunks = function(chunks, callback) {
+    if (!this.idb) {
+      this._initializeIDB(() => {
+        this._saveChunks(chunks, callback)
+      })
+      return
+    }
+    console.warn(`--- _saveChunks`)
+
+    console.time('saveChunks')
+
+    let tx = this.idb.transaction(['Store'], 'readwrite')
+    tx.oncomplete = () => {
+      console.timeEnd('saveChunks')
+      console.warn(`calling callback, all done!`)
+      callback()
+    }
+    // TODO: Error handling
+
+    let store = tx.objectStore('Store')
+
+    console.time('put')
+    chunks.forEach(([key, value]) => {
+      store.put({ key, value })
+    })
+    console.timeEnd('put')
   }
 
   IncremenentalAdapter.prototype.loadDatabase = function(dbname, callback) {

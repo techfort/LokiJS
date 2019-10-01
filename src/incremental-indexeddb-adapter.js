@@ -16,37 +16,19 @@
     function IncrementalIndexedDBAdapter() {
       this.mode = 'incremental'
       this.chunkSize = 100
-      // this.chunkSize = 5
       this.idb = null // will be lazily loaded on first operation that needs it
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
     IncrementalIndexedDBAdapter.prototype._getChunk = function(collection, chunkId) {
       // 0-99, 100-199, etc.
-      // (loki starts $loki ids with 1, but that could change so just to be safe…)
       const minId = chunkId * this.chunkSize
       const maxId = minId + this.chunkSize - 1
 
       // use idIndex to find first collection.data position within the $loki range
       const idIndex = collection.idIndex
 
-      // TODO: Proper binary search would be MUCH faster - this fast path works
-      // only if minId exists
       let firstDataPosition = null
-
-      // let getId = collection.get(minId, true)
-      // if (getId) {
-      //   firstDataPosition = getId[1]
-      // } else {
-      //   for (let i = 0, length = idIndex.length; i < length; i++) {
-      //     if (idIndex[i] >= minId && idIndex[i] <= maxId) {
-      //       firstDataPosition = i
-      //       break
-      //     }
-      //   }
-      // }
-
-
 
       var max = idIndex.length - 1,
           min = 0,
@@ -65,9 +47,6 @@
       if (max === min && idIndex[min] >= minId) {
         firstDataPosition = min
       }
-
-
-
 
       if (firstDataPosition === null) {
         // no elements in this chunk
@@ -102,19 +81,6 @@
       // this will have *up to* `this.chunkSize` elements (might have less, because $loki ids
       // will have holes when data is deleted)
       const chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
-      // const chunkData = []
-      // for (let i = firstDataPosition; true; i++) {
-      //   const element = collection.data[i]
-      //   // TODO: Remove sanity check
-      //   if (element && element.$loki < minId) {
-      //     throw new Error('broken invariant minid')
-      //   }
-      //   if (element && element.$loki <= maxId) {
-      //     chunkData.push(element)
-      //   } else {
-      //     break
-      //   }
-      // }
 
       // TODO: Remove sanity check
       if (chunkData.length > this.chunkSize) {
@@ -133,25 +99,6 @@
 
       console.time('makeChunks')
       loki.collections.forEach(collection => {
-        // TODO: do we need to separate inserted and updated?
-        // get deduplicated ids
-        // const idsToSave = new Set(changes.inserted.concat(changes.updated))
-        // const idsToRemove = new Set(changes.removed)
-        // idsToRemove.forEach(id => {
-          //   idsToSave.delete(id)
-          // })
-        // const changes = collection.lokiIdChanges
-        // const dirtyLokiIds = new Set(changes.inserted.concat(changes.updated).concat(changes.removed))
-        // collection.lokiIdChanges = null
-
-        // // prepare chunks to save and remove
-        // idsToSave.forEach(id => {
-        //   // TODO: error handling on get
-        //   chunksToSave.push([collection.name + '.' + id, collection.get(id)])
-        // })
-        // idsToRemove.forEach(id => {
-        //   chunkIdsToRemove.push(collection.name + '.' + id)
-        // })
 
         console.time('get dirty chunk ids')
         const dirtyChunks = new Set()
@@ -164,14 +111,10 @@
 
         console.time('get chunks&serialize')
         dirtyChunks.forEach(chunkId => {
-          // console.time('get chunk')
           const chunkData = this._getChunk(collection, chunkId)
-          // console.timeEnd('get chunk')
           // we must stringify, because IDB is asynchronous, and underlying objects are mutable
-          // console.time('stringify chunk')
           const chunkJSON = JSON.stringify(chunkData)
           chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
-          // console.timeEnd('stringify chunk')
         })
         console.timeEnd('get chunks&serialize')
 
@@ -221,7 +164,7 @@
         // console.log(`Found chunks:`, chunks)
 
         // sort chunks in place to load data in the right order (ascending loki ids)
-        // at least on Safari, we'll get chunks in order like this: 0, 1, 10, 100...
+        // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
         // console.time('sort')
         const getSortKey = function({ key }) {
           if (key.includes('.')) {
@@ -304,32 +247,21 @@
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, collections) {
       loki.collections.forEach(collection => {
-      // for(let k = 0, kLen = loki.collections.length; k < kLen; k++) {
-      //   const collection = loki.collections[k]
         const dataChunks = collections[collection.name]
 
         if (dataChunks) {
-          // console.log(`Importing ${dataChunks.length} chunks into ${collection.name}`)
-
           dataChunks.forEach((chunkObj, i) => {
-          // for (let j = 0, jLen = dataChunks.length; j < jLen; j++) {
             const chunk = JSON.parse(chunkObj)
-            // const chunk = []
             chunkObj = null
             dataChunks[i] = null
 
-            // for (let i = 0, len = chunk.length; i < len; i++) {
-              // collection.data.push(chunk[i])
-            // }
             chunk.forEach(doc => {
               collection.data.push(doc)
             })
-          // }
           })
         } else {
           // console.log(`No chunks available for ${collection.name}`)
         }
-      // }
       })
     }
 
@@ -364,11 +296,11 @@
         return
       }
 
-      console.time('saveChunks')
+      console.time('save chunks to idb')
 
       let tx = this.idb.transaction(['Store'], 'readwrite')
       tx.oncomplete = () => {
-        console.timeEnd('saveChunks')
+        console.timeEnd('save chunks to idb')
         console.timeEnd('exportDatabase')
         callback()
       }

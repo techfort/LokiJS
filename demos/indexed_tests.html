@@ -25,12 +25,20 @@
 
     // use idIndex to find first collection.data position within the $loki range
     const idIndex = collection.idIndex
+
+    // TODO: Proper binary search would be MUCH faster - this fast path works
+    // only if minId exists
     let firstDataPosition = null
-    for (let i = 0, length = idIndex.length; i < length; i++) {
-      // TODO: doing this by binary search would be faster
-      if (idIndex[i] >= minId && idIndex[i] <= maxId) {
-        firstDataPosition = i
-        break
+
+    let getId = collection.get(minId, true)
+    if (getId) {
+      firstDataPosition = getId[1]
+    } else {
+      for (let i = 0, length = idIndex.length; i < length; i++) {
+        if (idIndex[i] >= minId && idIndex[i] <= maxId) {
+          firstDataPosition = i
+          break
+        }
       }
     }
 
@@ -61,13 +69,12 @@
 
     const lastElement = collection.data[lastDataPosition]
     if (!(lastElement && lastElement.$loki >= minId && lastElement.$loki <= maxId)) {
-      debugger
       throw new Error('broken invariant lastElement')
     }
 
     // this will have *up to* `this.chunkSize` elements (might have less, because $loki ids
     // will have holes when data is deleted)
-    // const chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
+    const chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
     // const chunkData = []
     // for (let i = firstDataPosition; true; i++) {
     //   const element = collection.data[i]
@@ -136,8 +143,8 @@
         // console.timeEnd('get chunk')
         // we must stringify, because IDB is asynchronous, and underlying objects are mutable
         // console.time('stringify chunk')
-        const chunkJSON = JSON.stringify(chunkData)
-        chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
+        // const chunkJSON = JSON.stringify(chunkData)
+        // chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
         // console.timeEnd('stringify chunk')
       })
       console.timeEnd('get chunks&serialize')

@@ -11,8 +11,8 @@
 
   function IncremenentalAdapter() {
     this.mode = 'reference'
-    // this.chunkSize = 100
-    this.chunkSize = 5
+    this.chunkSize = 100
+    // this.chunkSize = 5
     this.idb = null // will be lazily loaded on first operation that needs it
   }
 
@@ -72,10 +72,12 @@
 
   IncremenentalAdapter.prototype.exportDatabase = function(dbname, loki, callback) {
     console.warn(`-- exportDatabase - begin`)
+    console.time('exportDatabase')
     console.log(loki.collections[0].lokiIdChanges)
 
     let chunksToSave = []
 
+    console.time('makeChunks')
     loki.collections.forEach(collection => {
       // TODO: do we need to separate inserted and updated?
       // get deduplicated ids
@@ -116,7 +118,9 @@
       // clear out data as we won't be saving it
       collection.data = []
     })
+    console.timeEnd('makeChunks')
 
+    console.time('loki-serialized')
     const serializedMetadata = JSON.stringify(loki)
     loki = null // allow GC of the DB copy
 
@@ -125,6 +129,7 @@
     console.log(JSON.parse(serializedMetadata))
 
     chunksToSave.push(['loki', serializedMetadata])
+    console.timeEnd('loki-serialized')
 
     // TODO: Clear out lokiChangedIds flags on original database
 
@@ -158,17 +163,20 @@
 
       // sort chunks in place to load data in the right order (ascending loki ids)
       // TODO: Maybe not necessary if IDB provides certain sort guarantees?
+      console.time('sort')
       chunks.sort(function(a, b){
         if(a.key < b.key) return -1;
         if(a.key > b.key) return 1;
         return 0;
       });
+      console.timeEnd('sort')
       console.log(`Sorted chunks`, chunks)
 
       // repack chunks into a map
       let loki
       let collections = {}
 
+      console.time('repack')
       chunks.forEach(({ key, value }) => {
         if (key === 'loki') {
           loki = value
@@ -189,6 +197,7 @@
         }
       })
       chunks = null
+      console.timeEnd('repack')
       console.log(`Collections`, collections)
 
       // TODO: Validate collection chunks?
@@ -197,6 +206,7 @@
       }
 
       // parse Loki object
+      console.time('parse/populate')
       loki = JSON.parse(loki)
       console.log(`Parsed loki object`, loki)
 
@@ -221,6 +231,7 @@
         }
       })
       collections = null
+      console.timeEnd('parse/populate')
 
       // instantiate actual Loki object
       console.timeEnd('loadDatabase')
@@ -276,6 +287,7 @@
     let tx = this.idb.transaction(['Store'], 'readwrite')
     tx.oncomplete = () => {
       console.timeEnd('saveChunks')
+      console.timeEnd('exportDatabase')
       console.warn(`calling callback, all done!`)
       callback()
     }
@@ -341,9 +353,15 @@
     console.log(db)
     console.log(col)
 
-    console.log(JSON.parse(db.serialize()))
+    // console.log(JSON.parse(db.serialize()))
 
     console.log(col.lokiIdChanges)
+
+    console.time('massAdd')
+    for (let i = 0; i < 65000; i++) {
+      col.insert({ mass: true, i, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' })
+    }
+    console.timeEnd('massAdd')
 
 
 

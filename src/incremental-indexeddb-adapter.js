@@ -106,7 +106,7 @@
           const chunkId = lokiId / this.chunkSize | 0
           dirtyChunks.add(chunkId)
         })
-        collection.dirtyIds = null
+        collection.dirtyIds = []
         console.timeEnd('get dirty chunk ids')
 
         console.time('get chunks&serialize')
@@ -146,8 +146,6 @@
       //   callback(new Error("some error occurred."));
       // }
     }
-
-
 
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
       console.log(`-- loadDatabase - begin`)
@@ -266,9 +264,11 @@
     }
 
     IncrementalIndexedDBAdapter.prototype._initializeIDB = function(callback) {
+      console.log(`initializing idb`)
       const openRequest = indexedDB.open('IncrementalAdapterIDB', 1);
 
       openRequest.onupgradeneeded = e => {
+        console.log('onupgradeneeded')
         const db = e.target.result
         if (db.objectStoreNames.contains('Store')) {
           throw new Error('todo')
@@ -278,7 +278,12 @@
         const store = db.createObjectStore('Store', { keyPath: 'key' })
       }
 
+      openRequest.onblocked = e => {
+        debugger
+      }
+
       openRequest.onsuccess = e => {
+        console.log('init success')
         this.idb = e.target.result
         callback()
       }
@@ -309,6 +314,7 @@
       let store = tx.objectStore('Store')
 
       console.time('put')
+      console.log(chunks)
       chunks.forEach(object => {
         store.put(object)
       })
@@ -322,7 +328,7 @@
         })
         return
       }
-
+      console.log('getting all chunks')
       console.time('getChunks')
 
       let tx = this.idb.transaction(['Store'], 'readonly')
@@ -335,7 +341,35 @@
         console.timeEnd('getChunks')
         callback(chunks)
       }
+
+      request.onerror = () => {
+        debugger
+      }
     }
+
+    IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
+      console.log(`deleteDatabase`)
+      console.time('deleteDatabase')
+      this.idb && this.idb.close()
+      this.idb = null
+
+      const request = indexedDB.deleteDatabase('IncrementalAdapterIDB')
+
+      // TODO: Error handling
+
+      request.onsuccess = () => {
+        console.timeEnd('deleteDatabase')
+        console.log(`deleteDatabase done`)
+        callback({ success: true })
+      }
+
+      request.onerror = () => {
+        debugger
+      }
+
+      console.log(`deleteDatabase - exit fn`)
+    }
+
     return IncrementalIndexedDBAdapter
   }())
 }))

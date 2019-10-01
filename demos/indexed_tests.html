@@ -143,8 +143,8 @@
         // console.timeEnd('get chunk')
         // we must stringify, because IDB is asynchronous, and underlying objects are mutable
         // console.time('stringify chunk')
-        // const chunkJSON = JSON.stringify(chunkData)
-        // chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
+        const chunkJSON = JSON.stringify(chunkData)
+        chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
         // console.timeEnd('stringify chunk')
       })
       console.timeEnd('get chunks&serialize')

@@ -1707,7 +1707,7 @@
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
         copyColl.changes = coll.changes;
-        copyColl.lokiIdChanges = coll.lokiIdChanges;
+        copyColl.dirtyIds = coll.dirtyIds;
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;
@@ -4892,11 +4892,7 @@
       this.changes = [];
 
       // lightweight changes tracking (loki IDs only) for optimized db saving
-      this.lokiIdChanges = {
-        inserted: [],
-        updated: [],
-        removed: [],
-      };
+      this.dirtyIds = [];
 
       // initialize the id index
       this.ensureId();
@@ -5873,7 +5869,7 @@
         this.idIndex[position] = newInternal.$loki;
         //this.flagBinaryIndexesDirty();
 
-        this.lokiIdChanges.updated.push(newInternal.$loki);
+        this.dirtyIds.push(newInternal.$loki);
 
         this.commit();
         this.dirty = true; // for autosave scenarios
@@ -5947,7 +5943,7 @@
 
         // add new obj id to idIndex
         this.idIndex.push(obj.$loki);
-        this.lokiIdChanges.inserted.push(obj.$loki);
+        this.dirtyIds.push(obj.$loki);
 
         // add the object
         this.data.push(obj);
@@ -6213,7 +6209,7 @@
         // remove id from idIndex
         this.idIndex.splice(position, 1);
 
-        this.lokiIdChanges.removed.push(doc.$loki);
+        this.dirtyIds.push(doc.$loki);
 
         this.commit();
         this.dirty = true; // for autosave scenarios

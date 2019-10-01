@@ -128,12 +128,11 @@
 
       console.time('get dirty chunk ids')
       const dirtyChunks = new Set()
-      const changes = collection.lokiIdChanges
-      changes.inserted.concat(changes.updated).concat(changes.removed).forEach(lokiId => {
+      collection.dirtyIds.forEach(lokiId => {
         const chunkId = lokiId / this.chunkSize | 0
         dirtyChunks.add(chunkId)
       })
-      collection.lokiIdChanges = null
+      collection.dirtyIds = null
       console.timeEnd('get dirty chunk ids')
 
       console.time('get chunks&serialize')
@@ -418,12 +417,30 @@
     console.log(col.lokiIdChanges)
 
     console.time('massAdd')
-    for (let i = 0; i < 65000; i++) {
+    const numberOfRecords = 65000
+    for (let i = 0; i < numberOfRecords; i++) {
       col.insert({ mass: true, i, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' })
     }
     console.timeEnd('massAdd')
 
+    // remove many contiguous records to have empty chunks
+    const dataToDelete = col.data.slice(200, 95)
+    col.remove(dataToDelete)
 
+    // fuzz changes
+    const numberOfDeletions = 5000
+    for (let i = 0;i<numberOfDeletions;i++) {
+      const id = Math.floor(Math.random() * col.data.length)
+      col.remove(col.data[id])
+    }
+
+    const numberOfUpdates = 5000
+    for (let i = 0;i<numberOfUpdates;i++) {
+      const id = Math.floor(Math.random() * col.data.length)
+      const doc = col.data[id]
+      doc.blah = 'UPDATED_' + doc.blah
+      col.update(doc)
+    }
 
     db.saveDatabase((e) => {
       e && console.error(e)

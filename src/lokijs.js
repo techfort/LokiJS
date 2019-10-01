@@ -2663,7 +2663,7 @@
       // TODO: Are we sure this is the right way?
       this.autosaveClearFlags();
 
-      // check if the adapter is requesting (and supports) a 'reference' mode export
+      // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
         const lokiCopy = this.copy({removeNonSerializable:true})
 

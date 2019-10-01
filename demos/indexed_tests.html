@@ -24,17 +24,17 @@
     const maxId = minId + this.chunkSize - 1
 
     // use idIndex to find first collection.data position within the $loki range
-    // const idIndex = collection.idIndex
-    // let firstDataPosition = null
-    // for (let i = 0; i < idIndex.length; i++) {
-    //   // doing this by binary search would be faster but probably not necessary
-    //   const lokiId = idIndex[i]
-    //   if (lokiId >= minId && lokiId <= maxId) {
-    //     firstDataPosition = idIndex
-    //   }
-    // }
-    const firstDataPosition = collection.idIndex.findIndex(lokiId => lokiId >= minId && lokiId <= maxId)
-    if (firstDataPosition === -1) {
+    const idIndex = collection.idIndex
+    let firstDataPosition = null
+    for (let i = 0, length = idIndex.length; i < length; i++) {
+      // TODO: doing this by binary search would be faster
+      if (idIndex[i] >= minId && idIndex[i] <= maxId) {
+        firstDataPosition = idIndex[i]
+        break
+      }
+    }
+
+    if (firstDataPosition === null) {
       // no elements in this chunk
       return []
     }
@@ -99,21 +99,28 @@
       //   chunkIdsToRemove.push(collection.name + '.' + id)
       // })
 
+      console.time('get dirty chunk ids')
       const dirtyChunks = new Set()
-
       const changes = collection.lokiIdChanges
       changes.inserted.concat(changes.updated).concat(changes.removed).forEach(lokiId => {
         const chunkId = lokiId / this.chunkSize | 0
         dirtyChunks.add(chunkId)
       })
       collection.lokiIdChanges = null
+      console.timeEnd('get dirty chunk ids')
 
+      console.time('get chunks&serialize')
       dirtyChunks.forEach(chunkId => {
+        // console.time('get chunk')
         const chunkData = this._getChunk(collection, chunkId)
+        // console.timeEnd('get chunk')
         // we must stringify, because IDB is asynchronous, and underlying objects are mutable
+        // console.time('stringify chunk')
         const chunkJSON = JSON.stringify(chunkData)
-        chunksToSave.push([collection.name + '.chunk.' + chunkId, chunkJSON])
+        chunksToSave.push({ key: collection.name + '.chunk.' + chunkId, value: chunkJSON})
+        // console.timeEnd('stringify chunk')
       })
+      console.timeEnd('get chunks&serialize')
 
       // clear out data as we won't be saving it
       collection.data = []
@@ -128,7 +135,7 @@
     // console.log(chunkIdsToRemove)
     console.log(JSON.parse(serializedMetadata))
 
-    chunksToSave.push(['loki', serializedMetadata])
+    chunksToSave.push({ key: 'loki', value: serializedMetadata })
     console.timeEnd('loki-serialized')
 
     // TODO: Clear out lokiChangedIds flags on original database
@@ -296,8 +303,8 @@
     let store = tx.objectStore('Store')
 
     console.time('put')
-    chunks.forEach(([key, value]) => {
-      store.put({ key, value })
+    chunks.forEach(object => {
+      store.put(object)
     })
     console.timeEnd('put')
   }

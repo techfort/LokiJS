@@ -29,7 +29,7 @@
     for (let i = 0, length = idIndex.length; i < length; i++) {
       // TODO: doing this by binary search would be faster
       if (idIndex[i] >= minId && idIndex[i] <= maxId) {
-        firstDataPosition = idIndex[i]
+        firstDataPosition = i
         break
       }
     }
@@ -39,6 +39,19 @@
       return []
     }
 
+    // find last position
+    // if loki IDs are contiguous (no removed elements)
+    // last position will be first + chunk - 1
+    // (and we look back in case there are missing pieces)
+    // TODO: Binary search
+    let lastDataPosition = null
+    for (let i = firstDataPosition + this.chunkSize - 1; i >= firstDataPosition; i--) {
+      if (idIndex[i] <= maxId) {
+        lastDataPosition = i
+        break
+      }
+    }
+
     // sanity check
     // TODO: remove me
     const firstElement = collection.data[firstDataPosition]
@@ -46,21 +59,28 @@
       throw new Error('broken invariant firstelement')
     }
 
+    const lastElement = collection.data[lastDataPosition]
+    if (!(lastElement && lastElement.$loki >= minId && lastElement.$loki <= maxId)) {
+      debugger
+      throw new Error('broken invariant lastElement')
+    }
+
     // this will have *up to* `this.chunkSize` elements (might have less, because $loki ids
     // will have holes when data is deleted)
-    const chunkData = []
-    for (let i = firstDataPosition; true; i++) {
-      const element = collection.data[i]
-      // TODO: Remove sanity check
-      if (element && element.$loki < minId) {
-        throw new Error('broken invariant minid')
-      }
-      if (element && element.$loki <= maxId) {
-        chunkData.push(element)
-      } else {
-        break
-      }
-    }
+    // const chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
+    // const chunkData = []
+    // for (let i = firstDataPosition; true; i++) {
+    //   const element = collection.data[i]
+    //   // TODO: Remove sanity check
+    //   if (element && element.$loki < minId) {
+    //     throw new Error('broken invariant minid')
+    //   }
+    //   if (element && element.$loki <= maxId) {
+    //     chunkData.push(element)
+    //   } else {
+    //     break
+    //   }
+    // }
 
     // TODO: Remove sanity check
     if (chunkData.length > this.chunkSize) {

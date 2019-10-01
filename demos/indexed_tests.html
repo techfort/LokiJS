@@ -196,11 +196,22 @@
       console.log(`Found chunks:`, chunks)
 
       // sort chunks in place to load data in the right order (ascending loki ids)
-      // TODO: Maybe not necessary if IDB provides certain sort guarantees?
+      // at least on Safari, we'll get chunks in order like this: 0, 1, 10, 100...
       console.time('sort')
-      chunks.sort(function(a, b){
-        if(a.key < b.key) return -1;
-        if(a.key > b.key) return 1;
+      const getSortKey = function({ key }) {
+        if (key.includes('.')) {
+          const segments = key.split('.')
+          if (segments.length === 3) {
+            return parseInt(segments[2], 10)
+          }
+        }
+
+        return key
+      }
+      chunks.sort(function(a, b) {
+        const aKey = getSortKey(a), bKey =getSortKey(b);
+        if(aKey < bKey) return -1;
+        if(aKey > bKey) return 1;
         return 0;
       });
       console.timeEnd('sort')
@@ -419,7 +430,26 @@
       console.log('Database saved!')
 
       // test loading
-      let db2 = new loki('indexed_tests', { adapter: new IncremenentalAdapter(), autoload: true, verbose: true });
+      let db2 = new loki('indexed_tests', { adapter: new IncremenentalAdapter(), verbose: true });
+      db2.loadDatabase({}, () => {
+        console.log(`Loaded database!`)
+
+        // make sure the two databases are identical
+        db.collections.forEach((col, ci) => {
+          if (!col.data.every((el, i) => {
+            const val = JSON.stringify(db2.collections[ci].data[i]) === JSON.stringify(el)
+            if (!val) {
+              debugger
+            }
+            return val
+          }
+          )) {
+            debugger
+            throw new Error('different dbs')
+          }
+        })
+        console.log(`Passed the checks!`)
+      })
     })
   }
 

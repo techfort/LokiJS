@@ -314,7 +314,7 @@
       let store = tx.objectStore('Store')
 
       console.time('put')
-      console.log(chunks)
+      // console.log(chunks)
       chunks.forEach(object => {
         store.put(object)
       })

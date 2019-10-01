@@ -2660,10 +2660,31 @@
 
       // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
       // or autosave won't work if an update occurs between here and the callback
+      // TODO: Are we sure this is the right way?
       this.autosaveClearFlags();
 
       // check if the adapter is requesting (and supports) a 'reference' mode export
-      if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+      if (this.persistenceAdapter.mode === "incremental") {
+        const lokiCopy = this.copy({removeNonSerializable:true})
+
+        // remember and clear dirty ids -- we must do it before the save so that if
+        // and update occurs between here and callback, it will get saved later
+        const dirtyIds = this.collections.map(collection => collection.dirtyIds)
+        this.collections.forEach(col => {
+          col.dirtyIds = []
+        })
+
+        this.persistenceAdapter.saveDatabase(this.filename, lokiCopy, function exportDatabaseCallback(err) {
+          if (err) {
+            // roll back dirty IDs to be saved later
+            this.collections.forEach((col, i) => {
+              col.dirtyIds = col.dirtyIds.concat(dirtyIds[i])
+            })
+          }
+          cFun(err);
+        })
+
+      } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // filename may seem redundant but loadDatabase will need to expect this same filename
         this.persistenceAdapter.exportDatabase(this.filename, this.copy({removeNonSerializable:true}), function exportDatabaseCallback(err) {
           cFun(err);

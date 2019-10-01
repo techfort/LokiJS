@@ -10,7 +10,7 @@
 
 
   function IncremenentalAdapter() {
-    this.mode = 'reference'
+    this.mode = 'incremental'
     this.chunkSize = 100
     // this.chunkSize = 5
     this.idb = null // will be lazily loaded on first operation that needs it
@@ -30,17 +30,40 @@
     // only if minId exists
     let firstDataPosition = null
 
-    let getId = collection.get(minId, true)
-    if (getId) {
-      firstDataPosition = getId[1]
-    } else {
-      for (let i = 0, length = idIndex.length; i < length; i++) {
-        if (idIndex[i] >= minId && idIndex[i] <= maxId) {
-          firstDataPosition = i
-          break
-        }
+    // let getId = collection.get(minId, true)
+    // if (getId) {
+    //   firstDataPosition = getId[1]
+    // } else {
+    //   for (let i = 0, length = idIndex.length; i < length; i++) {
+    //     if (idIndex[i] >= minId && idIndex[i] <= maxId) {
+    //       firstDataPosition = i
+    //       break
+    //     }
+    //   }
+    // }
+
+
+
+    var max = idIndex.length - 1,
+        min = 0,
+        mid;
+
+    while (idIndex[min] < idIndex[max]) {
+      mid = (min + max) >> 1;
+
+      if (idIndex[mid] < minId) {
+        min = mid + 1;
+      } else {
+        max = mid;
       }
     }
+
+    if (max === min && idIndex[min] >= minId) {
+      firstDataPosition = min
+    }
+
+
+
 
     if (firstDataPosition === null) {
       // no elements in this chunk
@@ -51,7 +74,7 @@
     // if loki IDs are contiguous (no removed elements)
     // last position will be first + chunk - 1
     // (and we look back in case there are missing pieces)
-    // TODO: Binary search
+    // TODO: Binary search (not as important as first position, worst case scanario is chunkSize steps)
     let lastDataPosition = null
     for (let i = firstDataPosition + this.chunkSize - 1; i >= firstDataPosition; i--) {
       if (idIndex[i] <= maxId) {
@@ -97,10 +120,10 @@
     return chunkData
   }
 
-  IncremenentalAdapter.prototype.exportDatabase = function(dbname, loki, callback) {
+  IncremenentalAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
     console.warn(`-- exportDatabase - begin`)
     console.time('exportDatabase')
-    console.log(loki.collections[0].lokiIdChanges)
+    // console.log(loki.collections[0].lokiIdChanges)
 
     let chunksToSave = []
 
@@ -157,9 +180,9 @@
     const serializedMetadata = JSON.stringify(loki)
     loki = null // allow GC of the DB copy
 
-    console.log(chunksToSave)
+    // console.log(chunksToSave)
     // console.log(chunkIdsToRemove)
-    console.log(JSON.parse(serializedMetadata))
+    // console.log(JSON.parse(serializedMetadata))
 
     chunksToSave.push({ key: 'loki', value: serializedMetadata })
     console.timeEnd('loki-serialized')
@@ -192,7 +215,8 @@
         return
       }
 
-      console.log(`Found chunks:`, chunks)
+      console.log(`Found chunks:`, chunks.length)
+      // console.log(`Found chunks:`, chunks)
 
       // sort chunks in place to load data in the right order (ascending loki ids)
       // at least on Safari, we'll get chunks in order like this: 0, 1, 10, 100...
@@ -214,7 +238,7 @@
         return 0;
       });
       console.timeEnd('sort')
-      console.log(`Sorted chunks`, chunks)
+      // console.log(`Sorted chunks`, chunks)
 
       // repack chunks into a map
       let loki
@@ -242,7 +266,7 @@
       })
       chunks = null
       console.timeEnd('repack')
-      console.log(`Collections`, collections)
+      // console.log(`Collections`, collections)
 
       // TODO: Validate collection chunks?
       if (!loki) {
@@ -253,7 +277,7 @@
       console.time('parse')
       loki = JSON.parse(loki)
       console.timeEnd('parse')
-      console.log(`Parsed loki object`, loki)
+      // console.log(`Parsed loki object`, loki)
 
       // populate collections with data
       console.time('populate')
@@ -263,7 +287,7 @@
 
       // instantiate actual Loki object
       console.timeEnd('loadDatabase')
-      console.log(`Loaded Loki database!`, loki)
+      // console.log(`Loaded Loki database!`, loki)
       callback(loki)
     })
 
@@ -385,6 +409,8 @@
   }
 
   function start() {
+    indexedDB.deleteDatabase("IncrementalAdapterIDB")
+
     let adapter = new IncremenentalAdapter()
     db = new loki('indexed_tests', { adapter: adapter, verbose: true });
 
@@ -409,12 +435,12 @@
 
     let h6 = col.insert({  customId: 6,  val: 'hello6' });
 
-    console.log(db)
-    console.log(col)
+    // console.log(db)
+    // console.log(col)
 
     // console.log(JSON.parse(db.serialize()))
 
-    console.log(col.lokiIdChanges)
+    // console.log(col.lokiIdChanges)
 
     console.time('massAdd')
     const numberOfRecords = 65000
@@ -442,30 +468,97 @@
       col.update(doc)
     }
 
-    db.saveDatabase((e) => {
-      e && console.error(e)
-      console.log('Database saved!')
+    function saveAndCheckIntegrity(source, callback) {
+      db.saveDatabase((e) => {
+        e && console.error(e)
+        console.log('Database saved!')
 
-      // test loading
-      let db2 = new loki('indexed_tests', { adapter: new IncremenentalAdapter(), verbose: true });
-      db2.loadDatabase({}, () => {
-        console.log(`Loaded database!`)
+        console.log(`loading database for check`)
+        // test loading
+        let db2 = new loki('indexed_tests', { adapter: new IncremenentalAdapter(), verbose: true });
+        db2.loadDatabase({}, () => {
+          console.log(`Loaded database!`)
 
-        // make sure the two databases are identical
-        db.collections.forEach((col, ci) => {
-          if (!col.data.every((el, i) => {
-            const val = JSON.stringify(db2.collections[ci].data[i]) === JSON.stringify(el)
-            if (!val) {
-              debugger
+          // make sure the two databases are identical
+          source.collections.forEach((col, ci) => {
+            if (!col.data.every((el, i) => {
+              const val = JSON.stringify(db2.collections[ci].data[i]) === JSON.stringify(el)
+              if (!val) {
+                debugger
+              }
+              return val
             }
-            return val
-          }
-          )) {
-            debugger
-            throw new Error('different dbs')
-          }
+            )) {
+              debugger
+              throw new Error('different dbs')
+            }
+          })
+          console.log(`Passed the checks!`)
+          callback()
         })
-        console.log(`Passed the checks!`)
+      })
+    }
+
+    // test save, test loading & check if incremental save was correct
+    saveAndCheckIntegrity(db, () => {
+      console.info(`---- do a second save with only some minor changes -----------`)
+
+      col.insert({ small: true, incremental: true, change: 'heck yeah'})
+
+      const someRandomRecordToDelete = col.data[100]
+      col.remove(someRandomRecordToDelete)
+
+      const someRandomRecordToUpdate = col.data[1000]
+      someRandomRecordToUpdate.updated = true
+      col.update(someRandomRecordToUpdate)
+
+      saveAndCheckIntegrity(db, () => {
+        console.info(`---- begin long running fuzz tests -----------`)
+
+        function fuzz() {
+          db.collections.forEach(col => {
+            // inserts
+            const numberOfInsertions = 30
+            for (let i = 0; i < numberOfInsertions; i++) {
+              col.insert({ mass: true, i, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' })
+            }
+
+            // deletions
+            const numberOfDeletions = 25
+            for (let i = 0;i<numberOfDeletions;i++) {
+              const id = Math.floor(Math.random() * col.data.length)
+              col.remove(col.data[id])
+            }
+
+            // updates
+            const numberOfUpdates = 25
+            for (let i = 0;i<numberOfUpdates;i++) {
+              const id = Math.floor(Math.random() * col.data.length)
+              const doc = col.data[id]
+              doc.blah = 'UPDATED_' + doc.blah
+              col.update(doc)
+            }
+          })
+        }
+
+        function performFuzzAndCheck() {
+          return new Promise((resolve, reject) => {
+            fuzz()
+            saveAndCheckIntegrity(db, resolve)
+          })
+        }
+
+        async function runFuzzes(count, callback) {
+          for (let i = 0; i < count; i++) {
+            await performFuzzAndCheck()
+          }
+
+          callback()
+        }
+
+        runFuzzes(100, () => {
+          console.log(`All tests passed!`)
+        })
       })
     })
   }

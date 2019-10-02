@@ -24,11 +24,11 @@
 
     /**
      * Loki persistence adapter class for indexedDb.
-     *     This class fulfills abstract adapter interface which can be applied to other storage methods. 
+     *     This class fulfills abstract adapter interface which can be applied to other storage methods.
      *     Utilizes the included LokiCatalog app/key/value database for actual database persistence.
      *     Indexeddb is highly async, but this adapter has been made 'console-friendly' as well.
      *     Anywhere a callback is omitted, it should return results (if applicable) to console.
-     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to 
+     *     IndexedDb storage is provided per-domain, so we implement app/key/value database to
      *     allow separate contexts for separate apps within a domain.
      *
      * @example

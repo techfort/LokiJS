@@ -1009,6 +1009,9 @@
           this.persistenceMethod = 'adapter';
           this.persistenceAdapter = options.adapter;
           this.options.adapter = null;
+
+          // if true, will keep track of dirty ids
+          this.isIncremental = this.persistenceAdapter.mode === 'incremental';
         }
 
 
@@ -1136,6 +1139,7 @@
       }
 
       var collection = new Collection(name, options);
+      collection.isIncremental = this.isIncremental;
       this.collections.push(collection);
 
       if (this.verbose)
@@ -1707,7 +1711,7 @@
         copyColl.cloneMethod = coll.cloneMethod || "parse-stringify";
         copyColl.autoupdate = coll.autoupdate;
         copyColl.changes = coll.changes;
-        copyColl.dirtyIds = coll.dirtyIds;
+        copyColl.dirtyIds = coll.dirtyIds || [];
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;
@@ -2669,7 +2673,7 @@
 
         // remember and clear dirty ids -- we must do it before the save so that if
         // and update occurs between here and callback, it will get saved later
-        const dirtyIds = this.collections.map(collection => collection.dirtyIds)
+        const cachedDirtyIds = this.collections.map(collection => collection.dirtyIds)
         this.collections.forEach(col => {
           col.dirtyIds = []
         })
@@ -2678,7 +2682,7 @@
           if (err) {
             // roll back dirty IDs to be saved later
             this.collections.forEach((col, i) => {
-              col.dirtyIds = col.dirtyIds.concat(dirtyIds[i])
+              col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i])
             })
           }
           cFun(err);
@@ -5890,7 +5894,9 @@
         this.idIndex[position] = newInternal.$loki;
         //this.flagBinaryIndexesDirty();
 
-        this.dirtyIds.push(newInternal.$loki);
+        if (this.isIncremental) {
+          this.dirtyIds.push(newInternal.$loki);
+        }
 
         this.commit();
         this.dirty = true; // for autosave scenarios
@@ -5964,7 +5970,9 @@
 
         // add new obj id to idIndex
         this.idIndex.push(obj.$loki);
-        this.dirtyIds.push(obj.$loki);
+        if (this.isIncremental) {
+          this.dirtyIds.push(obj.$loki);
+        }
 
         // add the object
         this.data.push(obj);
@@ -6230,7 +6238,9 @@
         // remove id from idIndex
         this.idIndex.splice(position, 1);
 
-        this.dirtyIds.push(doc.$loki);
+        if (this.isIncremental) {
+          this.dirtyIds.push(doc.$loki);
+        }
 
         this.commit();
         this.dirty = true; // for autosave scenarios
@@ -6857,6 +6867,7 @@
         this.cachedData = clone(this.data, this.cloneMethod);
         this.cachedIndex = this.idIndex;
         this.cachedBinaryIndex = this.binaryIndices;
+        this.cachedDirtyIds = this.dirtyIds;
 
         // propagate startTransaction to dynamic views
         for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -6871,6 +6882,7 @@
         this.cachedData = null;
         this.cachedIndex = null;
         this.cachedBinaryIndex = null;
+        this.cachedDirtyIds = null;
 
         // propagate commit to dynamic views
         for (var idx = 0; idx < this.DynamicViews.length; idx++) {
@@ -6886,6 +6898,7 @@
           this.data = this.cachedData;
           this.idIndex = this.cachedIndex;
           this.binaryIndices = this.cachedBinaryIndex;
+          this.dirtyIds = this.cachedDirtyIds;
         }
 
         // propagate rollback to dynamic views

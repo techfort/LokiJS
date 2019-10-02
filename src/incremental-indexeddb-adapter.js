@@ -123,6 +123,7 @@
         collection.isIndex = []
 
         // save collection metadata as separate chunk, leave only names in loki
+        // TODO: To reduce IO, we should only save this chunk when it has changed
         chunksToSave.push({
           key: collection.name + '.metadata',
           value: JSON.stringify(collection)

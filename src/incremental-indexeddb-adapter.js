@@ -99,16 +99,16 @@
 
       console.time("makeChunks");
       loki.collections.forEach(function(collection, i) {
-        console.time("get dirty chunk ids");
+        // console.time("get dirty chunk ids");
         var dirtyChunks = new Set();
         collection.dirtyIds.forEach(function(lokiId) {
           var chunkId = (lokiId / that.chunkSize) | 0;
           dirtyChunks.add(chunkId);
         });
         collection.dirtyIds = [];
-        console.timeEnd("get dirty chunk ids");
+        // console.timeEnd("get dirty chunk ids");
 
-        console.time("get chunks&serialize");
+        // console.time("get chunks&serialize");
         dirtyChunks.forEach(function(chunkId) {
           var chunkData = that._getChunk(collection, chunkId);
           // we must stringify, because IDB is asynchronous, and underlying objects are mutable
@@ -117,7 +117,7 @@
             value: JSON.stringify(chunkData),
           });
         });
-        console.timeEnd("get chunks&serialize");
+        // console.timeEnd("get chunks&serialize");
 
         collection.data = [];
         // this is recreated on load anyway, so we can make metadata smaller

@@ -2664,7 +2664,7 @@
 
       // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
       // or autosave won't work if an update occurs between here and the callback
-      // TODO: Are we sure this is the right way?
+      // TODO: This should be stored and rolled back in case of DB save failure
       this.autosaveClearFlags();
 
       // run incremental, reference, or normal mode adapters, depending on what's available

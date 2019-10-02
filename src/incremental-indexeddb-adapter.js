@@ -323,19 +323,28 @@
 
       console.time('save chunks to idb')
 
+      if (this.operationInProgress) {
+        throw new Error('Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object')
+      }
+
+      this.operationInProgress = true
+
       let tx = this.idb.transaction(['Store2'], 'readwrite')
       tx.oncomplete = () => {
+        this.operationInProgress = false
         console.timeEnd('save chunks to idb')
         console.timeEnd('exportDatabase')
         callback()
       }
 
       tx.onerror = e => {
+        this.operationInProgress = false
         console.error('Error while saving data to database', e)
         callback(e)
       }
 
       tx.onabort = e => {
+        this.operationInProgress = false
         console.error('Abort while saving data to database', e)
         callback(e)
       }
@@ -360,16 +369,24 @@
       console.log('getting all chunks')
       console.time('getChunks')
 
+      if (this.operationInProgress) {
+        throw new Error('Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object')
+      }
+
+      this.operationInProgress = true
+
       let tx = this.idb.transaction(['Store2'], 'readonly')
 
       const request = tx.objectStore('Store2').getAll()
       request.onsuccess = e => {
+        this.operationInProgress = false
         let chunks = e.target.result
         console.timeEnd('getChunks')
         callback(chunks)
       }
 
       request.onerror = e => {
+        this.operationInProgress = false
         console.error('Error while fetching data from IndexedDB', e)
         callback(e)
       }
@@ -379,8 +396,12 @@
       console.log(`deleteDatabase`)
       console.time('deleteDatabase')
 
-      // TODO: Race condition - if someone starts deleting database and then save/load happens
-      // we might get stuck and never save
+      if (this.operationInProgress) {
+        throw new Error('Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object')
+      }
+
+      this.operationInProgress = true
+
       if (this.idb) {
         this.idb.close()
         this.idb = null
@@ -389,12 +410,14 @@
       const request = indexedDB.deleteDatabase('IncrementalAdapterIDB')
 
       request.onsuccess = () => {
+        this.operationInProgress = false
         console.timeEnd('deleteDatabase')
         console.log(`deleteDatabase done`)
         callback({ success: true })
       }
 
       request.onerror = e => {
+        this.operationInProgress = false
         console.error('Error while deleting database', e)
         callback({ success: false })
       }

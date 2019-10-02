@@ -8,7 +8,7 @@ module.exports = function (config) {
     basePath: '',
 
     browserNoActivityTimeout: 50000,
-    
+
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['jasmine'],
@@ -17,6 +17,7 @@ module.exports = function (config) {
     // list of files / patterns to load in the browser
     files: [
       'src/lokijs.js',
+      'src/incremental-indexeddb-adapter.js',
       'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',
       'spec/browser/*.js'

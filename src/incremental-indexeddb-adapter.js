@@ -24,13 +24,13 @@
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
     IncrementalIndexedDBAdapter.prototype._getChunk = function(collection, chunkId) {
       // 0-99, 100-199, etc.
-      const minId = chunkId * this.chunkSize
-      const maxId = minId + this.chunkSize - 1
+      var minId = chunkId * this.chunkSize
+      var maxId = minId + this.chunkSize - 1
 
       // use idIndex to find first collection.data position within the $loki range
-      const idIndex = collection.idIndex
+      var idIndex = collection.idIndex
 
-      let firstDataPosition = null
+      var firstDataPosition = null
 
       var max = idIndex.length - 1,
           min = 0,
@@ -59,8 +59,8 @@
       // if loki IDs are contiguous (no removed elements), last position will be first + chunk - 1
       // (and we look back in case there are missing pieces)
       // TODO: Binary search (not as important as first position, worst case scanario is only chunkSize steps)
-      let lastDataPosition = null
-      for (let i = firstDataPosition + this.chunkSize - 1; i >= firstDataPosition; i--) {
+      var lastDataPosition = null
+      for (var i = firstDataPosition + this.chunkSize - 1; i >= firstDataPosition; i--) {
         if (idIndex[i] <= maxId) {
           lastDataPosition = i
           break
@@ -68,19 +68,19 @@
       }
 
       // TODO: remove sanity checks when everything is fully tested
-      const firstElement = collection.data[firstDataPosition]
+      var firstElement = collection.data[firstDataPosition]
       if (!(firstElement && firstElement.$loki >= minId && firstElement.$loki <= maxId)) {
         throw new Error('broken invariant firstelement')
       }
 
-      const lastElement = collection.data[lastDataPosition]
+      var lastElement = collection.data[lastDataPosition]
       if (!(lastElement && lastElement.$loki >= minId && lastElement.$loki <= maxId)) {
         throw new Error('broken invariant lastElement')
       }
 
-      // this will have *up to* `this.chunkSize` elements (might have less, because $loki ids
+      // this will have *up to* 'this.chunkSize' elements (might have less, because $loki ids
       // will have holes when data is deleted)
-      const chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
+      var chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1)
 
       // TODO: remove sanity checks when everything is fully tested
       if (chunkData.length > this.chunkSize) {
@@ -91,25 +91,26 @@
     }
 
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
-      console.log(`-- exportDatabase - begin`)
+      var that = this;
+      console.log('-- exportDatabase - begin')
       console.time('exportDatabase')
 
-      let chunksToSave = []
+      var chunksToSave = []
 
       console.time('makeChunks')
-      loki.collections.forEach((collection, i) => {
+      loki.collections.forEach(function (collection, i) {
         console.time('get dirty chunk ids')
-        const dirtyChunks = new Set()
-        collection.dirtyIds.forEach(lokiId => {
-          const chunkId = lokiId / this.chunkSize | 0
+        var dirtyChunks = new Set()
+        collection.dirtyIds.forEach(function (lokiId) {
+          var chunkId = lokiId / that.chunkSize | 0
           dirtyChunks.add(chunkId)
         })
         collection.dirtyIds = []
         console.timeEnd('get dirty chunk ids')
 
         console.time('get chunks&serialize')
-        dirtyChunks.forEach(chunkId => {
-          const chunkData = this._getChunk(collection, chunkId)
+        dirtyChunks.forEach(function (chunkId) {
+          var chunkData = that._getChunk(collection, chunkId)
           // we must stringify, because IDB is asynchronous, and underlying objects are mutable
           chunksToSave.push({
             key: collection.name + '.chunk.' + chunkId,
@@ -132,7 +133,7 @@
       })
       console.timeEnd('makeChunks')
 
-      const serializedMetadata = JSON.stringify(loki)
+      var serializedMetadata = JSON.stringify(loki)
       loki = null // allow GC of the DB copy
 
       // console.log(chunksToSave)
@@ -143,41 +144,44 @@
 
       // TODO: Clear out lokiChangedIds flags on original database
 
-      this._saveChunks(chunksToSave, callback)
+      that._saveChunks(chunksToSave, callback)
     }
 
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
-      console.log(`-- loadDatabase - begin`)
+      var that = this;
+      console.log('-- loadDatabase - begin')
       console.time('loadDatabase')
-      this._getAllChunks(chunks => {
+      this._getAllChunks(function (chunks) {
         if (!Array.isArray(chunks)) {
           // we got an error
           callback(chunks)
         }
 
         if (!chunks.length) {
-          console.log(`No chunks`)
+          console.log('No chunks')
           callback(null)
           return
         }
 
-        console.log(`Found chunks:`, chunks.length)
+        console.log('Found chunks:', chunks.length)
 
-        this._sortChunksInPlace(chunks)
+        that._sortChunksInPlace(chunks)
 
         // repack chunks into a map
-        let loki
-        let chunkCollections = {}
+        var loki
+        var chunkCollections = {}
 
         // console.time('repack')
-        chunks.forEach(({ key, value }) => {
+        chunks.forEach(function(object) {
+          var key = object.key;
+          var value = object.value;
           if (key === 'loki') {
             loki = value
             return
           } else if (key.includes('.')) {
-            const keySegments = key.split('.')
+            var keySegments = key.split('.')
             if (keySegments.length === 3 && keySegments[1] === 'chunk') {
-              const colName = keySegments[0]
+              var colName = keySegments[0]
               if (chunkCollections[colName]) {
                 chunkCollections[colName].dataChunks.push(value)
               } else {
@@ -185,7 +189,7 @@
               }
               return
             } else if (keySegments.length === 2 && keySegments[1] === 'metadata') {
-              const colName = keySegments[0]
+              var colName = keySegments[0]
               if (chunkCollections[colName]) {
                 chunkCollections[colName].metadata = value
               } else {
@@ -195,12 +199,12 @@
             }
           }
 
-          console.error(`Unknown chunk ${key}`)
+          console.error('Unknown chunk ' + key)
           callback(new Error('Invalid database - unknown chunk found'))
         })
         chunks = null
         // console.timeEnd('repack')
-        // console.log(`chunkCollections`, chunkCollections)
+        // console.log('chunkCollections', chunkCollections)
 
         if (!loki) {
           callback(new Error('Invalid database - missing database metadata'))
@@ -210,16 +214,16 @@
         // console.time('parse')
         loki = JSON.parse(loki)
         // console.timeEnd('parse')
-        // console.log(`Parsed loki object`, loki)
+        // console.log('Parsed loki object', loki)
 
         // populate collections with data
         console.time('populate')
-        this._populate(loki, chunkCollections)
+        that._populate(loki, chunkCollections)
         chunkCollections = null
         console.timeEnd('populate')
 
         console.timeEnd('loadDatabase')
-        // console.log(`Loaded Loki database!`, loki)
+        // console.log('Loaded Loki database!', loki)
         callback(loki)
       })
     }
@@ -228,9 +232,10 @@
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
       // console.time('sort')
-      const getSortKey = function({ key }) {
+      var getSortKey = function(object) {
+        var key = object.key
         if (key.includes('.')) {
-          const segments = key.split('.')
+          var segments = key.split('.')
           if (segments.length === 3 && segments[1] === 'chunk') {
             return parseInt(segments[2], 10)
           }
@@ -239,33 +244,33 @@
         return -1 // consistent type must be returned
       }
       chunks.sort(function(a, b) {
-        const aKey = getSortKey(a), bKey = getSortKey(b);
+        var aKey = getSortKey(a), bKey = getSortKey(b);
         if(aKey < bKey) return -1;
         if(aKey > bKey) return 1;
         return 0;
       });
       // console.timeEnd('sort')
-      // console.log(`Sorted chunks`, chunks)
+      // console.log('Sorted chunks', chunks)
     }
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {
-      loki.collections.forEach((collectionStub, i) => {
-        const chunkCollection = chunkCollections[collectionStub.name]
+      loki.collections.forEach(function (collectionStub, i) {
+        var chunkCollection = chunkCollections[collectionStub.name]
 
         if (chunkCollection) {
           // TODO: What if metadata is missing?
-          const collection = JSON.parse(chunkCollection.metadata)
+          var collection = JSON.parse(chunkCollection.metadata)
           chunkCollection.metadata = null
 
           loki.collections[i] = collection
 
-          const dataChunks = chunkCollection.dataChunks
-          dataChunks.forEach((chunkObj, i) => {
-            const chunk = JSON.parse(chunkObj)
+          var dataChunks = chunkCollection.dataChunks
+          dataChunks.forEach(function (chunkObj, i) {
+            var chunk = JSON.parse(chunkObj)
             chunkObj = null // make string available for GC
             dataChunks[i] = null
 
-            chunk.forEach(doc => {
+            chunk.forEach(function (doc) {
               collection.data.push(doc)
             })
           })
@@ -274,49 +279,51 @@
     }
 
     IncrementalIndexedDBAdapter.prototype._initializeIDB = function(callback) {
-      console.log(`initializing idb`)
+      var that = this;
+      console.log('initializing idb')
 
       if (this.idbInitInProgress) {
         throw new Error('Cannot open IndexedDB because open is already in progress')
       }
       this.idbInitInProgress = true
 
-      const openRequest = indexedDB.open('IncrementalAdapterIDB', 1);
+      var openRequest = indexedDB.open('IncrementalAdapterIDB', 1);
 
-      openRequest.onupgradeneeded = e => {
+      openRequest.onupgradeneeded = function(e) {
         console.log('onupgradeneeded')
-        const db = e.target.result
+        var db = e.target.result
         if (db.objectStoreNames.contains('Store2')) {
           throw new Error('todo')
           // TODO: Finish this
         }
 
-        const store = db.createObjectStore('Store2', { keyPath: 'key' })
+        var store = db.createObjectStore('Store2', { keyPath: 'key' })
       }
 
-      openRequest.onsuccess = e => {
-        this.idbInitInProgress = false
+      openRequest.onsuccess = function(e) {
+        that.idbInitInProgress = false
         console.log('init success')
-        this.idb = e.target.result
+        that.idb = e.target.result
         callback()
       }
 
-      openRequest.onblocked = e => {
+      openRequest.onblocked = function(e) {
         console.error('IndexedDB open is blocked', e)
         throw new Error('IndexedDB open is blocked by open connection')
       }
 
-      openRequest.onerror = e => {
-        this.idbInitInProgress = false
+      openRequest.onerror = function(e) {
+        that.idbInitInProgress = false
         console.error('IndexeddB open error', e)
         throw e
       }
     }
 
     IncrementalIndexedDBAdapter.prototype._saveChunks = function(chunks, callback) {
+      var that = this;
       if (!this.idb) {
-        this._initializeIDB(() => {
-          this._saveChunks(chunks, callback)
+        this._initializeIDB(function() {
+          that._saveChunks(chunks, callback)
         })
         return
       }
@@ -329,40 +336,41 @@
 
       this.operationInProgress = true
 
-      let tx = this.idb.transaction(['Store2'], 'readwrite')
-      tx.oncomplete = () => {
-        this.operationInProgress = false
+      var tx = this.idb.transaction(['Store2'], 'readwrite')
+      tx.oncomplete = function() {
+        that.operationInProgress = false
         console.timeEnd('save chunks to idb')
         console.timeEnd('exportDatabase')
         callback()
       }
 
-      tx.onerror = e => {
-        this.operationInProgress = false
+      tx.onerror = function(e) {
+        that.operationInProgress = false
         console.error('Error while saving data to database', e)
         callback(e)
       }
 
-      tx.onabort = e => {
-        this.operationInProgress = false
+      tx.onabort = function(e) {
+        that.operationInProgress = false
         console.error('Abort while saving data to database', e)
         callback(e)
       }
 
-      let store = tx.objectStore('Store2')
+      var store = tx.objectStore('Store2')
 
       console.time('put')
       // console.log(chunks)
-      chunks.forEach(object => {
+      chunks.forEach(function(object) {
         store.put(object)
       })
       console.timeEnd('put')
     }
 
     IncrementalIndexedDBAdapter.prototype._getAllChunks = function(callback) {
+      var that = this;
       if (!this.idb) {
-        this._initializeIDB(() => {
-          this._getAllChunks(callback)
+        this._initializeIDB(function() {
+          that._getAllChunks(callback)
         })
         return
       }
@@ -375,25 +383,26 @@
 
       this.operationInProgress = true
 
-      let tx = this.idb.transaction(['Store2'], 'readonly')
+      var tx = this.idb.transaction(['Store2'], 'readonly')
 
-      const request = tx.objectStore('Store2').getAll()
-      request.onsuccess = e => {
-        this.operationInProgress = false
-        let chunks = e.target.result
+      var request = tx.objectStore('Store2').getAll()
+      request.onsuccess = function(e) {
+        that.operationInProgress = false
+        var chunks = e.target.result
         console.timeEnd('getChunks')
         callback(chunks)
       }
 
-      request.onerror = e => {
-        this.operationInProgress = false
+      request.onerror = function(e) {
+        that.operationInProgress = false
         console.error('Error while fetching data from IndexedDB', e)
         callback(e)
       }
     }
 
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
-      console.log(`deleteDatabase`)
+      var that = this;
+      console.log('deleteDatabase')
       console.time('deleteDatabase')
 
       if (this.operationInProgress) {
@@ -407,22 +416,22 @@
         this.idb = null
       }
 
-      const request = indexedDB.deleteDatabase('IncrementalAdapterIDB')
+      var request = indexedDB.deleteDatabase('IncrementalAdapterIDB')
 
-      request.onsuccess = () => {
-        this.operationInProgress = false
+      request.onsuccess = function () {
+        that.operationInProgress = false
         console.timeEnd('deleteDatabase')
-        console.log(`deleteDatabase done`)
+        console.log('deleteDatabase done')
         callback({ success: true })
       }
 
-      request.onerror = e => {
-        this.operationInProgress = false
+      request.onerror = function(e) {
+        that.operationInProgress = false
         console.error('Error while deleting database', e)
         callback({ success: false })
       }
 
-      console.log(`deleteDatabase - exit fn`)
+      console.log('deleteDatabase - exit fn')
     }
 
     return IncrementalIndexedDBAdapter

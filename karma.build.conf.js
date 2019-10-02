@@ -42,7 +42,7 @@ module.exports = function (config) {
     // coverage reporter generates the coverage
     reporters: ['dots'],
 
-    
+
     // web server port
     port: 9876,
 

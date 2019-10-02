@@ -18,7 +18,8 @@
     "json",
     "nosql",
     "lokijs",
-    "in-memory"
+    "in-memory",
+    "indexeddb"
   ],
   "scripts": {
     "lint": "jshint src",

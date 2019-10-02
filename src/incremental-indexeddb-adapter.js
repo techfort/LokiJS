@@ -97,7 +97,7 @@
       let chunksToSave = []
 
       console.time('makeChunks')
-      loki.collections.forEach(collection => {
+      loki.collections.forEach((collection, i) => {
         console.time('get dirty chunk ids')
         const dirtyChunks = new Set()
         collection.dirtyIds.forEach(lokiId => {
@@ -111,15 +111,23 @@
         dirtyChunks.forEach(chunkId => {
           const chunkData = this._getChunk(collection, chunkId)
           // we must stringify, because IDB is asynchronous, and underlying objects are mutable
-          const chunkJSON = JSON.stringify(chunkData)
           chunksToSave.push({
             key: collection.name + '.chunk.' + chunkId,
-            value: chunkJSON
+            value: JSON.stringify(chunkData),
           })
         })
         console.timeEnd('get chunks&serialize')
 
         collection.data = []
+        // this is recreated on load anyway, so we can make metadata smaller
+        collection.isIndex = []
+
+        // save collection metadata as separate chunk, leave only names in loki
+        chunksToSave.push({
+          key: collection.name + '.metadata',
+          value: JSON.stringify(collection)
+        })
+        loki.collections[i] = { name: collection.name }
       })
       console.timeEnd('makeChunks')
 
@@ -170,9 +178,17 @@
             if (keySegments.length === 3 && keySegments[1] === 'chunk') {
               const colName = keySegments[0]
               if (chunkCollections[colName]) {
-                chunkCollections[colName].push(value)
+                chunkCollections[colName].dataChunks.push(value)
               } else {
-                chunkCollections[colName] = [value]
+                chunkCollections[colName] = { metadata: null, dataChunks: [value] }
+              }
+              return
+            } else if (keySegments.length === 2 && keySegments[1] === 'metadata') {
+              const colName = keySegments[0]
+              if (chunkCollections[colName]) {
+                chunkCollections[colName].metadata = value
+              } else {
+                chunkCollections[colName] = { metadata: value, dataChunks: [] }
               }
               return
             }
@@ -214,12 +230,12 @@
       const getSortKey = function({ key }) {
         if (key.includes('.')) {
           const segments = key.split('.')
-          if (segments.length === 3) {
+          if (segments.length === 3 && segments[1] === 'chunk') {
             return parseInt(segments[2], 10)
           }
         }
 
-        return key
+        return -1 // consistent type must be returned
       }
       chunks.sort(function(a, b) {
         const aKey = getSortKey(a), bKey = getSortKey(b);
@@ -232,10 +248,17 @@
     }
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {
-      loki.collections.forEach(collection => {
-        const dataChunks = chunkCollections[collection.name]
+      loki.collections.forEach((collectionStub, i) => {
+        const chunkCollection = chunkCollections[collectionStub.name]
 
-        if (dataChunks) {
+        if (chunkCollection) {
+          // TODO: What if metadata is missing?
+          const collection = JSON.parse(chunkCollection.metadata)
+          chunkCollection.metadata = null
+
+          loki.collections[i] = collection
+
+          const dataChunks = chunkCollection.dataChunks
           dataChunks.forEach((chunkObj, i) => {
             const chunk = JSON.parse(chunkObj)
             chunkObj = null // make string available for GC
@@ -262,12 +285,12 @@
       openRequest.onupgradeneeded = e => {
         console.log('onupgradeneeded')
         const db = e.target.result
-        if (db.objectStoreNames.contains('Store')) {
+        if (db.objectStoreNames.contains('Store2')) {
           throw new Error('todo')
           // TODO: Finish this
         }
 
-        const store = db.createObjectStore('Store', { keyPath: 'key' })
+        const store = db.createObjectStore('Store2', { keyPath: 'key' })
       }
 
       openRequest.onsuccess = e => {
@@ -299,7 +322,7 @@
 
       console.time('save chunks to idb')
 
-      let tx = this.idb.transaction(['Store'], 'readwrite')
+      let tx = this.idb.transaction(['Store2'], 'readwrite')
       tx.oncomplete = () => {
         console.timeEnd('save chunks to idb')
         console.timeEnd('exportDatabase')
@@ -316,7 +339,7 @@
         callback(e)
       }
 
-      let store = tx.objectStore('Store')
+      let store = tx.objectStore('Store2')
 
       console.time('put')
       // console.log(chunks)
@@ -336,9 +359,9 @@
       console.log('getting all chunks')
       console.time('getChunks')
 
-      let tx = this.idb.transaction(['Store'], 'readonly')
+      let tx = this.idb.transaction(['Store2'], 'readonly')
 
-      const request = tx.objectStore('Store').getAll()
+      const request = tx.objectStore('Store2').getAll()
       request.onsuccess = e => {
         let chunks = e.target.result
         console.timeEnd('getChunks')

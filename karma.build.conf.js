@@ -17,6 +17,7 @@ module.exports = function (config) {
     // list of files / patterns to load in the browser
     files: [
       'build/lokijs.min.js',
+      'src/incremental-indexeddb-adapter.js',
       'spec/helpers/assert-helpers.js',
       'spec/generic/*.js',
       'spec/browser/*.js'

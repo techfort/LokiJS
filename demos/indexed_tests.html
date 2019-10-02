@@ -91,7 +91,7 @@
                 debugger
               }
               return val
-            }) || JSON.stringify(col.idIndex) !== JSON.stringify(db.collections[ci].idIndex)) {
+            }) || JSON.stringify(col.idIndex) !== JSON.stringify(db2.collections[ci].idIndex)) {
               debugger
               throw new Error('different dbs')
             }

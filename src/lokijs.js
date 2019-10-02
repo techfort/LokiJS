@@ -2687,7 +2687,7 @@
         this.persistenceAdapter.saveDatabase(this.filename, lokiCopy, function exportDatabaseCallback(err) {
           if (err) {
             // roll back dirty IDs to be saved later
-            this.collections.forEach(function (col, i) {
+            self.collections.forEach(function (col, i) {
               col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i]);
             });
           }

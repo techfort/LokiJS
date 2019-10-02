@@ -2673,26 +2673,26 @@
 
       // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
-        var lokiCopy = this.copy({removeNonSerializable:true})
+        var lokiCopy = this.copy({removeNonSerializable:true});
 
         // remember and clear dirty ids -- we must do it before the save so that if
         // and update occurs between here and callback, it will get saved later
         var cachedDirtyIds = this.collections.map(function (collection) {
-          return collection.dirtyIds
-        })
+          return collection.dirtyIds;
+        });
         this.collections.forEach(function (col) {
-          col.dirtyIds = []
-        })
+          col.dirtyIds = [];
+        });
 
         this.persistenceAdapter.saveDatabase(this.filename, lokiCopy, function exportDatabaseCallback(err) {
           if (err) {
             // roll back dirty IDs to be saved later
             this.collections.forEach(function (col, i) {
-              col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i])
-            })
+              col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i]);
+            });
           }
           cFun(err);
-        })
+        });
 
       } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // filename may seem redundant but loadDatabase will need to expect this same filename

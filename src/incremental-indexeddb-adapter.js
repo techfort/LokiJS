@@ -192,11 +192,11 @@
               }
               return;
             } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
-              var colName = keySegments[0];
-              if (chunkCollections[colName]) {
-                chunkCollections[colName].metadata = value;
+              var name = keySegments[0];
+              if (chunkCollections[name]) {
+                chunkCollections[name].metadata = value;
               } else {
-                chunkCollections[colName] = { metadata: value, dataChunks: [] };
+                chunkCollections[name] = { metadata: value, dataChunks: [] };
               }
               return;
             }
@@ -335,9 +335,7 @@
       console.time("save chunks to idb");
 
       if (this.operationInProgress) {
-        throw new Error(
-          "Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object",
-        );
+        throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
@@ -384,9 +382,7 @@
       console.time("getChunks");
 
       if (this.operationInProgress) {
-        throw new Error(
-          "Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object",
-        );
+        throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
@@ -414,9 +410,7 @@
       console.time("deleteDatabase");
 
       if (this.operationInProgress) {
-        throw new Error(
-          "Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object",
-        );
+        throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;

@@ -329,14 +329,15 @@
       var openRequest = indexedDB.open(dbname, 1);
 
       openRequest.onupgradeneeded = function(e) {
-        console.log("onupgradeneeded");
         var db = e.target.result;
-        if (db.objectStoreNames.contains('LokiIncrementalData')) {
-          throw new Error("todo");
-          // TODO: Finish this
-        }
 
-        var store = db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+        if (e.oldVersion < 1) {
+          // Version 1 - Initial - Create database
+          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+        } else {
+          // Unknown version
+          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
+        }
       };
 
       openRequest.onsuccess = function(e) {

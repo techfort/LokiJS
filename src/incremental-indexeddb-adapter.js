@@ -194,10 +194,12 @@
       this._getAllChunks(dbname, function(chunks) {
         if (!Array.isArray(chunks)) {
           // we got an error
+          console.timeEnd("loadDatabase");
           callback(chunks);
         }
 
         if (!chunks.length) {
+          console.timeEnd("loadDatabase");
           callback(null);
           return;
         }
@@ -330,6 +332,7 @@
 
       openRequest.onupgradeneeded = function(e) {
         var db = e.target.result;
+        console.log('onupgradeneeded, old version: ' + e.oldVersion);
 
         if (e.oldVersion < 1) {
           // Version 1 - Initial - Create database
@@ -342,8 +345,14 @@
 
       openRequest.onsuccess = function(e) {
         that.idbInitInProgress = false;
-        console.log("init success");
         that.idb = e.target.result;
+
+        if (!that.idb.objectStoreNames.contains('LokiIncrementalData')) {
+          onError(new Error("Missing LokiIncrementalData"));
+          return;
+        }
+
+        console.log("init success");
         onSuccess();
       };
 
@@ -368,13 +377,13 @@
         return;
       }
 
-      console.time("save chunks to idb");
-
       if (this.operationInProgress) {
         throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
+
+      console.time("save chunks to idb");
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
@@ -414,14 +423,15 @@
         });
         return;
       }
-      console.log("getting all chunks");
-      console.time("getChunks");
 
       if (this.operationInProgress) {
         throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
+
+      console.log("getting all chunks");
+      console.time("getChunks");
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
@@ -455,15 +465,15 @@
      * @memberof IncrementalIndexedDBAdapter
      */
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
-      var that = this;
-      console.log("deleteDatabase");
-      console.time("deleteDatabase");
-
       if (this.operationInProgress) {
         throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
+
+      var that = this;
+      console.log("deleteDatabase");
+      console.time("deleteDatabase");
 
       if (this.idb) {
         this.idb.close();

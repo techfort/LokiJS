@@ -143,11 +143,36 @@ var idbAdapter = new LokiIndexedAdapter();
 // use paging only if you expect a single collection to be over 50 megs or so
 var pa = new loki.LokiPartitioningAdapter(idbAdapter, { paging: true });
 
-var db = new loki('test.db', { 
+var db = new loki('test.db', {
   adapter: pa,
   autoload: true,
   autoloadCallback : databaseInitialize,
-  autosave: true, 
+  autosave: true,
+  autosaveInterval: 4000
+});
+```
+
+### Example using IncrementalIndexedDBAdapter
+
+A newer, more advanced alternative to `LokiIndexedAdapter` with `LokiPartitioningAdapter` is to use `IncrementalIndexedDBAdapter`.
+Unlike `LokiIndexedAdapter`, the database is saved not as one big JSON blob (or even pages of individual collections), but split into
+small chunks with individual collection documents. When saving, only the chunks with changed
+documents (and database metadata) is saved to IndexedDB. This speeds up small incremental
+saves by an order of magnitude on large (tens of thousands of records) databases. It also
+avoids Safari 13 bug that would cause the database to balloon in size to gigabytes.
+
+`IncrementalIndexedDBAdapter` is not backwards compatible with `LokiIndexedAdapter`.
+
+```html
+<script src="../../src/lokijs.js"></script>
+<script src="../../src/incremental-indexeddb-adapter.js"></script>
+```
+```javascript
+var db = new loki('TestDatabase', {
+  adapter: new IncrementalIndexedDBAdapter(),
+  autoload: true,
+  autoloadCallback : databaseInitialize,
+  autosave: true,
   autosaveInterval: 4000
 });
 ```

@@ -169,7 +169,7 @@
 
       chunksToSave.push({ key: "loki", value: serializedMetadata });
 
-      that._saveChunks(chunksToSave, callback);
+      that._saveChunks(dbname, chunksToSave, callback);
     };
 
     /**
@@ -191,7 +191,7 @@
       var that = this;
       console.log("-- loadDatabase - begin");
       console.time("loadDatabase");
-      this._getAllChunks(function(chunks) {
+      this._getAllChunks(dbname, function(chunks) {
         if (!Array.isArray(chunks)) {
           // we got an error
           callback(chunks);

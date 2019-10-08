@@ -56,7 +56,7 @@ function saveAndCheckDatabaseCopyIntegrity(source) {
       const saveTime = new Date() - beforeSave
       expectToBe(saveError, undefined)
 
-      let copy = new loki('indexed_tests', { adapter: new IncrementalIndexedDBAdapter(), verbose: true });
+      let copy = new loki('incremental_idb_tester', { adapter: new IncrementalIndexedDBAdapter(), verbose: true });
       const beforeLoad = new Date()
       copy.loadDatabase({}, (loadError) => {
         const loadTime = new Date() - beforeLoad
@@ -79,10 +79,10 @@ async function startTests(divElement)
 {
   domElement = divElement;
 
-  indexedDB.deleteDatabase("IncrementalAdapterIDB")
+  indexedDB.deleteDatabase("incremental_idb_tester")
 
   let adapter = new IncrementalIndexedDBAdapter()
-  let db = new loki('indexed_tests', { adapter: adapter });
+  let db = new loki('incremental_idb_tester', { adapter: adapter });
 
   let col1 = db.addCollection('test_collection')
   let col2 = db.addCollection('test_collection2')

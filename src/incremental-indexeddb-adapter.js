@@ -13,8 +13,22 @@
   return (function() {
     "use strict";
 
-    // TODO: db name, etc.
-
+    /**
+     * An improved Loki persistence adapter for IndexedDB (not compatible with LokiIndexedAdapter)
+     *     Unlike LokiIndexedAdapter, the database is saved not as one big JSON blob, but split into
+     *     small chunks with individual collection documents. When saving, only the chunks with changed
+     *     documents (and database metadata) is saved to IndexedDB. This speeds up small incremental
+     *     saves by an order of magnitude on large (tens of thousands of records) databases. It also
+     *     avoids Safari 13 bug that would cause the database to balloon in size to gigabytes
+     *
+     *     The `appname` argument is not provided - to distinguish between multiple app on the same
+     *     domain, simply use a different Loki database name
+     *
+     * @example
+     * var adapter = new IncrementalIndexedDBAdapter();
+     *
+     * @constructor IncrementalIndexedDBAdapter
+     */
     function IncrementalIndexedDBAdapter() {
       this.mode = "incremental";
       this.chunkSize = 100;
@@ -90,6 +104,21 @@
       return chunkData;
     };
 
+    /**
+     * Incrementally saves the database to IndexedDB
+     *
+     * @example
+     * var idbAdapter = new IncrementalIndexedDBAdapter();
+     * var db = new loki('test', { adapter: idbAdapter });
+     * var coll = db.addCollection('testColl');
+     * coll.insert({test: 'val'});
+     * db.saveDatabase();
+     *
+     * @param {string} dbname - the name to give the serialized database
+     * @param {object} dbcopy - copy of the Loki database
+     * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
       var that = this;
       console.log("-- exportDatabase - begin");
@@ -99,25 +128,23 @@
 
       console.time("makeChunks");
       loki.collections.forEach(function(collection, i) {
-        // console.time("get dirty chunk ids");
+        // Find dirty chunk ids
         var dirtyChunks = new Set();
         collection.dirtyIds.forEach(function(lokiId) {
           var chunkId = (lokiId / that.chunkSize) | 0;
           dirtyChunks.add(chunkId);
         });
         collection.dirtyIds = [];
-        // console.timeEnd("get dirty chunk ids");
 
-        // console.time("get chunks&serialize");
+        // Serialize chunks to save
         dirtyChunks.forEach(function(chunkId) {
           var chunkData = that._getChunk(collection, chunkId);
-          // we must stringify, because IDB is asynchronous, and underlying objects are mutable
+          // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
           chunksToSave.push({
             key: collection.name + ".chunk." + chunkId,
             value: JSON.stringify(chunkData),
           });
         });
-        // console.timeEnd("get chunks&serialize");
 
         collection.data = [];
         // this is recreated on load anyway, so we can make metadata smaller
@@ -142,11 +169,24 @@
 
       chunksToSave.push({ key: "loki", value: serializedMetadata });
 
-      // TODO: Clear out lokiChangedIds flags on original database
-
       that._saveChunks(chunksToSave, callback);
     };
 
+    /**
+     * Retrieves a serialized db string from the catalog.
+     *
+     * @example
+     * // LOAD
+     * var idbAdapter = new IncrementalIndexedDBAdapter();
+     * var db = new loki('test', { adapter: idbAdapter });
+     * db.loadDatabase(function(result) {
+     *   console.log('done');
+     * });
+     *
+     * @param {string} dbname - the name of the database to retrieve.
+     * @param {function} callback - callback should accept string param containing serialized db string.
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
       var that = this;
       console.log("-- loadDatabase - begin");
@@ -158,7 +198,6 @@
         }
 
         if (!chunks.length) {
-          console.log("No chunks");
           callback(null);
           return;
         }
@@ -214,10 +253,7 @@
         }
 
         // parse Loki object
-        // console.time('parse')
         loki = JSON.parse(loki);
-        // console.timeEnd('parse')
-        // console.log('Parsed loki object', loki)
 
         // populate collections with data
         console.time("populate");
@@ -226,7 +262,6 @@
         console.timeEnd("populate");
 
         console.timeEnd("loadDatabase");
-        // console.log('Loaded Loki database!', loki)
         callback(loki);
       });
     };
@@ -404,6 +439,20 @@
       };
     };
 
+    /**
+     * Deletes a database from IndexedDB
+     *
+     * @example
+     * // DELETE DATABASE
+     * // delete 'finance'/'test' value from catalog
+     * idbAdapter.deleteDatabase('test', function {
+     *   // database deleted
+     * });
+     *
+     * @param {string} dbname - the name of the database to delete from IDB
+     * @param {function=} callback - (Optional) executed on database delete
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
       var that = this;
       console.log("deleteDatabase");

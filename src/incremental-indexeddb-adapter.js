@@ -317,7 +317,7 @@
       });
     };
 
-    IncrementalIndexedDBAdapter.prototype._initializeIDB = function(callback) {
+    IncrementalIndexedDBAdapter.prototype._initializeIDB = function(dbname, onError, onSuccess) {
       var that = this;
       console.log("initializing idb");
 
@@ -326,43 +326,43 @@
       }
       this.idbInitInProgress = true;
 
-      var openRequest = indexedDB.open("IncrementalAdapterIDB", 1);
+      var openRequest = indexedDB.open(dbname, 1);
 
       openRequest.onupgradeneeded = function(e) {
         console.log("onupgradeneeded");
         var db = e.target.result;
-        if (db.objectStoreNames.contains("Store2")) {
+        if (db.objectStoreNames.contains('LokiIncrementalData')) {
           throw new Error("todo");
           // TODO: Finish this
         }
 
-        var store = db.createObjectStore("Store2", { keyPath: "key" });
+        var store = db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
       };
 
       openRequest.onsuccess = function(e) {
         that.idbInitInProgress = false;
         console.log("init success");
         that.idb = e.target.result;
-        callback();
+        onSuccess();
       };
 
       openRequest.onblocked = function(e) {
         console.error("IndexedDB open is blocked", e);
-        throw new Error("IndexedDB open is blocked by open connection");
+        onError(new Error("IndexedDB open is blocked by open connection"));
       };
 
       openRequest.onerror = function(e) {
         that.idbInitInProgress = false;
         console.error("IndexeddB open error", e);
-        throw e;
+        onError(e);
       };
     };
 
-    IncrementalIndexedDBAdapter.prototype._saveChunks = function(chunks, callback) {
+    IncrementalIndexedDBAdapter.prototype._saveChunks = function(dbname, chunks, callback) {
       var that = this;
       if (!this.idb) {
-        this._initializeIDB(function() {
-          that._saveChunks(chunks, callback);
+        this._initializeIDB(dbname, callback, function() {
+          that._saveChunks(dbname, chunks, callback);
         });
         return;
       }
@@ -375,7 +375,7 @@
 
       this.operationInProgress = true;
 
-      var tx = this.idb.transaction(["Store2"], "readwrite");
+      var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
         that.operationInProgress = false;
         console.timeEnd("save chunks to idb");
@@ -395,7 +395,7 @@
         callback(e);
       };
 
-      var store = tx.objectStore("Store2");
+      var store = tx.objectStore('LokiIncrementalData');
 
       console.time("put");
       // console.log(chunks)
@@ -405,11 +405,11 @@
       console.timeEnd("put");
     };
 
-    IncrementalIndexedDBAdapter.prototype._getAllChunks = function(callback) {
+    IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {
       var that = this;
       if (!this.idb) {
-        this._initializeIDB(function() {
-          that._getAllChunks(callback);
+        this._initializeIDB(dbname, callback, function() {
+          that._getAllChunks(dbname, callback);
         });
         return;
       }
@@ -422,9 +422,9 @@
 
       this.operationInProgress = true;
 
-      var tx = this.idb.transaction(["Store2"], "readonly");
+      var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
-      var request = tx.objectStore("Store2").getAll();
+      var request = tx.objectStore('LokiIncrementalData').getAll();
       request.onsuccess = function(e) {
         that.operationInProgress = false;
         var chunks = e.target.result;
@@ -469,7 +469,7 @@
         this.idb = null;
       }
 
-      var request = indexedDB.deleteDatabase("IncrementalAdapterIDB");
+      var request = indexedDB.deleteDatabase(dbname);
 
       request.onsuccess = function() {
         that.operationInProgress = false;

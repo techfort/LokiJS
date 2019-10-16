@@ -780,18 +780,20 @@
      */
     LokiEventEmitter.prototype.emit = function (eventName) {
       var self = this;
-      var selfArgs = Array.prototype.slice.call(arguments, 1);
+      var selfArgs;
       if (eventName && this.events[eventName]) {
-        this.events[eventName].forEach(function (listener) {
-          if (self.asyncListeners) {
-            setTimeout(function () {
+        if (this.events[eventName].length) {
+          selfArgs = Array.prototype.slice.call(arguments, 1);
+          this.events[eventName].forEach(function (listener) {
+            if (self.asyncListeners) {
+              setTimeout(function () {
+                listener.apply(self, selfArgs);
+              }, 1);
+            } else {
               listener.apply(self, selfArgs);
-            }, 1);
-          } else {
-            listener.apply(self, selfArgs);
-          }
-
-        });
+            }
+          });
+        }
       } else {
         throw new Error('No event ' + eventName + ' defined');
       }

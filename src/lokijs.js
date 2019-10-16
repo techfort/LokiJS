@@ -5309,12 +5309,12 @@
 
       var wrappedComparer =
         (function (prop, data) {
-          var val1, val2, arr;
+          var val1, val2;
+          var propPath = ~prop.indexOf('.') ? prop.split('.') : false;
           return function (a, b) {
-            if (~prop.indexOf('.')) {
-              arr = prop.split('.');
-              val1 = Utils.getIn(data[a], arr, true);
-              val2 = Utils.getIn(data[b], arr, true);
+            if (propPath) {
+              val1 = Utils.getIn(data[a], propPath, true);
+              val2 = Utils.getIn(data[b], propPath, true);
             } else {
               val1 = data[a][prop];
               val2 = data[b][prop];

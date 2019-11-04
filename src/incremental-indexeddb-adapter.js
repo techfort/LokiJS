@@ -163,10 +163,6 @@
       var serializedMetadata = JSON.stringify(loki);
       loki = null; // allow GC of the DB copy
 
-      // console.log(chunksToSave)
-      // console.log(chunkIdsToRemove)
-      // console.log(JSON.parse(serializedMetadata))
-
       chunksToSave.push({ key: "loki", value: serializedMetadata });
 
       that._saveChunks(dbname, chunksToSave, callback);
@@ -212,7 +208,6 @@
         var loki;
         var chunkCollections = {};
 
-        // console.time('repack')
         chunks.forEach(function(object) {
           var key = object.key;
           var value = object.value;
@@ -247,8 +242,6 @@
           callback(new Error("Invalid database - unknown chunk found"));
         });
         chunks = null;
-        // console.timeEnd('repack')
-        // console.log('chunkCollections', chunkCollections)
 
         if (!loki) {
           callback(new Error("Invalid database - missing database metadata"));
@@ -271,7 +264,6 @@
     IncrementalIndexedDBAdapter.prototype._sortChunksInPlace = function(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
-      // console.time('sort')
       var getSortKey = function(object) {
         var key = object.key;
         if (key.includes(".")) {
@@ -290,8 +282,6 @@
         if (aKey > bKey) return 1;
         return 0;
       });
-      // console.timeEnd('sort')
-      // console.log('Sorted chunks', chunks)
     };
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {

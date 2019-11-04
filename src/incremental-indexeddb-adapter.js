@@ -131,7 +131,6 @@
 
       var chunksToSave = [];
 
-      console.time("makeChunks");
       loki.collections.forEach(function(collection, i) {
         // Find dirty chunk ids
         var dirtyChunks = new Set();
@@ -163,7 +162,6 @@
         });
         loki.collections[i] = { name: collection.name };
       });
-      console.timeEnd("makeChunks");
 
       var serializedMetadata = JSON.stringify(loki);
       loki = null; // allow GC of the DB copy
@@ -395,12 +393,9 @@
 
       this.operationInProgress = true;
 
-      console.time("save chunks to idb");
-
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
         that.operationInProgress = false;
-        console.timeEnd("save chunks to idb");
         console.timeEnd("exportDatabase");
         callback();
       };
@@ -419,12 +414,9 @@
 
       var store = tx.objectStore('LokiIncrementalData');
 
-      console.time("put");
-      // console.log(chunks)
       chunks.forEach(function(object) {
         store.put(object);
       });
-      console.timeEnd("put");
     };
 
     IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {

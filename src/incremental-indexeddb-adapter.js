@@ -126,7 +126,7 @@
      */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
       var that = this;
-      console.log("-- exportDatabase - begin");
+      console.log("exportDatabase - begin");
       console.time("exportDatabase");
 
       var chunksToSave = [];
@@ -188,7 +188,7 @@
      */
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
       var that = this;
-      console.log("-- loadDatabase - begin");
+      console.log("loadDatabase - begin");
       console.time("loadDatabase");
       this._getAllChunks(dbname, function(chunks) {
         if (!Array.isArray(chunks)) {
@@ -254,10 +254,8 @@
         loki = JSON.parse(loki);
 
         // populate collections with data
-        console.time("populate");
         that._populate(loki, chunkCollections);
         chunkCollections = null;
-        console.timeEnd("populate");
 
         console.timeEnd("loadDatabase");
         callback(loki);
@@ -402,13 +400,11 @@
 
       tx.onerror = function(e) {
         that.operationInProgress = false;
-        console.error("Error while saving data to database", e);
         callback(e);
       };
 
       tx.onabort = function(e) {
         that.operationInProgress = false;
-        console.error("Abort while saving data to database", e);
         callback(e);
       };
 
@@ -434,22 +430,17 @@
 
       this.operationInProgress = true;
 
-      console.log("getting all chunks");
-      console.time("getChunks");
-
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
       var request = tx.objectStore('LokiIncrementalData').getAll();
       request.onsuccess = function(e) {
         that.operationInProgress = false;
         var chunks = e.target.result;
-        console.timeEnd("getChunks");
         callback(chunks);
       };
 
       request.onerror = function(e) {
         that.operationInProgress = false;
-        console.error("Error while fetching data from IndexedDB", e);
         callback(e);
       };
     };
@@ -476,7 +467,7 @@
       this.operationInProgress = true;
 
       var that = this;
-      console.log("deleteDatabase");
+      console.log("deleteDatabase - begin");
       console.time("deleteDatabase");
 
       if (this.idb) {
@@ -489,7 +480,6 @@
       request.onsuccess = function() {
         that.operationInProgress = false;
         console.timeEnd("deleteDatabase");
-        console.log("deleteDatabase done");
         callback({ success: true });
       };
 
@@ -504,8 +494,6 @@
         // succeed in just a moment
         console.error("Deleting database failed because it's blocked by another connection", e);
       };
-
-      console.log("deleteDatabase - exit fn");
     };
 
     return IncrementalIndexedDBAdapter;

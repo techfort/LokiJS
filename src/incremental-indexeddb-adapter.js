@@ -28,9 +28,14 @@
      * var adapter = new IncrementalIndexedDBAdapter();
      *
      * @constructor IncrementalIndexedDBAdapter
+     *
+     * @param {object=} options Configuration options for the adapter
+     * @param {boolean} options.onversionchange Function to call on `IDBDatabase.onversionchange` event
+     *     (most likely database deleted from another browser tab)
      */
-    function IncrementalIndexedDBAdapter() {
+    function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
+      this.options = options || {};
       this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
     }
@@ -348,7 +353,16 @@
 
         that.idb.onversionchange = function(versionChangeEvent) {
           console.log(`IDB version change`, versionChangeEvent)
+          // This function will be called if another connection changed DB version
+          // (Most likely database was deleted from another browser tab, unless there's a new version
+          // of this adapter, or someone makes a connection to IDB outside of this adapter)
+          // We must close the database to avoid blocking concurrent deletes.
+          // The database will be unusable after this. Be sure to supply `onversionchange` option
+          // to force logout
           that.idb.close()
+          if (that.options.onversionchange) {
+            that.options.onversionchange(versionChangeEvent);
+          }
         };
 
         onSuccess();
@@ -493,7 +507,7 @@
         callback({ success: false });
       };
 
-      request.onblocked = function() {
+      request.onblocked = function(e) {
         // This should NOT occur, unless code other than this adapter accesses the database
         that.operationInProgress = false;
         console.error("Deleting database failed because it's blocked by another connection", e);

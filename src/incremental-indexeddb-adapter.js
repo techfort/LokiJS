@@ -349,10 +349,18 @@
 
         if (!that.idb.objectStoreNames.contains('LokiIncrementalData')) {
           onError(new Error("Missing LokiIncrementalData"));
+          // Attempt to recover (after reload) by deleting database, since it's damaged anyway
+          that.deleteDatabase(dbname)
           return;
         }
 
         console.log("init success");
+
+        that.idb.onversionchange = function(versionChangeEvent) {
+          console.log(`IDB version change`, versionChangeEvent)
+          that.idb.close()
+        };
+
         onSuccess();
       };
 
@@ -492,6 +500,13 @@
       request.onerror = function(e) {
         that.operationInProgress = false;
         console.error("Error while deleting database", e);
+        callback({ success: false });
+      };
+
+      request.onblocked = function() {
+        // This should NOT occur, unless code other than this adapter accesses the database
+        that.operationInProgress = false;
+        console.error("Deleting database failed because it's blocked by another connection", e);
         callback({ success: false });
       };
 

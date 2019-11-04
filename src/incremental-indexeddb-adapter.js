@@ -508,10 +508,9 @@
       };
 
       request.onblocked = function(e) {
-        // This should NOT occur, unless code other than this adapter accesses the database
-        that.operationInProgress = false;
+        // We can't call callback with failure status, because this will be called even if we
+        // succeed in just a moment
         console.error("Deleting database failed because it's blocked by another connection", e);
-        callback({ success: false });
       };
 
       console.log("deleteDatabase - exit fn");

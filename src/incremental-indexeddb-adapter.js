@@ -13,10 +13,29 @@
   return (function() {
     "use strict";
 
-    // TODO: db name, etc.
-
-    function IncrementalIndexedDBAdapter() {
+    /**
+     * An improved Loki persistence adapter for IndexedDB (not compatible with LokiIndexedAdapter)
+     *     Unlike LokiIndexedAdapter, the database is saved not as one big JSON blob, but split into
+     *     small chunks with individual collection documents. When saving, only the chunks with changed
+     *     documents (and database metadata) is saved to IndexedDB. This speeds up small incremental
+     *     saves by an order of magnitude on large (tens of thousands of records) databases. It also
+     *     avoids Safari 13 bug that would cause the database to balloon in size to gigabytes
+     *
+     *     The `appname` argument is not provided - to distinguish between multiple app on the same
+     *     domain, simply use a different Loki database name
+     *
+     * @example
+     * var adapter = new IncrementalIndexedDBAdapter();
+     *
+     * @constructor IncrementalIndexedDBAdapter
+     *
+     * @param {object=} options Configuration options for the adapter
+     * @param {boolean} options.onversionchange Function to call on `IDBDatabase.onversionchange` event
+     *     (most likely database deleted from another browser tab)
+     */
+    function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
+      this.options = options || {};
       this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
     }
@@ -90,34 +109,46 @@
       return chunkData;
     };
 
+    /**
+     * Incrementally saves the database to IndexedDB
+     *
+     * @example
+     * var idbAdapter = new IncrementalIndexedDBAdapter();
+     * var db = new loki('test', { adapter: idbAdapter });
+     * var coll = db.addCollection('testColl');
+     * coll.insert({test: 'val'});
+     * db.saveDatabase();
+     *
+     * @param {string} dbname - the name to give the serialized database
+     * @param {object} dbcopy - copy of the Loki database
+     * @param {function} callback - (Optional) callback passed obj.success with true or false
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
       var that = this;
-      console.log("-- exportDatabase - begin");
+      console.log("exportDatabase - begin");
       console.time("exportDatabase");
 
       var chunksToSave = [];
 
-      console.time("makeChunks");
       loki.collections.forEach(function(collection, i) {
-        console.time("get dirty chunk ids");
+        // Find dirty chunk ids
         var dirtyChunks = new Set();
         collection.dirtyIds.forEach(function(lokiId) {
           var chunkId = (lokiId / that.chunkSize) | 0;
           dirtyChunks.add(chunkId);
         });
         collection.dirtyIds = [];
-        console.timeEnd("get dirty chunk ids");
 
-        console.time("get chunks&serialize");
+        // Serialize chunks to save
         dirtyChunks.forEach(function(chunkId) {
           var chunkData = that._getChunk(collection, chunkId);
-          // we must stringify, because IDB is asynchronous, and underlying objects are mutable
+          // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
           chunksToSave.push({
             key: collection.name + ".chunk." + chunkId,
             value: JSON.stringify(chunkData),
           });
         });
-        console.timeEnd("get chunks&serialize");
 
         collection.data = [];
         // this is recreated on load anyway, so we can make metadata smaller
@@ -131,34 +162,43 @@
         });
         loki.collections[i] = { name: collection.name };
       });
-      console.timeEnd("makeChunks");
 
       var serializedMetadata = JSON.stringify(loki);
       loki = null; // allow GC of the DB copy
 
-      // console.log(chunksToSave)
-      // console.log(chunkIdsToRemove)
-      // console.log(JSON.parse(serializedMetadata))
-
       chunksToSave.push({ key: "loki", value: serializedMetadata });
 
-      // TODO: Clear out lokiChangedIds flags on original database
-
-      that._saveChunks(chunksToSave, callback);
+      that._saveChunks(dbname, chunksToSave, callback);
     };
 
+    /**
+     * Retrieves a serialized db string from the catalog.
+     *
+     * @example
+     * // LOAD
+     * var idbAdapter = new IncrementalIndexedDBAdapter();
+     * var db = new loki('test', { adapter: idbAdapter });
+     * db.loadDatabase(function(result) {
+     *   console.log('done');
+     * });
+     *
+     * @param {string} dbname - the name of the database to retrieve.
+     * @param {function} callback - callback should accept string param containing serialized db string.
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
       var that = this;
-      console.log("-- loadDatabase - begin");
+      console.log("loadDatabase - begin");
       console.time("loadDatabase");
-      this._getAllChunks(function(chunks) {
+      this._getAllChunks(dbname, function(chunks) {
         if (!Array.isArray(chunks)) {
           // we got an error
+          console.timeEnd("loadDatabase");
           callback(chunks);
         }
 
         if (!chunks.length) {
-          console.log("No chunks");
+          console.timeEnd("loadDatabase");
           callback(null);
           return;
         }
@@ -171,7 +211,6 @@
         var loki;
         var chunkCollections = {};
 
-        // console.time('repack')
         chunks.forEach(function(object) {
           var key = object.key;
           var value = object.value;
@@ -206,27 +245,19 @@
           callback(new Error("Invalid database - unknown chunk found"));
         });
         chunks = null;
-        // console.timeEnd('repack')
-        // console.log('chunkCollections', chunkCollections)
 
         if (!loki) {
           callback(new Error("Invalid database - missing database metadata"));
         }
 
         // parse Loki object
-        // console.time('parse')
         loki = JSON.parse(loki);
-        // console.timeEnd('parse')
-        // console.log('Parsed loki object', loki)
 
         // populate collections with data
-        console.time("populate");
         that._populate(loki, chunkCollections);
         chunkCollections = null;
-        console.timeEnd("populate");
 
         console.timeEnd("loadDatabase");
-        // console.log('Loaded Loki database!', loki)
         callback(loki);
       });
     };
@@ -234,7 +265,6 @@
     IncrementalIndexedDBAdapter.prototype._sortChunksInPlace = function(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
-      // console.time('sort')
       var getSortKey = function(object) {
         var key = object.key;
         if (key.includes(".")) {
@@ -253,8 +283,6 @@
         if (aKey > bKey) return 1;
         return 0;
       });
-      // console.timeEnd('sort')
-      // console.log('Sorted chunks', chunks)
     };
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {
@@ -282,7 +310,7 @@
       });
     };
 
-    IncrementalIndexedDBAdapter.prototype._initializeIDB = function(callback) {
+    IncrementalIndexedDBAdapter.prototype._initializeIDB = function(dbname, onError, onSuccess) {
       var that = this;
       console.log("initializing idb");
 
@@ -291,48 +319,71 @@
       }
       this.idbInitInProgress = true;
 
-      var openRequest = indexedDB.open("IncrementalAdapterIDB", 1);
+      var openRequest = indexedDB.open(dbname, 1);
 
       openRequest.onupgradeneeded = function(e) {
-        console.log("onupgradeneeded");
         var db = e.target.result;
-        if (db.objectStoreNames.contains("Store2")) {
-          throw new Error("todo");
-          // TODO: Finish this
-        }
+        console.log('onupgradeneeded, old version: ' + e.oldVersion);
 
-        var store = db.createObjectStore("Store2", { keyPath: "key" });
+        if (e.oldVersion < 1) {
+          // Version 1 - Initial - Create database
+          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+        } else {
+          // Unknown version
+          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
+        }
       };
 
       openRequest.onsuccess = function(e) {
         that.idbInitInProgress = false;
-        console.log("init success");
         that.idb = e.target.result;
-        callback();
+
+        if (!that.idb.objectStoreNames.contains('LokiIncrementalData')) {
+          onError(new Error("Missing LokiIncrementalData"));
+          // Attempt to recover (after reload) by deleting database, since it's damaged anyway
+          that.deleteDatabase(dbname);
+          return;
+        }
+
+        console.log("init success");
+
+        that.idb.onversionchange = function(versionChangeEvent) {
+          console.log('IDB version change', versionChangeEvent);
+          // This function will be called if another connection changed DB version
+          // (Most likely database was deleted from another browser tab, unless there's a new version
+          // of this adapter, or someone makes a connection to IDB outside of this adapter)
+          // We must close the database to avoid blocking concurrent deletes.
+          // The database will be unusable after this. Be sure to supply `onversionchange` option
+          // to force logout
+          that.idb.close();
+          if (that.options.onversionchange) {
+            that.options.onversionchange(versionChangeEvent);
+          }
+        };
+
+        onSuccess();
       };
 
       openRequest.onblocked = function(e) {
         console.error("IndexedDB open is blocked", e);
-        throw new Error("IndexedDB open is blocked by open connection");
+        onError(new Error("IndexedDB open is blocked by open connection"));
       };
 
       openRequest.onerror = function(e) {
         that.idbInitInProgress = false;
         console.error("IndexeddB open error", e);
-        throw e;
+        onError(e);
       };
     };
 
-    IncrementalIndexedDBAdapter.prototype._saveChunks = function(chunks, callback) {
+    IncrementalIndexedDBAdapter.prototype._saveChunks = function(dbname, chunks, callback) {
       var that = this;
       if (!this.idb) {
-        this._initializeIDB(function() {
-          that._saveChunks(chunks, callback);
+        this._initializeIDB(dbname, callback, function() {
+          that._saveChunks(dbname, chunks, callback);
         });
         return;
       }
-
-      console.time("save chunks to idb");
 
       if (this.operationInProgress) {
         throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
@@ -340,46 +391,38 @@
 
       this.operationInProgress = true;
 
-      var tx = this.idb.transaction(["Store2"], "readwrite");
+      var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
         that.operationInProgress = false;
-        console.timeEnd("save chunks to idb");
         console.timeEnd("exportDatabase");
         callback();
       };
 
       tx.onerror = function(e) {
         that.operationInProgress = false;
-        console.error("Error while saving data to database", e);
         callback(e);
       };
 
       tx.onabort = function(e) {
         that.operationInProgress = false;
-        console.error("Abort while saving data to database", e);
         callback(e);
       };
 
-      var store = tx.objectStore("Store2");
+      var store = tx.objectStore('LokiIncrementalData');
 
-      console.time("put");
-      // console.log(chunks)
       chunks.forEach(function(object) {
         store.put(object);
       });
-      console.timeEnd("put");
     };
 
-    IncrementalIndexedDBAdapter.prototype._getAllChunks = function(callback) {
+    IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {
       var that = this;
       if (!this.idb) {
-        this._initializeIDB(function() {
-          that._getAllChunks(callback);
+        this._initializeIDB(dbname, callback, function() {
+          that._getAllChunks(dbname, callback);
         });
         return;
       }
-      console.log("getting all chunks");
-      console.time("getChunks");
 
       if (this.operationInProgress) {
         throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
@@ -387,45 +430,56 @@
 
       this.operationInProgress = true;
 
-      var tx = this.idb.transaction(["Store2"], "readonly");
+      var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
-      var request = tx.objectStore("Store2").getAll();
+      var request = tx.objectStore('LokiIncrementalData').getAll();
       request.onsuccess = function(e) {
         that.operationInProgress = false;
         var chunks = e.target.result;
-        console.timeEnd("getChunks");
         callback(chunks);
       };
 
       request.onerror = function(e) {
         that.operationInProgress = false;
-        console.error("Error while fetching data from IndexedDB", e);
         callback(e);
       };
     };
 
+    /**
+     * Deletes a database from IndexedDB
+     *
+     * @example
+     * // DELETE DATABASE
+     * // delete 'finance'/'test' value from catalog
+     * idbAdapter.deleteDatabase('test', function {
+     *   // database deleted
+     * });
+     *
+     * @param {string} dbname - the name of the database to delete from IDB
+     * @param {function=} callback - (Optional) executed on database delete
+     * @memberof IncrementalIndexedDBAdapter
+     */
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
-      var that = this;
-      console.log("deleteDatabase");
-      console.time("deleteDatabase");
-
       if (this.operationInProgress) {
         throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
 
       this.operationInProgress = true;
 
+      var that = this;
+      console.log("deleteDatabase - begin");
+      console.time("deleteDatabase");
+
       if (this.idb) {
         this.idb.close();
         this.idb = null;
       }
 
-      var request = indexedDB.deleteDatabase("IncrementalAdapterIDB");
+      var request = indexedDB.deleteDatabase(dbname);
 
       request.onsuccess = function() {
         that.operationInProgress = false;
         console.timeEnd("deleteDatabase");
-        console.log("deleteDatabase done");
         callback({ success: true });
       };
 
@@ -435,7 +489,11 @@
         callback({ success: false });
       };
 
-      console.log("deleteDatabase - exit fn");
+      request.onblocked = function(e) {
+        // We can't call callback with failure status, because this will be called even if we
+        // succeed in just a moment
+        console.error("Deleting database failed because it's blocked by another connection", e);
+      };
     };
 
     return IncrementalIndexedDBAdapter;

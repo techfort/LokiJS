@@ -1,5 +1,10 @@
 # Changelog
 
+* add IncrementalIndexedDBAdapter
+* make ensureIndex faster
+* LokiEventEmitter.emit faster
+* make batch inserts faster (add option to overrideAdaptiveIndices)
+
 ## 1.5.6
 * added support for indexes on nested properties (#718)
 * more robust environment detection (#717)

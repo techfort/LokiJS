@@ -780,18 +780,20 @@
      */
     LokiEventEmitter.prototype.emit = function (eventName) {
       var self = this;
-      var selfArgs = Array.prototype.slice.call(arguments, 1);
+      var selfArgs;
       if (eventName && this.events[eventName]) {
-        this.events[eventName].forEach(function (listener) {
-          if (self.asyncListeners) {
-            setTimeout(function () {
+        if (this.events[eventName].length) {
+          selfArgs = Array.prototype.slice.call(arguments, 1);
+          this.events[eventName].forEach(function (listener) {
+            if (self.asyncListeners) {
+              setTimeout(function () {
+                listener.apply(self, selfArgs);
+              }, 1);
+            } else {
               listener.apply(self, selfArgs);
-            }, 1);
-          } else {
-            listener.apply(self, selfArgs);
-          }
-
-        });
+            }
+          });
+        }
       } else {
         throw new Error('No event ' + eventName + ' defined');
       }
@@ -5307,12 +5309,12 @@
 
       var wrappedComparer =
         (function (prop, data) {
-          var val1, val2, arr;
+          var val1, val2;
+          var propPath = ~prop.indexOf('.') ? prop.split('.') : false;
           return function (a, b) {
-            if (~prop.indexOf('.')) {
-              arr = prop.split('.');
-              val1 = Utils.getIn(data[a], arr, true);
-              val2 = Utils.getIn(data[b], arr, true);
+            if (propPath) {
+              val1 = Utils.getIn(data[a], propPath, true);
+              val2 = Utils.getIn(data[b], propPath, true);
             } else {
               val1 = data[a][prop];
               val2 = data[b][prop];
@@ -5660,6 +5662,9 @@
     /**
      * Adds object(s) to collection, ensure object(s) have meta properties, clone it if necessary, etc.
      * @param {(object|array)} doc - the document (or array of documents) to be inserted
+     * @param {boolean=} overrideAdaptiveIndices - (optional) if `true`, adaptive indicies will be
+     *   temporarily disabled and then fully rebuilt after batch. This will be faster for
+     *   large inserts, but slower for small/medium inserts in large collections
      * @returns {(object|array)} document or documents inserted
      * @memberof Collection
      * @example
@@ -5672,7 +5677,7 @@
      * // alternatively, insert array of documents
      * users.insert([{ name: 'Thor', age: 35}, { name: 'Loki', age: 30}]);
      */
-    Collection.prototype.insert = function (doc) {
+    Collection.prototype.insert = function (doc, overrideAdaptiveIndices) {
       if (!Array.isArray(doc)) {
         return this.insertOne(doc);
       }
@@ -5681,13 +5686,29 @@
       var obj;
       var results = [];
 
-      this.emit('pre-insert', doc);
-      for (var i = 0, len = doc.length; i < len; i++) {
-        obj = this.insertOne(doc[i], true);
-        if (!obj) {
-          return undefined;
+      // if not cloning, disable adaptive binary indices for the duration of the batch insert,
+      // followed by lazy rebuild and re-enabling adaptive indices after batch insert.
+      var adaptiveBatchOverride = overrideAdaptiveIndices && !this.cloneObjects &&
+        this.adaptiveBinaryIndices && Object.keys(this.binaryIndices).length > 0;
+
+      if (adaptiveBatchOverride) {
+        this.adaptiveBinaryIndices = false;
+      }
+
+      try {
+        this.emit('pre-insert', doc);
+        for (var i = 0, len = doc.length; i < len; i++) {
+          obj = this.insertOne(doc[i], true);
+          if (!obj) {
+            return undefined;
+          }
+          results.push(obj);
         }
-        results.push(obj);
+      } finally {
+        if (adaptiveBatchOverride) {
+          this.ensureAllIndexes();
+          this.adaptiveBinaryIndices = true;
+        }
       }
 
       // at the 'batch' level, if clone option is true then emitted docs are clones

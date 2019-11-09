@@ -5016,8 +5016,41 @@
         self.changes = [];
       }
 
-      this.getChanges = function () {
-        return self.changes;
+      /**
+       * Return changes in this collection, optionally with a filter applied
+       * @param {filter=} filter - filter to apply ($loki ID, a whole document object or a query object)
+       */
+      this.getChanges = function (filter) {
+        var changes = self.changes;
+
+        if (filter !== undefined) {
+          var filterId;
+
+          // filter by id
+          if (typeof filter === 'number' && filter !== Infinity && Math.floor(filter) === filter && filter > 0) {
+            filterId = filter;
+          } else if (isObject(filter)) {
+            try { // if filter is a valid query, use the id from the result
+              var findOneResult = this.findOne(filter);
+              if (findOneResult !== null) {
+                filterId = findOneResult.$loki;
+              }
+            } catch (_) {}
+
+            // fallback to using a supplied object's id
+            if (filterId === undefined && '$loki' in filter) {
+              filterId = filter.$loki;
+            }
+          }
+
+          if(filterId !== undefined) {
+            changes = changes.filter(function (change) {
+              return change.obj.$loki === filterId;
+            });
+          }
+        }
+
+        return changes;
       };
 
       this.flushChanges = flushChanges;
@@ -7222,6 +7255,14 @@
      */
     function isDeepProperty(field) {
       return field.indexOf('.') !== -1;
+    }
+
+    function isObject(obj) {
+      try {
+        return Object.getPrototypeOf(obj) === Object.getPrototypeOf({});
+      } catch(_) {
+        return false;
+      }
     }
 
     function parseBase10(num) {

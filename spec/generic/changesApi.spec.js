@@ -79,7 +79,7 @@ describe('changesApi', function () {
 
     var changes = db.serializeChanges(['items']);
     changes = JSON.parse(changes);
-    
+
     expect(changes.length).toEqual(6);
 
     var firstUpdate = changes[4];
@@ -91,7 +91,48 @@ describe('changesApi', function () {
     expect(secondUpdate.operation).toEqual('U');
     expect(secondUpdate.obj.owner).toBeUndefined();
     expect(secondUpdate.obj.maker).toEqual({ count: 4 });
-    
+
+  });
+
+  it('works with a filter', function () {
+    var db = new loki(),
+    options = {
+      asyncListeners: false,
+      disableChangesApi: false
+    },
+    items = db.addCollection('items', options );
+
+    // Add some documents to the collection
+    items.insert({ name : 'mjolnir', owner: 'thor', maker: { name: 'dwarves', count: 1 } });
+    items.insert({ name : 'gungnir', owner: 'odin', maker: { name: 'elves', count: 1 } });
+    items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: { name: 'dwarves', count: 1 } });
+    items.insert({ name : 'draupnir', owner: 'odin', maker: { name: 'elves', count: 1 } });
+
+    // Find and update an existing document
+    var tyrfing = items.findOne({'name': 'tyrfing'});
+    tyrfing.owner = 'arngrim';
+    items.update(tyrfing);
+    tyrfing.maker.count = 4;
+    items.update(tyrfing);
+
+    var changes = items.getChanges();
+    expect(changes.length).toEqual(6);
+
+    // Test filtering via $loki id
+    var filteredChanges = items.getChanges(tyrfing.$loki);
+    expect(filteredChanges.length).toEqual(3);
+    expect(filteredChanges.filter(function (item) { return item.obj.$loki === tyrfing.$loki; }).length).toEqual(filteredChanges.length);
+
+    // Test filtering by document
+    filteredChanges = items.getChanges(tyrfing);
+    expect(filteredChanges.length).toEqual(3);
+    expect(filteredChanges.filter(function (item) { return item.obj.$loki === tyrfing.$loki; }).length).toEqual(filteredChanges.length);
+
+    // Test filtering via query
+    var mjolnir = items.findOne({'owner': 'thor'});
+    filteredChanges = items.getChanges({'owner': mjolnir.owner});
+    expect(filteredChanges.length).toEqual(1);
+    expect(filteredChanges.filter(function (item) { return item.obj.$loki === mjolnir.$loki; }).length).toEqual(filteredChanges.length);
   });
 
   it('batch operations work with delta mode', function() {
@@ -115,7 +156,7 @@ describe('changesApi', function () {
 
     var changes = db.serializeChanges(['items']);
     changes = JSON.parse(changes);
-    
+
     expect(changes.length).toEqual(8);
 
     expect(changes[0].name).toEqual("items");

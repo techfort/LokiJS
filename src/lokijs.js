@@ -4965,7 +4965,7 @@
         });
 
         changedObjects.forEach(function (object) {
-          if (!hasOwnProperty.call(object, '$loki'))
+          if (!hasOwnProperty.call(object, idField))
             return self.removeAutoUpdateObserver(object);
           try {
             self.update(object);
@@ -4994,7 +4994,7 @@
           for (var i = 0; i < propertyNames.length; i++) {
             var propertyName = propertyNames[i];
             if (newObject.hasOwnProperty(propertyName)) {
-              if (!oldObject.hasOwnProperty(propertyName) || self.uniqueNames.indexOf(propertyName) >= 0 || propertyName == '$loki' || propertyName == 'meta') {
+              if (!oldObject.hasOwnProperty(propertyName) || self.uniqueNames.indexOf(propertyName) >= 0 || propertyName == idField || propertyName == 'meta') {
                 delta[propertyName] = newObject[propertyName];
               }
               else {
@@ -5572,7 +5572,7 @@
 
       this.idIndex = [];
       for (i; i < len; i += 1) {
-        this.idIndex.push(this.data[i].$loki);
+        this.idIndex.push(this.data[i][this.idField]);
       }
     };
 

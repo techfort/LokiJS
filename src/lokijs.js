@@ -4845,6 +4845,9 @@
       /* OPTIONS */
       options = options || {};
 
+      // Allow ID field name to be configured, default '$loki'
+      var idField = this.idField = options.idField || '$loki';
+
       // exact match and unique constraints
       if (options.hasOwnProperty('unique')) {
         if (!Array.isArray(options.unique)) {
@@ -4852,7 +4855,7 @@
         }
         options.unique.forEach(function (prop) {
           self.uniqueNames.push(prop); // used to regenerate on subsequent database loads
-          self.constraints.unique[prop] = new UniqueIndex(prop);
+          self.constraints.unique[prop] = new UniqueIndex(prop,idField);
         });
       }
 
@@ -5505,7 +5508,7 @@
       }
 
       // if index already existed, (re)loading it will likely cause collisions, rebuild always
-      this.constraints.unique[field] = index = new UniqueIndex(field);
+      this.constraints.unique[field] = index = new UniqueIndex(field,this.idField);
       this.data.forEach(function (obj) {
         index.set(obj);
       });
@@ -7336,10 +7339,11 @@
       }
     };
 
-    function UniqueIndex(uniqueField) {
+    function UniqueIndex(uniqueField,idField) {
       this.field = uniqueField;
       this.keyMap = {};
       this.lokiMap = {};
+      this.idField = idField;
     }
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
@@ -7350,7 +7354,7 @@
           throw new Error('Duplicate key for property ' + this.field + ': ' + fieldValue);
         } else {
           this.keyMap[fieldValue] = obj;
-          this.lokiMap[obj.$loki] = fieldValue;
+          this.lokiMap[obj[this.idField]] = fieldValue;
         }
       }
     };
@@ -7367,7 +7371,7 @@
      * @param  {Object} doc New document object (likely the same as obj)
      */
     UniqueIndex.prototype.update = function (obj, doc) {
-      if (this.lokiMap[obj.$loki] !== doc[this.field]) {
+      if (this.lokiMap[obj[this.idField]] !== doc[this.field]) {
         var old = this.lokiMap[obj.$loki];
         this.set(doc);
         // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
@@ -7380,7 +7384,7 @@
       var obj = this.keyMap[key];
       if (obj !== null && typeof obj !== 'undefined') {
         this.keyMap[key] = undefined;
-        this.lokiMap[obj.$loki] = undefined;
+        this.lokiMap[obj[this.idField]] = undefined;
       } else {
         throw new Error('Key is not in unique index: ' + this.field);
       }

@@ -3727,7 +3727,7 @@
             for (i = 0; i < len; i++) {
               obj = clone(data[i], method);
               if (options.removeMeta) {
-                delete obj.$loki;
+                delete obj[this.collection.idField];
                 delete obj.meta;
               }
               result.push(obj);
@@ -3752,7 +3752,7 @@
         for (i = 0; i < len; i++) {
           obj = clone(data[fr[i]], method);
           if (options.removeMeta) {
-            delete obj.$loki;
+            delete obj[this.collection.idField];
             delete obj.meta;
           }
           result.push(obj);

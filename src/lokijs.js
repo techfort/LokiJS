@@ -6153,8 +6153,9 @@
 
         // remove from data[] :
         // filter collection data for items not in inclusion hashobject
+        var _idField = this.idField;
         this.data = this.data.filter(function(obj) {
-          return !xo[obj.$loki];
+          return !xo[obj[_idField]];
         });
 
         // remove from idIndex[] :
@@ -6198,7 +6199,7 @@
 
       // create lookup hashobject to translate $loki id to position
       for (idx=0; idx < dlen; idx++) {
-        xlt[this.data[idx].$loki] = idx;
+        xlt[this.data[idx][this.idField]] = idx;
       }
 
       // iterate the batch
@@ -7030,7 +7031,7 @@
      */
     Collection.prototype.stage = function (stageName, obj) {
       var copy = JSON.parse(JSON.stringify(obj));
-      this.getStage(stageName)[obj.$loki] = copy;
+      this.getStage(stageName)[obj[this.idField]] = copy;
       return copy;
     };
 
@@ -7107,11 +7108,11 @@
         if (max !== undefined) {
           if (max < deepProperty(this.data[i], field, deep)) {
             max = deepProperty(this.data[i], field, deep);
-            result.index = this.data[i].$loki;
+            result.index = this.data[i][this.idField];
           }
         } else {
           max = deepProperty(this.data[i], field, deep);
-          result.index = this.data[i].$loki;
+          result.index = this.data[i][this.idField];
         }
       }
       result.value = max;
@@ -7135,11 +7136,11 @@
         if (min !== undefined) {
           if (min > deepProperty(this.data[i], field, deep)) {
             min = deepProperty(this.data[i], field, deep);
-            result.index = this.data[i].$loki;
+            result.index = this.data[i][this.idField];
           }
         } else {
           min = deepProperty(this.data[i], field, deep);
-          result.index = this.data[i].$loki;
+          result.index = this.data[i][this.idField];
         }
       }
       result.value = min;
@@ -7373,7 +7374,7 @@
      */
     UniqueIndex.prototype.update = function (obj, doc) {
       if (this.lokiMap[obj[this.idField]] !== doc[this.field]) {
-        var old = this.lokiMap[obj.$loki];
+        var old = this.lokiMap[obj[this.idField]];
         this.set(doc);
         // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
         this.keyMap[old] = undefined;

@@ -6231,13 +6231,13 @@
         return;
       }
 
-      if (!hasOwnProperty.call(doc, '$loki')) {
+      if (!hasOwnProperty.call(doc, this.idField)) {
         throw new Error('Object is not a document stored in the collection');
       }
 
       try {
         this.startTransaction();
-        var arr = this.get(doc.$loki, true),
+        var arr = this.get(doc[this.idField], true),
           // obj = arr[0],
           position = arr[1];
         var self = this;
@@ -6270,13 +6270,13 @@
         this.idIndex.splice(position, 1);
 
         if (this.isIncremental) {
-          this.dirtyIds.push(doc.$loki);
+          this.dirtyIds.push(doc[this.idField]);
         }
 
         this.commit();
         this.dirty = true; // for autosave scenarios
         this.emit('delete', arr[0]);
-        delete doc.$loki;
+        delete doc[this.idField];
         delete doc.meta;
         return doc;
 

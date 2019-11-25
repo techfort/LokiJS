@@ -1714,6 +1714,7 @@
         copyColl.autoupdate = coll.autoupdate;
         copyColl.changes = coll.changes;
         copyColl.dirtyIds = coll.dirtyIds || [];
+        copyColl.idField = coll.idField || '$loki';
 
         if (options && options.retainDirtyFlags === true) {
           copyColl.dirty = coll.dirty;
@@ -5870,12 +5871,12 @@
       }
 
       // verify object is a properly formed document
-      if (!hasOwnProperty.call(doc, '$loki')) {
+      if (!hasOwnProperty.call(doc, this.idField)) {
         throw new Error('Trying to update unsynced document. Please save the document first by using insert() or addMany()');
       }
       try {
         this.startTransaction();
-        var arr = this.get(doc.$loki, true),
+        var arr = this.get(doc[this.idField], true),
           oldInternal,   // ref to existing obj
           newInternal, // ref to new internal obj
           position,
@@ -5922,11 +5923,11 @@
           this.flagBinaryIndexesDirty();
         }
 
-        this.idIndex[position] = newInternal.$loki;
+        this.idIndex[position] = newInternal[this.idField];
         //this.flagBinaryIndexesDirty();
 
         if (this.isIncremental) {
-          this.dirtyIds.push(newInternal.$loki);
+          this.dirtyIds.push(newInternal[this.idField]);
         }
 
         this.commit();
@@ -5971,7 +5972,7 @@
       // if object you are adding already has id column it is either already in the collection
       // or the object is carrying its own 'id' property.  If it also has a meta property,
       // then this is already in collection so throw error, otherwise rename to originalId and continue adding.
-      if (typeof (obj.$loki) !== 'undefined') {
+      if (typeof (obj[this.idField]) !== 'undefined') {
         throw new Error('Document is already in collection, please use update()');
       }
 
@@ -5983,10 +5984,10 @@
         this.maxId++;
 
         if (isNaN(this.maxId)) {
-          this.maxId = (this.data[this.data.length - 1].$loki + 1);
+          this.maxId = (this.data[this.data.length - 1][this.idField] + 1);
         }
 
-        obj.$loki = this.maxId;
+        obj[this.idField] = this.maxId;
 
         if (!this.disableMeta) {
           obj.meta.version = 0;
@@ -6000,9 +6001,9 @@
         }
 
         // add new obj id to idIndex
-        this.idIndex.push(obj.$loki);
+        this.idIndex.push(obj[this.idField]);
         if (this.isIncremental) {
-          this.dirtyIds.push(obj.$loki);
+          this.dirtyIds.push(obj[this.idField]);
         }
 
         // add the object
@@ -6203,7 +6204,7 @@
       // iterate the batch
       for (idx=0; idx < len; idx++) {
         if (typeof(batch[idx]) === 'object') {
-          posx.push(xlt[batch[idx].$loki]);
+          posx.push(xlt[batch[idx][this.idField]]);
         }
         else {
           posx.push(xlt[batch[idx]]);

@@ -88,12 +88,14 @@
 
       // TODO: remove sanity checks when everything is fully tested
       var firstElement = collection.data[firstDataPosition];
-      if (!(firstElement && firstElement.$loki >= minId && firstElement.$loki <= maxId)) {
+      var firstId = firstElement[collection.idField];
+      if (!(firstElement && firstId >= minId && firstId <= maxId)) {
         throw new Error("broken invariant firstelement");
       }
 
       var lastElement = collection.data[lastDataPosition];
-      if (!(lastElement && lastElement.$loki >= minId && lastElement.$loki <= maxId)) {
+      var lastId = lastElement[collection.idField];
+      if (!(lastElement && lastId >= minId && lastId <= maxId)) {
         throw new Error("broken invariant lastElement");
       }
 

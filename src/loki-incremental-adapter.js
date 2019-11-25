@@ -21,8 +21,9 @@
     };
 
     const saveRecord = (coll, obj, dir) => {
-      console.log(`File is ${dir}/${coll}/${obj.$loki}.json`);
-      fs.writeFile(`${dir}/${coll}/${obj.$loki}.json`, JSON.stringify(obj), {
+      const _id = obj[ coll.idField ];
+      console.log(`File is ${dir}/${coll}/${_id}.json`);
+      fs.writeFile(`${dir}/${coll}/${_id}.json`, JSON.stringify(obj), {
         encoding: 'utf8'
       }, (err) => {
         if (err) {

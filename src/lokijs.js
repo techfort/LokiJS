@@ -4791,6 +4791,7 @@
      * @constructor Collection
      * @implements LokiEventEmitter
      * @param {string} name - collection name
+     * @param {string} [options.idField='$loki'] - optional name to use for ID field, default '$loki'
      * @param {(array|object)=} options - (optional) array of property names to be indicized OR a configuration object
      * @param {array=} [options.unique=[]] - array of property names to define unique constraints for
      * @param {array=} [options.exact=[]] - array of property names to define exact constraints for

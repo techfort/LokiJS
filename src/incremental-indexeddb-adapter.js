@@ -65,7 +65,7 @@
         }
       }
 
-      if (max === min && idIndex[min] >= minId) {
+      if (max === min && idIndex[min] >= minId && idIndex[min] <= minId) {
         firstDataPosition = min;
       }
 

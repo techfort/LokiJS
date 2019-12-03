@@ -170,6 +170,17 @@ async function startTests(divElement)
     trace(`load time: ${loadTime}ms`)
   }
 
+  trace('==> regression test: batch removing records')
+
+  {
+    db.collections.forEach(col => {
+      col.remove(col.data.slice(col.data.length - 215))
+    })
+
+    await saveAndCheckDatabaseCopyIntegrity(db);
+
+    trace('ok')
+  }
   trace('==> long running fuzz tests')
 
   function fuzz(dbToFuzz) {

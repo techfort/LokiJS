@@ -1,6 +1,6 @@
 # LokiJS
 
-[LokiJS.org web site](http://lokijs.org) | 
+[LokiJS.org web site](http://techfort.github.io/LokiJS/) | 
 [LokiJS GitHub page](https://github.com/techfort/LokiJS) | 
 [Sandbox / Playground](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
 

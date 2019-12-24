@@ -306,7 +306,7 @@ describe('collection', function () {
 
   it('allows to specify a custom ID field name and return instances correctly', function() {
     var db = new loki('test_id.db');
-    var coll = db.addCollection('testcoll', { clone:true, idField: '_id' } );
+    var coll = db.addCollection('testcoll', { clone: true, idField: '_id' } );
 
     // listen for insert events to validate objects
     coll.on("insert", function(obj) {

@@ -2090,7 +2090,8 @@
           pageIndex: 0
         };
 
-        self.loadNextPartition(0, function() {
+        self.loadNextPartition(0, function(err) {
+          if (err) return callback(err);
           callback(self.dbref);
         });
       });
@@ -2137,6 +2138,7 @@
 
       // load whatever page is next in sequence
       this.adapter.loadDatabase(keyname, function(result) {
+        if (result instanceof Error) return callback(result);
         var data = result.split(self.options.delimiter);
         result = ""; // free up memory now that we have split it into array
         var dlen = data.length;

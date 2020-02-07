@@ -116,6 +116,10 @@
       // lookup up db string in AKV db
       this.catalog.getAppKey(appName, dbname, function(result) {
         if (typeof (callback) === 'function') {
+          if (result instanceof Error) {
+            callback(result);
+            return;
+          }
           if (result.id === 0) {
             callback(null);
             return;
@@ -417,7 +421,11 @@
           }
 
           if (typeof(usercallback) === 'function') {
-            usercallback(lres);
+            try {
+              usercallback(lres);
+            } catch(err) {
+              usercallback(err);
+            }
           }
           else {
             console.log(lres);

@@ -4467,7 +4467,7 @@
       }
 
       var filters = this.filterPipeline;
-      var wasFrozen = Object.isFrozen(filter);
+      var wasFrozen = Object.isFrozen(filters);
       this.filterPipeline = [];
 
       for (var idx = 0, len = filters.length; idx < len; idx += 1) {

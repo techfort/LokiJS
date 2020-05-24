@@ -1809,6 +1809,9 @@
           dv.resultdata = colldv.resultdata;
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
+          if (!copyColl.disableFreeze) {
+            deepFreeze(dv.filterPipeline);
+          }
 
           dv.sortCriteria = colldv.sortCriteria;
           dv.sortFunction = null;
@@ -4082,6 +4085,9 @@
 
       // keep ordered filter pipeline
       this.filterPipeline = [];
+      if (!this.collection.disableFreeze) {
+        Object.freeze(this.filterPipeline);
+      }
 
       // sorting member variables
       // we only support one active search, applied using applySort() or applySimpleSort()
@@ -4094,13 +4100,23 @@
       // once we refactor transactions, i will tie in certain transactional events
 
       this.events = {
-        'rebuild': []
+        'rebuild': [],
+        'filter': [],
+        'sort': []
       };
     }
 
     DynamicView.prototype = new LokiEventEmitter();
     DynamicView.prototype.constructor = DynamicView;
 
+    /**
+     * getSort() - used to get the current sort 
+     * 
+     * @returns function (sortFunction) or array (sortCriteria) or object (sortCriteriaSimple)
+     */
+    DynamicView.prototype.getSort = function () {
+      return this.sortFunction || this.sortCriteria || this.sortCriteriaSimple;
+    };
 
     /**
      * rematerialize() - internally used immediately after deserialization (loading)
@@ -4128,17 +4144,22 @@
         this.sortDirty = true;
       }
 
+      var wasFrozen = Object.isFrozen(this.filterPipeline);
+      var filterChanged = false;
       if (options.hasOwnProperty('removeWhereFilters')) {
         // for each view see if it had any where filters applied... since they don't
         // serialize those functions lets remove those invalid filters
+        if (wasFrozen) {
+          this.filterPipeline = this.filterPipeline.slice();
+        }
         fpl = this.filterPipeline.length;
         fpi = fpl;
         while (fpi--) {
           if (this.filterPipeline[fpi].type === 'where') {
             if (fpi !== this.filterPipeline.length - 1) {
               this.filterPipeline[fpi] = this.filterPipeline[this.filterPipeline.length - 1];
+              filterChanged = true;
             }
-
             this.filterPipeline.length--;
           }
         }
@@ -4153,10 +4174,16 @@
       for (idx = 0; idx < fpl; idx++) {
         this.applyFind(ofp[idx].val);
       }
+      if (wasFrozen) {
+        Object.freeze(this.filterPipeline);
+      }
 
       // during creation of unit tests, i will remove this forced refresh and leave lazy
       this.data();
 
+      if (filterChanged) {
+        this.emit('filter');
+      }
       // emit rebuild event in case user wants to be notified
       this.emit('rebuild', this);
 
@@ -4241,8 +4268,13 @@
 
       this.cachedresultset = null;
 
+      var wasFrozen = Object.isFrozen(this.filterPipeline);
+      var filterChanged = this.filterPipeline.length > 0;
       // keep ordered filter pipeline
       this.filterPipeline = [];
+      if (wasFrozen) {
+        Object.freeze(this.filterPipeline);
+      }
 
       // sorting member variables
       // we only support one active search, applied using applySort() or applySimpleSort()
@@ -4253,6 +4285,10 @@
 
       if (options.queueSortPhase === true) {
         this.queueSortPhase();
+      }
+
+      if (filterChanged) {
+        this.emit('filter');
       }
     };
 
@@ -4275,6 +4311,7 @@
       this.sortCriteriaSimple = null;
 
       this.queueSortPhase();
+      this.emit('sort');
 
       return this;
     };
@@ -4295,10 +4332,14 @@
      */
     DynamicView.prototype.applySimpleSort = function (propname, options) {
       this.sortCriteriaSimple = { propname: propname, options: options || false };
+      if (!this.collection.disableFreeze) {
+        deepFreeze(this.sortCriteriaSimple);
+      }
       this.sortCriteria = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
+      this.emit('sort');
 
       return this;
     };
@@ -4319,11 +4360,14 @@
      */
     DynamicView.prototype.applySortCriteria = function (criteria) {
       this.sortCriteria = criteria;
+      if (!this.collection.disableFreeze) {
+        deepFreeze(this.sortCriteria);
+      }
       this.sortCriteriaSimple = null;
       this.sortFunction = null;
 
       this.queueSortPhase();
-
+      this.emit('sort');
       return this;
     };
 
@@ -4394,7 +4438,17 @@
      * @param {object} filter - The filter object. Refer to applyFilter() for extra details.
      */
     DynamicView.prototype._addFilter = function (filter) {
+      var wasFrozen = Object.isFrozen(this.filterPipeline);
+      if (wasFrozen) {
+        this.filterPipeline = this.filterPipeline.slice();
+      }
+      if (!this.collection.disableFreeze) {
+        deepFreeze(filter);
+      }
       this.filterPipeline.push(filter);
+      if (wasFrozen) {
+        Object.freeze(this.filterPipeline);
+      }
       this.resultset[filter.type](filter.val);
     };
 
@@ -4413,10 +4467,14 @@
       }
 
       var filters = this.filterPipeline;
+      var wasFrozen = Object.isFrozen(filter);
       this.filterPipeline = [];
 
       for (var idx = 0, len = filters.length; idx < len; idx += 1) {
         this._addFilter(filters[idx]);
+      }
+      if (wasFrozen) {
+        Object.freeze(this.filterPipeline);
       }
 
       if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
@@ -4424,7 +4482,7 @@
       } else {
         this.queueRebuildEvent();
       }
-
+      this.emit('filter');
       return this;
     };
 
@@ -4439,7 +4497,15 @@
     DynamicView.prototype.applyFilter = function (filter) {
       var idx = this._indexOfFilterWithId(filter.uid);
       if (idx >= 0) {
+        var wasFrozen = Object.isFrozen(this.filterPipeline);
+        if (wasFrozen) {
+          this.filterPipeline = this.filterPipeline.slice();
+        }
         this.filterPipeline[idx] = filter;
+        if (wasFrozen) {
+          freeze(filter);
+          Object.freeze(this.filterPipeline);
+        }
         return this.reapplyFilters();
       }
 
@@ -4457,6 +4523,7 @@
         this.queueRebuildEvent();
       }
 
+      this.emit('filter');
       return this;
     };
 
@@ -4506,8 +4573,14 @@
       if (idx < 0) {
         throw new Error("Dynamic view does not contain a filter with ID: " + uid);
       }
-
+      var wasFrozen = Object.isFrozen(this.filterPipeline);
+      if (wasFrozen) {
+        this.filterPipeline = this.filterPipeline.slice();
+      }
       this.filterPipeline.splice(idx, 1);
+      if (wasFrozen) {
+        Object.freeze(this.filterPipeline);
+      }
       this.reapplyFilters();
       return this;
     };

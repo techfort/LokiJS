@@ -410,6 +410,7 @@ describe('immutable', function () {
         items.insert(testRecords);
         var dv = items.addDynamicView();
 
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
         // with no filter, results should be all documents
         var results = dv.data();
         expect(results.length).toBe(4);
@@ -431,7 +432,13 @@ describe('immutable', function () {
         var db = new loki('dvtest');
         var items = db.addCollection('users', { disableFreeze: false });
         var dv = items.addDynamicView('dv');
+        var filterEmitted = false
+        dv.addListener('filter', function() {
+          filterEmitted = true;
+        });
         dv.applyFind({ a: 1 });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(filterEmitted).toBe(true)
 
         items.insert([
           { a: 0, b: 1 },
@@ -463,8 +470,63 @@ describe('immutable', function () {
         var db = new loki('dvtest');
         var items = db.addCollection('users', { disableFreeze: false });
         var dv = items.addDynamicView('dv', { persistent: true });
+        var filterEmitted = false;
+        var sortEmitted = false;
+        dv.addListener('filter', function() {
+          filterEmitted = true;
+        });
+        dv.addListener('sort', function() {
+          sortEmitted = true;
+        });
         dv.applyFind({ a: 1 });
         dv.applySimpleSort('b');
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
+        expect(filterEmitted).toBe(true);
+        expect(sortEmitted).toBe(true);
+
+        items.insert([
+          { a: 0, b: 1 },
+          { a: 1, b: 2 },
+          { a: 0, b: 3 },
+          { a: 1, b: 4 },
+          { a: 0, b: 5 },
+          { a: 1, b: 6 },
+          { a: 1, b: 7 },
+          { a: 1, b: 8 },
+          { a: 0, b: 9 }
+        ]);
+
+        expect(dv.data().length).toEqual(5);
+
+        items.findAndRemove({ b: { $lt: 7 } });
+
+        var results = dv.data();
+        expect(results.length).toEqual(2);
+        expect(results[0].b).toEqual(7);
+        expect(results[1].b).toEqual(8);
+      });
+    });
+
+    describe('dynamic (persistent/sorted with criteria) view batch removes work as expected', function () {
+      it('works', function () {
+        var db = new loki('dvtest');
+        var items = db.addCollection('users', { disableFreeze: false });
+        var dv = items.addDynamicView('dv', { persistent: true });
+        var filterEmitted = false;
+        var sortEmitted = false;
+        dv.addListener('filter', function() {
+          filterEmitted = true;
+        });
+        dv.addListener('sort', function() {
+          sortEmitted = true;
+        });
+        dv.applyFind({ a: 1 });
+        dv.applySortCriteria(['b']);
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
+        expect(filterEmitted).toBe(true);
+        expect(sortEmitted).toBe(true);
 
         items.insert([
           { a: 0, b: 1 },
@@ -496,6 +558,8 @@ describe('immutable', function () {
         var dv = items.addDynamicView('dv', { persistent: true });
         dv.applyFind({ a: 1 });
         dv.applySimpleSort('b');
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
 
         items.insert([
           { a: 0, b: 1 },
@@ -531,6 +595,7 @@ describe('immutable', function () {
         dv.applyWhere(function (obj) {
           return (obj.maker === 'elves');
         });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
 
         expect(dv.data().length).toEqual(2);
         expect(dv.filterPipeline.length).toEqual(2);
@@ -547,6 +612,7 @@ describe('immutable', function () {
         var items = db.addCollection('users', { disableFreeze: false });
         items.insert(testRecords);
         var dv = items.addDynamicView();
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
 
         var obj = dv.toJSON();
         expect(obj.collection).toEqual(null);
@@ -556,19 +622,22 @@ describe('immutable', function () {
     describe('dynamic view removeFilters works as expected', function () {
       it('works', function () {
         var db = new loki('dvtest');
-        var items = db.addCollection('users');
+        var items = db.addCollection('users', { disableFreeze: false });
         items.insert(testRecords);
         var dv = items.addDynamicView("ownr");
 
         dv.applyFind({ 'owner': 'odin' });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
         dv.applyWhere(function (obj) {
           return (obj.maker === 'elves');
         });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
 
         expect(dv.filterPipeline.length).toEqual(2);
         expect(dv.data().length).toEqual(2);
 
         dv.removeFilters();
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
         expect(dv.filterPipeline.length).toEqual(0);
         expect(dv.count()).toEqual(4);
       });
@@ -585,6 +654,7 @@ describe('immutable', function () {
         dv.applyWhere(function (obj) {
           return (obj.maker === 'elves');
         });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
 
         expect(items.DynamicViews.length).toEqual(1);
 
@@ -624,6 +694,8 @@ describe('immutable', function () {
         var dv = coll.addDynamicView('dvtest');
         dv.applyFind({ a: { $lte: 20 } });
         dv.applySimpleSort("b");
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
 
         // data only needs to be inserted once since we are leaving collection intact while
         // building up and tearing down dynamic views within it
@@ -643,6 +715,8 @@ describe('immutable', function () {
         dv = coll.addDynamicView('dvtest');
         dv.applyFind({ a: { $lte: 20 } });
         dv.applySimpleSort("b", { useJavascriptSorting: true });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
 
         // test whether results are valid
         // for our simple integer datatypes javascript sorting is same as loki sorting
@@ -659,6 +733,8 @@ describe('immutable', function () {
         dv = coll.addDynamicView('dvtest');
         dv.applyFind({ a: { $lte: 20 } });
         dv.applySimpleSort("b", { disableIndexIntersect: true, useJavascriptSorting: true });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
 
         // test whether results are valid
         var results = dv.data();
@@ -674,6 +750,8 @@ describe('immutable', function () {
         dv = coll.addDynamicView('dvtest');
         dv.applyFind({ a: { $lte: 20 } });
         dv.applySimpleSort("b", { forceIndexIntersect: true });
+        expect(isFrozen(dv.filterPipeline)).toBe(true);
+        expect(isFrozen(dv.sortCriteriaSimple)).toBe(true);
 
         // test whether results are valid
         var results = dv.data();
@@ -696,6 +774,7 @@ describe('immutable', function () {
 
         elves = items.addDynamicView('elves');
         elves.applyFind({ maker: 'elves' });
+        expect(isFrozen(elves.filterPipeline)).toBe(true);
       });
 
       it('finds first result with firstOnly: true', function () {

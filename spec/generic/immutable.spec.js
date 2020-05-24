@@ -393,6 +393,8 @@ describe('immutable', function () {
   })
 
   describe('dynamicviews work and disableFreeze', function () {
+    var testRecords;
+
     beforeEach(function () {
       testRecords = [
         { name: 'mjolnir', owner: 'thor', maker: 'dwarves' },
@@ -687,6 +689,7 @@ describe('immutable', function () {
 
     describe('dynamic view simplesort options work correctly', function () {
       it('works', function () {
+        var idx;
         var db = new loki('dvtest.db');
         var coll = db.addCollection('colltest', { disableFreeze: false, indices: ['a', 'b'] });
 

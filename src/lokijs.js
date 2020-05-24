@@ -7663,6 +7663,8 @@
     Loki.unFreeze = unFreeze;
     Loki.LokiOps = LokiOps;
     Loki.Collection = Collection;
+    Loki.DynamicView = DynamicView;
+    Loki.Resultset = Resultset;
     Loki.KeyValueStore = KeyValueStore;
     Loki.LokiMemoryAdapter = LokiMemoryAdapter;
     Loki.LokiPartitioningAdapter = LokiPartitioningAdapter;

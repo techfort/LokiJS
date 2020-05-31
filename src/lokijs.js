@@ -1671,6 +1671,7 @@
       if (serializedDb.length === 0) {
         dbObject = {};
       } else {
+
         // using option defined in instantiated db not what was in serialized db
         switch (this.options.serializationMethod) {
           case "normal":
@@ -1809,14 +1810,18 @@
           dv.resultdata = colldv.resultdata;
           dv.resultsdirty = colldv.resultsdirty;
           dv.filterPipeline = colldv.filterPipeline;
-          if (!copyColl.disableFreeze) {
-            deepFreeze(dv.filterPipeline);
-          }
-
+          dv.sortCriteriaSimple = colldv.sortCriteriaSimple;
           dv.sortCriteria = colldv.sortCriteria;
           dv.sortFunction = null;
-
           dv.sortDirty = colldv.sortDirty;
+          if (!copyColl.disableFreeze) {
+            deepFreeze(dv.filterPipeline);
+            if (dv.sortCriteriaSimple) {
+              deepFreeze(dv.sortCriteriaSimple);
+            } else if (dv.sortCriteria) {
+              deepFreeze(dv.sortCriteria);
+            }
+          }
           dv.resultset.filteredrows = colldv.resultset.filteredrows;
           dv.resultset.filterInitialized = colldv.resultset.filterInitialized;
 
@@ -4145,7 +4150,6 @@
       }
 
       var wasFrozen = Object.isFrozen(this.filterPipeline);
-      var filterChanged = false;
       if (options.hasOwnProperty('removeWhereFilters')) {
         // for each view see if it had any where filters applied... since they don't
         // serialize those functions lets remove those invalid filters
@@ -4158,7 +4162,6 @@
           if (this.filterPipeline[fpi].type === 'where') {
             if (fpi !== this.filterPipeline.length - 1) {
               this.filterPipeline[fpi] = this.filterPipeline[this.filterPipeline.length - 1];
-              filterChanged = true;
             }
             this.filterPipeline.length--;
           }
@@ -4172,7 +4175,7 @@
       // now re-apply 'find' filterPipeline ops
       fpl = ofp.length;
       for (idx = 0; idx < fpl; idx++) {
-        this.applyFind(ofp[idx].val);
+        this.applyFind(ofp[idx].val, ofp[idx].uid);
       }
       if (wasFrozen) {
         Object.freeze(this.filterPipeline);
@@ -4181,9 +4184,6 @@
       // during creation of unit tests, i will remove this forced refresh and leave lazy
       this.data();
 
-      if (filterChanged) {
-        this.emit('filter');
-      }
       // emit rebuild event in case user wants to be notified
       this.emit('rebuild', this);
 
@@ -4235,7 +4235,6 @@
      */
     DynamicView.prototype.toJSON = function () {
       var copy = new DynamicView(this.collection, this.name, this.options);
-
       copy.resultset = this.resultset;
       copy.resultdata = []; // let's not save data (copy) to minimize size
       copy.resultsdirty = true;

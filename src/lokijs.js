@@ -6153,6 +6153,12 @@
           return !xo[obj.$loki];
         });
 
+        if (this.isIncremental) {
+          for(idx=0; idx < len; idx++) {
+            this.dirtyIds.push(this.idIndex[positions[idx]]);
+          }
+        }
+
         // remove from idIndex[] :
         // filter idIndex for items not in inclusion hashobject
         this.idIndex = this.idIndex.filter(function(id) {

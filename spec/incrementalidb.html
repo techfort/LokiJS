@@ -170,6 +170,38 @@ async function startTests(divElement)
     trace(`load time: ${loadTime}ms`)
   }
 
+  trace('==> regression test: batch removing records')
+
+  {
+    db.collections.forEach(col => {
+      col.remove(col.data.slice(col.data.length - 215))
+    })
+
+    await saveAndCheckDatabaseCopyIntegrity(db);
+
+    trace('ok')
+  }
+
+  trace('==> regression test: loading db with a large chunk missing')
+
+  {
+    db.collections.forEach(col => {
+      // remove enough contiguous records to have the last chunk empty
+      const numberOfRecords = 300
+      for (let i = 0; i < numberOfRecords; i++) {
+        col.insert({ mass: true, i, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' })
+      }
+      col.remove(col.data.slice(col.data.length - 215))
+
+      // now add a new record to the end
+      col.insert({ mass: true, blah: 'accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam' })
+    })
+
+    await saveAndCheckDatabaseCopyIntegrity(db);
+
+    trace('ok')
+  }
+
   trace('==> long running fuzz tests')
 
   function fuzz(dbToFuzz) {

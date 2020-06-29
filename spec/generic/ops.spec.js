@@ -428,4 +428,23 @@ describe("Individual operator tests", function() {
       }
     }).length).toBe(1)
   });
+
+  it('$$op column comparisons work', function () {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ a: null, b: 5 });
+    coll.insert({ a: '5', b: 5 });
+    coll.insert({ a: 5, b: 5 });
+    coll.insert({ a: 6, b: 5 });
+    coll.insert({ a: 3, b: 5 });
+    coll.insert({ a: 3, b: 'number' });
+
+    expect(coll.find({ a: { $$eq: 'b' } }).length).toEqual(1);
+    expect(coll.find({ a: { $$aeq: 'b' } }).length).toEqual(2);
+    expect(coll.find({ a: { $$ne: 'b' } }).length).toEqual(5);
+    expect(coll.find({ a: { $$gt: 'b' } }).length).toEqual(1);
+    expect(coll.find({ a: { $$gte: 'b' } }).length).toEqual(2);
+    expect(coll.find({ a: { $$type: 'b' } }).length).toEqual(1);
+  });
 });

@@ -682,7 +682,7 @@
 
     // ops that can be used with { $$op: 'column-name' } syntax
     var valueLevelOps = ['$eq', '$aeq', '$ne', '$dteq', '$gt', '$gte', '$lt', '$lte', '$jgt', '$jgte', '$jlt', '$jlte', '$type'];
-    valueLevelOps.forEach(op => {
+    valueLevelOps.forEach(function (op) {
       var fun = LokiOps[name];
       LokiOps['$' + op] = function (a, b, record) {
         return callValueOp(fun, a, record, b);

@@ -7509,8 +7509,8 @@
 
     function UniqueIndex(uniqueField) {
       this.field = uniqueField;
-      this.keyMap = {};
-      this.lokiMap = {};
+      this.keyMap = Object.create(null);
+      this.lokiMap = Object.create(null);
     }
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
@@ -7557,12 +7557,12 @@
       }
     };
     UniqueIndex.prototype.clear = function () {
-      this.keyMap = {};
-      this.lokiMap = {};
+      this.keyMap = Object.create(null);
+      this.lokiMap = Object.create(null);
     };
 
     function ExactIndex(exactField) {
-      this.index = {};
+      this.index = Object.create(null);
       this.field = exactField;
     }
 

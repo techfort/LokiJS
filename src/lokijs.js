@@ -421,7 +421,7 @@
       if (pathOffset + 1 >= paths.length) {
         // if we have already expanded out the dot notation,
         // then just evaluate the test function and value on the element
-        valueFound = fun(element, value);
+        valueFound = fun(element, value, extra);
       } else if (Array.isArray(element)) {
         for (var index = 0, len = element.length; index < len; index += 1) {
           valueFound = dotSubScan(element[index], paths, fun, value, extra, pathOffset + 1);
@@ -582,7 +582,7 @@
         return false;
       },
 
-      $elemMatch: function (a, b, record) {
+      $elemMatch: function (a, b) {
         if (Array.isArray(a)) {
           return a.some(function (item) {
             return Object.keys(b).every(function (property) {
@@ -592,16 +592,16 @@
               }
 
               if (property.indexOf('.') !== -1) {
-                return dotSubScan(item, property.split('.'), doQueryOp, b[property], record);
+                return dotSubScan(item, property.split('.'), doQueryOp, b[property], item);
               }
-              return doQueryOp(item[property], filter, record);
+              return doQueryOp(item[property], filter, item);
             });
           });
         }
         return false;
       },
 
-      $type: function (a, b) {
+      $type: function (a, b, record) {
         var type = typeof a;
         if (type === 'object') {
           if (Array.isArray(a)) {
@@ -610,23 +610,23 @@
             type = 'date';
           }
         }
-        return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b);
+        return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b, record);
       },
 
       $finite: function (a, b) {
         return (b === isFinite(a));
       },
 
-      $size: function (a, b) {
+      $size: function (a, b, record) {
         if (Array.isArray(a)) {
-          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b, record);
         }
         return false;
       },
 
-      $len: function (a, b) {
+      $len: function (a, b, record) {
         if (typeof a === 'string') {
-          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b, record);
         }
         return false;
       },
@@ -670,22 +670,18 @@
       }
     };
 
-    function callValueOp(fun, a, val, spec) {
-      if (typeof spec === 'string') {
-        return fun(a, val[spec]);
-      } else if (typeof spec === 'function') {
-        return fun(a, spec(val));
-      } else {
-        throw new Error('Invalid argument to $$ matcher');
-      }
-    }
-
     // ops that can be used with { $$op: 'column-name' } syntax
     var valueLevelOps = ['$eq', '$aeq', '$ne', '$dteq', '$gt', '$gte', '$lt', '$lte', '$jgt', '$jgte', '$jlt', '$jlte', '$type'];
     valueLevelOps.forEach(function (op) {
-      var fun = LokiOps[name];
-      LokiOps['$' + op] = function (a, b, record) {
-        return callValueOp(fun, a, record, b);
+      var fun = LokiOps[op];
+      LokiOps['$' + op] = function (a, spec, record) {
+        if (typeof spec === 'string') {
+          return fun(a, record[spec]);
+        } else if (typeof spec === 'function') {
+          return fun(a, spec(record));
+        } else {
+          throw new Error('Invalid argument to $$ matcher');
+        }
       };
     });
 
@@ -3591,6 +3587,7 @@
         } else {
           for (i = 0; i < len; i++) {
             rowIdx = filter[i];
+            record = t[rowIdx];
             if (fun(record[property], value, record)) {
               result.push(rowIdx);
               if (firstOnly) {

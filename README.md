@@ -1,7 +1,7 @@
 # LokiJS
 
 LokiJS is being sponsored by the following tool; please help to support us by taking a look and signing up to a free trial
-<!--<a href="https://tracking.gitads.io/?repo=YOUR_REPO"> <img src="https://images.gitads.io/YOUR_REPO" alt="GitAds"/> </a>-->
+<a href="https://tracking.gitads.io/?repo=YOUR_REPO"> <img src="https://images.gitads.io/YOUR_REPO" alt="GitAds"/> </a>
 
 [![Join the chat at https://gitter.im/techfort/LokiJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/techfort/LokiJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)

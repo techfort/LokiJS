@@ -130,8 +130,9 @@
       console.time("exportDatabase");
 
       var chunksToSave = [];
+      var savedLength = 0;
 
-      loki.collections.forEach(function(collection, i) {
+      var prepareCollection = function (collection, i) {
         // Find dirty chunk ids
         var dirtyChunks = new Set();
         collection.dirtyIds.forEach(function(lokiId) {
@@ -141,14 +142,17 @@
         collection.dirtyIds = [];
 
         // Serialize chunks to save
-        dirtyChunks.forEach(function(chunkId) {
+        var prepareChunk = function (chunkId) {
           var chunkData = that._getChunk(collection, chunkId);
           // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
+          var chunkData = JSON.stringify(chunkData);
+          savedLength += chunkData.length;
           chunksToSave.push({
             key: collection.name + ".chunk." + chunkId,
-            value: JSON.stringify(chunkData),
+            value: chunkData,
           });
-        });
+        }
+        dirtyChunks.forEach(prepareChunk);
 
         collection.data = [];
         // this is recreated on load anyway, so we can make metadata smaller
@@ -156,18 +160,23 @@
 
         // save collection metadata as separate chunk, leave only names in loki
         // TODO: To reduce IO, we should only save this chunk when it has changed
+        var metadataChunk = JSON.stringify(collection);
+        savedLength += metadataChunk.length;
         chunksToSave.push({
           key: collection.name + ".metadata",
-          value: JSON.stringify(collection),
+          value: metadataChunk,
         });
         loki.collections[i] = { name: collection.name };
-      });
+      };
+      loki.collections.forEach(prepareCollection);
 
       var serializedMetadata = JSON.stringify(loki);
+      savedLength += serializedMetadata.length;
       loki = null; // allow GC of the DB copy
 
       chunksToSave.push({ key: "loki", value: serializedMetadata });
 
+      console.log(`[Loki] Saving ${savedLength} bytes(ish) to DB`);
       that._saveChunks(dbname, chunksToSave, callback);
     };
 

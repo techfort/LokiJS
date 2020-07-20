@@ -2730,24 +2730,17 @@
         return;
       }
 
-      // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
-      // or autosave won't work if an update occurs between here and the callback
-      // TODO: This should be stored and rolled back in case of DB save failure
-      // TODO: Reference mode adapter should have the same behavior
-      if (this.persistenceAdapter.mode !== "reference") {
-        this.autosaveClearFlags();
-      }
-
       // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
         var lokiCopy = this.copy({ removeNonSerializable: true });
 
         // remember and clear dirty ids -- we must do it before the save so that if
         // and update occurs between here and callback, it will get saved later
-        var cachedDirtyIds = this.collections.map(function (collection) {
-          return collection.dirtyIds;
+        var cachedDirty = this.collections.map(function (collection) {
+          return [collection.dirty, collection.dirtyIds];
         });
         this.collections.forEach(function (col) {
+          col.dirty = false;
           col.dirtyIds = [];
         });
 
@@ -2755,13 +2748,15 @@
           if (err) {
             // roll back dirty IDs to be saved later
             self.collections.forEach(function (col, i) {
-              col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i]);
+              var cached = cachedDirtyIds[i];
+              col.dirty = cached[0]
+              col.dirtyIds = col.dirtyIds.concat(cached[1]);
             });
           }
           cFun(err);
         });
-
       } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+        // TODO: dirty should be cleared here
         // filename may seem redundant but loadDatabase will need to expect this same filename
         this.persistenceAdapter.exportDatabase(this.filename, this.copy({ removeNonSerializable: true }), function exportDatabaseCallback(err) {
           self.autosaveClearFlags();
@@ -2770,6 +2765,10 @@
       }
       // otherwise just pass the serialized database to adapter
       else {
+        // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
+        // or autosave won't work if an update occurs between here and the callback
+        // TODO: This should be stored and rolled back in case of DB save failure
+        this.autosaveClearFlags();
         this.persistenceAdapter.saveDatabase(this.filename, this.serialize(), function saveDatabasecallback(err) {
           cFun(err);
         });

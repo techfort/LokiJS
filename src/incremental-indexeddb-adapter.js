@@ -154,18 +154,21 @@
         }
         dirtyChunks.forEach(prepareChunk);
 
-        collection.data = [];
-        // this is recreated on load anyway, so we can make metadata smaller
-        collection.isIndex = [];
+        // save collection metadata as separate chunk (but only if changed)
+        if (collection.dirty) {
+          // this is recreated on load anyway, so we can make metadata smaller
+          collection.idIndex = [];
+          collection.data = [];
 
-        // save collection metadata as separate chunk, leave only names in loki
-        // TODO: To reduce IO, we should only save this chunk when it has changed
-        var metadataChunk = JSON.stringify(collection);
-        savedLength += metadataChunk.length;
-        chunksToSave.push({
-          key: collection.name + ".metadata",
-          value: metadataChunk,
-        });
+          var metadataChunk = JSON.stringify(collection);
+          savedLength += metadataChunk.length;
+          chunksToSave.push({
+            key: collection.name + ".metadata",
+            value: metadataChunk,
+          });
+        }
+
+        // leave only names in the loki chunk
         loki.collections[i] = { name: collection.name };
       };
       loki.collections.forEach(prepareCollection);

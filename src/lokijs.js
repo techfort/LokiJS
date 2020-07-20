@@ -1128,7 +1128,7 @@
       options = options || {};
 
       // currently inverting and letting loadJSONObject do most of the work
-      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true });
+      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true, skipUniqueIndicies: true });
 
       // since our JSON serializeReplacer is not invoked for reference database adapters, this will let us mimic
       if (options.hasOwnProperty("removeNonSerializable") && options.removeNonSerializable === true) {
@@ -1706,6 +1706,7 @@
      * @param {object} dbObject - a serialized loki database string
      * @param {object=} options - apply or override collection level settings
      * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
+     * @param {bool} options.skipUniqueIndicies - skip regenerating unique indicies
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -1810,8 +1811,11 @@
         copyColl.uniqueNames = [];
         if (coll.hasOwnProperty("uniqueNames")) {
           copyColl.uniqueNames = coll.uniqueNames;
-          for (j = 0; j < copyColl.uniqueNames.length; j++) {
-            copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
+
+          if (!options.skipUniqueIndicies) {
+            for (j = 0; j < copyColl.uniqueNames.length; j++) {
+              copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
+            }
           }
         }
 

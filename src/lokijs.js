@@ -534,6 +534,10 @@
         return b.indexOf(a) !== -1;
       },
 
+      $inSet: function(a, b) {
+        return b.has(a);
+      },
+
       $nin: function (a, b) {
         return b.indexOf(a) === -1;
       },
@@ -3549,6 +3553,12 @@
 
         searchByIndex = true;
         index = this.collection.binaryIndices[property];
+      }
+
+      if (!searchByIndex && operator === '$in' && Array.isArray(value)
+        && typeof window !== undefined && typeof window.Set !== 'undefined') {
+        value = new Set(value)
+        operator = '$inSet'
       }
 
       // the comparison function

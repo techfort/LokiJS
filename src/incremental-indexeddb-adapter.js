@@ -36,7 +36,7 @@
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
       this.options = options || {};
-      this.chunkSize = 200;
+      this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
     }
 
@@ -143,34 +143,7 @@
 
         // Serialize chunks to save
         var prepareChunk = function (chunkId) {
-          var chunkData = that._getChunk(collection, chunkId).map(x => {
-            if (collection.name === 'comments') {
-              return [x.$loki,
-              x.id,
-              x._status,
-              x._changed,
-              x.author_id,
-              x.body,
-              x.created_at,
-              x.edited_at,
-              x.extra,
-              x.is_deleted,
-              x.is_pinned,
-              x.reactions,
-              x.task_id]
-            } else if (collection.name === 'task_events') {
-              return [x.$loki,
-              x.id,
-              x._status,
-              x._changed,
-              x.author_id,
-              x.created_at,
-              x.change,
-              x.task_id]
-            } else {
-              return x
-            }
-          });
+          var chunkData = that._getChunk(collection, chunkId);
           // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
           var chunkData = JSON.stringify(chunkData);
           savedLength += chunkData.length;
@@ -456,7 +429,6 @@
 
     IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {
       var that = this;
-      // return callback([])
       if (!this.idb) {
         this._initializeIDB(dbname, callback, function() {
           that._getAllChunks(dbname, callback);
@@ -472,185 +444,17 @@
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
-      // console.time('get keys')
-      // var keysReq = tx.objectStore('LokiIncrementalData').getAllKeys()
-      // // console.log(keysReq.result)
-      // keysReq.onsuccess = e => {
-      //   console.log(e.target.result)
-      //   console.timeEnd('get keys')
-      // }
-      // keysReq.onerror = e => {
-      //   console.error('error with keys')
-      // }
+      var request = tx.objectStore('LokiIncrementalData').getAll();
+      request.onsuccess = function(e) {
+        that.operationInProgress = false;
+        var chunks = e.target.result;
+        callback(chunks);
+      };
 
-      // console.time('get contents')
-      // const allChunks = []
-      // var cursor = tx.objectStore('LokiIncrementalData').openCursor()
-      // cursor.onsuccess = e => {
-      //   const cur = e.target.result
-      //   if (cur) {
-      //     // allChunks.push(JSON.parse(cur.value.value))
-      //     const val = JSON.parse(cur.value.value)
-      //     for (var j=0,jl=val.length;j<jl;j++) {
-      //       allChunks.push(val[j])
-      //     }
-      //     cur.continue()
-      //   } else {
-      //     console.log('done!')
-      //     console.timeEnd('get contents')
-      //   }
-      // }
-
-      console.time('get contents')
-      const allChunks = []
-      const store = tx.objectStore('LokiIncrementalData')
-      let count = 0
-      const done = () => {
-        count += 1
-        if (count === 8) {
-          console.timeEnd('get contents')
-          // console.log(allChunks)
-        }
-      }
-      const processChunkyChunk1 = e => {
-        const cur = e.target.result
-        cur.forEach((item, i) => {
-          const val = JSON.parse(item.value)
-          cur[i] = null
-          for (var j=0,jl=val.length;j<jl;j++) {
-            allChunks.push(val[j])
-          }
-        })
-        done()
-      }
-      const processChunkyChunk2 = e => {
-        const cur = e.target.result
-        cur.forEach((item, i) => {
-          const val = JSON.parse(item.value)
-          cur[i] = null
-          if (item.key.includes('comments')) {
-            for (var j=0,jl=val.length;j<jl;j++) {
-              const val1 = val[j]
-              const obj = {
-                $loki: val1[0],
-                id: val1[1],
-                _status: val1[2],
-                _changed: val1[3],
-                author_id: val1[4],
-                body: val1[5],
-                created_at: val1[6],
-                edited_at: val1[7],
-                extra: val1[8],
-                is_deleted: val1[9],
-                is_pinned: val1[10],
-                reactions: val1[11],
-                task_id: val1[12],
-              }
-              allChunks.push(obj)
-            }
-          } else if (item.key.includes('task_events')) {
-            for (var j=0,jl=val.length;j<jl;j++) {
-              const val1 = val[j]
-              const obj = {
-                $loki: val1[0],
-                id: val1[1],
-                _status: val1[2],
-                _changed: val1[3],
-                author_id: val1[4],
-                created_at: val1[5],
-                change: val1[6],
-                task_id: val1[7],
-              }
-              allChunks.push(obj)
-            }
-          } else {
-            for (var j=0,jl=val.length;j<jl;j++) {
-              const val1 = val[j]
-              allChunks.push(val1)
-            }
-          }
-        })
-        done()
-      }
-      const processChunkyChunk = processChunkyChunk2
-      // store.getAll(IDBKeyRange.upperBound('comments.chunk.36', true)).onsuccess = processChunkyChunk
-      // store.getAll(IDBKeyRange.bound('comments.chunk.36', 'task_events.chunk.1', false, true)).onsuccess = processChunkyChunk
-      // store.getAll(IDBKeyRange.bound('task_events.chunk.1', 'task_events.chunk.39', false, true)).onsuccess = processChunkyChunk
-      // store.getAll(IDBKeyRange.lowerBound('task_events.chunk.39', true)).onsuccess = processChunkyChunk
-
-      store.getAll(IDBKeyRange.upperBound('comments.chunk.141', true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('comments.chunk.141', 'comments.chunk.36', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('comments.chunk.36', 'comments.chunk.81', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('comments.chunk.81', 'task_events.chunk.1', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('task_events.chunk.1', 'task_events.chunk.144', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('task_events.chunk.144', 'task_events.chunk.39', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.bound('task_events.chunk.39', 'task_events.chunk.84', false, true)).onsuccess = processChunkyChunk
-      store.getAll(IDBKeyRange.lowerBound('task_events.chunk.84', true)).onsuccess = processChunkyChunk
-
-      // console.time('get contents')
-      // const allChunks = []
-      // var cursor = tx.objectStore('LokiIncrementalData').getAll()
-      // cursor.onsuccess = e => {
-      //   const cur = e.target.result
-      //   cur.forEach((item, i) => {
-      //     const val = JSON.parse(item.value)
-      //     cur[i] = null
-      //     for (var j=0,jl=val.length;j<jl;j++) {
-      //       allChunks.push(val[j])
-      //     }
-      //   })
-      //   console.timeEnd('get contents')
-      //   // console.log(cur)
-      //   // console.log(allChunks)
-      // }
-
-      // const fields=['authorId', 'body', 'createdAt', 'editedAt', 'extra', 'isDeleted', 'isPinned', 'reactions', 'taskId']
-      // const fieldsl = fields.length
-      // console.time('get contents')
-      // const allChunks = []
-      // var cursor = tx.objectStore('LokiIncrementalData').getAll()
-      // cursor.onsuccess = e => {
-      //   const cur = e.target.result
-      //   cur.forEach((item, i) => {
-      //     const val = JSON.parse(item.value)
-      //     cur[i] = null
-      //     for (var j=0,jl=val.length;j<jl;j++) {
-      //       const val1 = val[j]
-      //       // const obj = {}
-      //       // for (var k=0;k<fieldsl;k++) {
-      //       //   obj[fields[k]] = val1[k]
-      //       // }
-      //       const obj = {
-      //         authorId: val1[0],
-      //         body: val1[1],
-      //         createdAt: val1[2],
-      //         editedAt: val1[3],
-      //         extra: val1[4],
-      //         isDeleted: val1[5],
-      //         isPinned: val1[6],
-      //         reactions: val1[7],
-      //         taskId: val1[8],
-      //       }
-      //       allChunks.push(obj)
-      //     }
-      //   })
-      //   console.timeEnd('get contents')
-      //   // console.log(cur)
-      //   // console.log(allChunks)
-      // }
-
-
-      // var request = tx.objectStore('LokiIncrementalData').getAll();
-      // request.onsuccess = function(e) {
-      //   that.operationInProgress = false;
-      //   var chunks = e.target.result;
-      //   callback(chunks);
-      // };
-
-      // request.onerror = function(e) {
-      //   that.operationInProgress = false;
-      //   callback(e);
-      // };
+      request.onerror = function(e) {
+        that.operationInProgress = false;
+        callback(e);
+      };
     };
 
     /**

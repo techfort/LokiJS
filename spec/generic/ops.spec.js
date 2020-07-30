@@ -428,4 +428,71 @@ describe("Individual operator tests", function() {
       }
     }).length).toBe(1)
   });
+
+  it('$$op column comparisons work', function () {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ a: null, b: 5 });
+    coll.insert({ a: '5', b: 5 });
+    coll.insert({ a: 5, b: 5 });
+    coll.insert({ a: 6, b: 5 });
+    coll.insert({ a: 3, b: 5 });
+    coll.insert({ a: 3, b: 'number' });
+
+    // standard case
+    expect(coll.find({ a: { $$eq: 'b' } }).length).toEqual(1);
+    expect(coll.find({ a: { $$aeq: 'b' } }).length).toEqual(2);
+    expect(coll.find({ a: { $$ne: 'b' } }).length).toEqual(5);
+    expect(coll.find({ a: { $$gt: 'b' } }).length).toEqual(1);
+    expect(coll.find({ a: { $$gte: 'b' } }).length).toEqual(3);
+
+    // function variant
+    expect(coll.find({ a: { $$gt: function (record) { return record.b - 1 } } }).length).toEqual(4);
+
+    // comparison on filtered rows
+    expect(coll.find({ b: { $gt: 0 }, a: { $$aeq: 'b' } }).length).toEqual(2);
+
+    // type
+    expect(coll.find({ a: { $$type: 'b' } }).length).toEqual(1);
+    expect(coll.find({ a: { $type: { $$eq: 'b' } } }).length).toEqual(1);
+
+    // $not, $and, $or
+    expect(coll.find({ a: { $not: { $$type: 'b' } } }).length).toEqual(5);
+    expect(coll.find({ a: { $and: [{ $type: 'number' }, { $$gte: 'b' }] } }).length).toEqual(2);
+    expect(coll.find({ a: { $or: [{ $eq: null }, { $$gt: 'b' }] } }).length).toEqual(2);
+
+    // $len
+    coll.insert({ text1: 'blablabla', len: 10 })
+    coll.insert({ text1: 'abcdef', len: 6 })
+    coll.insert({ text1: 'abcdef', len: 3 })
+    expect(coll.find({ text1: { $len: { $$eq: 'len' } } }).length).toEqual(1);
+
+    // $size
+    coll.insert({ array1: [1, 2, 3], size: 2 })
+    coll.insert({ array1: [1, 2], size: 1 })
+    coll.insert({ array1: [1, 2], size: 3 })
+    coll.insert({ array1: [1, 2, 3, 4], size: 5 })
+    expect(coll.find({ array1: { $size: { $$eq: 'size' } } }).length).toEqual(0);
+    expect(coll.find({ array1: { $size: { $$lt: 'size' } } }).length).toEqual(2);
+
+    // $elemMatch
+    coll.insert({ els: [{ a: 1, b: 2 }] })
+    coll.insert({ els: [{ a: 1, b: 2 }, { a: 2, b: 2 }] })
+    expect(coll.find({ els: { $elemMatch: { a: { $$eq: 'b' } } } }).length).toEqual(1);
+
+    // $elemMatch - dot scan
+    coll.insert({ els2: [{ a: { val: 1 }, b: 2 }] })
+    coll.insert({ els2: [{ a: { val: 1 }, b: 2 }, { a: { val: 2 }, b: 2 }] })
+    expect(coll.find({ els2: { $elemMatch: { 'a.val': { $$eq: 'b' } } } }).length).toEqual(1);
+
+    // dot notation
+    coll.insert({ c: { val: 5 }, b: 5 });
+    coll.insert({ c: { val: 6 }, b: 5 });
+    coll.insert({ c: { val: 7 }, b: 6 });
+    expect(coll.find({ 'c.val': { $$gt: 'b' } }).length).toEqual(2);
+
+    // dot notation - on filtered rows
+    expect(coll.find({ b: { $gt: 0 }, 'c.val': { $$gt: 'b' } }).length).toEqual(2);
+  });
 });

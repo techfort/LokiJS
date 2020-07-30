@@ -406,9 +406,10 @@
      * @param {array} paths - array of properties to drill into
      * @param {function} fun - evaluation function to test with
      * @param {any} value - comparative value to also pass to (compare) fun
+     * @param {any} extra - extra arg to also pass to compare fun
      * @param {number} poffset - index of the item in 'paths' to start the sub-scan from
      */
-    function dotSubScan(root, paths, fun, value, poffset) {
+    function dotSubScan(root, paths, fun, value, extra, poffset) {
       var pathOffset = poffset || 0;
       var path = paths[pathOffset];
 
@@ -420,16 +421,16 @@
       if (pathOffset + 1 >= paths.length) {
         // if we have already expanded out the dot notation,
         // then just evaluate the test function and value on the element
-        valueFound = fun(element, value);
+        valueFound = fun(element, value, extra);
       } else if (Array.isArray(element)) {
         for (var index = 0, len = element.length; index < len; index += 1) {
-          valueFound = dotSubScan(element[index], paths, fun, value, pathOffset + 1);
+          valueFound = dotSubScan(element[index], paths, fun, value, extra, pathOffset + 1);
           if (valueFound === true) {
             break;
           }
         }
       } else {
-        valueFound = dotSubScan(element, paths, fun, value, pathOffset + 1);
+        valueFound = dotSubScan(element, paths, fun, value, extra, pathOffset + 1);
       }
 
       return valueFound;
@@ -448,10 +449,10 @@
       return null;
     }
 
-    function doQueryOp(val, op) {
+    function doQueryOp(val, op, record) {
       for (var p in op) {
         if (hasOwnProperty.call(op, p)) {
-          return LokiOps[p](val, op[p]);
+          return LokiOps[p](val, op[p], record);
         }
       }
       return false;
@@ -591,16 +592,16 @@
               }
 
               if (property.indexOf('.') !== -1) {
-                return dotSubScan(item, property.split('.'), doQueryOp, b[property]);
+                return dotSubScan(item, property.split('.'), doQueryOp, b[property], item);
               }
-              return doQueryOp(item[property], filter);
+              return doQueryOp(item[property], filter, item);
             });
           });
         }
         return false;
       },
 
-      $type: function (a, b) {
+      $type: function (a, b, record) {
         var type = typeof a;
         if (type === 'object') {
           if (Array.isArray(a)) {
@@ -609,23 +610,23 @@
             type = 'date';
           }
         }
-        return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b);
+        return (typeof b !== 'object') ? (type === b) : doQueryOp(type, b, record);
       },
 
       $finite: function (a, b) {
         return (b === isFinite(a));
       },
 
-      $size: function (a, b) {
+      $size: function (a, b, record) {
         if (Array.isArray(a)) {
-          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b, record);
         }
         return false;
       },
 
-      $len: function (a, b) {
+      $len: function (a, b, record) {
         if (typeof a === 'string') {
-          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b);
+          return (typeof b !== 'object') ? (a.length === b) : doQueryOp(a.length, b, record);
         }
         return false;
       },
@@ -638,22 +639,22 @@
       // a is the value in the collection
       // b is the nested query operation (for '$not')
       //   or an array of nested query operations (for '$and' and '$or')
-      $not: function (a, b) {
-        return !doQueryOp(a, b);
+      $not: function (a, b, record) {
+        return !doQueryOp(a, b, record);
       },
 
-      $and: function (a, b) {
+      $and: function (a, b, record) {
         for (var idx = 0, len = b.length; idx < len; idx += 1) {
-          if (!doQueryOp(a, b[idx])) {
+          if (!doQueryOp(a, b[idx], record)) {
             return false;
           }
         }
         return true;
       },
 
-      $or: function (a, b) {
+      $or: function (a, b, record) {
         for (var idx = 0, len = b.length; idx < len; idx += 1) {
-          if (doQueryOp(a, b[idx])) {
+          if (doQueryOp(a, b[idx], record)) {
             return true;
           }
         }
@@ -668,6 +669,21 @@
         }
       }
     };
+
+    // ops that can be used with { $$op: 'column-name' } syntax
+    var valueLevelOps = ['$eq', '$aeq', '$ne', '$dteq', '$gt', '$gte', '$lt', '$lte', '$jgt', '$jgte', '$jlt', '$jlte', '$type'];
+    valueLevelOps.forEach(function (op) {
+      var fun = LokiOps[op];
+      LokiOps['$' + op] = function (a, spec, record) {
+        if (typeof spec === 'string') {
+          return fun(a, record[spec]);
+        } else if (typeof spec === 'function') {
+          return fun(a, spec(record));
+        } else {
+          throw new Error('Invalid argument to $$ matcher');
+        }
+      };
+    });
 
     // if an op is registered in this object, our 'calculateRange' can use it with our binary indices.
     // if the op is registered to a function, we will run that function/op as a 2nd pass filter on results.
@@ -3547,7 +3563,7 @@
       //
       // For performance reasons, each case has its own if block to minimize in-loop calculations
 
-      var filter, rowIdx = 0;
+      var filter, rowIdx = 0, record;
 
       // If the filteredrows[] is already initialized, use it
       if (this.filterInitialized) {
@@ -3559,7 +3575,8 @@
           property = property.split('.');
           for (i = 0; i < len; i++) {
             rowIdx = filter[i];
-            if (dotSubScan(t[rowIdx], property, fun, value)) {
+            record = t[rowIdx];
+            if (dotSubScan(record, property, fun, value, record)) {
               result.push(rowIdx);
               if (firstOnly) {
                 this.filteredrows = result;
@@ -3570,7 +3587,8 @@
         } else {
           for (i = 0; i < len; i++) {
             rowIdx = filter[i];
-            if (fun(t[rowIdx][property], value)) {
+            record = t[rowIdx];
+            if (fun(record[property], value, record)) {
               result.push(rowIdx);
               if (firstOnly) {
                 this.filteredrows = result;
@@ -3589,7 +3607,8 @@
           if (usingDotNotation) {
             property = property.split('.');
             for (i = 0; i < len; i++) {
-              if (dotSubScan(t[i], property, fun, value)) {
+              record = t[i];
+              if (dotSubScan(record, property, fun, value, record)) {
                 result.push(i);
                 if (firstOnly) {
                   this.filteredrows = result;
@@ -3600,7 +3619,8 @@
             }
           } else {
             for (i = 0; i < len; i++) {
-              if (fun(t[i][property], value)) {
+              record = t[i];
+              if (fun(record[property], value, record)) {
                 result.push(i);
                 if (firstOnly) {
                   this.filteredrows = result;
@@ -4115,8 +4135,8 @@
     DynamicView.prototype.constructor = DynamicView;
 
     /**
-     * getSort() - used to get the current sort 
-     * 
+     * getSort() - used to get the current sort
+     *
      * @returns function (sortFunction) or array (sortCriteria) or object (sortCriteriaSimple)
      */
     DynamicView.prototype.getSort = function () {
@@ -7489,8 +7509,8 @@
 
     function UniqueIndex(uniqueField) {
       this.field = uniqueField;
-      this.keyMap = {};
-      this.lokiMap = {};
+      this.keyMap = Object.create(null);
+      this.lokiMap = Object.create(null);
     }
     UniqueIndex.prototype.keyMap = {};
     UniqueIndex.prototype.lokiMap = {};
@@ -7537,12 +7557,12 @@
       }
     };
     UniqueIndex.prototype.clear = function () {
-      this.keyMap = {};
-      this.lokiMap = {};
+      this.keyMap = Object.create(null);
+      this.lokiMap = Object.create(null);
     };
 
     function ExactIndex(exactField) {
-      this.index = {};
+      this.index = Object.create(null);
       this.field = exactField;
     }
 

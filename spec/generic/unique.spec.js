@@ -83,7 +83,7 @@ describe('Constraints', function () {
   it('coll.clear should affect unique indices correctly', function() {
     var db = new loki();
     var coll = db.addCollection('users', { unique: ['username'] });
-    
+
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
     coll.insert({ username: 'jake', name: 'Jake' });
@@ -100,7 +100,7 @@ describe('Constraints', function () {
 
     var db = new loki();
     var coll = db.addCollection('users', { unique: ['username'] });
-    
+
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
     coll.insert({ username: 'jake', name: 'Jake' });
@@ -122,18 +122,18 @@ describe('Constraints', function () {
       {name:'Jormungandr', legs: 0},
       {name:'Hel', legs: 2}
     ];
-  
+
     var db = new loki('test.db');
     var collection = db.addCollection("children", {
       unique: ["name"]
     });
-  
+
     data.forEach(function(c) {
       collection.insert(JSON.parse(JSON.stringify(c)));
     });
 
     collection.findAndRemove();
-  
+
     // reinsert 2 of the 3 original docs
     // implicitly 'expecting' that this will not throw exception on Duplicate key for property name(s)
     collection.insert(JSON.parse(JSON.stringify(data[0])));
@@ -158,12 +158,12 @@ describe('Constraints', function () {
       {name:'Jormungandr', legs: 0},
       {name:'Hel', legs: 2}
     ];
-  
+
     var db = new loki('test.db');
     var collection = db.addCollection("children", {
       unique: ["name"]
     });
-  
+
     data.forEach(function(c) {
       collection.insert(JSON.parse(JSON.stringify(c)));
     });
@@ -171,7 +171,7 @@ describe('Constraints', function () {
     collection.chain().update(function(obj) {
       obj.name = obj.name + '2';
     });
-  
+
     // implicitly 'expecting' that this will not throw exception on Duplicate key for property name: Sleipnir
     data.forEach(function(c) {
       collection.insert(JSON.parse(JSON.stringify(c)));
@@ -221,5 +221,14 @@ describe('Constraints', function () {
     expect(keys[3]).toEqual('Jormungandr2');
     expect(keys[4]).toEqual('Sleipnir');
     expect(keys[5]).toEqual('Sleipnir2');
+  });
+  it('should not crash on unsafe strings', function () {
+    var db = new loki();
+    var coll = db.addCollection('local_storage', {
+      unique: ['key']
+    });
+    expect(coll.by('key', 'hasOwnProperty')).toBe(undefined);
+    coll.insert({ key: 'hasOwnProperty', name: 'hey' });
+    expect(coll.by('key', 'hasOwnProperty').name).toBe('hey');
   });
 });

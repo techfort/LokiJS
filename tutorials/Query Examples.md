@@ -319,6 +319,15 @@ var results = coll.find({
 });
 ```
 
+**$$eq, $$eq, etc.** - many filters support column comparisons - comparing one column in a document
+with another (instead of between column and value):
+```javascript
+// fetch documents where foo > bar
+var results = coll.find({{ foo: { $$gt: 'bar' } }})
+
+// instead of passing second column name, you can pass a function that computes value to compare against
+var results = coll.find({{ foo: { $$lt: doc => doc.bar + 1 } }})
+```
 ### Features which support 'find' queries
 These operators can be used to compose find filter objects which can be used within : 
 * Collection find()

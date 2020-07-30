@@ -30,8 +30,10 @@
      * @constructor IncrementalIndexedDBAdapter
      *
      * @param {object=} options Configuration options for the adapter
-     * @param {boolean} options.onversionchange Function to call on `IDBDatabase.onversionchange` event
+     * @param {function} options.onversionchange Function to call on `IDBDatabase.onversionchange` event
      *     (most likely database deleted from another browser tab)
+     * @param {function} options.onFetchStart Function to call once IDB load has begun.
+     *     Use this as an opportunity to execute code concurrently while IDB does work on a separate thread
      */
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
@@ -455,6 +457,10 @@
         that.operationInProgress = false;
         callback(e);
       };
+
+      if (this.options.onFetchStart) {
+        this.options.onFetchStart();
+      }
     };
 
     /**

@@ -460,21 +460,81 @@
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
-      var request = tx.objectStore('LokiIncrementalData').getAll();
-      request.onsuccess = function(e) {
-        that.operationInProgress = false;
-        var chunks = e.target.result;
-        callback(chunks);
+      tx.oncomplete = function(e) {
+        console.log('!! tx oncomplete !!')
+      };
+      tx.onerror = function(e) {
+        console.log('!! tx onerror !!')
       };
 
-      request.onerror = function(e) {
-        that.operationInProgress = false;
-        callback(e);
+      var store = tx.objectStore('LokiIncrementalData');
+
+      var keysRequest = store.getAllKeys();
+      keysRequest.onsuccess = function(e) {
+        console.log('!! on get keys !!')
+        const keys = e.target.result;
+
+        if (keys.length < 100) {
+          var request = store.getAll();
+          request.onsuccess = function(e) {
+            var chunks = e.target.result;
+            console.log('!! on success lol !! ')
+            console.log(chunks.length);
+            callback(chunks);
+          };
+        } else {
+          keys.sort();
+          const megaChunks = 10
+          const chunksPerMegaChunk = Math.floor(keys.length / megaChunks);
+
+          const allChunks = []
+          let doneCount = 0
+
+          for (let i = 0; i < megaChunks; i += 1) {
+            var keyRange
+            if (i === 0) {
+              var maxKey = keys[chunksPerMegaChunk * (i + 1)]
+              keyRange = IDBKeyRange.upperBound(maxKey, true)
+            } else if (i === megaChunks - 1) {
+              var minKey = keys[chunksPerMegaChunk * i]
+              keyRange = IDBKeyRange.lowerBound(minKey, true)
+            } else {
+              var minKey = keys[chunksPerMegaChunk * i]
+              var maxKey = keys[chunksPerMegaChunk * (i + 1)]
+              keyRange = IDBKeyRange.bound(minKey, maxKey, false, true)
+            }
+            var megaChunkRequest = store.getAll(keyRange)
+            megaChunkRequest.onsuccess = function(e) {
+              console.log('!! megachunk success '+i+' !! ')
+              var mchunk = e.target.result;
+              mchunk.forEach(chunk => {
+                allChunks.push(chunk);
+              });
+              doneCount += 1;
+              if (doneCount === megaChunks) {
+                console.log('!! mega chunk success !!')
+                console.log(allChunks.length);
+                callback(allChunks);
+              }
+            }
+          }
+        }
+        if (that.options.onFetchStart) {
+          that.options.onFetchStart();
+        }
       };
 
-      if (this.options.onFetchStart) {
-        this.options.onFetchStart();
-      }
+      // var request = store.getAll();
+      // request.onsuccess = function(e) {
+      //   that.operationInProgress = false;
+      //   var chunks = e.target.result;
+      //   callback(chunks);
+      // };
+
+      // request.onerror = function(e) {
+      //   that.operationInProgress = false;
+      //   callback(e);
+      // };
     };
 
     /**

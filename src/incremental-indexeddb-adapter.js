@@ -452,6 +452,8 @@
         return;
       }
 
+      console.log('!! _getAllChunks !!')
+
       if (this.operationInProgress) {
         throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }
@@ -461,9 +463,11 @@
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
       tx.oncomplete = function(e) {
+        that.operationInProgress = false;
         console.log('!! tx oncomplete !!')
       };
       tx.onerror = function(e) {
+        that.operationInProgress = false;
         console.log('!! tx onerror !!')
       };
 

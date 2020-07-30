@@ -34,6 +34,12 @@
      *     (most likely database deleted from another browser tab)
      * @param {function} options.onFetchStart Function to call once IDB load has begun.
      *     Use this as an opportunity to execute code concurrently while IDB does work on a separate thread
+     * @param {function} options.serializeChunk Called with a chunk (array of Loki documents) before
+     *     it's saved to IndexedDB. You can use it to manually compress on-disk representation
+     *     for faster database loads. Hint: Hand-written conversion of objects to arrays is very
+     *     profitable for performance. If you use this, you must also pass options.deserializeChunk.
+     * @param {function} options.deserializeChunk Called with a chunk serialized with options.serializeChunk
+     *     Expects an array of Loki documents as the return value
      */
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
@@ -146,8 +152,11 @@
         // Serialize chunks to save
         var prepareChunk = function (chunkId) {
           var chunkData = that._getChunk(collection, chunkId);
+          if (that.options.serializeChunk) {
+            chunkData = that.options.serializeChunk(collection.name, chunkData);
+          }
           // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
-          var chunkData = JSON.stringify(chunkData);
+          chunkData = JSON.stringify(chunkData);
           savedLength += chunkData.length;
           chunksToSave.push({
             key: collection.name + ".chunk." + chunkId,
@@ -300,6 +309,7 @@
     };
 
     IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {
+      var that = this;
       loki.collections.forEach(function(collectionStub, i) {
         var chunkCollection = chunkCollections[collectionStub.name];
 
@@ -315,6 +325,10 @@
             var chunk = JSON.parse(chunkObj);
             chunkObj = null; // make string available for GC
             dataChunks[i] = null;
+
+            if (that.options.deserializeChunk) {
+              chunk = that.options.deserializeChunk(collection.name, chunk);
+            }
 
             chunk.forEach(function(doc) {
               collection.data.push(doc);

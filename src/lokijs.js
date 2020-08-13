@@ -1132,7 +1132,7 @@
       options = options || {};
 
       // currently inverting and letting loadJSONObject do most of the work
-      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true, skipUniqueIndicies: true });
+      databaseCopy.loadJSONObject(this, { retainDirtyFlags: true });
 
       // since our JSON serializeReplacer is not invoked for reference database adapters, this will let us mimic
       if (options.hasOwnProperty("removeNonSerializable") && options.removeNonSerializable === true) {
@@ -1710,7 +1710,6 @@
      * @param {object} dbObject - a serialized loki database string
      * @param {object=} options - apply or override collection level settings
      * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
-     * @param {bool} options.skipUniqueIndicies - skip regenerating unique indicies
      * @memberof Loki
      */
     Loki.prototype.loadJSONObject = function (dbObject, options) {
@@ -1815,12 +1814,6 @@
         copyColl.uniqueNames = [];
         if (coll.hasOwnProperty("uniqueNames")) {
           copyColl.uniqueNames = coll.uniqueNames;
-
-          if (!options.skipUniqueIndicies) {
-            for (j = 0; j < copyColl.uniqueNames.length; j++) {
-              copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
-            }
-          }
         }
 
         // in case they are loading a database created before we added dynamic views, handle undefined
@@ -4994,9 +4987,9 @@
         if (!Array.isArray(options.unique)) {
           options.unique = [options.unique];
         }
+        // save names; actual index is built lazily
         options.unique.forEach(function (prop) {
-          self.uniqueNames.push(prop); // used to regenerate on subsequent database loads
-          self.constraints.unique[prop] = new UniqueIndex(prop);
+          self.uniqueNames.push(prop);
         });
       }
 
@@ -5649,7 +5642,22 @@
       return result;
     };
 
+    /**
+     * Returns a named unique index
+     * @param {string} field - indexed field name
+     * @param {boolean} force - if `true`, will rebuild index; otherwise, function may return null
+     */
+    Collection.prototype.getUniqueIndex = function (field, force = false) {
+      console.log(`Getting index for ${this.name}.${field}`)
+      const index = this.constraints.unique[field]
+      if (force && !index) {
+        return this.ensureUniqueIndex(field)
+      }
+      return index
+    }
+
     Collection.prototype.ensureUniqueIndex = function (field) {
+      console.warn(`Building index for ${this.name}.${field}`)
       var index = this.constraints.unique[field];
       if (!index) {
         // keep track of new unique index for regenerate after database (re)load.
@@ -5964,15 +5972,14 @@
       this.maxId = 0;
       this.DynamicViews = [];
       this.dirty = true;
+      this.constraints = {
+        unique: {},
+        exact: {}
+      };
 
       // if removing indices entirely
       if (options.removeIndices === true) {
         this.binaryIndices = {};
-
-        this.constraints = {
-          unique: {},
-          exact: {}
-        };
         this.uniqueNames = [];
       }
       // clear indices but leave definitions in place
@@ -5982,17 +5989,6 @@
         keys.forEach(function (biname) {
           self.binaryIndices[biname].dirty = false;
           self.binaryIndices[biname].values = [];
-        });
-
-        // clear entire unique indices definition
-        this.constraints = {
-          unique: {},
-          exact: {}
-        };
-
-        // add definitions back
-        this.uniqueNames.forEach(function (uiname) {
-          self.ensureUniqueIndex(uiname);
         });
       }
     };
@@ -6057,7 +6053,8 @@
         this.emit('pre-update', doc);
 
         Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(oldInternal, newInternal);
+          const index = self.getUniqueIndex(key)
+          index && index.update(oldInternal, newInternal);
         });
 
         // operate the update
@@ -6161,7 +6158,8 @@
         var key, constrUnique = this.constraints.unique;
         for (key in constrUnique) {
           if (hasOwnProperty.call(constrUnique, key)) {
-            constrUnique[key].set(obj);
+            const index = this.getUniqueIndex(key);
+            index && index.set(obj);
           }
         }
 
@@ -6297,10 +6295,13 @@
 
           if (uic) {
             Object.keys(this.constraints.unique).forEach(function (key) {
-              for (idx = 0; idx < len; idx++) {
-                doc = self.data[positions[idx]];
-                if (doc[key] !== null && doc[key] !== undefined) {
-                  self.constraints.unique[key].remove(doc[key]);
+              const index = self.getUniqueIndex(key)
+              if (index) {
+                for (idx = 0; idx < len; idx++) {
+                  doc = self.data[positions[idx]];
+                  if (doc[key] !== null && doc[key] !== undefined) {
+                    index.remove(doc[key]);
+                  }
                 }
               }
             });
@@ -6417,7 +6418,8 @@
         var self = this;
         Object.keys(this.constraints.unique).forEach(function (key) {
           if (doc[key] !== null && typeof doc[key] !== 'undefined') {
-            self.constraints.unique[key].remove(doc[key]);
+            const index = self.getUniqueIndex(key);
+            index && index.remove(doc[key]);
           }
         });
         // now that we can efficiently determine the data[] position of newly added document,
@@ -6991,7 +6993,7 @@
         };
       }
 
-      var result = this.constraints.unique[field].get(value);
+      var result = this.getUniqueIndex(field, true).get(value);
       if (!this.cloneObjects) {
         return result;
       } else {

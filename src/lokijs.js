@@ -5726,13 +5726,14 @@
      * Rebuild idIndex
      */
     Collection.prototype.ensureId = function () {
-      var len = this.data.length,
+      var data = this.data,
         i = 0;
-
-      this.idIndex = [];
-      for (i; i < len; i += 1) {
-        this.idIndex.push(this.data[i].$loki);
+      var len = data.length;
+      var index = new Array(len);
+      for (i; i < len; i++) {
+        index[i] = data[i].$loki;
       }
+      this.idIndex = index;
     };
 
     /**

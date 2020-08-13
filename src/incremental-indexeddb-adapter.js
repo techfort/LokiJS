@@ -55,6 +55,7 @@
       var maxId = minId + this.chunkSize - 1;
 
       // use idIndex to find first collection.data position within the $loki range
+      collection.ensureId();
       var idIndex = collection.idIndex;
 
       var firstDataPosition = null;

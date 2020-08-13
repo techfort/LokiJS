@@ -1800,15 +1800,13 @@
         }
 
         copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
-        copyColl.idIndex = coll.idIndex;
+        copyColl.idIndex = coll.idIndex && coll.idIndex.length ? coll.idIndex : null;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
         }
         if (typeof coll.transforms !== 'undefined') {
           copyColl.transforms = coll.transforms;
         }
-
-        copyColl.ensureId();
 
         // regenerate unique indexes
         copyColl.uniqueNames = [];
@@ -4950,7 +4948,7 @@
       this.name = name;
       // the data held by the collection
       this.data = [];
-      this.idIndex = []; // index of id
+      this.idIndex = null; // position->$loki index
       this.binaryIndices = {}; // user defined indexes
       this.constraints = {
         unique: {},
@@ -5068,10 +5066,8 @@
       // lightweight changes tracking (loki IDs only) for optimized db saving
       this.dirtyIds = [];
 
-      // initialize the id index
-      this.ensureId();
-      var indices = [];
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
+      var indices = [];
       if (options && options.indices) {
         if (Object.prototype.toString.call(options.indices) === '[object Array]') {
           indices = options.indices;
@@ -5726,6 +5722,10 @@
      * Rebuild idIndex
      */
     Collection.prototype.ensureId = function () {
+      if (this.idIndex) {
+        return
+      }
+      console.warn(`rebuild ID index for ${this.name}`)
       var data = this.data,
         i = 0;
       var len = data.length;
@@ -5966,7 +5966,7 @@
       options = options || {};
 
       this.data = [];
-      this.idIndex = [];
+      this.idIndex = null;
       this.cachedIndex = null;
       this.cachedBinaryIndex = null;
       this.cachedData = null;
@@ -6150,7 +6150,8 @@
           this.maxId = (this.data[this.data.length - 1].$loki + 1);
         }
 
-        obj.$loki = this.maxId;
+        var newId = this.maxId;
+        obj.$loki = newId;
 
         if (!this.disableMeta) {
           obj.meta.version = 0;
@@ -6164,10 +6165,12 @@
           }
         }
 
-        // add new obj id to idIndex
-        this.idIndex.push(obj.$loki);
+        if (this.idIndex) {
+          this.idIndex.push(newId);
+        }
+
         if (this.isIncremental) {
-          this.dirtyIds.push(obj.$loki);
+          this.dirtyIds.push(newId);
         }
 
         // add the object
@@ -6266,6 +6269,7 @@
 
         // create hashobject for positional removal inclusion tests...
         // all keys defined in this hashobject represent $loki ids of the documents to remove.
+        this.ensureId();
         for (idx = 0; idx < len; idx++) {
           xo[this.idIndex[positions[idx]]] = true;
         }
@@ -6485,6 +6489,11 @@
      * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {
+      console.log(`--> Loki get ${this.name}#${id}`)
+      if (!this.idIndex) {
+        this.ensureId();
+      }
+
       var retpos = returnPosition || false,
         data = this.idIndex,
         max = data.length - 1,

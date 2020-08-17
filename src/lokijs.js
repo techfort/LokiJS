@@ -2742,7 +2742,7 @@
           if (err) {
             // roll back dirty IDs to be saved later
             self.collections.forEach(function (col, i) {
-              var cached = cachedDirtyIds[i];
+              var cached = cachedDirty[i];
               col.dirty = cached[0];
               col.dirtyIds = col.dirtyIds.concat(cached[1]);
             });
@@ -5642,9 +5642,9 @@
      * @param {string} field - indexed field name
      * @param {boolean} force - if `true`, will rebuild index; otherwise, function may return null
      */
-    Collection.prototype.getUniqueIndex = function (field, force = false) {
-      const index = this.constraints.unique[field];
-      if (force && !index) {
+    Collection.prototype.getUniqueIndex = function (field, force) {
+      var index = this.constraints.unique[field];
+      if (!index && force) {
         return this.ensureUniqueIndex(field);
       }
       return index;
@@ -6294,7 +6294,7 @@
 
           if (uic) {
             this.uniqueNames.forEach(function (key) {
-              const index = self.getUniqueIndex(key);
+              var index = self.getUniqueIndex(key);
               if (index) {
                 for (idx = 0; idx < len; idx++) {
                   doc = self.data[positions[idx]];
@@ -6417,7 +6417,7 @@
         var self = this;
         this.uniqueNames.forEach(function (key) {
           if (doc[key] !== null && typeof doc[key] !== 'undefined') {
-            const index = self.getUniqueIndex(key);
+            var index = self.getUniqueIndex(key);
             if (index) {
               index.remove(doc[key]);
             }

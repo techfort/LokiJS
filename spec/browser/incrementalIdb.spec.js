@@ -18,8 +18,6 @@ describe('IncrementalIndexedDBAdapter', function () {
       copyCol.data.every(function(copyEl, elIndex) {
         expect(JSON.stringify(copyEl)).toBe(JSON.stringify(source.collections[i].data[elIndex]))
       })
-
-      expect(copyCol.idIndex).toEqual(sourceCol.idIndex);
     })
   }
   it('checkDatabaseCopyIntegrity works', function() {

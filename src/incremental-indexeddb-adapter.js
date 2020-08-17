@@ -368,9 +368,10 @@
 
       openRequest.onsuccess = function(e) {
         that.idbInitInProgress = false;
-        that.idb = e.target.result;
+        var db = e.target.result;
+        that.idb = db;
 
-        if (!that.idb.objectStoreNames.contains('LokiIncrementalData')) {
+        if (!db.objectStoreNames.contains('LokiIncrementalData')) {
           onError(new Error("Missing LokiIncrementalData"));
           // Attempt to recover (after reload) by deleting database, since it's damaged anyway
           that.deleteDatabase(dbname);
@@ -379,7 +380,7 @@
 
         DEBUG && console.log("init success");
 
-        that.idb.onversionchange = function(versionChangeEvent) {
+        db.onversionchange = function(versionChangeEvent) {
           DEBUG && console.log('IDB version change', versionChangeEvent);
           // This function will be called if another connection changed DB version
           // (Most likely database was deleted from another browser tab, unless there's a new version
@@ -387,7 +388,7 @@
           // We must close the database to avoid blocking concurrent deletes.
           // The database will be unusable after this. Be sure to supply `onversionchange` option
           // to force logout
-          that.idb.close();
+          db.close();
           if (that.options.onversionchange) {
             that.options.onversionchange(versionChangeEvent);
           }

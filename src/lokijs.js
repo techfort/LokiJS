@@ -1800,7 +1800,6 @@
         }
 
         copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
-        copyColl.idIndex = coll.idIndex && coll.idIndex.length ? coll.idIndex : null;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
         }
@@ -4948,7 +4947,7 @@
       this.name = name;
       // the data held by the collection
       this.data = [];
-      this.idIndex = null; // position->$loki index
+      this.idIndex = null; // position->$loki index (built lazily)
       this.binaryIndices = {}; // user defined indexes
       this.constraints = {
         unique: {},
@@ -4956,7 +4955,7 @@
       };
 
       // unique contraints contain duplicate object references, so they are not persisted.
-      // we will keep track of properties which have unique contraint applied here, and regenerate on load
+      // we will keep track of properties which have unique contraint applied here, and regenerate lazily
       this.uniqueNames = [];
 
       // transforms will be used to store frequently used query chains as a series of steps
@@ -5725,7 +5724,7 @@
       if (this.idIndex) {
         return
       }
-      console.warn(`rebuild ID index for ${this.name}`)
+      console.warn(`Building index ID for ${this.name}`)
       var data = this.data,
         i = 0;
       var len = data.length;
@@ -6053,7 +6052,7 @@
 
         this.emit('pre-update', doc);
 
-        Object.keys(this.constraints.unique).forEach(function (key) {
+        this.uniqueNames.forEach(function (key) {
           const index = self.getUniqueIndex(key)
           index && index.update(oldInternal, newInternal);
         });
@@ -6299,7 +6298,7 @@
           }
 
           if (uic) {
-            Object.keys(this.constraints.unique).forEach(function (key) {
+            this.uniqueNames.forEach(function (key) {
               const index = self.getUniqueIndex(key)
               if (index) {
                 for (idx = 0; idx < len; idx++) {
@@ -6421,7 +6420,7 @@
           // obj = arr[0],
           position = arr[1];
         var self = this;
-        Object.keys(this.constraints.unique).forEach(function (key) {
+        this.uniqueNames.forEach(function (key) {
           if (doc[key] !== null && typeof doc[key] !== 'undefined') {
             const index = self.getUniqueIndex(key);
             index && index.remove(doc[key]);

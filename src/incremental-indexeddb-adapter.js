@@ -168,8 +168,7 @@
 
         // save collection metadata as separate chunk (but only if changed)
         if (collection.dirty) {
-          // this is recreated on load anyway, so we can make metadata smaller
-          collection.idIndex = [];
+          collection.idIndex = []; // this is recreated lazily
           collection.data = [];
 
           var metadataChunk = JSON.stringify(collection);

@@ -93,6 +93,8 @@ describe('IncrementalIndexedDBAdapter', function () {
     var adapter = new IncrementalIndexedDBAdapter('tests');
     var db = new loki('test.db', { adapter: adapter });
     var col1 = db.addCollection('test_collection');
+    var col2 = db.addCollection('test_collection2');
+    col2.dirty = false
 
     var doc1 = { foo: '1' };
     var doc2 = { foo: '2' };
@@ -104,6 +106,8 @@ describe('IncrementalIndexedDBAdapter', function () {
 
     var dirty = col1.dirtyIds;
     expect(dirty.length).toBe(5);
+    expect(col1.dirty).toBe(true);
+    expect(col2.dirty).toBe(false);
 
     // simulate save - don't go through IDB, just check that logic is good
     var callCallback;
@@ -114,12 +118,14 @@ describe('IncrementalIndexedDBAdapter', function () {
     // dirty ids zero out and roll back in case of error
     db.saveDatabase();
     expect(col1.dirtyIds).toEqual([]);
+    expect(col1.dirty).toBe(false);
     callCallback(new Error('foo'));
     expect(col1.dirtyIds).toEqual(dirty);
+    expect(col1.dirty).toBe(true);
+    expect(col2.dirty).toBe(false);
 
     // new dirtied ids get added in case of rollback
     db.saveDatabase();
-    expect(col1.dirtyIds).toEqual([]);
     var doc4 = { foo: '4' };
     col1.insert(doc4);
     expect(col1.dirtyIds).toEqual([doc4.$loki]);

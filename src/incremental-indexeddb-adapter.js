@@ -160,6 +160,7 @@
             chunkData = that.options.serializeChunk(collection.name, chunkData);
           }
           // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
+          // (and it's faster for some reason)
           chunkData = JSON.stringify(chunkData);
           savedLength += chunkData.length;
           chunksToSave.push({

@@ -2743,7 +2743,7 @@
             // roll back dirty IDs to be saved later
             self.collections.forEach(function (col, i) {
               var cached = cachedDirtyIds[i];
-              col.dirty = cached[0]
+              col.dirty = cached[0];
               col.dirtyIds = col.dirtyIds.concat(cached[1]);
             });
           }
@@ -3545,10 +3545,11 @@
         index = this.collection.binaryIndices[property];
       }
 
-      if (!searchByIndex && operator === '$in' && Array.isArray(value)
-        && typeof window !== undefined && typeof window.Set !== 'undefined') {
-        value = new Set(value)
-        operator = '$inSet'
+      // opportunistically speed up $in searches from O(n*m) to O(n*log m)
+      if (!searchByIndex && operator === '$in' && Array.isArray(value) &&
+        typeof window !== undefined && typeof window.Set !== 'undefined') {
+        value = new Set(value);
+        operator = '$inSet';
       }
 
       // the comparison function
@@ -5643,16 +5644,14 @@
      * @param {boolean} force - if `true`, will rebuild index; otherwise, function may return null
      */
     Collection.prototype.getUniqueIndex = function (field, force = false) {
-      console.log(`Getting index for ${this.name}.${field}`)
-      const index = this.constraints.unique[field]
+      const index = this.constraints.unique[field];
       if (force && !index) {
-        return this.ensureUniqueIndex(field)
+        return this.ensureUniqueIndex(field);
       }
-      return index
-    }
+      return index;
+    };
 
     Collection.prototype.ensureUniqueIndex = function (field) {
-      console.warn(`Building index for ${this.name}.${field}`)
       var index = this.constraints.unique[field];
       if (!index) {
         // keep track of new unique index for regenerate after database (re)load.
@@ -5722,9 +5721,8 @@
      */
     Collection.prototype.ensureId = function () {
       if (this.idIndex) {
-        return
+        return;
       }
-      console.warn(`Building index ID for ${this.name}`)
       var data = this.data,
         i = 0;
       var len = data.length;
@@ -6053,8 +6051,10 @@
         this.emit('pre-update', doc);
 
         this.uniqueNames.forEach(function (key) {
-          const index = self.getUniqueIndex(key)
-          index && index.update(oldInternal, newInternal);
+          const index = self.getUniqueIndex(key);
+          if (index) {
+            index.update(oldInternal, newInternal);
+          }
         });
 
         // operate the update
@@ -6160,7 +6160,9 @@
         for (key in constrUnique) {
           if (hasOwnProperty.call(constrUnique, key)) {
             const index = this.getUniqueIndex(key);
-            index && index.set(obj);
+            if (index) {
+              index.set(obj);
+            }
           }
         }
 
@@ -6299,7 +6301,7 @@
 
           if (uic) {
             this.uniqueNames.forEach(function (key) {
-              const index = self.getUniqueIndex(key)
+              const index = self.getUniqueIndex(key);
               if (index) {
                 for (idx = 0; idx < len; idx++) {
                   doc = self.data[positions[idx]];
@@ -6423,7 +6425,9 @@
         this.uniqueNames.forEach(function (key) {
           if (doc[key] !== null && typeof doc[key] !== 'undefined') {
             const index = self.getUniqueIndex(key);
-            index && index.remove(doc[key]);
+            if (index) {
+              index.remove(doc[key]);
+            }
           }
         });
         // now that we can efficiently determine the data[] position of newly added document,
@@ -6488,7 +6492,6 @@
      * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {
-      console.log(`--> Loki get ${this.name}#${id}`)
       if (!this.idIndex) {
         this.ensureId();
       }

@@ -6152,11 +6152,8 @@
           obj.meta.version = 0;
         }
 
-        var key, constrUnique = this.constraints.unique;
-        for (key in constrUnique) {
-          if (hasOwnProperty.call(constrUnique, key)) {
-            this.getUniqueIndex(key, true).set(obj);
-          }
+        for (var i = 0, len = this.uniqueNames.length; i < len; i ++) {
+          this.getUniqueIndex(this.uniqueNames[i], true).set(obj);
         }
 
         if (this.idIndex) {
@@ -6175,14 +6172,14 @@
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
         var dvlen = this.DynamicViews.length;
-        for (var i = 0; i < dvlen; i++) {
+        for (i = 0; i < dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(addedPos, true);
         }
 
         if (this.adaptiveBinaryIndices) {
           // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
           var bIndices = this.binaryIndices;
-          for (key in bIndices) {
+          for (var key in bIndices) {
             this.adaptiveBinaryIndexInsert(addedPos, key);
           }
         }

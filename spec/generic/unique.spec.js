@@ -56,7 +56,7 @@ describe('Constraints', function () {
       username: null,
       name: 'Jack'
     });
-    expect(Object.keys(coll3.getUniqueIndex('username', true).keyMap).length).toEqual(1);
+    expect(Object.keys(coll3.constraints.unique.username.keyMap).length).toEqual(1);
   });
 
   it('should not throw an error id multiple nulls are added', function() {
@@ -76,7 +76,7 @@ describe('Constraints', function () {
       username: null,
       name: 'Jake'
     });
-    expect(Object.keys(coll4.getUniqueIndex('username', true).keyMap).length).toEqual(1);
+    expect(Object.keys(coll4.constraints.unique.username.keyMap).length).toEqual(1);
   });
 
   it('coll.clear should affect unique indices correctly', function() {
@@ -86,13 +86,13 @@ describe('Constraints', function () {
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
     coll.insert({ username: 'jake', name: 'Jake' });
-    expect(Object.keys(coll.getUniqueIndex('username', true).keyMap).length).toEqual(3);
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
     expect(coll.uniqueNames.length).toEqual(1);
     coll.clear();
-    expect(coll.getUniqueIndex('username')).toBe(undefined);
+    expect(coll.constraints.unique.username).toBe(undefined);
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
-    expect(Object.keys(coll.getUniqueIndex('username', true).keyMap).length).toEqual(2);
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(2);
     coll.insert({ username: 'jake', name: 'Jake' });
     expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
     expect(coll.uniqueNames.length).toEqual(1);
@@ -103,7 +103,7 @@ describe('Constraints', function () {
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
     coll.insert({ username: 'jake', name: 'Jake' });
-    expect(Object.keys(coll.getUniqueIndex('username', true).keyMap).length).toEqual(3);
+    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
     expect(coll.uniqueNames.length).toEqual(1);
     coll.clear({ removeIndices: true });
     expect(coll.constraints.unique.hasOwnProperty('username')).toEqual(false);
@@ -126,7 +126,6 @@ describe('Constraints', function () {
     var collection = db.addCollection("children", {
       unique: ["name"]
     });
-    collection.getUniqueIndex('name', true);
 
     data.forEach(function(c) {
       collection.insert(JSON.parse(JSON.stringify(c)));
@@ -177,7 +176,7 @@ describe('Constraints', function () {
       collection.insert(JSON.parse(JSON.stringify(c)));
     });
 
-    var keys = Object.keys(collection.getUniqueIndex('name', true).keyMap);
+    var keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(6);
     keys.sort();
     expect(keys[0]).toEqual('Hel');
@@ -212,7 +211,7 @@ describe('Constraints', function () {
     // reinsert originals (implicitly 'expecting' that this will not throw exception on Duplicate key)
     collection.insert(data);
 
-    var keys = Object.keys(collection.getUniqueIndex('name', true).keyMap);
+    var keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(6);
     keys.sort();
     expect(keys[0]).toEqual('Hel');

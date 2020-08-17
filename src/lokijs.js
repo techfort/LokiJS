@@ -3546,8 +3546,7 @@
       }
 
       // opportunistically speed up $in searches from O(n*m) to O(n*log m)
-      if (!searchByIndex && operator === '$in' && Array.isArray(value) &&
-        typeof window !== undefined && typeof window.Set !== 'undefined') {
+      if (!searchByIndex && operator === '$in' && Array.isArray(value) && typeof Set !== 'undefined') {
         value = new Set(value);
         operator = '$inSet';
       }
@@ -6051,10 +6050,7 @@
         this.emit('pre-update', doc);
 
         this.uniqueNames.forEach(function (key) {
-          const index = self.getUniqueIndex(key);
-          if (index) {
-            index.update(oldInternal, newInternal);
-          }
+          self.getUniqueIndex(key, true).update(oldInternal, newInternal);
         });
 
         // operate the update
@@ -6159,10 +6155,7 @@
         var key, constrUnique = this.constraints.unique;
         for (key in constrUnique) {
           if (hasOwnProperty.call(constrUnique, key)) {
-            const index = this.getUniqueIndex(key);
-            if (index) {
-              index.set(obj);
-            }
+            this.getUniqueIndex(key, true).set(obj);
           }
         }
 

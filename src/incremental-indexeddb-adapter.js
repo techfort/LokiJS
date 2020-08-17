@@ -470,10 +470,6 @@
         that.operationInProgress = false;
         console.log('!! tx onerror !!')
       };
-      tx.onabort = function(e) {
-        that.operationInProgress = false;
-        console.log('!! tx onabort !!')
-      };
 
       var store = tx.objectStore('LokiIncrementalData');
 
@@ -487,7 +483,6 @@
           request.onsuccess = function(e) {
             var chunks = e.target.result;
             console.log('!! on success lol !! ')
-            that.operationInProgress = false;
             console.log(chunks.length);
             callback(chunks);
           };
@@ -521,7 +516,6 @@
               });
               doneCount += 1;
               if (doneCount === megaChunks) {
-                that.operationInProgress = false;
                 console.log('!! mega chunk success !!')
                 console.log(allChunks.length);
                 callback(allChunks);

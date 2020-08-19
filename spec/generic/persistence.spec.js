@@ -23,10 +23,10 @@ describe('testing unique index serialization', function () {
     var loaded = reloaded.loadJSON(ser);
     var coll = reloaded.getCollection('users');
     expect(coll.data.length).toEqual(4);
-    expect(coll.constraints.unique.username).toBeDefined();
     var joe = coll.by('username', 'joe');
     expect(joe).toBeDefined();
     expect(joe.username).toEqual('joe');
+    expect(coll.constraints.unique.username).toBeDefined();
 
     expect(reloaded.options.serializationMethod).toBe("normal");
     expect(reloaded.options.destructureDelimiter).toBe("$<\n");
@@ -841,7 +841,7 @@ describe('verify serializereplacer', function() {
 
     sdb.addCollection('test').insert({a:1, b:2});
     expect (sdb.collections[0].lokiConsoleWrapper === null).toEqual(false);
-    
+
     // serialized string/object should have nulled out that property
     var result = sdb.serialize();
     var obj = JSON.parse(result);
@@ -849,11 +849,11 @@ describe('verify serializereplacer', function() {
     expect(result.length).toBeGreaterThan(0);
     expect(obj.collections[0].lokiConsoleWrapper).toBeNull();
 
-    // now let's make sure that reloaded databasecollections 
+    // now let's make sure that reloaded databasecollections
     // with 'verbose' option set get the console reattached.
     var ndb = new loki("test.db", { verbose: true });
     ndb.loadJSONObject(obj);
-    
+
     expect(ndb.collections[0].lokiConsoleWrapper === null).toEqual(false);
     expect(typeof ndb.collections[0].lokiConsoleWrapper.log).toEqual("function");
   });

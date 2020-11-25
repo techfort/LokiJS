@@ -404,7 +404,7 @@
 
       openRequest.onerror = function(e) {
         that.idbInitInProgress = false;
-        console.error("IndexeddB open error", e);
+        console.error("IndexedDB open error", e);
         onError(e);
       };
     };

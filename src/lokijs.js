@@ -534,6 +534,10 @@
         return b.indexOf(a) !== -1;
       },
 
+      $inSet: function(a, b) {
+        return b.has(a);
+      },
+
       $nin: function (a, b) {
         return b.indexOf(a) === -1;
       },
@@ -1796,7 +1800,6 @@
         }
 
         copyColl.maxId = (typeof coll.maxId === 'undefined') ? 0 : coll.maxId;
-        copyColl.idIndex = coll.idIndex;
         if (typeof (coll.binaryIndices) !== 'undefined') {
           copyColl.binaryIndices = coll.binaryIndices;
         }
@@ -1804,15 +1807,10 @@
           copyColl.transforms = coll.transforms;
         }
 
-        copyColl.ensureId();
-
         // regenerate unique indexes
         copyColl.uniqueNames = [];
         if (coll.hasOwnProperty("uniqueNames")) {
           copyColl.uniqueNames = coll.uniqueNames;
-          for (j = 0; j < copyColl.uniqueNames.length; j++) {
-            copyColl.ensureUniqueIndex(copyColl.uniqueNames[j]);
-          }
         }
 
         // in case they are loading a database created before we added dynamic views, handle undefined
@@ -2726,24 +2724,17 @@
         return;
       }
 
-      // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
-      // or autosave won't work if an update occurs between here and the callback
-      // TODO: This should be stored and rolled back in case of DB save failure
-      // TODO: Reference mode adapter should have the same behavior
-      if (this.persistenceAdapter.mode !== "reference") {
-        this.autosaveClearFlags();
-      }
-
       // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
         var lokiCopy = this.copy({ removeNonSerializable: true });
 
         // remember and clear dirty ids -- we must do it before the save so that if
         // and update occurs between here and callback, it will get saved later
-        var cachedDirtyIds = this.collections.map(function (collection) {
-          return collection.dirtyIds;
+        var cachedDirty = this.collections.map(function (collection) {
+          return [collection.dirty, collection.dirtyIds];
         });
         this.collections.forEach(function (col) {
+          col.dirty = false;
           col.dirtyIds = [];
         });
 
@@ -2751,13 +2742,15 @@
           if (err) {
             // roll back dirty IDs to be saved later
             self.collections.forEach(function (col, i) {
-              col.dirtyIds = col.dirtyIds.concat(cachedDirtyIds[i]);
+              var cached = cachedDirty[i];
+              col.dirty = cached[0];
+              col.dirtyIds = col.dirtyIds.concat(cached[1]);
             });
           }
           cFun(err);
         });
-
       } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
+        // TODO: dirty should be cleared here
         // filename may seem redundant but loadDatabase will need to expect this same filename
         this.persistenceAdapter.exportDatabase(this.filename, this.copy({ removeNonSerializable: true }), function exportDatabaseCallback(err) {
           self.autosaveClearFlags();
@@ -2766,6 +2759,10 @@
       }
       // otherwise just pass the serialized database to adapter
       else {
+        // persistenceAdapter might be asynchronous, so we must clear `dirty` immediately
+        // or autosave won't work if an update occurs between here and the callback
+        // TODO: This should be stored and rolled back in case of DB save failure
+        this.autosaveClearFlags();
         this.persistenceAdapter.saveDatabase(this.filename, this.serialize(), function saveDatabasecallback(err) {
           cFun(err);
         });
@@ -3546,6 +3543,12 @@
 
         searchByIndex = true;
         index = this.collection.binaryIndices[property];
+      }
+
+      // opportunistically speed up $in searches from O(n*m) to O(n*log m)
+      if (!searchByIndex && operator === '$in' && Array.isArray(value) && typeof Set !== 'undefined') {
+        value = new Set(value);
+        operator = '$inSet';
       }
 
       // the comparison function
@@ -4944,7 +4947,7 @@
       this.name = name;
       // the data held by the collection
       this.data = [];
-      this.idIndex = []; // index of id
+      this.idIndex = null; // position->$loki index (built lazily)
       this.binaryIndices = {}; // user defined indexes
       this.constraints = {
         unique: {},
@@ -4952,7 +4955,7 @@
       };
 
       // unique contraints contain duplicate object references, so they are not persisted.
-      // we will keep track of properties which have unique contraint applied here, and regenerate on load
+      // we will keep track of properties which have unique contraint applied here, and regenerate lazily
       this.uniqueNames = [];
 
       // transforms will be used to store frequently used query chains as a series of steps
@@ -4981,9 +4984,9 @@
         if (!Array.isArray(options.unique)) {
           options.unique = [options.unique];
         }
+        // save names; actual index is built lazily
         options.unique.forEach(function (prop) {
-          self.uniqueNames.push(prop); // used to regenerate on subsequent database loads
-          self.constraints.unique[prop] = new UniqueIndex(prop);
+          self.uniqueNames.push(prop);
         });
       }
 
@@ -5062,10 +5065,8 @@
       // lightweight changes tracking (loki IDs only) for optimized db saving
       this.dirtyIds = [];
 
-      // initialize the id index
-      this.ensureId();
-      var indices = [];
       // initialize optional user-supplied indices array ['age', 'lname', 'zip']
+      var indices = [];
       if (options && options.indices) {
         if (Object.prototype.toString.call(options.indices) === '[object Array]') {
           indices = options.indices;
@@ -5636,6 +5637,19 @@
       return result;
     };
 
+    /**
+     * Returns a named unique index
+     * @param {string} field - indexed field name
+     * @param {boolean} force - if `true`, will rebuild index; otherwise, function may return null
+     */
+    Collection.prototype.getUniqueIndex = function (field, force) {
+      var index = this.constraints.unique[field];
+      if (!index && force) {
+        return this.ensureUniqueIndex(field);
+      }
+      return index;
+    };
+
     Collection.prototype.ensureUniqueIndex = function (field) {
       var index = this.constraints.unique[field];
       if (!index) {
@@ -5705,13 +5719,17 @@
      * Rebuild idIndex
      */
     Collection.prototype.ensureId = function () {
-      var len = this.data.length,
-        i = 0;
-
-      this.idIndex = [];
-      for (i; i < len; i += 1) {
-        this.idIndex.push(this.data[i].$loki);
+      if (this.idIndex) {
+        return;
       }
+      var data = this.data,
+        i = 0;
+      var len = data.length;
+      var index = new Array(len);
+      for (i; i < len; i++) {
+        index[i] = data[i].$loki;
+      }
+      this.idIndex = index;
     };
 
     /**
@@ -5944,22 +5962,21 @@
       options = options || {};
 
       this.data = [];
-      this.idIndex = [];
+      this.idIndex = null;
       this.cachedIndex = null;
       this.cachedBinaryIndex = null;
       this.cachedData = null;
       this.maxId = 0;
       this.DynamicViews = [];
       this.dirty = true;
+      this.constraints = {
+        unique: {},
+        exact: {}
+      };
 
       // if removing indices entirely
       if (options.removeIndices === true) {
         this.binaryIndices = {};
-
-        this.constraints = {
-          unique: {},
-          exact: {}
-        };
         this.uniqueNames = [];
       }
       // clear indices but leave definitions in place
@@ -5969,17 +5986,6 @@
         keys.forEach(function (biname) {
           self.binaryIndices[biname].dirty = false;
           self.binaryIndices[biname].values = [];
-        });
-
-        // clear entire unique indices definition
-        this.constraints = {
-          unique: {},
-          exact: {}
-        };
-
-        // add definitions back
-        this.uniqueNames.forEach(function (uiname) {
-          self.ensureUniqueIndex(uiname);
         });
       }
     };
@@ -6043,8 +6049,8 @@
 
         this.emit('pre-update', doc);
 
-        Object.keys(this.constraints.unique).forEach(function (key) {
-          self.constraints.unique[key].update(oldInternal, newInternal);
+        this.uniqueNames.forEach(function (key) {
+          self.getUniqueIndex(key, true).update(oldInternal, newInternal);
         });
 
         // operate the update
@@ -6139,23 +6145,23 @@
           this.maxId = (this.data[this.data.length - 1].$loki + 1);
         }
 
-        obj.$loki = this.maxId;
+        var newId = this.maxId;
+        obj.$loki = newId;
 
         if (!this.disableMeta) {
           obj.meta.version = 0;
         }
 
-        var key, constrUnique = this.constraints.unique;
-        for (key in constrUnique) {
-          if (hasOwnProperty.call(constrUnique, key)) {
-            constrUnique[key].set(obj);
-          }
+        for (var i = 0, len = this.uniqueNames.length; i < len; i ++) {
+          this.getUniqueIndex(this.uniqueNames[i], true).set(obj);
         }
 
-        // add new obj id to idIndex
-        this.idIndex.push(obj.$loki);
+        if (this.idIndex) {
+          this.idIndex.push(newId);
+        }
+
         if (this.isIncremental) {
-          this.dirtyIds.push(obj.$loki);
+          this.dirtyIds.push(newId);
         }
 
         // add the object
@@ -6166,14 +6172,14 @@
         // now that we can efficiently determine the data[] position of newly added document,
         // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
         var dvlen = this.DynamicViews.length;
-        for (var i = 0; i < dvlen; i++) {
+        for (i = 0; i < dvlen; i++) {
           this.DynamicViews[i].evaluateDocument(addedPos, true);
         }
 
         if (this.adaptiveBinaryIndices) {
           // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
           var bIndices = this.binaryIndices;
-          for (key in bIndices) {
+          for (var key in bIndices) {
             this.adaptiveBinaryIndexInsert(addedPos, key);
           }
         }
@@ -6254,6 +6260,7 @@
 
         // create hashobject for positional removal inclusion tests...
         // all keys defined in this hashobject represent $loki ids of the documents to remove.
+        this.ensureId();
         for (idx = 0; idx < len; idx++) {
           xo[this.idIndex[positions[idx]]] = true;
         }
@@ -6283,11 +6290,14 @@
           }
 
           if (uic) {
-            Object.keys(this.constraints.unique).forEach(function (key) {
-              for (idx = 0; idx < len; idx++) {
-                doc = self.data[positions[idx]];
-                if (doc[key] !== null && doc[key] !== undefined) {
-                  self.constraints.unique[key].remove(doc[key]);
+            this.uniqueNames.forEach(function (key) {
+              var index = self.getUniqueIndex(key);
+              if (index) {
+                for (idx = 0; idx < len; idx++) {
+                  doc = self.data[positions[idx]];
+                  if (doc[key] !== null && doc[key] !== undefined) {
+                    index.remove(doc[key]);
+                  }
                 }
               }
             });
@@ -6402,9 +6412,12 @@
           // obj = arr[0],
           position = arr[1];
         var self = this;
-        Object.keys(this.constraints.unique).forEach(function (key) {
+        this.uniqueNames.forEach(function (key) {
           if (doc[key] !== null && typeof doc[key] !== 'undefined') {
-            self.constraints.unique[key].remove(doc[key]);
+            var index = self.getUniqueIndex(key);
+            if (index) {
+              index.remove(doc[key]);
+            }
           }
         });
         // now that we can efficiently determine the data[] position of newly added document,
@@ -6469,6 +6482,10 @@
      * @memberof Collection
      */
     Collection.prototype.get = function (id, returnPosition) {
+      if (!this.idIndex) {
+        this.ensureId();
+      }
+
       var retpos = returnPosition || false,
         data = this.idIndex,
         max = data.length - 1,
@@ -6978,7 +6995,7 @@
         };
       }
 
-      var result = this.constraints.unique[field].get(value);
+      var result = this.getUniqueIndex(field, true).get(value);
       if (!this.cloneObjects) {
         return result;
       } else {

@@ -44,8 +44,6 @@ function checkDatabaseCopyIntegrity(source, copy) {
     copyCol.data.every(function(copyEl, elIndex) {
       expectEqual(copyEl, source.collections[i].data[elIndex])
     })
-
-    expectEqual(copyCol.idIndex, sourceCol.idIndex);
   })
 }
 

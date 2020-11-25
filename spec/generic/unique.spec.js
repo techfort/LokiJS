@@ -56,7 +56,6 @@ describe('Constraints', function () {
       username: null,
       name: 'Jack'
     });
-
     expect(Object.keys(coll3.constraints.unique.username.keyMap).length).toEqual(1);
   });
 
@@ -90,7 +89,7 @@ describe('Constraints', function () {
     expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(3);
     expect(coll.uniqueNames.length).toEqual(1);
     coll.clear();
-    expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(0);
+    expect(coll.constraints.unique.username).toBe(undefined);
     coll.insert({ username: 'joe', name: 'Joe' });
     coll.insert({ username: 'jack', name: 'Jack' });
     expect(Object.keys(coll.constraints.unique.username.keyMap).length).toEqual(2);
@@ -144,12 +143,12 @@ describe('Constraints', function () {
     keys.sort();
     // seems we don't delete the key but set its value to undefined
     expect(keys[0]).toEqual('Hel');
-    expect(typeof collection.constraints.unique["name"].keyMap['Hel'] === 'undefined').toEqual(true);
+    expect(typeof collection.constraints.unique.name.keyMap['Hel'] === 'undefined').toEqual(true);
     // the rest were re-added so they should not only exist but be undefined
     expect(keys[1]).toEqual('Jormungandr');
-    expect(typeof collection.constraints.unique["name"].keyMap['Jormungandr'] === 'undefined').toEqual(false);
+    expect(typeof collection.constraints.unique.name.keyMap['Jormungandr'] === 'undefined').toEqual(false);
     expect(keys[2]).toEqual('Sleipnir');
-    expect(typeof collection.constraints.unique["name"].keyMap['Sleipnir'] === 'undefined').toEqual(false);
+    expect(typeof collection.constraints.unique.name.keyMap['Sleipnir'] === 'undefined').toEqual(false);
   });
 
   it('chained batch updates should update constraints', function() {

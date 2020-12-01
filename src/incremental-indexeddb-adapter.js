@@ -100,7 +100,7 @@
         }
       }
 
-      // TODO: remove sanity checks when everything is fully tested
+      // verify
       var firstElement = collection.data[firstDataPosition];
       if (!(firstElement && firstElement.$loki >= minId && firstElement.$loki <= maxId)) {
         throw new Error("broken invariant firstelement");
@@ -115,7 +115,6 @@
       // will have holes when data is deleted)
       var chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1);
 
-      // TODO: remove sanity checks when everything is fully tested
       if (chunkData.length > this.chunkSize) {
         throw new Error("broken invariant - chunk size");
       }
@@ -246,7 +245,7 @@
 
         DEBUG && console.log("Found chunks:", chunks.length);
 
-        that._sortChunksInPlace(chunks);
+        sortChunksInPlace(chunks);
 
         // repack chunks into a map
         var loki;
@@ -296,7 +295,8 @@
         loki = JSON.parse(loki);
 
         // populate collections with data
-        that._populate(loki, chunkCollections);
+        var deserializeChunk = that.options.deserializeChunk;
+        populateLoki(loki, chunkCollections, deserializeChunk);
         chunkCollections = null;
 
         // remember previous version IDs
@@ -310,31 +310,7 @@
       });
     };
 
-    IncrementalIndexedDBAdapter.prototype._sortChunksInPlace = function(chunks) {
-      // sort chunks in place to load data in the right order (ascending loki ids)
-      // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
-      var getSortKey = function(object) {
-        var key = object.key;
-        if (key.includes(".")) {
-          var segments = key.split(".");
-          if (segments.length === 3 && segments[1] === "chunk") {
-            return parseInt(segments[2], 10);
-          }
-        }
-
-        return -1; // consistent type must be returned
-      };
-      chunks.sort(function(a, b) {
-        var aKey = getSortKey(a),
-          bKey = getSortKey(b);
-        if (aKey < bKey) return -1;
-        if (aKey > bKey) return 1;
-        return 0;
-      });
-    };
-
-    IncrementalIndexedDBAdapter.prototype._populate = function(loki, chunkCollections) {
-      var that = this;
+    function populateLoki(loki, chunkCollections, deserializeChunk) {
       loki.collections.forEach(function(collectionStub, i) {
         var chunkCollection = chunkCollections[collectionStub.name];
 
@@ -351,8 +327,8 @@
             chunkObj = null; // make string available for GC
             dataChunks[i] = null;
 
-            if (that.options.deserializeChunk) {
-              chunk = that.options.deserializeChunk(collection.name, chunk);
+            if (deserializeChunk) {
+              chunk = deserializeChunk(collection.name, chunk);
             }
 
             chunk.forEach(function(doc) {
@@ -559,6 +535,30 @@
       // that thinks a new version is the same as an earlier one, not globally unique)
       return Math.random().toString(36).substring(2);
     }
+
+    function _getSortKey(object) {
+      var key = object.key;
+      if (key.includes(".")) {
+        var segments = key.split(".");
+        if (segments.length === 3 && segments[1] === "chunk") {
+          return parseInt(segments[2], 10);
+        }
+      }
+
+      return -1; // consistent type must be returned
+    };
+
+    function sortChunksInPlace(chunks) {
+      // sort chunks in place to load data in the right order (ascending loki ids)
+      // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
+      chunks.sort(function(a, b) {
+        var aKey = _getSortKey(a),
+          bKey = _getSortKey(b);
+        if (aKey < bKey) return -1;
+        if (aKey > bKey) return 1;
+        return 0;
+      });
+    };
 
     return IncrementalIndexedDBAdapter;
   })();

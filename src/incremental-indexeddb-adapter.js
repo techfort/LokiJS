@@ -174,6 +174,7 @@
         if (collection.dirty) {
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
+          collection.idbVersionId = randomVersionId()
 
           var metadataChunk = JSON.stringify(collection);
           savedLength += metadataChunk.length;
@@ -188,6 +189,7 @@
       };
       loki.collections.forEach(prepareCollection);
 
+      loki.idbVersionId = randomVersionId()
       var serializedMetadata = JSON.stringify(loki);
       savedLength += serializedMetadata.length;
       loki = null; // allow GC of the DB copy
@@ -532,6 +534,13 @@
         console.error("Deleting database failed because it's blocked by another connection", e);
       };
     };
+
+    function randomVersionId() {
+      // Appears to have enough entropy for chunk version IDs
+      // (Only has to be different than enough of its own previous versions that there's no writer
+      // that thinks a new version is the same as an earlier one, not globally unique)
+      return Math.random().toString(36).substring(2);
+    }
 
     return IncrementalIndexedDBAdapter;
   })();

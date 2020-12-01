@@ -426,19 +426,23 @@
 
       this.operationInProgress = true;
 
+      DEBUG && console.log("save tx: begin")
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
+        DEBUG && console.log("save tx: complete")
         that.operationInProgress = false;
         DEBUG && console.timeEnd("exportDatabase");
         callback();
       };
 
       tx.onerror = function(e) {
+        DEBUG && console.log("save tx: error")
         that.operationInProgress = false;
         callback(e);
       };
 
       tx.onabort = function(e) {
+        DEBUG && console.log("save tx: abort")
         that.operationInProgress = false;
         callback(e);
       };

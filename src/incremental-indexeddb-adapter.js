@@ -49,6 +49,8 @@
       this.options = options || {};
       this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
+      this.prevLokiVersionId = null;
+      this.prevMetadataVersionIds = {};
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
@@ -220,16 +222,17 @@
       DEBUG && console.log("loadDatabase - begin");
       DEBUG && console.time("loadDatabase");
       this._getAllChunks(dbname, function(chunks) {
+        var finish = function (value) {
+          DEBUG && console.timeEnd("loadDatabase");
+          callback(value);
+        }
         if (!Array.isArray(chunks)) {
           // we got an error
-          DEBUG && console.timeEnd("loadDatabase");
-          callback(chunks);
+          return finish(chunks)
         }
 
         if (!chunks.length) {
-          DEBUG && console.timeEnd("loadDatabase");
-          callback(null);
-          return;
+          return finish(null)
         }
 
         DEBUG && console.log("Found chunks:", chunks.length);
@@ -271,12 +274,12 @@
           }
 
           console.error("Unknown chunk " + key);
-          callback(new Error("Invalid database - unknown chunk found"));
+          throw new Error("Invalid database - unknown chunk found");
         });
         chunks = null;
 
         if (!loki) {
-          callback(new Error("Invalid database - missing database metadata"));
+          return finish(new Error("Invalid database - missing database metadata"));
         }
 
         // parse Loki object
@@ -286,8 +289,15 @@
         that._populate(loki, chunkCollections);
         chunkCollections = null;
 
-        DEBUG && console.timeEnd("loadDatabase");
-        callback(loki);
+        // remember previous version IDs
+        // TODO: loadDatabase mutex
+        this.prevLokiVersionId = loki.idbVersionId || null
+        this.prevMetadataVersionIds = {}
+        loki.collections.forEach(function (collection) {
+          that.prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
+        })
+
+        return finish(loki);
       });
     };
 

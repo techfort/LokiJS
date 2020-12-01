@@ -175,7 +175,7 @@
         if (collection.dirty) {
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
-          collection.idbVersionId = randomVersionId()
+          collection.idbVersionId = randomVersionId();
 
           var metadataChunk = JSON.stringify(collection);
           savedLength += metadataChunk.length;
@@ -190,7 +190,7 @@
       };
       loki.collections.forEach(prepareCollection);
 
-      loki.idbVersionId = randomVersionId()
+      loki.idbVersionId = randomVersionId();
       var serializedMetadata = JSON.stringify(loki);
       savedLength += serializedMetadata.length;
       loki = null; // allow GC of the DB copy
@@ -232,16 +232,16 @@
         DEBUG && console.timeEnd("loadDatabase");
         that.operationInProgress = false;
         callback(value);
-      }
+      };
 
       this._getAllChunks(dbname, function(chunks) {
         try {
           if (!Array.isArray(chunks)) {
-            throw chunks // we have an error
+            throw chunks; // we have an error
           }
 
           if (!chunks.length) {
-            return finish(null)
+            return finish(null);
           }
 
           DEBUG && console.log("Found chunks:", chunks.length);
@@ -257,15 +257,17 @@
           chunks = null; // gc
 
           // remember previous version IDs
-          this._prevLokiVersionId = loki.idbVersionId || null
-          this._prevMetadataVersionIds = {}
+          that._prevLokiVersionId = loki.idbVersionId || null;
+          that._prevMetadataVersionIds = {};
           loki.collections.forEach(function (collection) {
-            that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
-          })
+            that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null;
+          });
 
           return finish(loki);
         } catch (error) {
-          return finish(error)
+          that._prevLokiVersionId = null;
+          that._prevMetadataVersionIds = {};
+          return finish(error);
         }
       });
     };
@@ -314,7 +316,7 @@
         throw new Error("Corrupted database - missing database metadata");
       }
 
-      return { loki: loki, chunkMap: chunkMap }
+      return { loki: loki, chunkMap: chunkMap };
     }
 
     function populateLoki(loki, chunkMap, deserializeChunk) {
@@ -323,7 +325,7 @@
 
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
-            throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name)
+            throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
           }
           var collection = JSON.parse(chunkCollection.metadata);
           chunkCollection.metadata = null;
@@ -346,7 +348,7 @@
           });
         }
       });
-    };
+    }
 
     IncrementalIndexedDBAdapter.prototype._initializeIDB = function(dbname, onError, onSuccess) {
       var that = this;
@@ -430,23 +432,23 @@
 
       this.operationInProgress = true;
 
-      DEBUG && console.log("save tx: begin")
+      DEBUG && console.log("save tx: begin");
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
-        DEBUG && console.log("save tx: complete")
+        DEBUG && console.log("save tx: complete");
         that.operationInProgress = false;
         DEBUG && console.timeEnd("exportDatabase");
         callback();
       };
 
       tx.onerror = function(e) {
-        DEBUG && console.log("save tx: error")
+        DEBUG && console.log("save tx: error");
         that.operationInProgress = false;
         callback(e);
       };
 
       tx.onabort = function(e) {
-        DEBUG && console.log("save tx: abort")
+        DEBUG && console.log("save tx: abort");
         that.operationInProgress = false;
         callback(e);
       };
@@ -509,8 +511,8 @@
       DEBUG && console.log("deleteDatabase - begin");
       DEBUG && console.time("deleteDatabase");
 
-      this._prevLokiVersionId = null
-      this._prevMetadataVersionIds = {}
+      this._prevLokiVersionId = null;
+      this._prevMetadataVersionIds = {};
 
       if (this.idb) {
         this.idb.close();
@@ -555,7 +557,7 @@
       }
 
       return -1; // consistent type must be returned
-    };
+    }
 
     function sortChunksInPlace(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
@@ -567,7 +569,7 @@
         if (aKey > bKey) return 1;
         return 0;
       });
-    };
+    }
 
     return IncrementalIndexedDBAdapter;
   })();

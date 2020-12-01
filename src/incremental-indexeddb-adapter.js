@@ -49,8 +49,8 @@
       this.options = options || {};
       this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
-      this.prevLokiVersionId = null;
-      this.prevMetadataVersionIds = {};
+      this._prevLokiVersionId = null;
+      this._prevMetadataVersionIds = {};
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
@@ -219,11 +219,20 @@
      */
     IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
       var that = this;
+
+      if (this.operationInProgress) {
+        throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
+      }
+
+      this.operationInProgress = true;
+
       DEBUG && console.log("loadDatabase - begin");
       DEBUG && console.time("loadDatabase");
+
       this._getAllChunks(dbname, function(chunks) {
         var finish = function (value) {
           DEBUG && console.timeEnd("loadDatabase");
+          that.operationInProgress = false;
           callback(value);
         }
         if (!Array.isArray(chunks)) {
@@ -274,6 +283,7 @@
           }
 
           console.error("Unknown chunk " + key);
+          // TODO: No way to catch this error
           throw new Error("Invalid database - unknown chunk found");
         });
         chunks = null;
@@ -290,11 +300,10 @@
         chunkCollections = null;
 
         // remember previous version IDs
-        // TODO: loadDatabase mutex
-        this.prevLokiVersionId = loki.idbVersionId || null
-        this.prevMetadataVersionIds = {}
+        this._prevLokiVersionId = loki.idbVersionId || null
+        this._prevMetadataVersionIds = {}
         loki.collections.forEach(function (collection) {
-          that.prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
+          that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
         })
 
         return finish(loki);
@@ -473,23 +482,15 @@
         return;
       }
 
-      if (this.operationInProgress) {
-        throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
-      }
-
-      this.operationInProgress = true;
-
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
 
       var request = tx.objectStore('LokiIncrementalData').getAll();
       request.onsuccess = function(e) {
-        that.operationInProgress = false;
         var chunks = e.target.result;
         callback(chunks);
       };
 
       request.onerror = function(e) {
-        that.operationInProgress = false;
         callback(e);
       };
 
@@ -522,6 +523,9 @@
       var that = this;
       DEBUG && console.log("deleteDatabase - begin");
       DEBUG && console.time("deleteDatabase");
+
+      this._prevLokiVersionId = null
+      this._prevMetadataVersionIds = {}
 
       if (this.idb) {
         this.idb.close();

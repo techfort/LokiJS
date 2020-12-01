@@ -142,8 +142,16 @@
       DEBUG && console.log("exportDatabase - begin");
       DEBUG && console.time("exportDatabase");
 
-      var chunksToSave = [];
-      var savedLength = 0;
+      var chunksToSave = this._lokiToChunks(loki);
+      loki = null; // allow gc
+
+      that._saveChunks(dbname, chunksToSave, callback);
+    };
+
+    IncrementalIndexedDBAdapter.prototype._lokiToChunks = function(loki) {
+      var that = this;
+      var chunks = [];
+      var savedSize = 0;
 
       var prepareCollection = function (collection, i) {
         // Find dirty chunk ids
@@ -161,10 +169,11 @@
             chunkData = that.options.serializeChunk(collection.name, chunkData);
           }
           // we must stringify now, because IDB is asynchronous, and underlying objects are mutable
-          // (and it's faster for some reason)
+          // In general, it's also faster to stringify, because we need serialization anyway, and
+          // JSON.stringify is much better optimized than IDB's structured clone
           chunkData = JSON.stringify(chunkData);
-          savedLength += chunkData.length;
-          chunksToSave.push({
+          savedSize += chunkData.length;
+          chunks.push({
             key: collection.name + ".chunk." + chunkId,
             value: chunkData,
           });
@@ -172,14 +181,14 @@
         dirtyChunks.forEach(prepareChunk);
 
         // save collection metadata as separate chunk (but only if changed)
-        if (collection.dirty) {
+        if (collection.dirty || dirtyChunks.size) {
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
           collection.idbVersionId = randomVersionId();
 
           var metadataChunk = JSON.stringify(collection);
-          savedLength += metadataChunk.length;
-          chunksToSave.push({
+          savedSize += metadataChunk.length;
+          chunks.push({
             key: collection.name + ".metadata",
             value: metadataChunk,
           });
@@ -192,13 +201,12 @@
 
       loki.idbVersionId = randomVersionId();
       var serializedMetadata = JSON.stringify(loki);
-      savedLength += serializedMetadata.length;
-      loki = null; // allow GC of the DB copy
+      savedSize += serializedMetadata.length;
 
-      chunksToSave.push({ key: "loki", value: serializedMetadata });
+      chunks.push({ key: "loki", value: serializedMetadata });
 
-      DEBUG && console.log("saved size: " + savedLength);
-      that._saveChunks(dbname, chunksToSave, callback);
+      DEBUG && console.log("saved size: " + savedSize);
+      return chunks
     };
 
     /**

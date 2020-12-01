@@ -133,18 +133,16 @@
      * db.saveDatabase();
      *
      * @param {string} dbname - the name to give the serialized database
-     * @param {object} dbcopy - copy of the Loki database
+     * @param {function} getLokiCopy - returns copy of the Loki database
      * @param {function} callback - (Optional) callback passed obj.success with true or false
      * @memberof IncrementalIndexedDBAdapter
      */
-    IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, loki, callback) {
+    IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, getLokiCopy, callback) {
       var that = this;
       DEBUG && console.log("exportDatabase - begin");
       DEBUG && console.time("exportDatabase");
 
-      var chunksToSave = this._lokiToChunks(loki);
-      loki = null; // allow gc
-
+      var chunksToSave = this._lokiToChunks(getLokiCopy());
       that._saveChunks(dbname, chunksToSave, callback);
     };
 

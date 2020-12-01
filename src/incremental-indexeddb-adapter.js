@@ -228,94 +228,103 @@
       DEBUG && console.log("loadDatabase - begin");
       DEBUG && console.time("loadDatabase");
 
+      var finish = function (value) {
+        DEBUG && console.timeEnd("loadDatabase");
+        that.operationInProgress = false;
+        callback(value);
+      }
+
       this._getAllChunks(dbname, function(chunks) {
-        var finish = function (value) {
-          DEBUG && console.timeEnd("loadDatabase");
-          that.operationInProgress = false;
-          callback(value);
-        }
-        if (!Array.isArray(chunks)) {
-          // we got an error
-          return finish(chunks)
-        }
-
-        if (!chunks.length) {
-          return finish(null)
-        }
-
-        DEBUG && console.log("Found chunks:", chunks.length);
-
-        sortChunksInPlace(chunks);
-
-        // repack chunks into a map
-        var loki;
-        var chunkCollections = {};
-
-        chunks.forEach(function(object) {
-          var key = object.key;
-          var value = object.value;
-          if (key === "loki") {
-            loki = value;
-            return;
-          } else if (key.includes(".")) {
-            var keySegments = key.split(".");
-            if (keySegments.length === 3 && keySegments[1] === "chunk") {
-              var colName = keySegments[0];
-              if (chunkCollections[colName]) {
-                chunkCollections[colName].dataChunks.push(value);
-              } else {
-                chunkCollections[colName] = {
-                  metadata: null,
-                  dataChunks: [value],
-                };
-              }
-              return;
-            } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
-              var name = keySegments[0];
-              if (chunkCollections[name]) {
-                chunkCollections[name].metadata = value;
-              } else {
-                chunkCollections[name] = { metadata: value, dataChunks: [] };
-              }
-              return;
-            }
+        try {
+          if (!Array.isArray(chunks)) {
+            throw chunks // we have an error
           }
 
-          console.error("Unknown chunk " + key);
-          // TODO: No way to catch this error
-          throw new Error("Invalid database - unknown chunk found");
-        });
-        chunks = null;
+          if (!chunks.length) {
+            return finish(null)
+          }
 
-        if (!loki) {
-          return finish(new Error("Invalid database - missing database metadata"));
+          DEBUG && console.log("Found chunks:", chunks.length);
+
+          // repack chunks into a map
+          chunks = chunksToMap(chunks);
+          var loki = JSON.parse(chunks.loki);
+          chunks.loki = null; // gc
+
+          // populate collections with data
+          var deserializeChunk = that.options.deserializeChunk;
+          populateLoki(loki, chunks.chunkMap, deserializeChunk);
+          chunks = null; // gc
+
+          // remember previous version IDs
+          this._prevLokiVersionId = loki.idbVersionId || null
+          this._prevMetadataVersionIds = {}
+          loki.collections.forEach(function (collection) {
+            that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
+          })
+
+          return finish(loki);
+        } catch (error) {
+          return finish(error)
         }
-
-        // parse Loki object
-        loki = JSON.parse(loki);
-
-        // populate collections with data
-        var deserializeChunk = that.options.deserializeChunk;
-        populateLoki(loki, chunkCollections, deserializeChunk);
-        chunkCollections = null;
-
-        // remember previous version IDs
-        this._prevLokiVersionId = loki.idbVersionId || null
-        this._prevMetadataVersionIds = {}
-        loki.collections.forEach(function (collection) {
-          that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null
-        })
-
-        return finish(loki);
       });
     };
 
-    function populateLoki(loki, chunkCollections, deserializeChunk) {
+    function chunksToMap(chunks) {
+      var loki;
+      var chunkMap = {};
+
+      sortChunksInPlace(chunks);
+
+      chunks.forEach(function(object) {
+        var key = object.key;
+        var value = object.value;
+        if (key === "loki") {
+          loki = value;
+          return;
+        } else if (key.includes(".")) {
+          var keySegments = key.split(".");
+          if (keySegments.length === 3 && keySegments[1] === "chunk") {
+            var colName = keySegments[0];
+            if (chunkMap[colName]) {
+              chunkMap[colName].dataChunks.push(value);
+            } else {
+              chunkMap[colName] = {
+                metadata: null,
+                dataChunks: [value],
+              };
+            }
+            return;
+          } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
+            var name = keySegments[0];
+            if (chunkMap[name]) {
+              chunkMap[name].metadata = value;
+            } else {
+              chunkMap[name] = { metadata: value, dataChunks: [] };
+            }
+            return;
+          }
+        }
+
+        console.error("Unknown chunk " + key);
+        throw new Error("Corrupted database - unknown chunk found");
+      });
+
+      if (!loki) {
+        throw new Error("Corrupted database - missing database metadata");
+      }
+
+      return { loki: loki, chunkMap: chunkMap }
+    }
+
+    function populateLoki(loki, chunkMap, deserializeChunk) {
       loki.collections.forEach(function(collectionStub, i) {
-        var chunkCollection = chunkCollections[collectionStub.name];
+        var chunkCollection = chunkMap[collectionStub.name];
 
         if (chunkCollection) {
-          // TODO: What if metadata is missing?
+          if (!chunkCollection.metadata) {
+            throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name)
+          }
           var collection = JSON.parse(chunkCollection.metadata);
           chunkCollection.metadata = null;
 

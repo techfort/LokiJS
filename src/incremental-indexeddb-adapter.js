@@ -139,11 +139,89 @@
      */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, getLokiCopy, callback) {
       var that = this;
+
+      if (!this.idb) {
+        this._initializeIDB(dbname, callback, function() {
+          that.saveDatabase(dbname, getLokiCopy, callback);
+        });
+        return;
+      }
+
+      if (this.operationInProgress) {
+        throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
+      }
+      this.operationInProgress = true;
+
       DEBUG && console.log("exportDatabase - begin");
       DEBUG && console.time("exportDatabase");
+      function finish(value) {
+        DEBUG && console.timeEnd("exportDatabase");
+        that.operationInProgress = false;
+        callback(value);
+      }
 
-      var chunkInfo = this._lokiToChunks(getLokiCopy());
-      that._saveChunks(dbname, chunkInfo, callback);
+      var updatePrevVersionIds = function () {
+        console.error('Unexpected successful tx - cannot update previous version ids');
+      };
+
+      DEBUG && console.log("save tx: begin");
+      var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
+      tx.oncomplete = function() {
+        updatePrevVersionIds();
+        DEBUG && console.log("save tx: complete");
+        return finish();
+      };
+
+      tx.onerror = function(e) {
+        DEBUG && console.log("save tx: error");
+        return finish(e);
+      };
+
+      tx.onabort = function(e) {
+        DEBUG && console.log("save tx: abort");
+        return finish(e);
+      };
+
+      var store = tx.objectStore('LokiIncrementalData');
+
+      function saveChunks(chunks) {
+        chunks.forEach(function(object) {
+          store.put(object);
+        });
+      }
+
+      var lokiReq = store.get('loki');
+      lokiReq.onsuccess = function(e) {
+        var loki = e.target.result;
+        console.log('Loki info: ', loki);
+        try {
+          if (loki) {
+            loki = JSON.parse(loki.value)
+            if (loki.idbVersionId === that._prevLokiVersionId) {
+              console.log('loki ok')
+            } else {
+              console.warn('--------> LOKI CHANGED!!!')
+            }
+          } else {
+            console.log('no loki')
+          }
+        } catch (error) {
+          console.error('could not unpack loki')
+        }
+
+        var chunkInfo = that._lokiToChunks(getLokiCopy());
+        updatePrevVersionIds = function() {
+          that._prevLokiVersionId = chunkInfo.lokiVersionId;
+          chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
+            that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+          });
+        };
+        saveChunks(chunkInfo.chunks);
+        console.log('chunks saved');
+      }
+      lokiReq.onerror = function(e) {
+        console.error('Getting loki failed: ', e)
+      }
     };
 
     IncrementalIndexedDBAdapter.prototype._lokiToChunks = function(loki) {
@@ -427,82 +505,6 @@
         console.error("IndexedDB open error", e);
         onError(e);
       };
-    };
-
-    IncrementalIndexedDBAdapter.prototype._saveChunks = function(dbname, chunkInfo, callback) {
-      var that = this;
-      if (!this.idb) {
-        this._initializeIDB(dbname, callback, function() {
-          that._saveChunks(dbname, chunkInfo, callback);
-        });
-        return;
-      }
-
-      if (this.operationInProgress) {
-        throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
-      }
-
-      this.operationInProgress = true;
-
-      DEBUG && console.log("save tx: begin");
-      var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
-      tx.oncomplete = function() {
-        that._prevLokiVersionId = chunkInfo.lokiVersionId;
-        chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
-          that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
-        })
-
-        DEBUG && console.log("save tx: complete");
-        that.operationInProgress = false;
-        DEBUG && console.timeEnd("exportDatabase");
-        callback();
-      };
-
-      tx.onerror = function(e) {
-        DEBUG && console.log("save tx: error");
-        that.operationInProgress = false;
-        callback(e);
-      };
-
-      tx.onabort = function(e) {
-        DEBUG && console.log("save tx: abort");
-        that.operationInProgress = false;
-        callback(e);
-      };
-
-      var store = tx.objectStore('LokiIncrementalData');
-
-      function saveChunks() {
-        chunkInfo.chunks.forEach(function(object) {
-          store.put(object);
-        });
-      }
-
-      var lokiReq = store.get('loki');
-      lokiReq.onsuccess = function(e) {
-        var loki = e.target.result;
-        console.log('Loki info: ', loki);
-        try {
-          if (loki) {
-            loki = JSON.parse(loki.value)
-            if (loki.idbVersionId === that._prevLokiVersionId) {
-              console.log('loki ok')
-            } else {
-              console.warn('--------> LOKI CHANGED!!!')
-            }
-          } else {
-            console.log('no loki')
-          }
-        } catch (error) {
-          console.error('could not unpack loki')
-        }
-
-        saveChunks();
-        console.log('chunks saved');
-      }
-      lokiReq.onerror = function(e) {
-        console.error('Getting loki failed: ', e)
-      }
     };
 
     IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {

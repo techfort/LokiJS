@@ -1,5 +1,9 @@
 # LokiJS
 
+The super fast in-memory javascript document oriented database.
+
+Enable offline-syncing to your SQL/NoSQL database servers with [SyncProxy](https://www.syncproxy.com) !! Code-free real time syncing, ideal for mobile, electron and web apps.
+
 [![Join the chat at https://gitter.im/techfort/LokiJS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/techfort/LokiJS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![alt CI-badge](https://travis-ci.org/techfort/LokiJS.svg?branch=master)
 [![npm version](https://badge.fury.io/js/lokijs.svg)](http://badge.fury.io/js/lokijs)

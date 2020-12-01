@@ -50,7 +50,7 @@
       this.chunkSize = 100;
       this.idb = null; // will be lazily loaded on first operation that needs it
       this._prevLokiVersionId = null;
-      this._prevMetadataVersionIds = {};
+      this._prevCollectionVersionIds = {};
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
@@ -142,13 +142,14 @@
       DEBUG && console.log("exportDatabase - begin");
       DEBUG && console.time("exportDatabase");
 
-      var chunksToSave = this._lokiToChunks(getLokiCopy());
-      that._saveChunks(dbname, chunksToSave, callback);
+      var chunkInfo = this._lokiToChunks(getLokiCopy());
+      that._saveChunks(dbname, chunkInfo, callback);
     };
 
     IncrementalIndexedDBAdapter.prototype._lokiToChunks = function(loki) {
       var that = this;
       var chunks = [];
+      var collectionVersionIds = [];
       var savedSize = 0;
 
       var prepareCollection = function (collection, i) {
@@ -183,6 +184,7 @@
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
           collection.idbVersionId = randomVersionId();
+          collectionVersionIds.push({ name: collection.name, versionId: collection.idbVersionId });
 
           var metadataChunk = JSON.stringify(collection);
           savedSize += metadataChunk.length;
@@ -204,7 +206,11 @@
       chunks.push({ key: "loki", value: serializedMetadata });
 
       DEBUG && console.log("saved size: " + savedSize);
-      return chunks
+      return {
+        chunks: chunks,
+        lokiVersionId: loki.idbVersionId,
+        collectionVersionIds: collectionVersionIds,
+      };
     };
 
     /**
@@ -264,15 +270,15 @@
 
           // remember previous version IDs
           that._prevLokiVersionId = loki.idbVersionId || null;
-          that._prevMetadataVersionIds = {};
+          that._prevCollectionVersionIds = {};
           loki.collections.forEach(function (collection) {
-            that._prevMetadataVersionIds[collection.name] = collection.idbVersionId || null;
+            that._prevCollectionVersionIds[collection.name] = collection.idbVersionId || null;
           });
 
           return finish(loki);
         } catch (error) {
           that._prevLokiVersionId = null;
-          that._prevMetadataVersionIds = {};
+          that._prevCollectionVersionIds = {};
           return finish(error);
         }
       });
@@ -423,11 +429,11 @@
       };
     };
 
-    IncrementalIndexedDBAdapter.prototype._saveChunks = function(dbname, chunks, callback) {
+    IncrementalIndexedDBAdapter.prototype._saveChunks = function(dbname, chunkInfo, callback) {
       var that = this;
       if (!this.idb) {
         this._initializeIDB(dbname, callback, function() {
-          that._saveChunks(dbname, chunks, callback);
+          that._saveChunks(dbname, chunkInfo, callback);
         });
         return;
       }
@@ -441,6 +447,11 @@
       DEBUG && console.log("save tx: begin");
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
+        that._prevLokiVersionId = chunkInfo.lokiVersionId;
+        chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
+          that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+        })
+
         DEBUG && console.log("save tx: complete");
         that.operationInProgress = false;
         DEBUG && console.timeEnd("exportDatabase");
@@ -461,9 +472,37 @@
 
       var store = tx.objectStore('LokiIncrementalData');
 
-      chunks.forEach(function(object) {
-        store.put(object);
-      });
+      function saveChunks() {
+        chunkInfo.chunks.forEach(function(object) {
+          store.put(object);
+        });
+      }
+
+      var lokiReq = store.get('loki');
+      lokiReq.onsuccess = function(e) {
+        var loki = e.target.result;
+        console.log('Loki info: ', loki);
+        try {
+          if (loki) {
+            loki = JSON.parse(loki.value)
+            if (loki.idbVersionId === that._prevLokiVersionId) {
+              console.log('loki ok')
+            } else {
+              console.warn('--------> LOKI CHANGED!!!')
+            }
+          } else {
+            console.log('no loki')
+          }
+        } catch (error) {
+          console.error('could not unpack loki')
+        }
+
+        saveChunks();
+        console.log('chunks saved');
+      }
+      lokiReq.onerror = function(e) {
+        console.error('Getting loki failed: ', e)
+      }
     };
 
     IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {
@@ -518,7 +557,7 @@
       DEBUG && console.time("deleteDatabase");
 
       this._prevLokiVersionId = null;
-      this._prevMetadataVersionIds = {};
+      this._prevCollectionVersionIds = {};
 
       if (this.idb) {
         this.idb.close();

@@ -155,7 +155,7 @@
       DEBUG && console.log("saveDatabase - begin");
       DEBUG && console.time("saveDatabase");
       function finish(e) {
-        DEBUG && e && console.error(e)
+        DEBUG && e && console.error(e);
         DEBUG && console.timeEnd("saveDatabase");
         that.operationInProgress = false;
         callback(e);
@@ -194,7 +194,7 @@
             that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
           });
         };
-        console.log('chunks saved');
+        DEBUG && console.log('chunks saved');
         tx.commit && tx.commit();
       }
 
@@ -213,9 +213,9 @@
           if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
             performSave();
           } else {
-            console.warn('--------> LOKI CHANGED!!! [slow path]')
+            DEBUG && console.warn('--------> LOKI CHANGED!!! [slow path]');
             // TODO: Get collection metadata chunks
-            getAllKeysThenSave()
+            getAllKeysThenSave();
           }
         }, function(e) {
           console.error('Getting loki chunk failed: ', e);
@@ -298,15 +298,15 @@
           for (var j = 0; j <= maxChunkId; j += 1) {
             prepareChunk(j);
           }
-          console.log('Saved chunks from 0 to ' + maxChunkId)
 
           // delete chunks with larger ids than what we have
           // NOTE: we don't have to delete metadata chunks as they will be absent from loki anyway
           // NOTE: failures are silently ignored, so we don't have to worry about holes
           var persistedMaxChunkId = maxChunkIds[collection.name] || 0;
-          for (var j = maxChunkId + 1; j <= persistedMaxChunkId; j += 1) {
-            idbStore.delete(collection.name + ".chunk." + j);
-            console.log('Deleted chunk: ' + collection.name + ".chunk." + j);
+          for (var k = maxChunkId + 1; k <= persistedMaxChunkId; k += 1) {
+            var deletedChunkName = collection.name + ".chunk." + k;
+            idbStore.delete(deletedChunkName);
+            DEBUG && console.warn('Deleted chunk: ' + deletedChunkName);
           }
         }
 

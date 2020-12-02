@@ -2731,8 +2731,8 @@
           this.filename,
           function getLokiCopy() {
             if (cachedDirty) {
-              cFun(new Error('adapter error - getLokiCopy called more than once'))
-              return
+              cFun(new Error('adapter error - getLokiCopy called more than once'));
+              return;
             }
             var lokiCopy = self.copy({ removeNonSerializable: true });
 
@@ -2745,7 +2745,7 @@
               col.dirty = false;
               col.dirtyIds = [];
             });
-            return lokiCopy
+            return lokiCopy;
           },
           function exportDatabaseCallback(err) {
             if (err && cachedDirty) {
@@ -2757,8 +2757,7 @@
               });
             }
             cFun(err);
-          },
-        );
+          });
       } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // TODO: dirty should be cleared here
         // filename may seem redundant but loadDatabase will need to expect this same filename

@@ -111,7 +111,8 @@ describe('IncrementalIndexedDBAdapter', function () {
 
     // simulate save - don't go through IDB, just check that logic is good
     var callCallback;
-    adapter.saveDatabase = function(dbname, loki, callback) {
+    adapter.saveDatabase = function(dbname, getLokiCopy, callback) {
+      getLokiCopy();
       callCallback = callback;
     };
 

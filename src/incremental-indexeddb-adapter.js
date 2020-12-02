@@ -154,10 +154,11 @@
 
       DEBUG && console.log("saveDatabase - begin");
       DEBUG && console.time("saveDatabase");
-      function finish(value) {
+      function finish(e) {
+        DEBUG && e && console.error(e)
         DEBUG && console.timeEnd("saveDatabase");
         that.operationInProgress = false;
-        callback(value);
+        callback(e);
       }
 
       var updatePrevVersionIds = function () {
@@ -184,8 +185,9 @@
 
       var store = tx.objectStore('LokiIncrementalData');
 
-      var performSave = function(incremental) {
-        var chunkInfo = that._putInChunks(getLokiCopy(), incremental, store);
+      function performSave(maxChunkIds) {
+        var incremental = !maxChunkIds;
+        var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
         updatePrevVersionIds = function() {
           that._prevLokiVersionId = chunkInfo.lokiVersionId;
           chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
@@ -194,24 +196,55 @@
         };
         console.log('chunks saved');
         tx.commit && tx.commit();
-      };
+      }
 
-      var lokiReq = store.get('loki');
-      lokiReq.onsuccess = function(e) {
-        if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
-          performSave(true);
-        } else {
-          console.warn('--------> LOKI CHANGED!!! [slow path]')
-          // TODO: Get collection metadata chunks
-          // TODO: Get all key names so we can check if we might have to delete something
-          performSave(false);
-        }
-      };
-      lokiReq.onerror = function(e) {
-        console.error('Getting loki chunk failed: ', e);
-        tx.abort();
-      };
+      function getAllKeysThenSave() {
+        idbReq(store.getAllKeys(), function(e) {
+          var maxChunkIds = getMaxChunkIds(e.target.result);
+          performSave(maxChunkIds);
+        }, function(e) {
+          console.error('Getting all keys failed: ', e);
+          tx.abort();
+        });
+      }
+
+      function getLokiThenSave() {
+        idbReq(store.get('loki'), function(e) {
+          if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
+            performSave();
+          } else {
+            console.warn('--------> LOKI CHANGED!!! [slow path]')
+            // TODO: Get collection metadata chunks
+            getAllKeysThenSave()
+          }
+        }, function(e) {
+          console.error('Getting loki chunk failed: ', e);
+          tx.abort();
+        });
+      }
+
+      getLokiThenSave();
     };
+
+    // gets current largest chunk ID for each collection
+    function getMaxChunkIds(allKeys) {
+      var maxChunkIds = {};
+
+      allKeys.forEach(function (key) {
+        var keySegments = key.split(".");
+        // table.chunk.2317
+        if (keySegments.length === 3 && keySegments[1] === "chunk") {
+          var collection = keySegments[0];
+          var chunkId = parseInt(keySegments[2]) || 0;
+          var currentMax = maxChunkIds[collection];
+
+          if (!currentMax || chunkId > currentMax) {
+            maxChunkIds[collection] = chunkId;
+          }
+        }
+      });
+      return maxChunkIds;
+    }
 
     function lokiChunkVersionId(chunk) {
       try {
@@ -227,7 +260,7 @@
       }
     }
 
-    IncrementalIndexedDBAdapter.prototype._putInChunks = function(loki, incremental, idbStore) {
+    IncrementalIndexedDBAdapter.prototype._putInChunks = function(idbStore, loki, incremental, maxChunkIds) {
       var that = this;
       var collectionVersionIds = [];
       var savedSize = 0;
@@ -264,6 +297,16 @@
           var maxChunkId = (collection.maxId / that.chunkSize) | 0;
           for (var j = 0; j <= maxChunkId; j += 1) {
             prepareChunk(j);
+          }
+          console.log('Saved chunks from 0 to ' + maxChunkId)
+
+          // delete chunks with larger ids than what we have
+          // NOTE: we don't have to delete metadata chunks as they will be absent from loki anyway
+          // NOTE: failures are silently ignored, so we don't have to worry about holes
+          var persistedMaxChunkId = maxChunkIds[collection.name] || 0;
+          for (var j = maxChunkId + 1; j <= persistedMaxChunkId; j += 1) {
+            idbStore.delete(collection.name + ".chunk." + j);
+            console.log('Deleted chunk: ' + collection.name + ".chunk." + j);
           }
         }
 
@@ -625,6 +668,12 @@
         if (aKey > bKey) return 1;
         return 0;
       });
+    }
+
+    function idbReq(request, onsuccess, onerror) {
+      request.onsuccess = onsuccess;
+      request.onerror = onerror;
+      return request;
     }
 
     return IncrementalIndexedDBAdapter;

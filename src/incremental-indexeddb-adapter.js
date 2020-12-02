@@ -152,10 +152,10 @@
       }
       this.operationInProgress = true;
 
-      DEBUG && console.log("exportDatabase - begin");
-      DEBUG && console.time("exportDatabase");
+      DEBUG && console.log("saveDatabase - begin");
+      DEBUG && console.time("saveDatabase");
       function finish(value) {
-        DEBUG && console.timeEnd("exportDatabase");
+        DEBUG && console.timeEnd("saveDatabase");
         that.operationInProgress = false;
         callback(value);
       }
@@ -184,15 +184,8 @@
 
       var store = tx.objectStore('LokiIncrementalData');
 
-      var lokiReq = store.get('loki');
-      lokiReq.onsuccess = function(e) {
-        if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
-          console.log('loki ok')
-        } else {
-          console.warn('--------> LOKI CHANGED!!!')
-        }
-
-        var chunkInfo = that._putInChunks(getLokiCopy(), store);
+      var performSave = function(incremental) {
+        var chunkInfo = that._putInChunks(getLokiCopy(), incremental, store);
         updatePrevVersionIds = function() {
           that._prevLokiVersionId = chunkInfo.lokiVersionId;
           chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
@@ -200,10 +193,23 @@
           });
         };
         console.log('chunks saved');
-      }
+        tx.commit && tx.commit();
+      };
+
+      var lokiReq = store.get('loki');
+      lokiReq.onsuccess = function(e) {
+        if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
+          performSave(true);
+        } else {
+          console.warn('--------> LOKI CHANGED!!! [slow path]')
+          // TODO: Get collection metadata chunks
+          // TODO: Get all key names so we can check if we might have to delete something
+          performSave(false);
+        }
+      };
       lokiReq.onerror = function(e) {
         console.error('Getting loki chunk failed: ', e);
-        tx.abort()
+        tx.abort();
       };
     };
 
@@ -221,7 +227,7 @@
       }
     }
 
-    IncrementalIndexedDBAdapter.prototype._putInChunks = function(loki, idbStore) {
+    IncrementalIndexedDBAdapter.prototype._putInChunks = function(loki, incremental, idbStore) {
       var that = this;
       var collectionVersionIds = [];
       var savedSize = 0;
@@ -229,7 +235,7 @@
       var prepareCollection = function (collection, i) {
         // Find dirty chunk ids
         var dirtyChunks = new Set();
-        collection.dirtyIds.forEach(function(lokiId) {
+        incremental && collection.dirtyIds.forEach(function(lokiId) {
           var chunkId = (lokiId / that.chunkSize) | 0;
           dirtyChunks.add(chunkId);
         });
@@ -251,10 +257,18 @@
             value: chunkData,
           });
         };
-        dirtyChunks.forEach(prepareChunk);
+        if (incremental) {
+          dirtyChunks.forEach(prepareChunk);
+        } else {
+          // add all chunks
+          var maxChunkId = (collection.maxId / that.chunkSize) | 0;
+          for (var j = 0; j <= maxChunkId; j += 1) {
+            prepareChunk(j);
+          }
+        }
 
         // save collection metadata as separate chunk (but only if changed)
-        if (collection.dirty || dirtyChunks.size) {
+        if (collection.dirty || dirtyChunks.size || !incremental) {
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
           collection.idbVersionId = randomVersionId();

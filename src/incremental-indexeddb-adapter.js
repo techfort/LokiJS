@@ -184,49 +184,45 @@
 
       var store = tx.objectStore('LokiIncrementalData');
 
-      function saveChunks(chunks) {
-        chunks.forEach(function(object) {
-          store.put(object);
-        });
-      }
-
       var lokiReq = store.get('loki');
       lokiReq.onsuccess = function(e) {
-        var loki = e.target.result;
-        console.log('Loki info: ', loki);
-        try {
-          if (loki) {
-            loki = JSON.parse(loki.value)
-            if (loki.idbVersionId === that._prevLokiVersionId) {
-              console.log('loki ok')
-            } else {
-              console.warn('--------> LOKI CHANGED!!!')
-            }
-          } else {
-            console.log('no loki')
-          }
-        } catch (error) {
-          console.error('could not unpack loki')
+        if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
+          console.log('loki ok')
+        } else {
+          console.warn('--------> LOKI CHANGED!!!')
         }
 
-        var chunkInfo = that._lokiToChunks(getLokiCopy());
+        var chunkInfo = that._putInChunks(getLokiCopy(), store);
         updatePrevVersionIds = function() {
           that._prevLokiVersionId = chunkInfo.lokiVersionId;
           chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
             that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
           });
         };
-        saveChunks(chunkInfo.chunks);
         console.log('chunks saved');
       }
       lokiReq.onerror = function(e) {
-        console.error('Getting loki failed: ', e)
-      }
+        console.error('Getting loki chunk failed: ', e);
+        tx.abort()
+      };
     };
 
-    IncrementalIndexedDBAdapter.prototype._lokiToChunks = function(loki) {
+    function lokiChunkVersionId(chunk) {
+      try {
+        if (chunk) {
+          var loki = JSON.parse(chunk.value);
+          return loki.idbVersionId || null;
+        } else {
+          return null;
+        }
+      } catch (e) {
+        console.error('Error while parsing loki chunk', e);
+        return null;
+      }
+    }
+
+    IncrementalIndexedDBAdapter.prototype._putInChunks = function(loki, idbStore) {
       var that = this;
-      var chunks = [];
       var collectionVersionIds = [];
       var savedSize = 0;
 
@@ -250,7 +246,7 @@
           // JSON.stringify is much better optimized than IDB's structured clone
           chunkData = JSON.stringify(chunkData);
           savedSize += chunkData.length;
-          chunks.push({
+          idbStore.put({
             key: collection.name + ".chunk." + chunkId,
             value: chunkData,
           });
@@ -266,7 +262,7 @@
 
           var metadataChunk = JSON.stringify(collection);
           savedSize += metadataChunk.length;
-          chunks.push({
+          idbStore.put({
             key: collection.name + ".metadata",
             value: metadataChunk,
           });
@@ -281,11 +277,10 @@
       var serializedMetadata = JSON.stringify(loki);
       savedSize += serializedMetadata.length;
 
-      chunks.push({ key: "loki", value: serializedMetadata });
+      idbStore.put({ key: "loki", value: serializedMetadata });
 
       DEBUG && console.log("saved size: " + savedSize);
       return {
-        chunks: chunks,
         lokiVersionId: loki.idbVersionId,
         collectionVersionIds: collectionVersionIds,
       };

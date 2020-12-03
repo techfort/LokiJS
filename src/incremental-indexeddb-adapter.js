@@ -186,21 +186,17 @@
       var store = tx.objectStore('LokiIncrementalData');
 
       function performSave(maxChunkIds) {
-        try {
-          var incremental = !maxChunkIds;
-          var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
-          updatePrevVersionIds = function() {
-            that._prevLokiVersionId = chunkInfo.lokiVersionId;
-            chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
-              that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
-            });
-          };
-          DEBUG && console.log('chunks saved');
-          tx.commit && tx.commit();
-        } catch (error) {
-          console.error('Error while saving to idb', error);
-          tx.abort();
-        }
+        var incremental = !maxChunkIds;
+        var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
+        // Update last seen version IDs, but only after the transaction is successful
+        updatePrevVersionIds = function() {
+          that._prevLokiVersionId = chunkInfo.lokiVersionId;
+          chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
+            that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+          });
+        };
+        DEBUG && console.log('chunks saved');
+        tx.commit && tx.commit();
       }
 
       // Incrementally saving changed chunks breaks down if there is more than one writer to IDB
@@ -217,8 +213,13 @@
         // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
         // chunks whan we did -- if so, we must delete them.
         idbReq(store.getAllKeys(), function(e) {
-          var maxChunkIds = getMaxChunkIds(e.target.result);
-          performSave(maxChunkIds);
+          try {
+            var maxChunkIds = getMaxChunkIds(e.target.result);
+            performSave(maxChunkIds);
+          } catch (error) {
+            console.error('Error while saving to idb', error);
+            tx.abort();
+          }
         }, function(e) {
           console.error('Getting all keys failed: ', e);
           tx.abort();

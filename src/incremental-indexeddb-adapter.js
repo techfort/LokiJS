@@ -165,21 +165,17 @@
         console.error('Unexpected successful tx - cannot update previous version ids');
       };
 
-      DEBUG && console.log("save tx: begin");
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
         updatePrevVersionIds();
-        DEBUG && console.log("save tx: complete");
         return finish();
       };
 
       tx.onerror = function(e) {
-        DEBUG && console.log("save tx: error");
         return finish(e);
       };
 
       tx.onabort = function(e) {
-        DEBUG && console.log("save tx: abort");
         return finish(e);
       };
 
@@ -213,13 +209,8 @@
         // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
         // chunks whan we did -- if so, we must delete them.
         idbReq(store.getAllKeys(), function(e) {
-          try {
-            var maxChunkIds = getMaxChunkIds(e.target.result);
-            performSave(maxChunkIds);
-          } catch (error) {
-            console.error('Error while saving to idb', error);
-            tx.abort();
-          }
+          var maxChunkIds = getMaxChunkIds(e.target.result);
+          performSave(maxChunkIds);
         }, function(e) {
           console.error('Getting all keys failed: ', e);
           tx.abort();
@@ -231,7 +222,7 @@
           if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
             performSave();
           } else {
-            DEBUG && console.warn('--------> LOKI CHANGED!!! [slow path]');
+            DEBUG && console.warn('Another writer changed Loki IDB, using slow path...');
             getAllKeysThenSave();
           }
         }, function(e) {
@@ -685,7 +676,13 @@
     }
 
     function idbReq(request, onsuccess, onerror) {
-      request.onsuccess = onsuccess;
+      request.onsuccess = function (e) {
+        try {
+          return onsuccess(e)
+        } catch (error) {
+          onerror(error)
+        }
+      };
       request.onerror = onerror;
       return request;
     }

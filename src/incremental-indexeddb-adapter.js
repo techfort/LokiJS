@@ -182,17 +182,22 @@
       var store = tx.objectStore('LokiIncrementalData');
 
       function performSave(maxChunkIds) {
-        var incremental = !maxChunkIds;
-        var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
-        // Update last seen version IDs, but only after the transaction is successful
-        updatePrevVersionIds = function() {
-          that._prevLokiVersionId = chunkInfo.lokiVersionId;
-          chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
-            that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
-          });
-        };
-        DEBUG && console.log('chunks saved');
-        tx.commit && tx.commit();
+        try {
+          var incremental = !maxChunkIds;
+          var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
+          // Update last seen version IDs, but only after the transaction is successful
+          updatePrevVersionIds = function() {
+            that._prevLokiVersionId = chunkInfo.lokiVersionId;
+            chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
+              that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+            });
+          };
+          DEBUG && console.log('chunks saved');
+          tx.commit && tx.commit();
+        } catch (error) {
+          console.error('idb performSave failed: ', error);
+          tx.abort();
+        }
       }
 
       // Incrementally saving changed chunks breaks down if there is more than one writer to IDB
@@ -678,9 +683,9 @@
     function idbReq(request, onsuccess, onerror) {
       request.onsuccess = function (e) {
         try {
-          return onsuccess(e)
+          return onsuccess(e);
         } catch (error) {
-          onerror(error)
+          onerror(error);
         }
       };
       request.onerror = onerror;

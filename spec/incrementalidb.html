@@ -95,7 +95,8 @@ async function startTests(divElement)
 
   indexedDB.deleteDatabase("incremental_idb_tester")
 
-  let adapter = new IncrementalIndexedDBAdapter()
+  let idbOverwriteCount = 0;
+  let adapter = new IncrementalIndexedDBAdapter({ onDidOverwrite: () => { idbOverwriteCount += 1 } })
   let db = new loki('incremental_idb_tester', { adapter: adapter });
 
   let col1 = db.addCollection('test_collection', {
@@ -191,8 +192,13 @@ async function startTests(divElement)
   trace('==> test concurrent writers integrity')
 
   {
-    let db2 = new loki('incremental_idb_tester', { adapter: new IncrementalIndexedDBAdapter() });
+    let idb2OverwriteCount = 0;
+    let db2 = new loki('incremental_idb_tester', { adapter: new IncrementalIndexedDBAdapter({
+      onDidOverwrite: () => { idb2OverwriteCount += 1 }
+    }) });
     await loadLoki(db2)
+    expectToBe(idbOverwriteCount, 0);
+    expectToBe(idb2OverwriteCount, 0);
 
     for (let i = 0; i < 200; i++) {
       db2.getCollection('test_collection').insert({ mass: true, i, blah: 'hello' })
@@ -223,6 +229,10 @@ async function startTests(divElement)
 
     await saveAndCheckDatabaseCopyIntegrity(db2)
     await saveAndCheckDatabaseCopyIntegrity(db)
+    await saveAndCheckDatabaseCopyIntegrity(db)
+
+    expectToBe(idbOverwriteCount, 3);
+    expectToBe(idb2OverwriteCount, 2);
 
     trace('ok')
   }

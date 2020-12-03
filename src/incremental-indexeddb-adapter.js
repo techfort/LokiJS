@@ -37,6 +37,9 @@
      *     (most likely database deleted from another browser tab)
      * @param {function} options.onFetchStart Function to call once IDB load has begun.
      *     Use this as an opportunity to execute code concurrently while IDB does work on a separate thread
+     * @param {function} options.onDidOverwrite Called when this adapter is forced to overwrite contents
+     *     of IndexedDB. This happens if there's another open tab of the same app that's making changes.
+     *     You might use it as an opportunity to alert user to the potential loss of data
      * @param {function} options.serializeChunk Called with a chunk (array of Loki documents) before
      *     it's saved to IndexedDB. You can use it to manually compress on-disk representation
      *     for faster database loads. Hint: Hand-written conversion of objects to arrays is very
@@ -164,19 +167,23 @@
       var updatePrevVersionIds = function () {
         console.error('Unexpected successful tx - cannot update previous version ids');
       };
+      var didOverwrite = false;
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
       tx.oncomplete = function() {
         updatePrevVersionIds();
-        return finish();
+        finish();
+        if (didOverwrite && that.options.onDidOverwrite) {
+          that.options.onDidOverwrite();
+        }
       };
 
       tx.onerror = function(e) {
-        return finish(e);
+        finish(e);
       };
 
       tx.onabort = function(e) {
-        return finish(e);
+        finish(e);
       };
 
       var store = tx.objectStore('LokiIncrementalData');
@@ -228,6 +235,7 @@
             performSave();
           } else {
             DEBUG && console.warn('Another writer changed Loki IDB, using slow path...');
+            didOverwrite = true;
             getAllKeysThenSave();
           }
         }, function(e) {

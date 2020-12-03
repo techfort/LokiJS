@@ -199,7 +199,6 @@
               that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
             });
           };
-          DEBUG && console.log('chunks saved');
           tx.commit && tx.commit();
         } catch (error) {
           console.error('idb performSave failed: ', error);

@@ -164,86 +164,93 @@
         callback(e);
       }
 
-      var updatePrevVersionIds = function () {
-        console.error('Unexpected successful tx - cannot update previous version ids');
-      };
-      var didOverwrite = false;
+      // try..catch is required, e.g.:
+      // InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.
+      // (this may happen if another tab has called deleteDatabase)
+      try {
+        var updatePrevVersionIds = function () {
+          console.error('Unexpected successful tx - cannot update previous version ids');
+        };
+        var didOverwrite = false;
 
-      var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
-      tx.oncomplete = function() {
-        updatePrevVersionIds();
-        finish();
-        if (didOverwrite && that.options.onDidOverwrite) {
-          that.options.onDidOverwrite();
-        }
-      };
-
-      tx.onerror = function(e) {
-        finish(e);
-      };
-
-      tx.onabort = function(e) {
-        finish(e);
-      };
-
-      var store = tx.objectStore('LokiIncrementalData');
-
-      function performSave(maxChunkIds) {
-        try {
-          var incremental = !maxChunkIds;
-          var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
-          // Update last seen version IDs, but only after the transaction is successful
-          updatePrevVersionIds = function() {
-            that._prevLokiVersionId = chunkInfo.lokiVersionId;
-            chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
-              that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
-            });
-          };
-          tx.commit && tx.commit();
-        } catch (error) {
-          console.error('idb performSave failed: ', error);
-          tx.abort();
-        }
-      }
-
-      // Incrementally saving changed chunks breaks down if there is more than one writer to IDB
-      // (multiple tabs of the same web app), leading to data corruption. To fix that, we save all
-      // metadata chunks (loki + collections) with a unique ID on each save and remember it. Before
-      // the subsequent save, we read loki from IDB to check if its version ID changed. If not, we're
-      // guaranteed that persisted DB is consistent with our diff. Otherwise, we fall back to the slow
-      // path and overwrite *all* database chunks with our version. Both reading and writing must
-      // happen in the same IDB transaction for this to work.
-      // TODO: We can optimize the slow path by fetching collection metadata chunks and comparing their
-      // version IDs with those last seen by us. Since any change in collection data requires a metadata
-      // chunk save, we're guaranteed that if the IDs match, we don't need to overwrite chukns of this collection
-      function getAllKeysThenSave() {
-        // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
-        // chunks whan we did -- if so, we must delete them.
-        idbReq(store.getAllKeys(), function(e) {
-          var maxChunkIds = getMaxChunkIds(e.target.result);
-          performSave(maxChunkIds);
-        }, function(e) {
-          console.error('Getting all keys failed: ', e);
-          tx.abort();
-        });
-      }
-
-      function getLokiThenSave() {
-        idbReq(store.get('loki'), function(e) {
-          if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
-            performSave();
-          } else {
-            DEBUG && console.warn('Another writer changed Loki IDB, using slow path...');
-            didOverwrite = true;
-            getAllKeysThenSave();
+        var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
+        tx.oncomplete = function() {
+          updatePrevVersionIds();
+          finish();
+          if (didOverwrite && that.options.onDidOverwrite) {
+            that.options.onDidOverwrite();
           }
-        }, function(e) {
-          console.error('Getting loki chunk failed: ', e);
-          tx.abort();
-        });
-      }
+        };
 
-      getLokiThenSave();
+        tx.onerror = function(e) {
+          finish(e);
+        };
+
+        tx.onabort = function(e) {
+          finish(e);
+        };
+
+        var store = tx.objectStore('LokiIncrementalData');
+
+        function performSave(maxChunkIds) {
+          try {
+            var incremental = !maxChunkIds;
+            var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
+            // Update last seen version IDs, but only after the transaction is successful
+            updatePrevVersionIds = function() {
+              that._prevLokiVersionId = chunkInfo.lokiVersionId;
+              chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
+                that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+              });
+            };
+            tx.commit && tx.commit();
+          } catch (error) {
+            console.error('idb performSave failed: ', error);
+            tx.abort();
+          }
+        }
+
+        // Incrementally saving changed chunks breaks down if there is more than one writer to IDB
+        // (multiple tabs of the same web app), leading to data corruption. To fix that, we save all
+        // metadata chunks (loki + collections) with a unique ID on each save and remember it. Before
+        // the subsequent save, we read loki from IDB to check if its version ID changed. If not, we're
+        // guaranteed that persisted DB is consistent with our diff. Otherwise, we fall back to the slow
+        // path and overwrite *all* database chunks with our version. Both reading and writing must
+        // happen in the same IDB transaction for this to work.
+        // TODO: We can optimize the slow path by fetching collection metadata chunks and comparing their
+        // version IDs with those last seen by us. Since any change in collection data requires a metadata
+        // chunk save, we're guaranteed that if the IDs match, we don't need to overwrite chukns of this collection
+        function getAllKeysThenSave() {
+          // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
+          // chunks whan we did -- if so, we must delete them.
+          idbReq(store.getAllKeys(), function(e) {
+            var maxChunkIds = getMaxChunkIds(e.target.result);
+            performSave(maxChunkIds);
+          }, function(e) {
+            console.error('Getting all keys failed: ', e);
+            tx.abort();
+          });
+        }
+
+        function getLokiThenSave() {
+          idbReq(store.get('loki'), function(e) {
+            if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
+              performSave();
+            } else {
+              DEBUG && console.warn('Another writer changed Loki IDB, using slow path...');
+              didOverwrite = true;
+              getAllKeysThenSave();
+            }
+          }, function(e) {
+            console.error('Getting loki chunk failed: ', e);
+            tx.abort();
+          });
+        }
+
+        getLokiThenSave();
+      } catch (error) {
+        finish(error);
+      }
     };
 
     // gets current largest chunk ID for each collection

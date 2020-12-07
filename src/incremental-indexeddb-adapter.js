@@ -561,6 +561,11 @@
         DEBUG && console.log("init success");
 
         db.onversionchange = function(versionChangeEvent) {
+          // Ignore if database was deleted and recreated in the meantime
+          if (that.idb !== db) {
+            return;
+          }
+
           DEBUG && console.log('IDB version change', versionChangeEvent);
           // This function will be called if another connection changed DB version
           // (Most likely database was deleted from another browser tab, unless there's a new version
@@ -568,7 +573,8 @@
           // We must close the database to avoid blocking concurrent deletes.
           // The database will be unusable after this. Be sure to supply `onversionchange` option
           // to force logout
-          db.close();
+          that.idb.close();
+          that.idb = null;
           if (that.options.onversionchange) {
             that.options.onversionchange(versionChangeEvent);
           }

@@ -192,7 +192,7 @@
 
         var store = tx.objectStore('LokiIncrementalData');
 
-        function performSave(maxChunkIds) {
+        var performSave = function (maxChunkIds) {
           try {
             var incremental = !maxChunkIds;
             var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
@@ -208,7 +208,7 @@
             console.error('idb performSave failed: ', error);
             tx.abort();
           }
-        }
+        };
 
         // Incrementally saving changed chunks breaks down if there is more than one writer to IDB
         // (multiple tabs of the same web app), leading to data corruption. To fix that, we save all
@@ -220,7 +220,7 @@
         // TODO: We can optimize the slow path by fetching collection metadata chunks and comparing their
         // version IDs with those last seen by us. Since any change in collection data requires a metadata
         // chunk save, we're guaranteed that if the IDs match, we don't need to overwrite chukns of this collection
-        function getAllKeysThenSave() {
+        var getAllKeysThenSave = function() {
           // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
           // chunks whan we did -- if so, we must delete them.
           idbReq(store.getAllKeys(), function(e) {
@@ -230,9 +230,9 @@
             console.error('Getting all keys failed: ', e);
             tx.abort();
           });
-        }
+        };
 
-        function getLokiThenSave() {
+        var getLokiThenSave = function() {
           idbReq(store.get('loki'), function(e) {
             if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
               performSave();
@@ -245,7 +245,7 @@
             console.error('Getting loki chunk failed: ', e);
             tx.abort();
           });
-        }
+        };
 
         getLokiThenSave();
       } catch (error) {
@@ -312,7 +312,7 @@
           // JSON.stringify is much better optimized than IDB's structured clone
           chunkData = JSON.stringify(chunkData);
           savedSize += chunkData.length;
-          DEBUG && incremental && console.log(`Saving: ${collection.name + ".chunk." + chunkId}`);
+          DEBUG && incremental && console.log('Saving: ' + collection.name + ".chunk." + chunkId);
           idbStore.put({
             key: collection.name + ".chunk." + chunkId,
             value: chunkData,
@@ -347,7 +347,7 @@
 
           var metadataChunk = JSON.stringify(collection);
           savedSize += metadataChunk.length;
-          DEBUG && incremental && console.log(`Saving: ${collection.name + ".metadata"}`);
+          DEBUG && incremental && console.log('Saving: ' + collection.name + ".metadata");
           idbStore.put({
             key: collection.name + ".metadata",
             value: metadataChunk,
@@ -363,7 +363,7 @@
       var serializedMetadata = JSON.stringify(loki);
       savedSize += serializedMetadata.length;
 
-      DEBUG && incremental && console.log(`Saving: loki`);
+      DEBUG && incremental && console.log('Saving: loki');
       idbStore.put({ key: "loki", value: serializedMetadata });
 
       DEBUG && console.log("saved size: " + savedSize);

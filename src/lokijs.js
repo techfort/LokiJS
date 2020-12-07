@@ -2727,9 +2727,13 @@
       // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
         var cachedDirty;
+        // ignore autosave until we copy loki (only then we can clear dirty flags,
+        // but if we don't do it now, autosave will be triggered a lot unnecessarily)
+        this.ignoreAutosave = true;
         this.persistenceAdapter.saveDatabase(
           this.filename,
           function getLokiCopy() {
+            self.ignoreAutosave = false;
             if (cachedDirty) {
               cFun(new Error('adapter error - getLokiCopy called more than once'));
               return;
@@ -2748,6 +2752,7 @@
             return lokiCopy;
           },
           function exportDatabaseCallback(err) {
+            self.ignoreAutosave = false;
             if (err && cachedDirty) {
               // roll back dirty IDs to be saved later
               self.collections.forEach(function (col, i) {
@@ -2914,7 +2919,7 @@
         // so next step will be to implement collection level dirty flags set on insert/update/remove
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
 
-        if (self.autosaveDirty()) {
+        if (self.autosaveDirty() && !self.ignoreAutosave) {
           self.saveDatabase(callback);
         }
       }, delay);

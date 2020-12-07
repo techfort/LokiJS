@@ -7581,6 +7581,7 @@
     UniqueIndex.prototype.remove = function (key) {
       var obj = this.keyMap[key];
       if (obj !== null && typeof obj !== 'undefined') {
+        // avoid using `delete`
         this.keyMap[key] = undefined;
         this.lokiMap[obj.$loki] = undefined;
       } else {

@@ -305,6 +305,7 @@
           // JSON.stringify is much better optimized than IDB's structured clone
           chunkData = JSON.stringify(chunkData);
           savedSize += chunkData.length;
+          DEBUG && incremental && console.log(`Saving: ${collection.name + ".chunk." + chunkId}`);
           idbStore.put({
             key: collection.name + ".chunk." + chunkId,
             value: chunkData,
@@ -339,6 +340,7 @@
 
           var metadataChunk = JSON.stringify(collection);
           savedSize += metadataChunk.length;
+          DEBUG && incremental && console.log(`Saving: ${collection.name + ".metadata"}`);
           idbStore.put({
             key: collection.name + ".metadata",
             value: metadataChunk,
@@ -354,6 +356,7 @@
       var serializedMetadata = JSON.stringify(loki);
       savedSize += serializedMetadata.length;
 
+      DEBUG && incremental && console.log(`Saving: loki`);
       idbStore.put({ key: "loki", value: serializedMetadata });
 
       DEBUG && console.log("saved size: " + savedSize);

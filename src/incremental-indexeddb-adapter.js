@@ -492,9 +492,9 @@
     }
 
     function populateLoki(loki, chunkMap, deserializeChunk) {
-      loki.collections.forEach(function(collectionStub, i) {
+      loki.collections.forEach(function populateCollection(collectionStub, i) {
+        DEBUG && console.time('populate collection ' + collectionStub.name);
         var chunkCollection = chunkMap[collectionStub.name];
-
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
             throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
@@ -505,7 +505,7 @@
           loki.collections[i] = collection;
 
           var dataChunks = chunkCollection.dataChunks;
-          dataChunks.forEach(function(chunkObj, i) {
+          dataChunks.forEach(function populateChunk(chunkObj, i) {
             var chunk = JSON.parse(chunkObj);
             chunkObj = null; // make string available for GC
             dataChunks[i] = null;
@@ -519,6 +519,7 @@
             });
           });
         }
+        DEBUG && console.timeEnd('populate collection ' + collectionStub.name);
       });
     }
 

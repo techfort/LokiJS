@@ -606,17 +606,81 @@
       }
 
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
+      var store = tx.objectStore('LokiIncrementalData');
 
-      idbReq(tx.objectStore('LokiIncrementalData').getAll(), function(e) {
-        var chunks = e.target.result;
-        callback(chunks);
-      }, function(e) {
-        callback(e);
-      });
-
-      if (this.options.onFetchStart) {
-        this.options.onFetchStart();
+      function onFetchStart() {
+        if (that.options.onFetchStart) {
+          that.options.onFetchStart();
+        }
       }
+
+      function getAllChunks() {
+        idbReq(store.getAll(), function(e) {
+          var chunks = e.target.result;
+          callback(chunks);
+        }, function(e) {
+          callback(e);
+        });
+        onFetchStart();
+      }
+
+      function getMegachunks(keys) {
+        console.log('key count', keys.length);
+        var megachunkCount = 8;
+        var chunksPerMegachunk = Math.floor(keys.length / megachunkCount);
+        var keyRanges = [];
+        var minKey, maxKey;
+        for (var i = 0; i < megachunkCount; i += 1) {
+          minKey = keys[chunksPerMegachunk * i];
+          maxKey = keys[chunksPerMegachunk * (i + 1)];
+          if (i === 0) {
+            keyRanges.push(IDBKeyRange.upperBound(maxKey, true));
+          } else if (i === megachunkCount - 1) {
+            keyRanges.push(IDBKeyRange.lowerBound(minKey, true));
+          } else {
+            keyRanges.push(IDBKeyRange.bound(minKey, maxKey, false, true));
+          }
+        }
+        console.log(keyRanges);
+
+        const allChunks = []
+        let doneCount = 0
+
+        keyRanges.forEach((keyRange, i) => {
+          idbReq(store.getAll(keyRange), function(e) {
+            console.log('--> success for megachunk ' + i)
+
+            var mchunk = e.target.result;
+            mchunk.forEach(chunk => {
+              allChunks.push(chunk);
+            });
+            doneCount += 1;
+            if (doneCount === megachunkCount) {
+              console.log('!! mega chunk, mega success !!')
+              console.log('chunk count', allChunks.length);
+              callback(allChunks);
+            }
+          }, function(e) {
+            callback(e);
+          });
+        });
+
+        onFetchStart();
+      }
+
+      function getAllKeys() {
+        idbReq(store.getAllKeys(), function(e) {
+          var keys = e.target.result.sort();
+          if (keys.length > 100) {
+            getMegachunks(keys);
+          } else {
+            getAllChunks();
+          }
+        }, function(e) {
+          callback(e);
+        });
+      }
+      getAllKeys();
     };
 
     /**

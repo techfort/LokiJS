@@ -420,7 +420,7 @@
 
           // repack chunks into a map
           chunks = chunksToMap(chunks);
-          var loki = JSON.parse(chunks.loki);
+          var loki = chunks.loki;
           chunks.loki = null; // gc
 
           // populate collections with data
@@ -493,33 +493,26 @@
 
     function populateLoki(loki, chunkMap, deserializeChunk) {
       loki.collections.forEach(function populateCollection(collectionStub, i) {
-        DEBUG && console.time('populate collection ' + collectionStub.name);
+        // DEBUG && console.time('populate collection ' + collectionStub.name);
         var chunkCollection = chunkMap[collectionStub.name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
             throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
           }
-          var collection = JSON.parse(chunkCollection.metadata);
+          var collection = chunkCollection.metadata;
           chunkCollection.metadata = null;
 
           loki.collections[i] = collection;
 
           var dataChunks = chunkCollection.dataChunks;
-          dataChunks.forEach(function populateChunk(chunkObj, i) {
-            var chunk = JSON.parse(chunkObj);
-            chunkObj = null; // make string available for GC
-            dataChunks[i] = null;
-
-            if (deserializeChunk) {
-              chunk = deserializeChunk(collection.name, chunk);
-            }
-
+          dataChunks.forEach(function populateChunk(chunk, i) {
             chunk.forEach(function(doc) {
               collection.data.push(doc);
             });
+            dataChunks[i] = null;
           });
         }
-        DEBUG && console.timeEnd('populate collection ' + collectionStub.name);
+        // DEBUG && console.timeEnd('populate collection ' + collectionStub.name);
       });
     }
 
@@ -615,6 +608,7 @@
       }
 
       function getAllChunks() {
+        throw new Error('baaaah')
         idbReq(store.getAll(), function(e) {
           var chunks = e.target.result;
           callback(chunks);
@@ -625,8 +619,8 @@
       }
 
       function getMegachunks(keys) {
-        console.log('key count', keys.length);
-        var megachunkCount = 8;
+        // console.log('key count', keys.length);
+        var megachunkCount = 20; // >=4, divisible by 2
         var chunksPerMegachunk = Math.floor(keys.length / megachunkCount);
         var keyRanges = [];
         var minKey, maxKey;
@@ -636,30 +630,44 @@
           if (i === 0) {
             keyRanges.push(IDBKeyRange.upperBound(maxKey, true));
           } else if (i === megachunkCount - 1) {
-            keyRanges.push(IDBKeyRange.lowerBound(minKey, true));
+            keyRanges.push(IDBKeyRange.lowerBound(minKey));
           } else {
             keyRanges.push(IDBKeyRange.bound(minKey, maxKey, false, true));
           }
         }
-        console.log(keyRanges);
+        // console.log(keyRanges);
 
         const allChunks = []
         let doneCount = 0
+        var deserializeChunk = that.options.deserializeChunk;
+
+        function processMegachunk(e, keyRange) {
+          console.time('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
+          var mchunk = e.target.result;
+          mchunk.forEach((chunk, i) => {
+            chunk.value = JSON.parse(chunk.value)
+            const segments = chunk.key.split('.')
+            if (segments.length === 3 && segments[1] === 'chunk') {
+              if (deserializeChunk) {
+                chunk.value = deserializeChunk(segments[0], chunk.value);
+              }
+            }
+            allChunks.push(chunk);
+            mchunk[i] = null; // gc
+          });
+          console.timeEnd('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
+
+          doneCount += 1;
+          if (doneCount === megachunkCount) {
+            console.log('!! mega chunk, mega success !!')
+            console.log('chunk count', allChunks.length);
+            callback(allChunks);
+          }
+        }
 
         keyRanges.forEach((keyRange, i) => {
           idbReq(store.getAll(keyRange), function(e) {
-            console.log('--> success for megachunk ' + i)
-
-            var mchunk = e.target.result;
-            mchunk.forEach(chunk => {
-              allChunks.push(chunk);
-            });
-            doneCount += 1;
-            if (doneCount === megachunkCount) {
-              console.log('!! mega chunk, mega success !!')
-              console.log('chunk count', allChunks.length);
-              callback(allChunks);
-            }
+            processMegachunk(e, keyRange);
           }, function(e) {
             callback(e);
           });
@@ -680,6 +688,7 @@
           callback(e);
         });
       }
+      // getAllChunks();
       getAllKeys();
     };
 

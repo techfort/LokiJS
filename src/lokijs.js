@@ -2726,29 +2726,43 @@
 
       // run incremental, reference, or normal mode adapters, depending on what's available
       if (this.persistenceAdapter.mode === "incremental") {
-        var lokiCopy = this.copy({ removeNonSerializable: true });
+        var cachedDirty;
+        // ignore autosave until we copy loki (only then we can clear dirty flags,
+        // but if we don't do it now, autosave will be triggered a lot unnecessarily)
+        this.ignoreAutosave = true;
+        this.persistenceAdapter.saveDatabase(
+          this.filename,
+          function getLokiCopy() {
+            self.ignoreAutosave = false;
+            if (cachedDirty) {
+              cFun(new Error('adapter error - getLokiCopy called more than once'));
+              return;
+            }
+            var lokiCopy = self.copy({ removeNonSerializable: true });
 
-        // remember and clear dirty ids -- we must do it before the save so that if
-        // and update occurs between here and callback, it will get saved later
-        var cachedDirty = this.collections.map(function (collection) {
-          return [collection.dirty, collection.dirtyIds];
-        });
-        this.collections.forEach(function (col) {
-          col.dirty = false;
-          col.dirtyIds = [];
-        });
-
-        this.persistenceAdapter.saveDatabase(this.filename, lokiCopy, function exportDatabaseCallback(err) {
-          if (err) {
-            // roll back dirty IDs to be saved later
-            self.collections.forEach(function (col, i) {
-              var cached = cachedDirty[i];
-              col.dirty = cached[0];
-              col.dirtyIds = col.dirtyIds.concat(cached[1]);
+            // remember and clear dirty ids -- we must do it before the save so that if
+            // and update occurs between here and callback, it will get saved later
+            cachedDirty = self.collections.map(function (collection) {
+              return [collection.dirty, collection.dirtyIds];
             });
-          }
-          cFun(err);
-        });
+            self.collections.forEach(function (col) {
+              col.dirty = false;
+              col.dirtyIds = [];
+            });
+            return lokiCopy;
+          },
+          function exportDatabaseCallback(err) {
+            self.ignoreAutosave = false;
+            if (err && cachedDirty) {
+              // roll back dirty IDs to be saved later
+              self.collections.forEach(function (col, i) {
+                var cached = cachedDirty[i];
+                col.dirty = col.dirty || cached[0];
+                col.dirtyIds = col.dirtyIds.concat(cached[1]);
+              });
+            }
+            cFun(err);
+          });
       } else if (this.persistenceAdapter.mode === "reference" && typeof this.persistenceAdapter.exportDatabase === "function") {
         // TODO: dirty should be cleared here
         // filename may seem redundant but loadDatabase will need to expect this same filename
@@ -2905,7 +2919,7 @@
         // so next step will be to implement collection level dirty flags set on insert/update/remove
         // along with loki level isdirty() function which iterates all collections to see if any are dirty
 
-        if (self.autosaveDirty()) {
+        if (self.autosaveDirty() && !self.ignoreAutosave) {
           self.saveDatabase(callback);
         }
       }, delay);
@@ -7567,6 +7581,7 @@
     UniqueIndex.prototype.remove = function (key) {
       var obj = this.keyMap[key];
       if (obj !== null && typeof obj !== 'undefined') {
+        // avoid using `delete`
         this.keyMap[key] = undefined;
         this.lokiMap[obj.$loki] = undefined;
       } else {

@@ -2,6 +2,9 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script>
+    window.__loki_incremental_idb_debug = true
+  </script>
   <script type="text/javascript" src="../src/lokijs.js"></script>
   <script type="text/javascript" src="../src/incremental-indexeddb-adapter.js"></script>
 </head>
@@ -42,8 +45,13 @@ function checkDatabaseCopyIntegrity(source, copy) {
     expectToBe(copyCol.data.length, sourceCol.data.length);
 
     copyCol.data.every(function(copyEl, elIndex) {
-      expectEqual(copyEl, source.collections[i].data[elIndex])
+      expectEqual(copyEl, sourceCol.data[elIndex])
     })
+    expectEqual(copyCol.binaryIndices, sourceCol.binaryIndices)
+    expectEqual(copyCol.constraints, sourceCol.constraints)
+    expectEqual(copyCol.maxId, sourceCol.maxId)
+    expectEqual(copyCol.dirty, sourceCol.dirty)
+    expectEqual(copyCol.dirtyIds, sourceCol.dirtyIds)
   })
 }
 
@@ -66,6 +74,14 @@ function saveAndCheckDatabaseCopyIntegrity(source) {
   })
 }
 
+function loadLoki(loki) {
+  return new Promise((resolve, reject) => {
+    loki.loadDatabase({}, error => {
+      error ? reject(error) : resolve()
+    })
+  })
+}
+
 function trace(string)
 {
   domElement.innerHTML = domElement.innerHTML + string + "<br/>";
@@ -79,11 +95,16 @@ async function startTests(divElement)
 
   indexedDB.deleteDatabase("incremental_idb_tester")
 
-  let adapter = new IncrementalIndexedDBAdapter()
+  let idbOverwriteCount = 0;
+  let adapter = new IncrementalIndexedDBAdapter({ onDidOverwrite: () => { idbOverwriteCount += 1 } })
   let db = new loki('incremental_idb_tester', { adapter: adapter });
 
-  let col1 = db.addCollection('test_collection')
-  let col2 = db.addCollection('test_collection2')
+  let col1 = db.addCollection('test_collection', {
+    indices: ['blah'],
+  })
+  let col2 = db.addCollection('test_collection2', {
+    indices: ['blah'],
+  })
 
   trace('==> basic save and loading (6 records)')
 
@@ -166,6 +187,54 @@ async function startTests(divElement)
     trace('ok')
     trace(`save time: ${saveTime}ms`)
     trace(`load time: ${loadTime}ms`)
+  }
+
+  trace('==> test concurrent writers integrity')
+
+  {
+    let idb2OverwriteCount = 0;
+    let db2 = new loki('incremental_idb_tester', { adapter: new IncrementalIndexedDBAdapter({
+      onDidOverwrite: () => { idb2OverwriteCount += 1 }
+    }) });
+    await loadLoki(db2)
+    expectToBe(idbOverwriteCount, 0);
+    expectToBe(idb2OverwriteCount, 0);
+
+    for (let i = 0; i < 200; i++) {
+      db2.getCollection('test_collection').insert({ mass: true, i, blah: 'hello' })
+    }
+
+    await saveAndCheckDatabaseCopyIntegrity(db2)
+    await saveAndCheckDatabaseCopyIntegrity(db)
+    await saveAndCheckDatabaseCopyIntegrity(db2)
+
+    db.collections.forEach(col => {
+      col.remove(col.data.slice(col.data.length - 400))
+      col.remove(col.data.slice(500, 800))
+    })
+
+    await saveAndCheckDatabaseCopyIntegrity(db)
+
+    const databases = [db, db2]
+    databases.forEach(database => {
+      database.collections.forEach(col => {
+        for (let i = 0;i<1000;i++) {
+          const id = Math.floor(Math.random() * col.data.length)
+          const doc = col.data[id]
+          doc.blah = 'UPDATED_' + doc.blah
+          col.update(doc)
+        }
+      })
+    })
+
+    await saveAndCheckDatabaseCopyIntegrity(db2)
+    await saveAndCheckDatabaseCopyIntegrity(db)
+    await saveAndCheckDatabaseCopyIntegrity(db)
+
+    expectToBe(idbOverwriteCount, 3);
+    expectToBe(idb2OverwriteCount, 2);
+
+    trace('ok')
   }
 
   trace('==> regression test: batch removing records')
@@ -255,6 +324,9 @@ async function startTests(divElement)
     trace(`avg load time: ${loadTimes / fuzzes}ms`)
 
     trace('all fuzz tests done')
+  }
+
+  {
     trace('ALL DONE!')
   }
 }

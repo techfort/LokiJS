@@ -111,7 +111,8 @@ describe('IncrementalIndexedDBAdapter', function () {
 
     // simulate save - don't go through IDB, just check that logic is good
     var callCallback;
-    adapter.saveDatabase = function(dbname, loki, callback) {
+    adapter.saveDatabase = function(dbname, getLokiCopy, callback) {
+      getLokiCopy();
       callCallback = callback;
     };
 
@@ -129,16 +130,23 @@ describe('IncrementalIndexedDBAdapter', function () {
     var doc4 = { foo: '4' };
     col1.insert(doc4);
     expect(col1.dirtyIds).toEqual([doc4.$loki]);
+    var doc5 = { foo: '5' };
+    col2.insert(doc5);
+    expect(col2.dirty).toBe(true);
+    expect(col2.dirtyIds).toEqual([doc5.$loki]);
     callCallback(new Error('foo'));
     expect(col1.dirtyIds).toEqual([doc4.$loki].concat(dirty));
+    expect(col1.dirty).toBe(true);
+    expect(col2.dirtyIds).toEqual([doc5.$loki]);
+    expect(col2.dirty).toBe(true);
 
     // if successful, dirty ids don't zero out
     db.saveDatabase();
     expect(col1.dirtyIds).toEqual([]);
-    var doc5 = { foo: '5' };
-    col1.insert(doc5);
-    expect(col1.dirtyIds).toEqual([doc5.$loki]);
+    var doc6 = { foo: '6' };
+    col1.insert(doc6);
+    expect(col1.dirtyIds).toEqual([doc6.$loki]);
     callCallback();
-    expect(col1.dirtyIds).toEqual([doc5.$loki]);
+    expect(col1.dirtyIds).toEqual([doc6.$loki]);
   })
 })

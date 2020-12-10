@@ -431,8 +431,7 @@
           chunks.loki = null; // gc
 
           // populate collections with data
-          var deserializeChunk = that.options.deserializeChunk;
-          populateLoki(loki, chunks.chunkMap, deserializeChunk);
+          populateLoki(loki, chunks.chunkMap);
           chunks = null; // gc
 
           // remember previous version IDs
@@ -498,7 +497,7 @@
       return { loki: loki, chunkMap: chunkMap };
     }
 
-    function populateLoki(loki, chunkMap, deserializeChunk) {
+    function populateLoki(loki, chunkMap) {
       loki.collections.forEach(function populateCollection(collectionStub, i) {
         var chunkCollection = chunkMap[collectionStub.name];
         if (chunkCollection) {
@@ -606,12 +605,6 @@
       var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
       var store = tx.objectStore('LokiIncrementalData');
 
-      function onFetchStart() {
-        if (that.options.onFetchStart) {
-          that.options.onFetchStart();
-        }
-      }
-
       var deserializeChunk = this.options.deserializeChunk;
 
       // If there are a lot of chunks (>100), don't request them all in one go, but in multiple
@@ -628,7 +621,7 @@
           // var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
           // DEBUG && console.time(debugMsg);
           var megachunk = e.target.result;
-          megachunk.forEach((chunk, i) => {
+          megachunk.forEach(function (chunk, i) {
             parseChunk(chunk, deserializeChunk);
             allChunks.push(chunk);
             megachunk[i] = null; // gc
@@ -659,8 +652,6 @@
         for (var i = 0; i < megachunkCount / 2; i += 1) {
           requestMegachunk(i);
         }
-
-        onFetchStart();
       }
 
       function getAllChunks() {
@@ -673,7 +664,6 @@
         }, function(e) {
           callback(e);
         });
-        onFetchStart();
       }
 
       function getAllKeys() {
@@ -687,6 +677,10 @@
         }, function(e) {
           callback(e);
         });
+
+        if (that.options.onFetchStart) {
+          that.options.onFetchStart();
+        }
       }
 
       getAllKeys();

@@ -614,6 +614,9 @@
 
       var deserializeChunk = this.options.deserializeChunk;
 
+      // If there are a lot of chunks (>100), don't request them all in one go, but in multiple
+      // "megachunks" (chunks of chunks). This improves concurrency, as main thread is already busy
+      // while IDB process is still fetching data. Details: https://github.com/techfort/LokiJS/pull/874
       function getMegachunks(keys) {
         var megachunkCount = that.megachunkCount;
         var keyRanges = createKeyRanges(keys, megachunkCount);
@@ -638,6 +641,8 @@
           }
         }
 
+        // Stagger megachunk requests - first one half, then request the second when first one comes
+        // back. This further improves concurrency.
         function requestMegachunk(index) {
           var keyRange = keyRanges[index];
           idbReq(store.getAll(keyRange), function(e) {

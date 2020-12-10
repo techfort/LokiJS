@@ -46,14 +46,21 @@
      *     profitable for performance. If you use this, you must also pass options.deserializeChunk.
      * @param {function} options.deserializeChunk Called with a chunk serialized with options.serializeChunk
      *     Expects an array of Loki documents as the return value
+     * @param {number} options.megachunkCount Number of parallel requests for data when loading database.
+     *     Can be tuned for a specific application
      */
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
       this.options = options || {};
       this.chunkSize = 100;
+      this.megachunkCount = this.options.megachunkCount || 20;
       this.idb = null; // will be lazily loaded on first operation that needs it
       this._prevLokiVersionId = null;
       this._prevCollectionVersionIds = {};
+
+      if (!(this.megachunkCount >= 4 && this.megachunkCount % 2 === 0)) {
+        throw new Error('megachunkCount must be >=4 and divisible by 2');
+      }
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
@@ -605,83 +612,62 @@
         }
       }
 
-      function getAllChunks() {
-        throw new Error('baaaah')
-        idbReq(store.getAll(), function(e) {
-          var chunks = e.target.result;
-          callback(chunks);
-        }, function(e) {
-          callback(e);
-        });
-        onFetchStart();
-      }
+      var deserializeChunk = this.options.deserializeChunk;
 
       function getMegachunks(keys) {
-        // console.log('key count', keys.length);
-        var megachunkCount = 20; // >=4, divisible by 2
-        var chunksPerMegachunk = Math.floor(keys.length / megachunkCount);
-        var keyRanges = [];
-        var minKey, maxKey;
-        for (var i = 0; i < megachunkCount; i += 1) {
-          minKey = keys[chunksPerMegachunk * i];
-          maxKey = keys[chunksPerMegachunk * (i + 1)];
-          if (i === 0) {
-            keyRanges.push(IDBKeyRange.upperBound(maxKey, true));
-          } else if (i === megachunkCount - 1) {
-            keyRanges.push(IDBKeyRange.lowerBound(minKey));
-          } else {
-            keyRanges.push(IDBKeyRange.bound(minKey, maxKey, false, true));
-          }
-        }
-        // console.log(keyRanges);
+        var megachunkCount = that.megachunkCount;
+        var keyRanges = createKeyRanges(keys, megachunkCount);
 
-        const allChunks = []
-        let doneCount = 0
-        var deserializeChunk = that.options.deserializeChunk;
+        var allChunks = [];
+        var megachunksReceived = 0;
 
-        function processMegachunk(e, i, keyRange) {
-          // console.time('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
-          var mchunk = e.target.result;
-          mchunk.forEach((chunk, i) => {
-            chunk.value = JSON.parse(chunk.value)
-            const segments = chunk.key.split('.')
-            if (segments.length === 3 && segments[1] === 'chunk') {
-              if (deserializeChunk) {
-                chunk.value = deserializeChunk(segments[0], chunk.value);
-              }
-            }
+        function processMegachunk(e, megachunkIndex, keyRange) {
+          // var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
+          // DEBUG && console.time(debugMsg);
+          var megachunk = e.target.result;
+          megachunk.forEach((chunk, i) => {
+            parseChunk(chunk, deserializeChunk);
             allChunks.push(chunk);
-            mchunk[i] = null; // gc
+            megachunk[i] = null; // gc
           });
-          // console.timeEnd('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
+          // DEBUG && console.timeEnd(debugMsg);
 
-          doneCount += 1;
-          if (doneCount === megachunkCount) {
+          megachunksReceived += 1;
+          if (megachunksReceived === megachunkCount) {
             callback(allChunks);
           }
         }
 
-        keyRanges.forEach((keyRange, i) => {
-          if (i >= megachunkCount / 2) {
-            return
-          }
+        function requestMegachunk(index) {
+          var keyRange = keyRanges[index];
           idbReq(store.getAll(keyRange), function(e) {
+            if (index < megachunkCount / 2) {
+              requestMegachunk(index + megachunkCount / 2);
+            }
 
-            var secondI = i + megachunkCount / 2
-            var secondKeyRange = keyRanges[secondI];
-            idbReq(store.getAll(secondKeyRange), function(e) {
-
-              processMegachunk(e, secondI, secondKeyRange);
-            }, function(e) {
-              callback(e);
-            });
-
-            processMegachunk(e, i, keyRange);
+            processMegachunk(e, index, keyRange);
           }, function(e) {
             callback(e);
           });
-        });
+        }
 
+        for (var i = 0; i < megachunkCount / 2; i += 1) {
+          requestMegachunk(i);
+        }
+
+        onFetchStart();
+      }
+
+      function getAllChunks() {
+        idbReq(store.getAll(), function(e) {
+          var allChunks = e.target.result;
+          allChunks.forEach(function (chunk) {
+            parseChunk(chunk, deserializeChunk);
+          });
+          callback(allChunks);
+        }, function(e) {
+          callback(e);
+        });
         onFetchStart();
       }
 
@@ -700,6 +686,17 @@
 
       getAllKeys();
     };
+
+    function parseChunk(chunk, deserializeChunk) {
+      chunk.value = JSON.parse(chunk.value);
+      if (deserializeChunk) {
+        var segments = chunk.key.split('.');
+        if (segments.length === 3 && segments[1] === 'chunk') {
+          var collectionName = segments[0];
+          chunk.value = deserializeChunk(collectionName, chunk.value);
+        }
+      }
+    }
 
     /**
      * Deletes a database from IndexedDB
@@ -784,6 +781,27 @@
         if (aKey > bKey) return 1;
         return 0;
       });
+    }
+
+    function createKeyRanges(keys, count) {
+      var countPerRange = Math.floor(keys.length / count);
+      var keyRanges = [];
+      var minKey, maxKey;
+      for (var i = 0; i < count; i += 1) {
+        minKey = keys[countPerRange * i];
+        maxKey = keys[countPerRange * (i + 1)];
+        if (i === 0) {
+          // ... < maxKey
+          keyRanges.push(IDBKeyRange.upperBound(maxKey, true));
+        } else if (i === count - 1) {
+          // >= minKey
+          keyRanges.push(IDBKeyRange.lowerBound(minKey));
+        } else {
+          // >= minKey && < maxKey
+          keyRanges.push(IDBKeyRange.bound(minKey, maxKey, false, true));
+        }
+      }
+      return keyRanges;
     }
 
     function idbReq(request, onsuccess, onerror) {

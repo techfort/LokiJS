@@ -493,7 +493,6 @@
 
     function populateLoki(loki, chunkMap, deserializeChunk) {
       loki.collections.forEach(function populateCollection(collectionStub, i) {
-        // DEBUG && console.time('populate collection ' + collectionStub.name);
         var chunkCollection = chunkMap[collectionStub.name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
@@ -512,7 +511,6 @@
             dataChunks[i] = null;
           });
         }
-        // DEBUG && console.timeEnd('populate collection ' + collectionStub.name);
       });
     }
 
@@ -659,8 +657,6 @@
 
           doneCount += 1;
           if (doneCount === megachunkCount) {
-            // console.log('!! mega chunk, mega success !!')
-            // console.log('chunk count', allChunks.length);
             callback(allChunks);
           }
         }
@@ -702,57 +698,7 @@
         });
       }
 
-      function getKeysViaCursor() {
-        var allChunksViaCursor = []
-        var cursors = 20;
-        var cursorDoneCount = 0;
-        var deserializeChunk = that.options.deserializeChunk;
-
-        function makeCursorOnSuccess(skip, jump) {
-          var didSkip = false
-          return function(event) {
-            var cursor = event.target.result;
-            if(cursor) {
-              if (!didSkip) {
-                didSkip = true;
-                if (skip > 0) {
-                  cursor.advance(skip);
-                  return;
-                }
-              }
-
-              var chunk = cursor.value
-              chunk.value = JSON.parse(chunk.value)
-              const segments = chunk.key.split('.')
-              if (segments.length === 3 && segments[1] === 'chunk') {
-                if (deserializeChunk) {
-                  chunk.value = deserializeChunk(segments[0], chunk.value);
-                }
-              }
-              allChunksViaCursor.push(chunk);
-
-              cursor.advance(jump);
-            } else {
-              console.log('done', skip, jump)
-              cursorDoneCount += 1;
-              if (cursorDoneCount === cursors) {
-                console.log(allChunksViaCursor)
-                callback(allChunksViaCursor)
-              }
-            }
-          }
-        }
-
-        for (var c=0;c<cursors;c++) {
-          store.openCursor().onsuccess = makeCursorOnSuccess(c, cursors);
-        }
-
-        onFetchStart();
-      }
-
-      // getAllChunks();
-      // getAllKeys();
-      getKeysViaCursor()
+      getAllKeys();
     };
 
     /**

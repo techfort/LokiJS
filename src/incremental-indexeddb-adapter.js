@@ -641,8 +641,8 @@
         let doneCount = 0
         var deserializeChunk = that.options.deserializeChunk;
 
-        function processMegachunk(e, keyRange) {
-          console.time('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
+        function processMegachunk(e, i, keyRange) {
+          // console.time('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
           var mchunk = e.target.result;
           mchunk.forEach((chunk, i) => {
             chunk.value = JSON.parse(chunk.value)
@@ -655,19 +655,32 @@
             allChunks.push(chunk);
             mchunk[i] = null; // gc
           });
-          console.timeEnd('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
+          // console.timeEnd('processing chunk ' + i + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')');
 
           doneCount += 1;
           if (doneCount === megachunkCount) {
-            console.log('!! mega chunk, mega success !!')
-            console.log('chunk count', allChunks.length);
+            // console.log('!! mega chunk, mega success !!')
+            // console.log('chunk count', allChunks.length);
             callback(allChunks);
           }
         }
 
         keyRanges.forEach((keyRange, i) => {
+          if (i >= megachunkCount / 2) {
+            return
+          }
           idbReq(store.getAll(keyRange), function(e) {
-            processMegachunk(e, keyRange);
+
+            var secondI = i + megachunkCount / 2
+            var secondKeyRange = keyRanges[secondI];
+            idbReq(store.getAll(secondKeyRange), function(e) {
+
+              processMegachunk(e, secondI, secondKeyRange);
+            }, function(e) {
+              callback(e);
+            });
+
+            processMegachunk(e, i, keyRange);
           }, function(e) {
             callback(e);
           });

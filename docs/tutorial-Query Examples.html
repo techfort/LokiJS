@@ -128,7 +128,7 @@ items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });
 items.insert({ name : 'draupnir', owner: 'odin', maker: 'elves' });
 
 // returns gungnir and draupnir.  similar to $keyin, the value ('rule') is not used by the op
-var results = items.find({maker: { $efinedin: { elves: 'rule' } } });</code></pre><p><strong>$undefinedin</strong> -  filter for document(s) whose property value is not defined in the provided hash object or defined but is <strong><em>undefined</em></strong>. <a href="https://github.com/techfort/LokiJS/issues/285">#285</a></p>
+var results = items.find({maker: { $definedin: { elves: 'rule' } } });</code></pre><p><strong>$undefinedin</strong> -  filter for document(s) whose property value is not defined in the provided hash object or defined but is <strong><em>undefined</em></strong>. <a href="https://github.com/techfort/LokiJS/issues/285">#285</a></p>
 <pre class="prettyprint source lang-javascript"><code>items.insert({ name : 'mjolnir', owner: 'thor', maker: 'dwarves' });
 items.insert({ name : 'gungnir', owner: 'odin', maker: 'elves' });
 items.insert({ name : 'tyrfing', owner: 'Svafrlami', maker: 'dwarves' });

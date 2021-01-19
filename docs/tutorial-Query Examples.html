@@ -83,7 +83,7 @@ var results = items.find({ created: { $dteq: new Date(&quot;1/1/2017&quot;) } })
 <pre class="prettyprint source lang-javascript"><code>// match users with count value between 50 and 75
 var results = users.find({ count : { '$between': [50, 75] }});</code></pre><p>&gt;</p>
 <blockquote>
-<p>Note : the above $gt, $gte, $lt, $lte, and $between ops use 'loki' sorting which provides a unified range actoss 
+<p>Note : the above $gt, $gte, $lt, $lte, and $between ops use 'loki' sorting which provides a unified range across 
 mixed types and which return the same results whether the property is indexed or not. This is needed for binary 
 indexes and for guarantees of results equality between indexed and non-indexed comparisons.</p>
 <p>If you do not expect to utilize a binary index and you expect that simple javascript comparisons are acceptable, 

@@ -81,7 +81,7 @@ var results = items.find({ created: { $dteq: new Date(&quot;1/1/2017&quot;) } })
 <pre class="prettyprint source lang-javascript"><code>var results = coll.find({'age': {'$lt': 40}});</code></pre><p><strong>$lte</strong> - filter for document(s) with property less than or equal to provided value</p>
 <pre class="prettyprint source lang-javascript"><code>var results = coll.find({'age': {'$lte': 40}});</code></pre><p><strong>$between</strong> - filter for documents(s) with property between provided vals</p>
 <pre class="prettyprint source lang-javascript"><code>// match users with count value between 50 and 75
-var results = users.find({ count : { '$between': [50, 75] }});</code></pre><p>&gt;</p>
+var results = users.find({ count : { '$between': [50, 75] }});</code></pre>
 <blockquote>
 <p>Note : the above $gt, $gte, $lt, $lte, and $between ops use 'loki' sorting which provides a unified range across 
 mixed types and which return the same results whether the property is indexed or not. This is needed for binary 

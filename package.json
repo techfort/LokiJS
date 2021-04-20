@@ -1,6 +1,6 @@
 {
   "name": "lokijs",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "description": "Fast document oriented javascript in-memory database",
   "homepage": "https://techfort.github.io/LokiJS/",
   "main": "src/lokijs.js",

@@ -3568,6 +3568,10 @@
       // the comparison function
       var fun = LokiOps[operator];
 
+      if (typeof fun !== 'function') {
+        throw new TypeError('"' + operator + '" is not a valid operator');
+      }
+
       // "shortcut" for collection data
       var t = this.collection.data;
       // filter data length

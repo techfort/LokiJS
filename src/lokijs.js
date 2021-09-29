@@ -415,7 +415,7 @@
 
       var valueFound = false;
       var element;
-      if (typeof root === 'object' && path in root) {
+      if (root !== null && typeof root === 'object' && path in root) {
         element = root[path];
       }
       if (pathOffset + 1 >= paths.length) {

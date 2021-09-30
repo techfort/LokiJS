@@ -53,7 +53,7 @@
       this.mode = "incremental";
       this.options = options || {};
       this.chunkSize = 100;
-      this.megachunkCount = this.options.megachunkCount || 20;
+      this.megachunkCount = this.options.megachunkCount || 24;
       this.idb = null; // will be lazily loaded on first operation that needs it
       this._prevLokiVersionId = null;
       this._prevCollectionVersionIds = {};
@@ -647,11 +647,14 @@
 
         // Stagger megachunk requests - first one half, then request the second when first one comes
         // back. This further improves concurrency.
-        function requestMegachunk(index) {
+        const megachunkWaves = 2
+        const megachunksPerWave = megachunkCount / megachunkWaves
+        console.log(megachunkWaves, megachunksPerWave)
+        function requestMegachunk(index, wave) {
           var keyRange = keyRanges[index];
           idbReq(store.getAll(keyRange), function(e) {
-            if (index < megachunkCount / 2) {
-              requestMegachunk(index + megachunkCount / 2);
+            if (wave < megachunkWaves) {
+              requestMegachunk(index + megachunksPerWave, wave + 1);
             }
 
             processMegachunk(e, index, keyRange);
@@ -660,8 +663,8 @@
           });
         }
 
-        for (var i = 0; i < megachunkCount / 2; i += 1) {
-          requestMegachunk(i);
+        for (var i = 0; i < megachunksPerWave; i += 1) {
+          requestMegachunk(i, 1);
         }
       }
 

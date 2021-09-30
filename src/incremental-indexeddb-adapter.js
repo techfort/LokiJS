@@ -529,24 +529,8 @@
       }
       this.idbInitInProgress = true;
 
-      var openRequest = indexedDB.open(dbname, 1);
-
-      openRequest.onupgradeneeded = function(e) {
-        var db = e.target.result;
-        DEBUG && console.log('onupgradeneeded, old version: ' + e.oldVersion);
-
-        if (e.oldVersion < 1) {
-          // Version 1 - Initial - Create database
-          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
-        } else {
-          // Unknown version
-          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
-        }
-      };
-
-      openRequest.onsuccess = function(e) {
+      function onDidOpen(db) {
         that.idbInitInProgress = false;
-        var db = e.target.result;
         that.idb = db;
 
         if (!db.objectStoreNames.contains('LokiIncrementalData')) {
@@ -579,6 +563,33 @@
         };
 
         onSuccess();
+      }
+
+      if (window.__idb && window.__idb.idb) {
+        console.warn('using preloaded idb')
+        onDidOpen(window.__idb.idb);
+        return;
+      }
+
+      var openRequest = indexedDB.open(dbname, 1);
+
+      openRequest.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        DEBUG && console.log('onupgradeneeded, old version: ' + e.oldVersion);
+
+        if (e.oldVersion < 1) {
+          // Version 1 - Initial - Create database
+          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+        } else {
+          // Unknown version
+          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
+        }
+      };
+
+      openRequest.onsuccess = function(e) {
+        that.idbInitInProgress = false;
+        var db = e.target.result;
+        onDidOpen(db);
       };
 
       openRequest.onblocked = function(e) {
@@ -667,16 +678,25 @@
       }
 
       function getAllKeys() {
-        idbReq(store.getAllKeys(), function(e) {
-          var keys = e.target.result.sort();
+        function onDidGetKeys(keys) {
+          keys.sort();
           if (keys.length > 100) {
             getMegachunks(keys);
           } else {
             getAllChunks();
           }
-        }, function(e) {
-          callback(e);
-        });
+        }
+
+        if (window.__idb && window.__idb.keys) {
+          console.warn('using preloaded keys')
+          onDidGetKeys(window.__idb.keys);
+        } else {
+          idbReq(store.getAllKeys(), function(e) {
+            onDidGetKeys(e.target.result);
+          }, function(e) {
+            callback(e);
+          });
+        }
 
         if (that.options.onFetchStart) {
           that.options.onFetchStart();

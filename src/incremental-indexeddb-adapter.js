@@ -727,6 +727,7 @@
         if (keySegments.length === 3 && keySegments[1] === "chunk") {
           chunk.type = 'data';
           chunk.collectionName = keySegments[0];
+          chunk.index = parseInt(keySegments[2], 10);
           return;
         } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
           chunk.type = 'metadata';
@@ -814,27 +815,11 @@
       return Math.random().toString(36).substring(2);
     }
 
-    function _getSortKey(object) {
-      var key = object.key;
-      if (key.includes(".")) {
-        var segments = key.split(".");
-        if (segments.length === 3 && segments[1] === "chunk") {
-          return parseInt(segments[2], 10);
-        }
-      }
-
-      return -1; // consistent type must be returned
-    }
-
     function sortChunksInPlace(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
       chunks.sort(function(a, b) {
-        var aKey = _getSortKey(a),
-          bKey = _getSortKey(b);
-        if (aKey < bKey) return -1;
-        if (aKey > bKey) return 1;
-        return 0;
+        return a.index - b.index
       });
     }
 

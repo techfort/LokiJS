@@ -54,6 +54,7 @@
       this.options = options || {};
       this.chunkSize = 100;
       this.megachunkCount = this.options.megachunkCount || 24;
+      this.lazyCollections = this.options.lazyCollections || [];
       this.idb = null; // will be lazily loaded on first operation that needs it
       this._prevLokiVersionId = null;
       this._prevCollectionVersionIds = {};
@@ -431,7 +432,7 @@
           chunks.loki = null; // gc
 
           // populate collections with data
-          populateLoki(loki, chunks.chunkMap, that.options.deserializeChunk);
+          populateLoki(loki, chunks.chunkMap, that.options.deserializeChunk, that.lazyCollections);
           chunks = null; // gc
 
           // remember previous version IDs
@@ -489,28 +490,29 @@
       return { loki: loki, chunkMap: chunkMap };
     }
 
-    function populateLoki(loki, chunkMap, deserializeChunk) {
-      // console.warn(chunkMap)
-      // console.warn(loki.collections.length)
+    function populateLoki(loki, chunkMap, deserializeChunk, lazyCollections) {
       loki.collections.forEach(function populateCollection(collectionStub, i) {
-        var chunkCollection = chunkMap[collectionStub.name];
+        var name = collectionStub.name;
+        var chunkCollection = chunkMap[name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
-            throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
+            throw new Error("Corrupted database - missing metadata chunk for " + name);
           }
           var collection = chunkCollection.metadata;
           chunkCollection.metadata = null;
-
           loki.collections[i] = collection;
 
+          var isLazy = lazyCollections.includes(name);
 
           const getData = () => {
             var data = []
             var dataChunks = chunkCollection.dataChunks;
             dataChunks.forEach(function populateChunk(chunk, i) {
+              if (isLazy) {
               chunk = JSON.parse(chunk);
               if (deserializeChunk) {
-                chunk = deserializeChunk(collection.name, chunk);
+                  chunk = deserializeChunk(name, chunk);
+                }
               }
               chunk.forEach(function(doc) {
                 data.push(doc);
@@ -621,6 +623,7 @@
       var store = tx.objectStore('LokiIncrementalData');
 
       var deserializeChunk = this.options.deserializeChunk;
+      var lazyCollections = this.lazyCollections;
 
       // If there are a lot of chunks (>100), don't request them all in one go, but in multiple
       // "megachunks" (chunks of chunks). This improves concurrency, as main thread is already busy
@@ -637,7 +640,7 @@
           DEBUG && console.time(debugMsg);
           var megachunk = e.target.result;
           megachunk.forEach(function (chunk, i) {
-            parseChunk(chunk, deserializeChunk);
+            parseChunk(chunk, deserializeChunk, lazyCollections);
             allChunks.push(chunk);
             megachunk[i] = null; // gc
           });
@@ -676,7 +679,7 @@
         idbReq(store.getAll(), function(e) {
           var allChunks = e.target.result;
           allChunks.forEach(function (chunk) {
-            parseChunk(chunk, deserializeChunk);
+            parseChunk(chunk, deserializeChunk, lazyCollections);
           });
           callback(allChunks);
         }, function(e) {
@@ -736,21 +739,18 @@
       throw new Error("Corrupted database - unknown chunk found");
     }
 
-    function parseChunk(chunk, deserializeChunk) {
+    function parseChunk(chunk, deserializeChunk, lazyCollections) {
       classifyChunk(chunk);
 
-      if (chunk.type !== 'data') {
+      var isData = chunk.type === 'data'
+      var isLazy = lazyCollections.includes(chunk.collectionName);
+
+      if (!(isData && isLazy)) {
         chunk.value = JSON.parse(chunk.value);
       }
-
-      // chunk.value = JSON.parse(chunk.value);
-      // if (deserializeChunk) {
-      //   var segments = chunk.key.split('.');
-      //   if (segments.length === 3 && segments[1] === 'chunk') {
-      //     var collectionName = segments[0];
-      //     chunk.value = deserializeChunk(collectionName, chunk.value);
-      //   }
-      // }
+      if (deserializeChunk && isData && !isLazy) {
+        chunk.value = deserializeChunk(chunk.collectionName, chunk.value);
+      }
     }
 
     /**

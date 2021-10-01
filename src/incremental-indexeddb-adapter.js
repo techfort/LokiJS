@@ -427,7 +427,7 @@
 
           // repack chunks into a map
           chunks = chunksToMap(chunks);
-          var loki = JSON.parse(chunks.loki);
+          var loki = chunks.loki;
           chunks.loki = null; // gc
 
           // populate collections with data
@@ -456,38 +456,30 @@
 
       sortChunksInPlace(chunks);
 
-      chunks.forEach(function(object) {
-        var key = object.key;
-        var value = object.value;
-        if (key === "loki") {
+      chunks.forEach(function(chunk) {
+        var type = chunk.type;
+        var value = chunk.value;
+        var name = chunk.collectionName;
+        if (type === "loki") {
           loki = value;
-          return;
-        } else if (key.includes(".")) {
-          var keySegments = key.split(".");
-          if (keySegments.length === 3 && keySegments[1] === "chunk") {
-            var colName = keySegments[0];
-            if (chunkMap[colName]) {
-              chunkMap[colName].dataChunks.push(value);
+        } else if (type === "data") {
+          if (chunkMap[name]) {
+            chunkMap[name].dataChunks.push(value);
             } else {
-              chunkMap[colName] = {
+            chunkMap[name] = {
                 metadata: null,
                 dataChunks: [value],
               };
             }
-            return;
-          } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
-            var name = keySegments[0];
+        } else if (type === "metadata") {
             if (chunkMap[name]) {
               chunkMap[name].metadata = value;
             } else {
               chunkMap[name] = { metadata: value, dataChunks: [] };
             }
-            return;
-          }
+        } else {
+          throw new Error("unreachable");
         }
-
-        console.error("Unknown chunk " + key);
-        throw new Error("Corrupted database - unknown chunk found");
       });
 
       if (!loki) {
@@ -506,7 +498,7 @@
           if (!chunkCollection.metadata) {
             throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
           }
-          var collection = JSON.parse(chunkCollection.metadata);
+          var collection = chunkCollection.metadata;
           chunkCollection.metadata = null;
 
           loki.collections[i] = collection;
@@ -721,7 +713,36 @@
       getAllKeys();
     };
 
+    function classifyChunk(chunk) {
+      var key = chunk.key;
+
+      if (key === 'loki') {
+        chunk.type = 'loki';
+        return;
+      } else if (key.includes('.')) {
+        var keySegments = key.split(".");
+        if (keySegments.length === 3 && keySegments[1] === "chunk") {
+          chunk.type = 'data';
+          chunk.collectionName = keySegments[0];
+          return;
+        } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
+          chunk.type = 'metadata';
+          chunk.collectionName = keySegments[0];
+          return;
+        }
+      }
+
+      console.error("Unknown chunk " + key);
+      throw new Error("Corrupted database - unknown chunk found");
+    }
+
     function parseChunk(chunk, deserializeChunk) {
+      classifyChunk(chunk);
+
+      if (chunk.type !== 'data') {
+        chunk.value = JSON.parse(chunk.value);
+      }
+
       // chunk.value = JSON.parse(chunk.value);
       // if (deserializeChunk) {
       //   var segments = chunk.key.split('.');

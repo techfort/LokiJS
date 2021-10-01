@@ -1774,27 +1774,41 @@
           copyColl.dirty = false;
         }
 
-        // load each element individually
-        clen = coll.data.length;
-        j = 0;
-        if (options && options.hasOwnProperty(coll.name)) {
-          loader = makeLoader(coll);
 
-          for (j; j < clen; j++) {
-            collObj = loader(coll.data[j]);
-            copyColl.data[j] = collObj;
-            copyColl.addAutoUpdateObserver(collObj);
-            if (!copyColl.disableFreeze) {
-              deepFreeze(copyColl.data[j]);
+        if (coll.getData) {
+          const {name, getData}=coll;
+          Object.defineProperty(copyColl, 'data', {
+            get()  {
+              console.log(`hello ${name}`);
+              console.log(this)
+              const data = getData()
+              Object.defineProperty(this, 'data', { value: data })
+              return data;
             }
-          }
+          });
         } else {
+          // load each element individually
+          clen = coll.data.length;
+          j = 0;
+          if (options && options.hasOwnProperty(coll.name)) {
+            loader = makeLoader(coll);
 
-          for (j; j < clen; j++) {
-            copyColl.data[j] = coll.data[j];
-            copyColl.addAutoUpdateObserver(copyColl.data[j]);
-            if (!copyColl.disableFreeze) {
-              deepFreeze(copyColl.data[j]);
+            for (j; j < clen; j++) {
+              collObj = loader(coll.data[j]);
+              copyColl.data[j] = collObj;
+              copyColl.addAutoUpdateObserver(collObj);
+              if (!copyColl.disableFreeze) {
+                deepFreeze(copyColl.data[j]);
+              }
+            }
+          } else {
+
+            for (j; j < clen; j++) {
+              copyColl.data[j] = coll.data[j];
+              copyColl.addAutoUpdateObserver(copyColl.data[j]);
+              if (!copyColl.disableFreeze) {
+                deepFreeze(copyColl.data[j]);
+              }
             }
           }
         }

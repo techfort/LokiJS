@@ -427,11 +427,11 @@
 
           // repack chunks into a map
           chunks = chunksToMap(chunks);
-          var loki = chunks.loki;
+          var loki = JSON.parse(chunks.loki);
           chunks.loki = null; // gc
 
           // populate collections with data
-          populateLoki(loki, chunks.chunkMap);
+          populateLoki(loki, chunks.chunkMap, that.options.deserializeChunk);
           chunks = null; // gc
 
           // remember previous version IDs
@@ -497,25 +497,37 @@
       return { loki: loki, chunkMap: chunkMap };
     }
 
-    function populateLoki(loki, chunkMap) {
+    function populateLoki(loki, chunkMap, deserializeChunk) {
+      // console.warn(chunkMap)
+      // console.warn(loki.collections.length)
       loki.collections.forEach(function populateCollection(collectionStub, i) {
         var chunkCollection = chunkMap[collectionStub.name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
             throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
           }
-          var collection = chunkCollection.metadata;
+          var collection = JSON.parse(chunkCollection.metadata);
           chunkCollection.metadata = null;
 
           loki.collections[i] = collection;
 
-          var dataChunks = chunkCollection.dataChunks;
-          dataChunks.forEach(function populateChunk(chunk, i) {
-            chunk.forEach(function(doc) {
-              collection.data.push(doc);
+
+          const getData = () => {
+            var data = []
+            var dataChunks = chunkCollection.dataChunks;
+            dataChunks.forEach(function populateChunk(chunk, i) {
+              chunk = JSON.parse(chunk);
+              if (deserializeChunk) {
+                chunk = deserializeChunk(collection.name, chunk);
+              }
+              chunk.forEach(function(doc) {
+                data.push(doc);
+              });
+              dataChunks[i] = null;
             });
-            dataChunks[i] = null;
-          });
+            return data
+          }
+          collection.getData = getData;
         }
       });
     }
@@ -710,14 +722,14 @@
     };
 
     function parseChunk(chunk, deserializeChunk) {
-      chunk.value = JSON.parse(chunk.value);
-      if (deserializeChunk) {
-        var segments = chunk.key.split('.');
-        if (segments.length === 3 && segments[1] === 'chunk') {
-          var collectionName = segments[0];
-          chunk.value = deserializeChunk(collectionName, chunk.value);
-        }
-      }
+      // chunk.value = JSON.parse(chunk.value);
+      // if (deserializeChunk) {
+      //   var segments = chunk.key.split('.');
+      //   if (segments.length === 3 && segments[1] === 'chunk') {
+      //     var collectionName = segments[0];
+      //     chunk.value = deserializeChunk(collectionName, chunk.value);
+      //   }
+      // }
     }
 
     /**

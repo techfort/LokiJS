@@ -565,11 +565,11 @@
         onSuccess();
       }
 
-      if (window.__idb && window.__idb.idb) {
-        console.warn('using preloaded idb')
-        onDidOpen(window.__idb.idb);
-        return;
-      }
+      // if (window.__idb && window.__idb.idb) {
+      //   console.warn('using preloaded idb')
+      //   onDidOpen(window.__idb.idb);
+      //   return;
+      // }
 
       var openRequest = indexedDB.open(dbname, 1);
 
@@ -623,21 +623,21 @@
       // while IDB process is still fetching data. Details: https://github.com/techfort/LokiJS/pull/874
       function getMegachunks(keys) {
         var megachunkCount = that.megachunkCount;
-        var keyRanges = createKeyRanges(keys, megachunkCount);
+        var keyRanges = createKeyRanges(keys, megachunkCount).sort(() => Math.random() - 0.5);
 
         var allChunks = [];
         var megachunksReceived = 0;
 
         function processMegachunk(e, megachunkIndex, keyRange) {
-          // var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
-          // DEBUG && console.time(debugMsg);
+          var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
+          DEBUG && console.time(debugMsg);
           var megachunk = e.target.result;
           megachunk.forEach(function (chunk, i) {
             parseChunk(chunk, deserializeChunk);
             allChunks.push(chunk);
             megachunk[i] = null; // gc
           });
-          // DEBUG && console.timeEnd(debugMsg);
+          DEBUG && console.timeEnd(debugMsg);
 
           megachunksReceived += 1;
           if (megachunksReceived === megachunkCount) {

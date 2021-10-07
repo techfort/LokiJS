@@ -1,3 +1,4 @@
+
 /**
  * LokiJS
  * @author Joe Minichino <joe.minichino@gmail.com>
@@ -2052,6 +2053,8 @@
       }
     };
 
+    //region LokiPartitioningAdapter
+
     /**
      * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
@@ -2076,17 +2079,22 @@
       this.dbref = null;
       this.dbname = "";
       this.pageIterator = {};
+      this.fileHash = {};
+
+      const SparkMD5 = require('spark-md5');
+
+      this.hash = (data) => {
+        return SparkMD5.hex(data);
+      };
 
       // verify user passed an appropriate adapter
       if (adapter) {
         if (adapter.mode === "reference") {
           throw new Error("LokiPartitioningAdapter cannot be instantiated with a reference mode adapter");
-        }
-        else {
+        } else {
           this.adapter = adapter;
         }
-      }
-      else {
+      } else {
         throw new Error("LokiPartitioningAdapter requires a (non-reference mode) adapter on construction");
       }
 
@@ -2102,6 +2110,14 @@
 
       if (!this.options.hasOwnProperty("delimiter")) {
         this.options.delimiter = '$<\n';
+      }
+
+      if (!this.options.hasOwnProperty("saveAsync")) {
+        this.options.saveAsync = true;
+      }
+
+      if (!this.options.hasOwnProperty("saveOnlyChangedFiles")) {
+        this.options.saveOnlyChangedFiles = true;
       }
     }
 
@@ -2132,6 +2148,10 @@
           callback(new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()"));
         }
 
+        if (self.options.saveOnlyChangedFiles) {
+          self.fileHash[dbname] = self.hash(result);
+        }
+
         // I will want to use loki destructuring helper methods so i will inflate into typed instance
         var db = JSON.parse(result);
         self.dbref.loadJSONObject(db);
@@ -2146,7 +2166,7 @@
 
         self.pageIterator = {
           collection: 0,
-          pageIndex: 0
+          pageIndex: 0,
         };
 
         self.loadNextPartition(0, function () {
@@ -2162,7 +2182,7 @@
      * @param {function} callback - adapter callback to return load result to caller
      */
     LokiPartitioningAdapter.prototype.loadNextPartition = function (partition, callback) {
-      var keyname = this.dbname + "." + partition;
+      var keyname = this.dbname + '.' + partition;
       var self = this;
 
       if (this.options.paging === true) {
@@ -2172,13 +2192,16 @@
       }
 
       this.adapter.loadDatabase(keyname, function (result) {
+        if (self.options.saveOnlyChangedFiles) {
+          self.fileHash[keyname] = self.hash(result);
+        }
+
         var data = self.dbref.deserializeCollection(result, { delimited: true, collectionIndex: partition });
         self.dbref.collections[partition].data = data;
 
         if (++partition < self.dbref.collections.length) {
           self.loadNextPartition(partition, callback);
-        }
-        else {
+        } else {
           callback();
         }
       });
@@ -2191,23 +2214,27 @@
      */
     LokiPartitioningAdapter.prototype.loadNextPage = function (callback) {
       // calculate name for next saved page in sequence
-      var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
+      var keyname = this.dbname + '.' + this.pageIterator.collection + '.' + this.pageIterator.pageIndex;
       var self = this;
 
       // load whatever page is next in sequence
       this.adapter.loadDatabase(keyname, function (result) {
+        if (self.options.saveOnlyChangedFiles) {
+          self.fileHash[keyname] = self.hash(result);
+        }
+
         var data = result.split(self.options.delimiter);
-        result = ""; // free up memory now that we have split it into array
+        result = ''; // free up memory now that we have split it into array
         var dlen = data.length;
         var idx;
 
         // detect if last page by presence of final empty string element and remove it if so
-        var isLastPage = (data[dlen - 1] === "");
+        var isLastPage = data[dlen - 1] === '';
         if (isLastPage) {
           data.pop();
           dlen = data.length;
           // empty collections are just a delimiter meaning two blank items
-          if (data[dlen - 1] === "" && dlen === 1) {
+          if (data[dlen - 1] === '' && dlen === 1) {
             data.pop();
             dlen = data.length;
           }
@@ -2222,16 +2249,13 @@
 
         // if last page, we are done with this partition
         if (isLastPage) {
-
           // if there are more partitions, kick off next partition load
           if (++self.pageIterator.collection < self.dbref.collections.length) {
             self.loadNextPartition(self.pageIterator.collection, callback);
-          }
-          else {
+          } else {
             callback();
           }
-        }
-        else {
+        } else {
           self.pageIterator.pageIndex++;
           self.loadNextPage(callback);
         }
@@ -2250,7 +2274,8 @@
      */
     LokiPartitioningAdapter.prototype.exportDatabase = function (dbname, dbref, callback) {
       var self = this;
-      var idx, clen = dbref.collections.length;
+      var idx,
+        clen = dbref.collections.length;
 
       this.dbref = dbref;
       this.dbname = dbname;
@@ -2276,22 +2301,21 @@
     LokiPartitioningAdapter.prototype.saveNextPartition = function (callback) {
       var self = this;
       var partition = this.dirtyPartitions.shift();
-      var keyname = this.dbname + ((partition === -1) ? "" : ("." + partition));
+      var keyname = this.dbname + (partition === -1 ? '' : '.' + partition);
 
       // if we are doing paging and this is collection partition
       if (this.options.paging && partition !== -1) {
         this.pageIterator = {
           collection: partition,
           docIndex: 0,
-          pageIndex: 0
+          pageIndex: 0,
         };
 
         // since saveNextPage recursively calls itself until done, our callback means this whole paged partition is finished
         this.saveNextPage(function (err) {
           if (self.dirtyPartitions.length === 0) {
             callback(err);
-          }
-          else {
+          } else {
             self.saveNextPartition(callback);
           }
         });
@@ -2302,8 +2326,22 @@
       var result = this.dbref.serializeDestructured({
         partitioned: true,
         delimited: true,
-        partition: partition
+        partition: partition,
       });
+
+      const next = () => {
+        if (self.dirtyPartitions.length === 0) {
+          callback(null);
+        } else {
+          self.saveNextPartition(callback);
+        }
+      };
+
+      const newHash = this.hash(result);
+      if (this.options.saveOnlyChangedFiles && newHash === this.fileHash[keyname]) {
+        next();
+        return;
+      }
 
       this.adapter.saveDatabase(keyname, result, function (err) {
         if (err) {
@@ -2311,12 +2349,10 @@
           return;
         }
 
-        if (self.dirtyPartitions.length === 0) {
-          callback(null);
+        if (self.options.saveOnlyChangedFiles) {
+          self.fileHash[keyname] = newHash;
         }
-        else {
-          self.saveNextPartition(callback);
-        }
+        next();
       });
     };
 
@@ -2328,17 +2364,17 @@
     LokiPartitioningAdapter.prototype.saveNextPage = function (callback) {
       var self = this;
       var coll = this.dbref.collections[this.pageIterator.collection];
-      var keyname = this.dbname + "." + this.pageIterator.collection + "." + this.pageIterator.pageIndex;
+      var keyname = this.dbname + '.' + this.pageIterator.collection + '.' + this.pageIterator.pageIndex;
       var pageLen = 0,
         cdlen = coll.data.length,
         delimlen = this.options.delimiter.length;
-      var serializedObject = "",
-        pageBuilder = "";
+      var serializedObject = '',
+        pageBuilder = '';
       var doneWithPartition = false,
         doneWithPage = false;
 
       var pageSaveCallback = function (err) {
-        pageBuilder = "";
+        pageBuilder = '';
 
         if (err) {
           callback(err);
@@ -2347,10 +2383,13 @@
         // update meta properties then continue process by invoking callback
         if (doneWithPartition) {
           callback(null);
-        }
-        else {
+        } else {
           self.pageIterator.pageIndex++;
-          self.saveNextPage(callback);
+          if (self.options.saveAsync) {
+            setTimeout(() => self.saveNextPage(callback), 0);
+          } else {
+            self.saveNextPage(callback);
+          }
         }
       };
 
@@ -2380,11 +2419,21 @@
 
         // if we are done with page save it and pass off to next recursive call or callback
         if (doneWithPartition || doneWithPage) {
-          this.adapter.saveDatabase(keyname, pageBuilder, pageSaveCallback);
+          const newHash = this.hash(pageBuilder);
+          if (this.options.saveOnlyChangedFiles && newHash === this.fileHash[keyname]) {
+            pageSaveCallback(null);
+            return;
+          }
+          this.adapter.saveDatabase(keyname, pageBuilder, (err) => {
+            self.fileHash[keyname] = newHash;
+            pageSaveCallback(err);
+          });
           return;
         }
       }
     };
+
+    // endregion
 
     /**
      * A loki persistence adapter which persists using node fs module

@@ -48,7 +48,9 @@
   "bugs": {
     "url": "https://github.com/techfort/LokiJS/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "spark-md5": "^3.0.2"
+  },
   "devDependencies": {
     "istanbul": "^0.4.4",
     "jasmine": "^2.4.1",

@@ -10,7 +10,8 @@ This service of Lokijs for Angular simplifies things to the most basic level bec
 `bower install lokijs`
 
 ###Html:
-```
+
+```html
 <script src="bower_components/lokijs/src/lokijs.js"></script>
 <script src="bower_components/lokijs/src/loki-angular.js"></script>
 ```
@@ -93,7 +94,7 @@ Lokiwork.deleteDatabase(dbName);
 
 ####Further examples:
   
-  ```
+```javascript
 var collection = {  
   "db":"settings",
   "collection": "globals" ,
@@ -121,7 +122,8 @@ Lokiwork.setCurrentDoc('settings', 'globals', {'name': "user settings"})
     });
 ```
 
-###Remember!
+### Remember!
+
 A lot of the above commands may not be necessary if you are implementing a static change, just edit the underlying json javascript file, delete the local storage file, and restart the app.
 
 ###Notes:

@@ -263,17 +263,17 @@ results = coll.where(function(obj) {
 <li>limit - allows limiting the results to a specific document count.</li>
 <li>offset - allows skipping the first number of documents from the results.</li>
 <li>branch - useful for splitting a query path into multiple branches.</li>
-<li>simplesort - just pass a property name and your resulset will be sorted by this.</li>
+<li>simplesort - just pass a property name and your resultset will be sorted by this property.</li>
 <li>sort - allows you to provide your own comparison function to sort the resultset with.</li>
 <li>compoundsort - allows you sort based on multiple properties in ascending or descending order.</li>
 <li>update - used to run an update operation (javascript function) on all documents currently in the resultset.</li>
-<li>remove - removes all document objects which are currently in resultset from collection (as well as resultset)</li>
-<li>map - maps into a new anonymous collection, provide this with a map function</li>
+<li>remove - removes all document objects which are currently in resultset from collection (as well as resultset).</li>
+<li>map - maps into a new anonymous collection, provide this with a map function.</li>
 <li>mapReduce - allows you to specify both a map function and a reduce function on the current resultset data.</li>
 <li>eqJoin - Left joining two sets of data. Join keys can be defined or calculated properties</li>
 <li>transform - at the resultset level, this requires a raw transform array. When beginning a chain, a named or raw transform may be passed in to the chain method.  (See the <a href="https://github.com/techfort/LokiJS/wiki/Collection-Transforms">'Collection Transforms'</a> wiki page for more details.)</li>
 </ul>
-<p>An example making better use of chaining might be the following : </p>
+<p>An example making better use of chaining might be: </p>
 <pre class="prettyprint source lang-javascript"><code>var results = coll.chain()
                   .find({'Age': {'$gt':20}})
                   .where(function(obj) {

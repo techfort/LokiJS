@@ -25,7 +25,7 @@ var result = users.find({ age : { $lte: 35 } });
 console.log(result);
 ```
 
-### Autosave/autoload quickstart with default LokiFsAdapter (async i/o) : 
+### Autosave/autoload quickstart with default LokiFsAdapter (async i/o): 
 
 ```javascript
 var db = new loki('quickstart.db', {
@@ -49,14 +49,14 @@ function databaseInitialize() {
 // example method with any bootstrap logic to run after database initialized
 function runProgramLogic() {
   var entryCount = db.getCollection("entries").count();
-  console.log("number of entries in database : " + entryCount);
+  console.log("number of entries in database: " + entryCount);
 }
-
 ```
 
 If you expect your database to grow over 100mb or you experience slow save speeds you might to use our more high-performance LokiFsStructuredAdapter. This adapter utilitizes es6 generator iterators and node streams to stream the database line by line.  It will also save each collection into its own file (partitioned) with a file name derived from the base name.  This database should scale to support databases just under 1 gb on the default node heap allocation of 1.4gb.  Increasing heap allocation, you can push this limit further. 
 
-### An example using fastest and most scalable LokiFsStructuredAdapter (for nodejs) might look like : 
+### An example using fastest and most scalable LokiFsStructuredAdapter (for nodejs) might look like: 
+
 ```javascript
 const loki = require("lokijs");
 const lfsa = require('../src/loki-fs-structured-adapter.js');
@@ -80,21 +80,23 @@ function databaseInitialize() {
   // log some random event data as part of our example
   log.insert({ event: 'dbinit', dt: (new Date()).getTime() });
 }
-
 ```
 
 # Web QuickStart
 If you are using lokijs in a web environment, we will automatically use the built-in LokiLocalStorageAdapter.  This adapter is limited to around 5mb so that won't last long but here is how to quickly get started experimenting with lokijs :
-```
+
+```html
 <script src="../../src/lokijs.js"></script>
 ```
 
-### Example constructing loki for in-memory only or manual save/load (with default localStorage adapter) :
+### Example constructing loki for in-memory only or manual save/load (with default localStorage adapter):
+
 ```javascript
 var loki = new loki("test.db");
 ```
 
-### Example constructing loki for autoload/autosave (with default localStorage adapter) : 
+### Example constructing loki for autoload/autosave (with default localStorage adapter): 
+
 ```javascript
 var db = new loki("quickstart.db", {
   autoload: true,
@@ -108,16 +110,17 @@ function databaseInitialize() {
     db.addCollection("users");
   }
 }
-
 ```
 
 If you expect your database to grow up to 60megs you might want to use our LokiIndexedAdapter which can save to IndexedDb, if your browser supports it.  
 
-### Example using more scalable LokiIndexedAdapter : 
-```
+### Example using more scalable LokiIndexedAdapter: 
+
+```html
 <script src="../../src/lokijs.js"></script>
 <script src="../../src/loki-indexed-adapter.js"></script>
 ```
+
 ```javascript
 var idbAdapter = new LokiIndexedAdapter();
 var db = new loki("test.db", { 
@@ -133,10 +136,11 @@ If you expect your database to grow over 60megs things start to get browser depe
 
 ### An example using the LokiPartitioningAdapter along with LokiIndexedAdapter might appear as :
 
-```
+```html
 <script src="../../src/lokijs.js"></script>
 <script src="../../src/loki-indexed-adapter.js"></script>
 ```
+
 ```javascript
 var idbAdapter = new LokiIndexedAdapter();
 
@@ -167,6 +171,7 @@ avoids Safari 13 bug that would cause the database to balloon in size to gigabyt
 <script src="../../src/lokijs.js"></script>
 <script src="../../src/incremental-indexeddb-adapter.js"></script>
 ```
+
 ```javascript
 var db = new loki('TestDatabase', {
   adapter: new IncrementalIndexedDBAdapter(),
@@ -178,6 +183,7 @@ var db = new loki('TestDatabase', {
 ```
 
 # Description of LokiNativescriptAdapter
+
 This adapter can be used when developing a nativescript application for iOS or Android, it persists the loki db to the filesystem using the native platform api.
 
 ### Simple Example of using LokiNativescriptAdapter :
@@ -189,18 +195,20 @@ let db = new loki('loki.json',{
 });
 ```
 
-> In addition to the above adapters which are included in the lokijs distro, several community members have also created their own adapters using this adapter interface.  Some of these include : 
-* Cordova adapter : https://github.com/cosmith/loki-cordova-fs-adapter
-* localForage adapter : https://github.com/paulhovey/loki-localforage-adapter
+> In addition to the above adapters which are included in the lokijs distro, several community members have also created their own adapters using this adapter interface.  Some of these include: 
+* Cordova adapter: https://github.com/cosmith/loki-cordova-fs-adapter
+* localForage adapter: https://github.com/paulhovey/loki-localforage-adapter
 
 # Configuring persistence adapters
+
 ## Autosave, Autoload and close()
+
 LokiJS now supports automatic saving at user defined intervals, configured via loki constructor options.  This is supported for all persistenceMethods.  Data is only saved if changes have occurred since the last save.  You can also specify an autoload to immediately load a saved database during new loki construction.  If you need to process anything on load completion you can also specify your own autoloadCallback.  Finally, in an autosave scenario, if the user wants to exit or is notified of leaving the webpage (window.onbeforeunload) you can call close() on the database which will perform a final save (if needed).
 
-> _**Note : the ability of loki to 'flush' data on events such as a browsers onbeforeunload event, depends on the storage adapter being synchronous.  Local storage and file system adapters are synchronous but indexeddb is asynchronous and cannot save when triggered from db.close() in an onbeforeunload event.  The mouseleave event may allow enough time to perform a preemptive save.**_
-
+> _**Note: the ability of loki to 'flush' data on events such as a browsers onbeforeunload event, depends on the storage adapter being synchronous.  Local storage and file system adapters are synchronous but indexeddb is asynchronous and cannot save when triggered from db.close() in an onbeforeunload event.  The mouseleave event may allow enough time to perform a preemptive save.**_
 
 ### Autosave example
+
 ```javascript
     var idbAdapter = new LokiIndexedAdapter('loki');
     var db = new loki('test', 
@@ -212,6 +220,7 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
 ```
 
 ### Autosave with autoload example
+
 ```javascript
     var idbAdapter = new lokiIndexedAdapter('loki');
     var db = new loki('test.db', 
@@ -231,16 +240,18 @@ LokiJS now supports automatic saving at user defined intervals, configured via l
       }
     }
 ```
+
 [Try in Loki Sandbox](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/447edca33d1274dd9a64767d23df56e9/raw/740d3bedc1ed76d3718acd207b6913281a11ed78/autoloadCallback).
 
 # Save throttling and persistence contention management
+
 LokiJS now supports throttled saves and loads to avoid overlapping saveDatabase and loadDatabase calls from interfering with each other.  This is controlled by a loki constructor option called 'throttledSaves' and the default for that option is 'true'. 
 
 This means that within any single Loki database instance, multiple saves routed to the persistence adapter will be throttled and ensured to not conflict by overlap.  With save throttling, during the time between an adapter save and an adapter response to that save, if new save requests come in we will queue those requests (and their callbacks) for a save which we will initiate immediately after the current save is complete.  In that situation, if 10 requests to save had been made while a save is pending, the subsequent (single) save will callback all ten queued/tiered callbacks when -it- completes.  
 
 If a loadDatabase call occurs while a save is pending, we will (by default) wait indefinitely for the queue to deplete without being replenished.  Once that occurs we will lock all saves during the load... any incoming save requests made while the database is being loaded will then be queued for saving once the load is completed.  Since loadDatabase now internally calls a new 'throttledSaveDrain' we will pass through options to control that drain. (These options will be summarized below).
 
-You may also directly call this 'throttledSaveDrain' loki method which can wait for the queue to drain. You might do this using any of these variations/options : 
+You may also directly call this 'throttledSaveDrain' loki method which can wait for the queue to drain. You might do this using any of these variations/options: 
 
 ```javascript
     // wait indefinitely (recursively)
@@ -248,12 +259,14 @@ You may also directly call this 'throttledSaveDrain' loki method which can wait 
       console.log("no saves in progress");
     });
 ```
+
 ```javascript
     // wait only for the -current- queue to deplete
     db.throttledSaveDrain(function () {
       console.log("queue drained");
     }, { recursiveWait: false } );
 ```
+
 ```javascript
     // wait recursively but only for so long...
     db.throttledSaveDrain(function (success) {
@@ -265,13 +278,15 @@ You may also directly call this 'throttledSaveDrain' loki method which can wait 
       }
     }, { recursiveWaitLimit: true, recursiveWaitLimitDuration: 2000 });
 ```
-If you do not wish loki to supervise these conflicts with its throttling contention management, you can disable this by constructing loki with the following option (in addition to any existing options you are passing) : 
+
+If you do not wish loki to supervise these conflicts with its throttling contention management, you can disable this by constructing loki with the following option (in addition to any existing options you are passing): 
+
 ```javascript
 var db = new loki('test.db', { throttledSaves: false });
 ```
 
 # Creating your own Loki Persistence Adapters
-Lokijs currently supports two types of database adapters : 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.
+Lokijs currently supports two types of database adapters: 'basic', and 'reference' mode adapters. Basic adapters are passed a string to save and return a string when loaded... this is well suited to key/value stores.  Reference mode adapters are passed a reference to the database itself where it can save however it wishes to.  When loading, reference mode adapters can return an object reference or serialized string.  Below we will describe the minimal functionality which lokijs requires, you may want to provide additional adapter functionality for deleting or inspecting its persistence store.
 
 # Creating your own 'Basic' persistence adapter 
 
@@ -291,7 +306,7 @@ MyCustomAdapter.prototype.loadDatabase = function(dbname, callback) {
 }
 ```
 
-and a saveDatabase example might look like : 
+and a saveDatabase example might look like: 
 
 ```javascript
 MyCustomAdapter.prototype.saveDatabase = function(dbname, dbstring, callback) {
@@ -313,7 +328,7 @@ An additional 'level' of adapter support would be for your adapter to support **
 
 To instruct loki that your adapter supports 'reference' mode, you will need to implement a top level property called 'mode' on your adapter and set it equal to 'reference'.  Having done that and configured that adapter to be used, whenever loki wishes to save the database it will instead call out to an exportDatabase() method on your adapter.  
 
-A simple example of an advanced 'reference' mode adapter might look like : 
+A simple example of an advanced 'reference' mode adapter might look like: 
 ```javascript
 function YourAdapter() {
    this.mode = "reference";
@@ -371,6 +386,7 @@ var db = new loki('sandbox.db', { adapter: pa });
 ```
 
 You can also pass in a pageSize option if you wish to use a page size other than the default 25meg page size.
+
 ```javascript
 // set up adapter to page using 35 meg page size
 var pa = new loki.LokiPartitioningAdapter(idbAdapter, { paging: true, pageSize:35*1024*1024 });
@@ -385,7 +401,7 @@ var mem = new loki.LokiMemoryAdapter();
 var db = new loki('sandbox.db', {adapter: mem});
 ```
 
-If you wish to simulate asynchronous 'basic' adapter you can pass options to its constructor : 
+If you wish to simulate asynchronous 'basic' adapter you can pass options to its constructor: 
 ```javascript
 // simulate 50ms async delay for loads and saves. this will yield thread until then
 var mem = new loki.LokiMemoryAdapter({ asyncResponses: true, asyncTimeout: 50 });
@@ -410,7 +426,9 @@ var result = db.serializeDestructured({
   delimited: false
 });
 ```
+
 To destructure a single partition you might use the following syntax and experiment with 'delimited' and 'partition' properties :
+
 ```javascript
 var result = db.serializeDestructured({
   partitioned: true,
@@ -418,6 +436,7 @@ var result = db.serializeDestructured({
   delimited: false
 });
 ```
+
 > To experiment with the various structured serialization formats you can view this [Loki Sandbox gist](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm#rawgist=https://gist.githubusercontent.com/obeliskos/98a73205d7fe9746a687634e19a5eb89/raw/3821c9bbb6bae2689b00d16be9fae78dff430e28/destructuring%2520demo) and try various combinations of 'partitioned' and 'delimited' options (making sure both the serializeDestructured and deserializeDestructured use the same values.
 
 Destructuring (making many smaller json serializations vs one large serialization) does not lower memory overhead but seems to be a little faster.  Partitioning can reduce memory overhead if you can dispose of those memory chunks before advancing to the next (which our adapter implementations do).  Our 2.0.0 branch which is able to use ES6 language constructs may gain an iterable interface in the future for data exchange or line-by-line streaming.
@@ -442,15 +461,16 @@ var db = new loki('test', { adapter: idbAdapter });
 ```
 
 Note the 'finance' in this case represents an 'App' context and the 'test' designates the key (or database name)... the 'value' is the serialized strings representing your database which loki will provide. Advantages include larger storage limits over localstorage, and a catalog based approach where you can store many databases, grouped by an 'App' context.  Since indexedDB storage is provided 'per-domain', and on any given domain you might be running several web 'apps' each with its own database(s), this structure allows for organization and expandibility.
-> _**Note : the 'App' context is an conceptual separation, not a security partition. Security is provided by your web browser, partitioned per-domain within client storage in the browser/system.**_
+> _**Note: the 'App' context is an conceptual separation, not a security partition. Security is provided by your web browser, partitioned per-domain within client storage in the browser/system.**_
 
 # Loki Indexed adapter interface
 
 In addition to core loadDatabase and saveDatabase methods, the loki Indexed adapter provides the ability to getDatabaseList (for the current app context), deleteDatabase, and getCatalogSummary to retrieve unfiltered list of app/keys along with the size in database.  (Note sizes reported may not be Unicode sizes so effective 'size' it may consume might be double that amount as indexeddb saves in Unicode).  The loki indexed adapter also is console-friendly... even though indexeddb is highly asynchronous, relying on callbacks, you can omit callbacks for many of its methods and will log results to console instead.  This makes experimenting, diagnosing, and maintenance of loki catalog easier to learn and inspect.
 
 ### Full Examples of using loki indexed adapter
+
 ```javascript
-  // Save : will save App/Key/Val as 'finance'/'test'/{serializedDb}
+  // Save: will save App/Key/Val as 'finance'/'test'/{serializedDb}
   // if appContect ('finance' in this example) is omitted, 'loki' will be used
   var idbAdapter = new lokiIndexedAdapter('finance');
   var db = new loki('test', { adapter: idbAdapter });
@@ -487,17 +507,16 @@ In addition to core loadDatabase and saveDatabase methods, the loki Indexed adap
   var idbAdapter = new LokiIndexedAdapter('finance');
   idbAdapter.getCatalogSummary(function(entries) {
     entries.forEach(function(obj) {
-      console.log("app : " + obj.app);
-      console.log("key : " + obj.key);
-      console.log("size : " + obj.size);
+      console.log("app: " + obj.app);
+      console.log("key: " + obj.key);
+      console.log("size: " + obj.size);
     });
   });
-
 ```
 
 ### Examples of using loki Indexed adapter from console
 ```javascript
-  // CONSOLE USAGE : if using from console for management/diagnostic, here are a few examples :
+  // CONSOLE USAGE: if using from console for management/diagnostic, here are a few examples :
   var adapter = new LokiIndexedAdapter('loki');  // or whatever appContext you want to use
   adapter.getDatabaseList(); // with no callback passed, this method will log results to console
   adapter.saveDatabase('UserDatabase', JSON.stringify(myDb));

@@ -111,7 +111,7 @@
       // result[path[1]] on the result, etc etc.
       //
       // If `usingDotNotation` is true, this function still supports
-      // non nested fields.
+      // non-nested fields.
       //
       // `usingDotNotation` is a performance optimization. The caller
       // may know that a path is *not* nested. In which case, this
@@ -1416,7 +1416,7 @@
         // NDA : Non-Delimited Array : one iterable concatenated array with empty string collection partitions
         if (options.partitioned === false && options.delimited === false) {
           if (!Array.isArray(result)) {
-            throw new Error("a nondelimited, non partitioned collection serialization did not return an expected array");
+            throw new Error("a nondelimited, non-partitioned collection serialization did not return an expected array");
           }
 
           // Array.concat would probably duplicate memory overhead for copying strings.
@@ -2053,7 +2053,7 @@
     };
 
     /**
-     * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
+     * An adapter for adapters.  Converts a non-reference mode adapter into a reference mode adapter
      * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
      * only dirty collections will be saved.  If you  turn on paging with default page size of 25megs and save
      * a 75 meg collection it should use up roughly 3 save slots (key/value pairs sent to inner adapter).

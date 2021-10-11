@@ -282,13 +282,13 @@ results = coll.where(function(obj) {
                   .simplesort('Name')
                   .offset(100)
                   .limit(25)
-                  .data();</code></pre><h3>Resultset branching</h3><p>Resultsets and their results are not meant to be 'held' around. Those situations usually involve utilitizing Dynamic Views to keep results up-to-date.  You can however temporarily branch a resulset as often as you like, provided that you use the results right away (before any inserts/updates/deletes can occur).  Dynamic views also allows branching results which, in turn, takes its internal resultset and uses this branch to allow you to further query and transform its results without the initial penalty of the already executed filters.</p>
-<p>A simple example of collection branching might appear as follows : </p>
-<pre class="prettyprint source lang-javascript"><code>var baseResulset = coll.chain().find({'Age': {'$gte': 40}});
-var branchedResulset = baseResultset.branch();
+                  .data();</code></pre><h3>Resultset branching</h3><p>Resultsets and their results are not meant to be 'held' around. Those situations usually involve utilitizing Dynamic Views to keep results up-to-date.  You can however temporarily branch a resultset as often as you like, provided that you use the results right away (before any inserts/updates/deletes can occur).  Dynamic views also allows branching results which, in turn, takes its internal resultset and uses this branch to allow you to further query and transform its results without the initial penalty of the already executed filters.</p>
+<p>Here is a simple example of collection branching : </p>
+<pre class="prettyprint source lang-javascript"><code>var baseResultset = coll.chain().find({'Age': {'$gte': 40}});
+var branchedResultset = baseResultset.branch();
 
 var usResults = baseResultset.find({'Country': 'US'}).data();
-var ieResults = branchedResulset.find({'Country': 'IE'}).data();</code></pre><p>The advantage being if the base resulset query was time consuming, your subsequent branches would not need to incur that common cost.  Branching is typically more useful in large collections or extremely time sensitive applications.  </p>
+var ieResults = branchedResultset.find({'Country': 'IE'}).data();</code></pre><p>The advantage being if the base resultset query was time consuming, your subsequent branches would not need to incur that common cost.  Branching is typically more useful in large collections or extremely time sensitive applications.  </p>
 <p>Retaining the resultset (even when not branching) can be done to break up a chain into several parts if you need to examine data() or document counts at various stages in the chain.</p>
 <h3>Summary</h3><p>Wherever possible, use 'Find' queries over 'Where' queries.  'Find' queries are able to utilize indexes if they are applied and are relevant to your query.</p>
 <p>The 'Core' (Collection) querying methods (Collection.where(), Collection.find(), Collection.findOne(), Collection.by()) are the best method for learning lokijs.  For many applications this may be sufficient for your query needs.  Features not (yet?) available would be sorting, limiting, offsets and other higher level transformations.  </p>

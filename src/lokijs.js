@@ -1774,17 +1774,20 @@
           copyColl.dirty = false;
         }
 
-
         if (coll.getData) {
-          const {name, getData}=coll;
+          if ((options && options.hasOwnProperty(coll.name)) || !copyColl.disableFreeze || copyColl.autoupdate) {
+            throw new Error("this collection cannot be loaded lazily: " + coll.name);
+          }
+          copyColl.getData = coll.getData;
           Object.defineProperty(copyColl, 'data', {
-            get()  {
-              console.log(`hello ${name}`);
-              console.log(this)
-              const data = getData()
-              Object.defineProperty(this, 'data', { value: data })
+            /* jshint loopfunc:true */
+            get: function() {
+              var data = this.getData();
+              this.getData = null;
+              Object.defineProperty(this, 'data', { value: data });
               return data;
             }
+            /* jshint loopfunc:false */
           });
         } else {
           // load each element individually
@@ -1802,7 +1805,6 @@
               }
             }
           } else {
-
             for (j; j < clen; j++) {
               copyColl.data[j] = coll.data[j];
               copyColl.addAutoUpdateObserver(copyColl.data[j]);

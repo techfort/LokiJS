@@ -504,9 +504,11 @@
           loki.collections[i] = collection;
 
           var isLazy = lazyCollections.includes(name);
-
-          const getData = () => {
-            var data = []
+          var lokiDeserializeCollectionChunks = function () {
+            if (isLazy) {
+              DEBUG && console.log("lazy loading " + name);
+            }
+            var data = [];
             var dataChunks = chunkCollection.dataChunks;
             dataChunks.forEach(function populateChunk(chunk, i) {
               if (isLazy) {
@@ -520,9 +522,9 @@
               });
               dataChunks[i] = null;
             });
-            return data
-          }
-          collection.getData = getData;
+            return data;
+          };
+          collection.getData = lokiDeserializeCollectionChunks;
         }
       });
     }
@@ -632,7 +634,7 @@
       // while IDB process is still fetching data. Details: https://github.com/techfort/LokiJS/pull/874
       function getMegachunks(keys) {
         var megachunkCount = that.megachunkCount;
-        var keyRanges = createKeyRanges(keys, megachunkCount)
+        var keyRanges = createKeyRanges(keys, megachunkCount);
 
         var allChunks = [];
         var megachunksReceived = 0;
@@ -656,9 +658,8 @@
 
         // Stagger megachunk requests - first one half, then request the second when first one comes
         // back. This further improves concurrency.
-        const megachunkWaves = 2
-        const megachunksPerWave = megachunkCount / megachunkWaves
-        console.log(megachunkWaves, megachunksPerWave)
+        var megachunkWaves = 2;
+        var megachunksPerWave = megachunkCount / megachunkWaves;
         function requestMegachunk(index, wave) {
           var keyRange = keyRanges[index];
           idbReq(store.getAll(keyRange), function(e) {
@@ -746,7 +747,7 @@
     function parseChunk(chunk, deserializeChunk, lazyCollections) {
       classifyChunk(chunk);
 
-      var isData = chunk.type === 'data'
+      var isData = chunk.type === 'data';
       var isLazy = lazyCollections.includes(chunk.collectionName);
 
       if (!(isData && isLazy)) {
@@ -824,7 +825,7 @@
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
       chunks.sort(function(a, b) {
-        return a.index - b.index
+        return a.index - b.index;
       });
     }
 

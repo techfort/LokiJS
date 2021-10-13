@@ -149,6 +149,7 @@
      * @memberof IncrementalIndexedDBAdapter
      */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, getLokiCopy, callback) {
+      // throw new Error('save NOPE')
       var that = this;
 
       if (!this.idb) {
@@ -466,18 +467,18 @@
         } else if (type === "data") {
           if (chunkMap[name]) {
             chunkMap[name].dataChunks.push(value);
-            } else {
+          } else {
             chunkMap[name] = {
-                metadata: null,
-                dataChunks: [value],
-              };
-            }
+              metadata: null,
+              dataChunks: [value],
+            };
+          }
         } else if (type === "metadata") {
-            if (chunkMap[name]) {
-              chunkMap[name].metadata = value;
-            } else {
-              chunkMap[name] = { metadata: value, dataChunks: [] };
-            }
+          if (chunkMap[name]) {
+            chunkMap[name].metadata = value;
+          } else {
+            chunkMap[name] = { metadata: value, dataChunks: [] };
+          }
         } else {
           throw new Error("unreachable");
         }
@@ -509,8 +510,8 @@
             var dataChunks = chunkCollection.dataChunks;
             dataChunks.forEach(function populateChunk(chunk, i) {
               if (isLazy) {
-              chunk = JSON.parse(chunk);
-              if (deserializeChunk) {
+                chunk = JSON.parse(chunk);
+                if (deserializeChunk) {
                   chunk = deserializeChunk(name, chunk);
                 }
               }
@@ -571,11 +572,12 @@
         onSuccess();
       }
 
-      // if (window.__idb && window.__idb.idb) {
-      //   console.warn('using preloaded idb')
-      //   onDidOpen(window.__idb.idb);
-      //   return;
-      // }
+      if (this.options.preloads && this.options.preloads.idb) {
+        DEBUG && console.log('using preloaded idb');
+        onDidOpen(this.options.preloads.idb);
+        this.options.preloads.idb = null;
+        return;
+      }
 
       var openRequest = indexedDB.open(dbname, 1);
 
@@ -630,21 +632,21 @@
       // while IDB process is still fetching data. Details: https://github.com/techfort/LokiJS/pull/874
       function getMegachunks(keys) {
         var megachunkCount = that.megachunkCount;
-        var keyRanges = createKeyRanges(keys, megachunkCount).sort(() => Math.random() - 0.5);
+        var keyRanges = createKeyRanges(keys, megachunkCount)
 
         var allChunks = [];
         var megachunksReceived = 0;
 
         function processMegachunk(e, megachunkIndex, keyRange) {
-          var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
-          DEBUG && console.time(debugMsg);
+          // var debugMsg = 'processing chunk ' + megachunkIndex + ' (' + keyRange.lower + ' -- ' + keyRange.upper + ')'
+          // DEBUG && console.time(debugMsg);
           var megachunk = e.target.result;
           megachunk.forEach(function (chunk, i) {
             parseChunk(chunk, deserializeChunk, lazyCollections);
             allChunks.push(chunk);
             megachunk[i] = null; // gc
           });
-          DEBUG && console.timeEnd(debugMsg);
+          // DEBUG && console.timeEnd(debugMsg);
 
           megachunksReceived += 1;
           if (megachunksReceived === megachunkCount) {
@@ -697,9 +699,10 @@
           }
         }
 
-        if (window.__idb && window.__idb.keys) {
-          console.warn('using preloaded keys')
-          onDidGetKeys(window.__idb.keys);
+        if (that.options.preloads && that.options.preloads.keys) {
+          DEBUG && console.log('using preloaded keys');
+          onDidGetKeys(that.options.preloads.keys);
+          that.options.preloads.keys = null;
         } else {
           idbReq(store.getAllKeys(), function(e) {
             onDidGetKeys(e.target.result);
@@ -769,6 +772,8 @@
      * @memberof IncrementalIndexedDBAdapter
      */
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
+      // debugger
+      // throw new Error('delete NOPE')
       if (this.operationInProgress) {
         throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }

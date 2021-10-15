@@ -149,7 +149,6 @@
      * @memberof IncrementalIndexedDBAdapter
      */
     IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, getLokiCopy, callback) {
-      // throw new Error('save NOPE')
       var that = this;
 
       if (!this.idb) {
@@ -505,9 +504,7 @@
 
           var isLazy = lazyCollections.includes(name);
           var lokiDeserializeCollectionChunks = function () {
-            if (isLazy) {
-              DEBUG && console.log("lazy loading " + name);
-            }
+            DEBUG && isLazy && console.log("lazy loading " + name);
             var data = [];
             var dataChunks = chunkCollection.dataChunks;
             dataChunks.forEach(function populateChunk(chunk, i) {
@@ -773,8 +770,6 @@
      * @memberof IncrementalIndexedDBAdapter
      */
     IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
-      // debugger
-      // throw new Error('delete NOPE')
       if (this.operationInProgress) {
         throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
       }

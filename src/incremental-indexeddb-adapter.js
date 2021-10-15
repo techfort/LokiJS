@@ -820,7 +820,7 @@
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
       chunks.sort(function(a, b) {
-        return a.index - b.index;
+        return (a.index || 0) - (b.index || 0);
       });
     }
 

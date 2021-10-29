@@ -48,6 +48,8 @@
      *     Expects an array of Loki documents as the return value
      * @param {number} options.megachunkCount Number of parallel requests for data when loading database.
      *     Can be tuned for a specific application
+     * @param {array} options.lazyCollections Names of collections that should be deserialized lazily
+     *     Only use this for collections that aren't used at launch
      */
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
@@ -535,8 +537,24 @@
       }
       this.idbInitInProgress = true;
 
-      function onDidOpen(db) {
+      var openRequest = indexedDB.open(dbname, 1);
+
+      openRequest.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        DEBUG && console.log('onupgradeneeded, old version: ' + e.oldVersion);
+
+        if (e.oldVersion < 1) {
+          // Version 1 - Initial - Create database
+          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+        } else {
+          // Unknown version
+          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
+        }
+      };
+
+      openRequest.onsuccess = function(e) {
         that.idbInitInProgress = false;
+        var db = e.target.result;
         that.idb = db;
 
         if (!db.objectStoreNames.contains('LokiIncrementalData')) {
@@ -569,34 +587,6 @@
         };
 
         onSuccess();
-      }
-
-      if (this.options.preloads && this.options.preloads.idb) {
-        DEBUG && console.log('using preloaded idb');
-        onDidOpen(this.options.preloads.idb);
-        this.options.preloads.idb = null;
-        return;
-      }
-
-      var openRequest = indexedDB.open(dbname, 1);
-
-      openRequest.onupgradeneeded = function(e) {
-        var db = e.target.result;
-        DEBUG && console.log('onupgradeneeded, old version: ' + e.oldVersion);
-
-        if (e.oldVersion < 1) {
-          // Version 1 - Initial - Create database
-          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
-        } else {
-          // Unknown version
-          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
-        }
-      };
-
-      openRequest.onsuccess = function(e) {
-        that.idbInitInProgress = false;
-        var db = e.target.result;
-        onDidOpen(db);
       };
 
       openRequest.onblocked = function(e) {
@@ -697,17 +687,11 @@
           }
         }
 
-        if (that.options.preloads && that.options.preloads.keys) {
-          DEBUG && console.log('using preloaded keys');
-          onDidGetKeys(that.options.preloads.keys);
-          that.options.preloads.keys = null;
-        } else {
-          idbReq(store.getAllKeys(), function(e) {
-            onDidGetKeys(e.target.result);
-          }, function(e) {
-            callback(e);
-          });
-        }
+        idbReq(store.getAllKeys(), function(e) {
+          onDidGetKeys(e.target.result);
+        }, function(e) {
+          callback(e);
+        });
 
         if (that.options.onFetchStart) {
           that.options.onFetchStart();

@@ -1774,27 +1774,43 @@
           copyColl.dirty = false;
         }
 
-        // load each element individually
-        clen = coll.data.length;
-        j = 0;
-        if (options && options.hasOwnProperty(coll.name)) {
-          loader = makeLoader(coll);
-
-          for (j; j < clen; j++) {
-            collObj = loader(coll.data[j]);
-            copyColl.data[j] = collObj;
-            copyColl.addAutoUpdateObserver(collObj);
-            if (!copyColl.disableFreeze) {
-              deepFreeze(copyColl.data[j]);
-            }
+        if (coll.getData) {
+          if ((options && options.hasOwnProperty(coll.name)) || !copyColl.disableFreeze || copyColl.autoupdate) {
+            throw new Error("this collection cannot be loaded lazily: " + coll.name);
           }
+          copyColl.getData = coll.getData;
+          Object.defineProperty(copyColl, 'data', {
+            /* jshint loopfunc:true */
+            get: function() {
+              var data = this.getData();
+              this.getData = null;
+              Object.defineProperty(this, 'data', { value: data });
+              return data;
+            }
+            /* jshint loopfunc:false */
+          });
         } else {
+          // load each element individually
+          clen = coll.data.length;
+          j = 0;
+          if (options && options.hasOwnProperty(coll.name)) {
+            loader = makeLoader(coll);
 
-          for (j; j < clen; j++) {
-            copyColl.data[j] = coll.data[j];
-            copyColl.addAutoUpdateObserver(copyColl.data[j]);
-            if (!copyColl.disableFreeze) {
-              deepFreeze(copyColl.data[j]);
+            for (j; j < clen; j++) {
+              collObj = loader(coll.data[j]);
+              copyColl.data[j] = collObj;
+              copyColl.addAutoUpdateObserver(collObj);
+              if (!copyColl.disableFreeze) {
+                deepFreeze(copyColl.data[j]);
+              }
+            }
+          } else {
+            for (j; j < clen; j++) {
+              copyColl.data[j] = coll.data[j];
+              copyColl.addAutoUpdateObserver(copyColl.data[j]);
+              if (!copyColl.disableFreeze) {
+                deepFreeze(copyColl.data[j]);
+              }
             }
           }
         }

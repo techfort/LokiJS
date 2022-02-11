@@ -48,12 +48,15 @@
      *     Expects an array of Loki documents as the return value
      * @param {number} options.megachunkCount Number of parallel requests for data when loading database.
      *     Can be tuned for a specific application
+     * @param {array} options.lazyCollections Names of collections that should be deserialized lazily
+     *     Only use this for collections that aren't used at launch
      */
     function IncrementalIndexedDBAdapter(options) {
       this.mode = "incremental";
       this.options = options || {};
       this.chunkSize = 100;
-      this.megachunkCount = this.options.megachunkCount || 20;
+      this.megachunkCount = this.options.megachunkCount || 24;
+      this.lazyCollections = this.options.lazyCollections || [];
       this.idb = null; // will be lazily loaded on first operation that needs it
       this._prevLokiVersionId = null;
       this._prevCollectionVersionIds = {};
@@ -431,7 +434,7 @@
           chunks.loki = null; // gc
 
           // populate collections with data
-          populateLoki(loki, chunks.chunkMap);
+          populateLoki(loki, chunks.chunkMap, that.options.deserializeChunk, that.lazyCollections);
           chunks = null; // gc
 
           // remember previous version IDs
@@ -456,38 +459,30 @@
 
       sortChunksInPlace(chunks);
 
-      chunks.forEach(function(object) {
-        var key = object.key;
-        var value = object.value;
-        if (key === "loki") {
+      chunks.forEach(function(chunk) {
+        var type = chunk.type;
+        var value = chunk.value;
+        var name = chunk.collectionName;
+        if (type === "loki") {
           loki = value;
-          return;
-        } else if (key.includes(".")) {
-          var keySegments = key.split(".");
-          if (keySegments.length === 3 && keySegments[1] === "chunk") {
-            var colName = keySegments[0];
-            if (chunkMap[colName]) {
-              chunkMap[colName].dataChunks.push(value);
-            } else {
-              chunkMap[colName] = {
-                metadata: null,
-                dataChunks: [value],
-              };
-            }
-            return;
-          } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
-            var name = keySegments[0];
-            if (chunkMap[name]) {
-              chunkMap[name].metadata = value;
-            } else {
-              chunkMap[name] = { metadata: value, dataChunks: [] };
-            }
-            return;
+        } else if (type === "data") {
+          if (chunkMap[name]) {
+            chunkMap[name].dataChunks.push(value);
+          } else {
+            chunkMap[name] = {
+              metadata: null,
+              dataChunks: [value],
+            };
           }
+        } else if (type === "metadata") {
+          if (chunkMap[name]) {
+            chunkMap[name].metadata = value;
+          } else {
+            chunkMap[name] = { metadata: value, dataChunks: [] };
+          }
+        } else {
+          throw new Error("unreachable");
         }
-
-        console.error("Unknown chunk " + key);
-        throw new Error("Corrupted database - unknown chunk found");
       });
 
       if (!loki) {
@@ -497,25 +492,38 @@
       return { loki: loki, chunkMap: chunkMap };
     }
 
-    function populateLoki(loki, chunkMap) {
+    function populateLoki(loki, chunkMap, deserializeChunk, lazyCollections) {
       loki.collections.forEach(function populateCollection(collectionStub, i) {
-        var chunkCollection = chunkMap[collectionStub.name];
+        var name = collectionStub.name;
+        var chunkCollection = chunkMap[name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
-            throw new Error("Corrupted database - missing metadata chunk for " + collectionStub.name);
+            throw new Error("Corrupted database - missing metadata chunk for " + name);
           }
           var collection = chunkCollection.metadata;
           chunkCollection.metadata = null;
-
           loki.collections[i] = collection;
 
-          var dataChunks = chunkCollection.dataChunks;
-          dataChunks.forEach(function populateChunk(chunk, i) {
-            chunk.forEach(function(doc) {
-              collection.data.push(doc);
+          var isLazy = lazyCollections.includes(name);
+          var lokiDeserializeCollectionChunks = function () {
+            DEBUG && isLazy && console.log("lazy loading " + name);
+            var data = [];
+            var dataChunks = chunkCollection.dataChunks;
+            dataChunks.forEach(function populateChunk(chunk, i) {
+              if (isLazy) {
+                chunk = JSON.parse(chunk);
+                if (deserializeChunk) {
+                  chunk = deserializeChunk(name, chunk);
+                }
+              }
+              chunk.forEach(function(doc) {
+                data.push(doc);
+              });
+              dataChunks[i] = null;
             });
-            dataChunks[i] = null;
-          });
+            return data;
+          };
+          collection.getData = lokiDeserializeCollectionChunks;
         }
       });
     }
@@ -606,6 +614,7 @@
       var store = tx.objectStore('LokiIncrementalData');
 
       var deserializeChunk = this.options.deserializeChunk;
+      var lazyCollections = this.lazyCollections;
 
       // If there are a lot of chunks (>100), don't request them all in one go, but in multiple
       // "megachunks" (chunks of chunks). This improves concurrency, as main thread is already busy
@@ -622,7 +631,7 @@
           // DEBUG && console.time(debugMsg);
           var megachunk = e.target.result;
           megachunk.forEach(function (chunk, i) {
-            parseChunk(chunk, deserializeChunk);
+            parseChunk(chunk, deserializeChunk, lazyCollections);
             allChunks.push(chunk);
             megachunk[i] = null; // gc
           });
@@ -636,11 +645,13 @@
 
         // Stagger megachunk requests - first one half, then request the second when first one comes
         // back. This further improves concurrency.
-        function requestMegachunk(index) {
+        var megachunkWaves = 2;
+        var megachunksPerWave = megachunkCount / megachunkWaves;
+        function requestMegachunk(index, wave) {
           var keyRange = keyRanges[index];
           idbReq(store.getAll(keyRange), function(e) {
-            if (index < megachunkCount / 2) {
-              requestMegachunk(index + megachunkCount / 2);
+            if (wave < megachunkWaves) {
+              requestMegachunk(index + megachunksPerWave, wave + 1);
             }
 
             processMegachunk(e, index, keyRange);
@@ -649,8 +660,8 @@
           });
         }
 
-        for (var i = 0; i < megachunkCount / 2; i += 1) {
-          requestMegachunk(i);
+        for (var i = 0; i < megachunksPerWave; i += 1) {
+          requestMegachunk(i, 1);
         }
       }
 
@@ -658,7 +669,7 @@
         idbReq(store.getAll(), function(e) {
           var allChunks = e.target.result;
           allChunks.forEach(function (chunk) {
-            parseChunk(chunk, deserializeChunk);
+            parseChunk(chunk, deserializeChunk, lazyCollections);
           });
           callback(allChunks);
         }, function(e) {
@@ -667,13 +678,17 @@
       }
 
       function getAllKeys() {
-        idbReq(store.getAllKeys(), function(e) {
-          var keys = e.target.result.sort();
+        function onDidGetKeys(keys) {
+          keys.sort();
           if (keys.length > 100) {
             getMegachunks(keys);
           } else {
             getAllChunks();
           }
+        }
+
+        idbReq(store.getAllKeys(), function(e) {
+          onDidGetKeys(e.target.result);
         }, function(e) {
           callback(e);
         });
@@ -686,14 +701,41 @@
       getAllKeys();
     };
 
-    function parseChunk(chunk, deserializeChunk) {
-      chunk.value = JSON.parse(chunk.value);
-      if (deserializeChunk) {
-        var segments = chunk.key.split('.');
-        if (segments.length === 3 && segments[1] === 'chunk') {
-          var collectionName = segments[0];
-          chunk.value = deserializeChunk(collectionName, chunk.value);
+    function classifyChunk(chunk) {
+      var key = chunk.key;
+
+      if (key === 'loki') {
+        chunk.type = 'loki';
+        return;
+      } else if (key.includes('.')) {
+        var keySegments = key.split(".");
+        if (keySegments.length === 3 && keySegments[1] === "chunk") {
+          chunk.type = 'data';
+          chunk.collectionName = keySegments[0];
+          chunk.index = parseInt(keySegments[2], 10);
+          return;
+        } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
+          chunk.type = 'metadata';
+          chunk.collectionName = keySegments[0];
+          return;
         }
+      }
+
+      console.error("Unknown chunk " + key);
+      throw new Error("Corrupted database - unknown chunk found");
+    }
+
+    function parseChunk(chunk, deserializeChunk, lazyCollections) {
+      classifyChunk(chunk);
+
+      var isData = chunk.type === 'data';
+      var isLazy = lazyCollections.includes(chunk.collectionName);
+
+      if (!(isData && isLazy)) {
+        chunk.value = JSON.parse(chunk.value);
+      }
+      if (deserializeChunk && isData && !isLazy) {
+        chunk.value = deserializeChunk(chunk.collectionName, chunk.value);
       }
     }
 
@@ -758,27 +800,11 @@
       return Math.random().toString(36).substring(2);
     }
 
-    function _getSortKey(object) {
-      var key = object.key;
-      if (key.includes(".")) {
-        var segments = key.split(".");
-        if (segments.length === 3 && segments[1] === "chunk") {
-          return parseInt(segments[2], 10);
-        }
-      }
-
-      return -1; // consistent type must be returned
-    }
-
     function sortChunksInPlace(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
       chunks.sort(function(a, b) {
-        var aKey = _getSortKey(a),
-          bKey = _getSortKey(b);
-        if (aKey < bKey) return -1;
-        if (aKey > bKey) return 1;
-        return 0;
+        return (a.index || 0) - (b.index || 0);
       });
     }
 

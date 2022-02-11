@@ -269,6 +269,17 @@ async function startTests(divElement)
     trace('ok')
   }
 
+  trace('==> lazy collection deserialization')
+
+  {
+    let db2 = new loki('incremental_idb_tester', { adapter: new IncrementalIndexedDBAdapter({
+      lazyCollections: ['test_collection']
+    }) });
+    await saveAndCheckDatabaseCopyIntegrity(db2);
+
+    trace('ok')
+  }
+
   trace('==> long running fuzz tests')
 
   function fuzz(dbToFuzz) {

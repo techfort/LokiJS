@@ -32,7 +32,7 @@ function sleipnirFilter(obj) {
 }
 
 // and then pass that
-results = coll.where(sleipnirFunction);
+results = coll.where(sleipnirFilter);
 ```
 
 ### 'Find' queries

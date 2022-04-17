@@ -359,6 +359,17 @@ describe("Individual operator tests", function() {
     expect(coll.find({ "c": { $eq: undefined } }).length).toEqual(4);
   });
 
+  it('query nested documents with nullable object', function() {
+    var db = new loki('db');
+    var coll = db.addCollection('coll');
+
+    coll.insert({ a: null, b: 5, c: { a: 1 }});
+    coll.insert({ a: "11", b: 5, c: { a: 1 }});
+    coll.insert({ a: "11", b: 5, c: null});
+
+    expect(coll.find({ "c.a": { $eq: 1 } }).length).toEqual(2);
+  });
+
   it('$exists ops work as expected', function() {
     var db = new loki('db');
     var coll = db.addCollection('coll');

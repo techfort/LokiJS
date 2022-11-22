@@ -3891,7 +3891,7 @@
       // pass in each document object currently in resultset to user supplied updateFunction
       for (var idx = 0; idx < len; idx++) {
         // if we have cloning option specified or are doing differential delta changes, clone object first
-        if (!this.disableFreeze || this.collection.cloneObjects || !this.collection.disableDeltaChangesApi) {
+        if (!this.collection.disableFreeze || this.collection.cloneObjects || !this.collection.disableDeltaChangesApi) {
           obj = clone(rcd[this.filteredrows[idx]], this.collection.cloneMethod);
           updateFunction(obj);
           this.collection.update(obj);

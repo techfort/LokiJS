@@ -4050,10 +4050,17 @@
         };
       }
 
+      var temp = [];
+
       //Run map function over each object in the resultset
       for (var j = 0; j < leftDataLength; j++) {
         key = leftKeyisFunction ? leftJoinKey(leftData[j]) : leftData[j][leftJoinKey];
-        result.push(mapFun(leftData[j], joinMap[key] || {}));
+        for( var k = 0; k < key.length; k++ )
+        {
+          temp.push( joinMap[key[k]] );   
+        }
+        result.push(mapFun(leftData[j], temp || {}));
+        temp = [];
       }
 
       //return return a new resultset with no filters

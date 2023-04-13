@@ -4050,19 +4050,17 @@
         };
       }
 
-      var temp = [];
-
+      var data = [];
       //Run map function over each object in the resultset
       for (var j = 0; j < leftDataLength; j++) {
         key = leftKeyisFunction ? leftJoinKey(leftData[j]) : leftData[j][leftJoinKey];
         for( var k = 0; k < key.length; k++ )
         {
-          temp.push( joinMap[key[k]] );   
+          data.push( joinMap[key[k]] );   
         }
-        result.push(mapFun(leftData[j], temp || {}));
-        temp = [];
+        result.push(mapFun(leftData[j], data || {}));
+        data = [];
       }
-
       //return return a new resultset with no filters
       this.collection = new Collection('joinData');
       this.collection.insert(result);

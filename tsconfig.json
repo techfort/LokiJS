@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    // "outDir": "./build",
+    "target": "es6",
+    "skipLibCheck": true,
+    "lib": ["es2017", "dom"]
+  },
+  "include": ["./src/**/*"]
+}

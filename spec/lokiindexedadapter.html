@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script>
+      window.__loki_incremental_idb_debug = true;
+    </script>
+    <script type="text/javascript" src="../src/lokijs.js"></script>
+    <script
+      type="text/javascript"
+      src="../src/loki-indexed-adapter.js"
+    ></script>
+  </head>
+  <body>
+    <h2>Loki IDB tests and benchmark</h2>
+
+    <p>
+      <b
+        >Close console (if visible) and press start. Results will display in
+        page when done.</b
+      >
+    </p>
+    <br />
+    <!-- <button onclick="start()">Start</button> -->
+    <p id="waitMessage" style="display: none">
+      <i>This may take a minute please wait...</i>
+    </p>
+    <br />
+
+    <div id="output"></div>
+
+    <script>
+      function expectToBe(a, b) {
+        if (a !== b) {
+          trace("test failed");
+          {
+            {
+              /*  debugger;  */
+            }
+          }
+          throw new Error(
+            `expectToBe failed: <${JSON.stringify(a)}> does not equal <${b}>`
+          );
+        }
+      }
+
+      function expectEqual(a, b) {
+        if (JSON.stringify(a) !== JSON.stringify(b)) {
+          trace("test failed", true);
+          {
+            {
+              /*  debugger;  */
+            }
+          }
+          throw new Error(
+            `expectEqual failed: <${JSON.stringify(
+              a
+            )}> does not equal <${JSON.stringify(b)}>`
+          );
+        }
+      }
+
+      function checkDatabaseCopyIntegrity(source, copy) {
+        console.log(source);
+        console.log(copy);
+
+        source.collections.forEach(function (sourceCol, i) {
+          var copyCol = copy.collections[i];
+
+          {
+            expectToBe(copyCol.name, sourceCol.name);
+            expectToBe(copyCol.data.length, sourceCol.data.length);
+          }
+
+          copyCol.data.every(function (copyEl, elIndex) {
+            {
+              expectEqual(copyEl, sourceCol.data[elIndex]);
+            }
+          });
+          {
+            expectEqual(copyCol.binaryIndices, sourceCol.binaryIndices);
+            expectEqual(copyCol.constraints, sourceCol.constraints);
+            expectEqual(copyCol.maxId, sourceCol.maxId);
+            expectEqual(copyCol.dirty, sourceCol.dirty);
+            expectEqual(copyCol.dirtyIds, sourceCol.dirtyIds);
+          }
+        });
+      }
+
+      function saveAndCheckDatabaseCopyIntegrity(source) {
+        return new Promise((resolve) => {
+          const beforeSave = new Date();
+          source.saveDatabase((saveError) => {
+            const saveTime = new Date() - beforeSave;
+            expectToBe(saveError, undefined);
+
+            let copy = new loki("loki_idb_tester", {
+              adapter: new LokiIndexedAdapter(undefined),
+              verbose: true,
+            });
+            const beforeLoad = new Date();
+            copy.loadDatabase({}, (loadError) => {
+              const loadTime = new Date() - beforeLoad;
+              expectToBe(loadError, null);
+              checkDatabaseCopyIntegrity(source, copy);
+              resolve([loadTime, saveTime]);
+            });
+          });
+        });
+      }
+
+      function loadLoki(loki) {
+        return new Promise((resolve, reject) => {
+          loki.loadDatabase({}, (error) => {
+            error ? reject(error) : resolve();
+          });
+        });
+      }
+
+      function trace(string, error) {
+        domElement.innerHTML = domElement.innerHTML + string + "<br/>";
+      }
+
+      var domElement = null;
+
+      async function startTests(divElement) {
+        domElement = divElement;
+
+        indexedDB.deleteDatabase("loki_idb_tester");
+
+        let idbOverwriteCount = 0;
+        let adapter = new LokiIndexedAdapter(undefined, {
+          onDidOverwrite: () => {
+            idbOverwriteCount += 1;
+          },
+        });
+        let db = new loki("loki_idb_tester", { adapter: adapter });
+
+        let col1 = db.addCollection("test_collection", {
+          indices: ["blah"],
+        });
+        let col2 = db.addCollection("test_collection2", {
+          indices: ["blah"],
+        });
+
+        trace("==> basic save and loading (6 records)");
+
+        {
+          col1.insert({ customId: 0, val: "hello", constraints: 100 });
+          col1.insert({ customId: 1, val: "hello1" });
+          let h2 = col1.insert({ customId: 2, val: "hello2" });
+          let h3 = col1.insert({ customId: 3, val: "hello3" });
+          let h4 = col1.insert({ customId: 4, val: "hello4" });
+          let h5 = col1.insert({ customId: 5, val: "hello5" });
+
+          h2.val = "UPDATED";
+          col1.update(h2);
+
+          h3.val = "UPDATED";
+          col1.update(h3);
+          h3.val2 = "added!";
+          col1.update(h3);
+
+          col1.remove(h4);
+
+          let h6 = col1.insert({ customId: 6, val: "hello6" });
+
+          const [loadTime, saveTime] = await saveAndCheckDatabaseCopyIntegrity(
+            db
+          );
+
+          trace("ok");
+          trace(`save time: ${saveTime}ms`);
+          trace(`load time: ${loadTime}ms`);
+        }
+        {
+          {
+            trace("==> large save (10K records)");
+
+            {
+              console.time("massAdd");
+              for (let i = 0; i < 10000; i++) {
+                col1.insert({
+                  mass: true,
+                  i,
+                  blah: "accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam",
+                });
+              }
+              console.timeEnd("massAdd");
+
+              const [loadTime, saveTime] =
+                await saveAndCheckDatabaseCopyIntegrity(db);
+
+              trace("ok");
+              trace(`save time: ${saveTime}ms`);
+              trace(`load time: ${loadTime}ms`);
+            }
+
+            trace("==> large save with fuzzed changes (75K records)");
+
+            {
+              db.collections.forEach((col) => {
+                console.time("massAdd");
+                const numberOfRecords = 32000;
+                for (let i = 0; i < numberOfRecords; i++) {
+                  col.insert({
+                    mass: true,
+                    i,
+                    blah: "accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam. Ut sagittis, ipsum dolor quam. nibh vel risus. Sed vel lectus. Ut sagittis, ipsum dolor quam",
+                  });
+                }
+                console.timeEnd("massAdd");
+
+                // remove many contiguous records to have empty chunks
+                const dataToDelete = col.data.slice(200, 95);
+                col.remove(dataToDelete);
+
+                // fuzz changes
+                const numberOfDeletions = 2500;
+                for (let i = 0; i < numberOfDeletions; i++) {
+                  const id = Math.floor(Math.random() * col.data.length);
+                  col.remove(col.data[id]);
+                }
+
+                const numberOfUpdates = 2500;
+                for (let i = 0; i < numberOfUpdates; i++) {
+                  const id = Math.floor(Math.random() * col.data.length);
+                  const doc = col.data[id];
+                  doc.blah = "UPDATED_" + doc.blah;
+                  col.update(doc);
+                }
+              });
+
+              const [loadTime, saveTime] =
+                await saveAndCheckDatabaseCopyIntegrity(db);
+
+              trace("ok");
+              trace(`save time: ${saveTime}ms`);
+              trace(`load time: ${loadTime}ms`);
+            }
+          }
+        }
+
+        {
+          trace("ALL DONE!");
+        }
+      }
+
+      function start() {
+        document.getElementById("waitMessage").style.display = "";
+
+        setTimeout(function () {
+          startTests(document.getElementById("output"));
+        }, 100);
+      }
+      start();
+    </script>
+  </body>
+</html>

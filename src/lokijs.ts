@@ -1,3 +1,3 @@
-import Loki from "./loki";
+import Loki from "./modules/Loki";
 
 window.loki = Loki;

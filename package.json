@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "lint": "exit 0",
+    "typecheck": "tsc --noEmit",
     "lint:eslint": "eslint . --ext .ts",
     "test:browser": "karma start karma.conf.js --single-run",
     "test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
@@ -30,8 +31,9 @@
     "test": "npm run test:browser && npm run test:node",
     "build": "node esbuild.js",
     "postbuild": "karma start karma.build.conf.js --single-run",
+    "prebuild": "tsc --noEmit || exit 0",
     "prepublish": "npm run build",
-    "clean": "rimraf build/* coverage/* node_modules",
+    "clean": "rimraf build/* coverage/*",
     "pour:beer": "echo New npm version published, one beer for you !",
     "jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json",
     "benchmark": "node benchmark/benchmark"

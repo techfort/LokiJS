@@ -6,7 +6,7 @@ esbuild
     entryNames: "[name].min",
     outdir: "build",
     bundle: true,
-    // sourcemap: true,
+    sourcemap: true,
     minifyWhitespace: true,
     format: "iife",
     // target: ["esnext"],

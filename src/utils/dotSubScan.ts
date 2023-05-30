@@ -1,5 +1,4 @@
 /* eslint-disable no-prototype-builtins */
-/* eslint-disable no-var */
 
 "use strict";
 /**
@@ -21,11 +20,10 @@ export function dotSubScan(
   extra,
   poffset?: number
 ) {
-  var pathOffset = poffset || 0;
-  var path = paths[pathOffset];
-
-  var valueFound = false;
-  var element;
+  const pathOffset = poffset || 0;
+  const path = paths[pathOffset];
+  let valueFound = false;
+  let element;
   if (root !== null && typeof root === "object" && path in root) {
     element = root[path];
   }
@@ -34,7 +32,7 @@ export function dotSubScan(
     // then just evaluate the test function and value on the element
     valueFound = fun(element, value, extra);
   } else if (Array.isArray(element)) {
-    for (var index = 0, len = element.length; index < len; index += 1) {
+    for (let index = 0, len = element.length; index < len; index += 1) {
       valueFound = dotSubScan(
         element[index],
         paths,

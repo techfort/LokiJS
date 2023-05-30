@@ -585,7 +585,7 @@ export class Collection extends LokiEventEmitter {
    * @param {boolean} options.adaptiveBinaryIndices - collection indices will be actively rebuilt rather than lazily
    * @memberof Collection
    */
-  configureOptions(options: Record<string, any> = {}) {
+  configureOptions = (options: Record<string, any> = {}) => {
     if (options.hasOwnProperty("adaptiveBinaryIndices")) {
       this.adaptiveBinaryIndices = options.adaptiveBinaryIndices;
 
@@ -594,7 +594,7 @@ export class Collection extends LokiEventEmitter {
         this.ensureAllIndexes();
       }
     }
-  }
+  };
 
   /**
    * Ensure binary index on a certain field
@@ -912,13 +912,13 @@ export class Collection extends LokiEventEmitter {
    * @returns {number} number of documents in the collection
    * @memberof Collection
    */
-  count(query?: Record<string, any>) {
+  count = (query?: Record<string, any>) => {
     if (!query) {
       return this.data.length;
     }
 
     return this.chain().find(query).filteredrows.length;
-  }
+  };
 
   /**
    * Rebuild idIndex
@@ -2387,7 +2387,7 @@ export class Collection extends LokiEventEmitter {
    * Transaction methods
    */
   /** start the transation */
-  startTransaction() {
+  startTransaction = () => {
     if (this.transactional) {
       this.cachedData = clone(this.data, this.cloneMethod);
       this.cachedIndex = this.idIndex;
@@ -2399,10 +2399,10 @@ export class Collection extends LokiEventEmitter {
         this.DynamicViews[idx].startTransaction();
       }
     }
-  }
+  };
 
   /** commit the transation */
-  commit() {
+  commit = () => {
     if (this.transactional) {
       this.cachedData = null;
       this.cachedIndex = null;
@@ -2414,10 +2414,10 @@ export class Collection extends LokiEventEmitter {
         this.DynamicViews[idx].commit();
       }
     }
-  }
+  };
 
   /** roll back the transation */
-  rollback() {
+  rollback = () => {
     if (this.transactional) {
       if (this.cachedData !== null && this.cachedIndex !== null) {
         this.data = this.cachedData;
@@ -2431,7 +2431,7 @@ export class Collection extends LokiEventEmitter {
         this.DynamicViews[idx].rollback();
       }
     }
-  }
+  };
 
   // async executor. This is only to enable callbacks at the end of the execution.
   async(fun, callback) {
@@ -2470,9 +2470,9 @@ export class Collection extends LokiEventEmitter {
    * @returns {data} The result of your mapReduce operation
    * @memberof Collection
    */
-  mapReduce(mapFunction, reduceFunction) {
+  mapReduce = (mapFunction, reduceFunction) => {
     return reduceFunction(this.data.map(mapFunction));
-  }
+  };
 
   /**
    * Join two collections on specified properties

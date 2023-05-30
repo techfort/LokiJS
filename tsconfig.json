@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    // "outDir": "./build",
     "target": "es6",
     "skipLibCheck": true,
     "lib": ["es2022", "dom"]

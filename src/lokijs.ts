@@ -1,3 +1,5 @@
 import Loki from "./modules/Loki";
 
-window.loki = Loki;
+if (typeof window !== "undefined") {
+  window.loki = Loki;
+}

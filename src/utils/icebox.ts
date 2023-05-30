@@ -9,12 +9,13 @@
 "use strict";
 import { clone } from "./clone";
 
-export function freeze(obj) {
+export function freeze(obj: object) {
   if (!Object.isFrozen(obj)) {
     Object.freeze(obj);
   }
 }
-export function deepFreeze(obj) {
+
+export function deepFreeze(obj: object) {
   var prop, i;
   if (Array.isArray(obj)) {
     for (i = 0; i < obj.length; i++) {
@@ -31,7 +32,7 @@ export function deepFreeze(obj) {
   }
 }
 
-export function unFreeze(obj) {
+export function unFreeze(obj: object) {
   if (!Object.isFrozen(obj)) {
     return obj;
   }

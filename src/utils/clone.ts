@@ -1,10 +1,18 @@
 /* eslint-disable no-prototype-builtins */
 /* eslint-disable no-var */
-
 "use strict";
+
+import * as jQuery from "jquery";
 import { cloneObjectArray } from "./cloneObjectArray";
 
-export function clone(data, method) {
+export type CloneMethods =
+  | "parse-stringify"
+  | "jquery-extend-deep"
+  | "shallow"
+  | "shallow-assign"
+  | "shallow-recurse-objects";
+
+export function clone(data: object, method: CloneMethods) {
   if (data === null || data === undefined) {
     return null;
   }
@@ -17,7 +25,6 @@ export function clone(data, method) {
       cloned = JSON.parse(JSON.stringify(data));
       break;
     case "jquery-extend-deep":
-      // @ts-ignore
       cloned = jQuery.extend(true, {}, data);
       break;
     case "shallow":

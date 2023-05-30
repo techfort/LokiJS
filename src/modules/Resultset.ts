@@ -15,7 +15,7 @@
  */
 
 import { hasOwnProperty, precompileQuery } from "../loki";
-import { clone } from "../utils/clone";
+import { CloneMethods, clone } from "../utils/clone";
 import { dotSubScan } from "../utils/dotSubScan";
 import { Utils } from "../utils/index";
 import { indexedOps, LokiOps } from "../utils/ops";
@@ -640,6 +640,11 @@ export class Resultset {
     // the comparison function
     const fun = LokiOps[operator];
 
+    // https://github.com/techfort/LokiJS/pull/892
+    if (typeof fun !== "function") {
+      throw new TypeError('"' + operator + '" is not a valid operator');
+    }
+
     // "shortcut" for collection data
     const t = this.collection.data;
 
@@ -881,7 +886,8 @@ export class Resultset {
     for (let idx = 0; idx < len; idx++) {
       // if we have cloning option specified or are doing differential delta changes, clone object first
       if (
-        !this.disableFreeze ||
+        // https://github.com/techfort/LokiJS/pull/918/files
+        !this.collection.disableFreeze ||
         this.collection.cloneObjects ||
         !this.collection.disableDeltaChangesApi
       ) {
@@ -995,9 +1001,7 @@ export class Resultset {
    */
   eqJoin(joinData, leftJoinKey, rightJoinKey, mapFun, dataOptions) {
     let leftData = [];
-    let leftDataLength;
     let rightData = [];
-    let rightDataLength;
     let key;
     const result = [];
     const leftKeyisFunction = typeof leftJoinKey === "function";
@@ -1006,20 +1010,20 @@ export class Resultset {
 
     //get the left data
     leftData = this.data(dataOptions);
-    leftDataLength = leftData.length;
+    const leftDataLength = leftData.length;
 
     //get the right data
     if (joinData instanceof Collection) {
       rightData = joinData.chain().data(dataOptions);
     } else if (joinData instanceof Resultset) {
-      let x = new Resultset({}, {});
+      const x = new Resultset({}, {});
       x.rightData = joinData.data(dataOptions);
     } else if (Array.isArray(joinData)) {
       rightData = joinData;
     } else {
       throw new TypeError("joinData needs to be an array or result set");
     }
-    rightDataLength = rightData.length;
+    const rightDataLength = rightData.length;
 
     //construct a lookup table
 
@@ -1036,7 +1040,6 @@ export class Resultset {
         right,
       });
     }
-
     //Run map function over each object in the resultset
     for (let j = 0; j < leftDataLength; j++) {
       key = leftKeyisFunction
@@ -1069,7 +1072,8 @@ export class Resultset {
    * @example
    * var resutls = users.chain().find({ age: 34 }).data();
    */
-  data(options?: Record<string, any>) {
+
+  data<T = unknown>(options?: Partial<ResultSetDataOptions>): T[] {
     var result = [],
       data = this.collection.data,
       obj,
@@ -1160,7 +1164,7 @@ export class Resultset {
    *   };
    * });
    */
-  map(mapFun, dataOptions) {
+  map(mapFun, dataOptions?: Partial<ResultSetDataOptions>) {
     const data = this.data(dataOptions).map(mapFun);
     //return return a new resultset with no filters
     this.collection = new Collection("mappedData");
@@ -1180,7 +1184,8 @@ export class Resultset {
   $and = Resultset.prototype.findAnd;
 }
 
-/**
- * Alias of copy()
- * @memberof Resultset
- */
+interface ResultSetDataOptions {
+  removeMeta: boolean;
+  forceClones: boolean;
+  forceCloneMethod: CloneMethods;
+}

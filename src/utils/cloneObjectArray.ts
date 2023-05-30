@@ -1,9 +1,9 @@
 /* eslint-disable no-prototype-builtins */
 /* eslint-disable no-var */
 "use strict";
-import { clone } from "./clone";
+import { CloneMethods, clone } from "./clone";
 
-export function cloneObjectArray(objarray, method) {
+export function cloneObjectArray(objarray: object[], method: CloneMethods) {
   if (method == "parse-stringify") {
     return clone(objarray, method);
   }

@@ -1,6 +1,7 @@
 /* eslint-disable no-prototype-builtins */
 /* eslint-disable no-var */
 "use strict";
+
 export function localStorageAvailable() {
   try {
     return (

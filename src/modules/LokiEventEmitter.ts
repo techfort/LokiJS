@@ -35,7 +35,6 @@ export class LokiEventEmitter {
   serializeChanges: (collectionNamesArray: any) => string;
   clearChanges: () => void;
   throttledSaveDrain: (callback: any, options: any) => void;
-  loadDatabaseInternal: (options: any, callback: any) => void;
   loadDatabase: (options: any, callback: any) => void;
   saveDatabaseInternal: (callback: any) => void;
   saveDatabase: (callback: any) => void;
@@ -78,7 +77,10 @@ export class LokiEventEmitter {
    * @returns {int} the index of the callback in the array of listeners for a particular event
    * @memberof LokiEventEmitter
    */
-  on(eventName, listener) {
+  on<F extends (...args: any[]) => any>(
+    eventName: string | string[],
+    listener: F
+  ): F {
     let event;
     var self = this;
 
@@ -105,7 +107,7 @@ export class LokiEventEmitter {
    * @returns {int} the index of the callback in the array of listeners for a particular event
    * @memberof LokiEventEmitter
    */
-  addListener = this.on;
+  addListener: LokiEventEmitter["on"] = this.on;
 
   /**
    * emit(eventName, data) - emits a particular event
@@ -115,7 +117,7 @@ export class LokiEventEmitter {
    * @param {object=} data - optional object passed with the event
    * @memberof LokiEventEmitter
    */
-  emit(eventName, data?: unknown) {
+  emit(eventName: string, data?: unknown, arg?: any): void {
     let selfArgs;
     var self = this;
 
@@ -144,7 +146,10 @@ export class LokiEventEmitter {
    * @param {function} listener - the listener callback function to remove from emitter
    * @memberof LokiEventEmitter
    */
-  removeListener(eventName, listener) {
+  removeListener(
+    eventName: string | string[],
+    listener: (...args: any[]) => any
+  ): void {
     var self = this;
 
     if (Array.isArray(eventName)) {
@@ -165,7 +170,7 @@ export class LokiEventEmitter {
    * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
    * @memberof LokiEventEmitter
    */
-  events: Record<string, (() => void)[]> = {};
+  public events: { [eventName: string]: ((...args: any[]) => any)[] } = {};
 
   /**
    * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event

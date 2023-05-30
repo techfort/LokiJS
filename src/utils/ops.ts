@@ -14,10 +14,10 @@ export function doQueryOp(val, op, record) {
   return false;
 }
 
-export var LokiOps = {
-  // comparison operators
-  // a is the value in the collection
-  // b is the query value
+// comparison operators
+// a is the value in the collection
+// b is the query value
+export const LokiOps = {
   $eq: function (a, b) {
     return a === b;
   },
@@ -272,7 +272,7 @@ valueLevelOps.forEach(function (op) {
 // if an op is registered in this object, our 'calculateRange' can use it with our binary indices.
 // if the op is registered to a function, we will run that function/op as a 2nd pass filter on results.
 // those 2nd pass filter functions should be similar to LokiOps functions, accepting 2 vals to compare.
-export var indexedOps = {
+export const indexedOps = {
   $eq: LokiOps.$eq,
   $aeq: true,
   $dteq: true,

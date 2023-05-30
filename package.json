@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "lint": "eslint . --ext .ts || exit 0",
+    "format": "prettier src/*.ts -w",
     "typecheck": "tsc --noEmit",
     "lint:eslint": "eslint . --ext .ts",
     "test:browser": "karma start karma.conf.js --single-run",
@@ -32,7 +33,7 @@
     "test": "npm run test:browser && npm run test:node",
     "build": "node esbuild.js",
     "postbuild": "karma start karma.build.conf.js --single-run",
-    "prebuild": "tsc --noEmit",
+    "prebuild": "npm run format && tsc --noEmit",
     "prepublish": "npm run build",
     "clean": "rimraf build/* coverage/*",
     "pour:beer": "echo New npm version published, one beer for you !",

@@ -3,7 +3,7 @@
 /* eslint-disable no-var */
 "use strict";
 
-import { BSonSort, binarySearch } from "../loki";
+import { BSonSort, binarySearch } from "../lokijs";
 
 export function KeyValueStore() {}
 

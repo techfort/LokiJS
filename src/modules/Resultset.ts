@@ -14,7 +14,7 @@
  * @param {Collection} collection - The collection which this Resultset will query against.
  */
 
-import { hasOwnProperty, precompileQuery } from "../loki";
+import { hasOwnProperty, precompileQuery } from "../lokijs";
 import { CloneMethods, clone } from "../utils/clone";
 import { dotSubScan } from "../utils/dotSubScan";
 import { Utils } from "../utils/index";

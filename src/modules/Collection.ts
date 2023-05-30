@@ -16,9 +16,9 @@ import {
   average,
   standardDeviation,
   sub,
-} from "../loki";
-import { ExactIndex } from "./ExactIndex";
-import { UniqueIndex } from "./UniqueIndex";
+} from "../lokijs";
+import { ExactIndex } from "./index/ExactIndex";
+import { UniqueIndex } from "./index/UniqueIndex";
 import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
 

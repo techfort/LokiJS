@@ -3,7 +3,7 @@
 /* eslint-disable no-var */
 "use strict";
 
-import Loki from "./Loki";
+import Loki from "../Loki";
 
 /**
  * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter

@@ -816,6 +816,18 @@
                  * @memberof LokiEventEmitter
                  */
                 this.addListener = this.on;
+                /**
+                 * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
+                 * @memberof LokiEventEmitter
+                 */
+                this.events = {};
+                /**
+                 * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event
+                 * should happen in an async fashion or not
+                 * Default is false, which means events are synchronous
+                 * @memberof LokiEventEmitter
+                 */
+                this.asyncListeners = false;
             }
             /**
              * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
@@ -890,65 +902,6 @@
                 }
             }
         }
-        /**
-         * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
-         * @memberof LokiEventEmitter
-         */
-        LokiEventEmitter.prototype.events = {};
-        /**
-         * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event
-         * should happen in an async fashion or not
-         * Default is false, which means events are synchronous
-         * @memberof LokiEventEmitter
-         */
-        LokiEventEmitter.prototype.asyncListeners = false;
-        /**
-         * emit(eventName, data) - emits a particular event
-         * with the option of passing optional parameters which are going to be processed by the callback
-         * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
-         * @param {string} eventName - the name of the event
-         * @param {object=} data - optional object passed with the event
-         * @memberof LokiEventEmitter
-         */
-        // LokiEventEmitter.prototype.emit = function (eventName) {
-        //   var self = this;
-        //   var selfArgs;
-        //   if (eventName && this.events[eventName]) {
-        //     if (this.events[eventName].length) {
-        //       selfArgs = Array.prototype.slice.call(arguments, 1);
-        //       this.events[eventName].forEach(function (listener) {
-        //         if (self.asyncListeners) {
-        //           setTimeout(function () {
-        //             listener.apply(self, selfArgs);
-        //           }, 1);
-        //         } else {
-        //           listener.apply(self, selfArgs);
-        //         }
-        //       });
-        //     }
-        //   } else {
-        //     throw new Error("No event " + eventName + " defined");
-        //   }
-        // };
-        /**
-         * removeListener() - removes the listener at position 'index' from the event 'eventName'
-         * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
-         * @param {function} listener - the listener callback function to remove from emitter
-         * @memberof LokiEventEmitter
-         */
-        // LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
-        //   var self = this;
-        //   if (Array.isArray(eventName)) {
-        //     eventName.forEach(function (currentEventName) {
-        //       self.removeListener(currentEventName, listener);
-        //     });
-        //     return;
-        //   }
-        //   if (this.events[eventName]) {
-        //     var listeners = this.events[eventName];
-        //     listeners.splice(listeners.indexOf(listener), 1);
-        //   }
-        // };
         /**
          * Loki: The main database class
          * @constructor Loki

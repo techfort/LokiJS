@@ -3,7 +3,7 @@
     // "outDir": "./build",
     "target": "es6",
     "skipLibCheck": true,
-    "lib": ["es2017", "dom"]
+    "lib": ["es2022", "dom"]
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "./spec/**/*"]
 }

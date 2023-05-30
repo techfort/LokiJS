@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable no-var */
+/* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable no-prototype-builtins */
 /**
  * LokiJS
  * @author Joe Minichino <joe.minichino@gmail.com>
- * @author Christopher Fu <cfu288>
  *
  * A lightweight document oriented javascript database
  */
@@ -23,9 +23,9 @@
 })(this, function () {
     return (function () {
         "use strict";
-        const hasOwnProperty = Object.prototype.hasOwnProperty;
+        var hasOwnProperty = Object.prototype.hasOwnProperty;
         function deepFreeze(obj) {
-            let i, p;
+            var prop, i;
             if (Array.isArray(obj)) {
                 for (i = 0; i < obj.length; i++) {
                     deepFreeze(obj[i]);
@@ -33,9 +33,9 @@
                 freeze(obj);
             }
             else if (obj !== null && typeof obj === "object") {
-                for (p in obj) {
-                    if (obj.hasOwnProperty(p)) {
-                        deepFreeze(obj[p]);
+                for (prop in obj) {
+                    if (obj.hasOwnProperty(prop)) {
+                        deepFreeze(obj[prop]);
                     }
                 }
                 freeze(obj);
@@ -52,16 +52,16 @@
             }
             return clone(obj, "shallow");
         }
-        const Utils = {
+        var Utils = {
             copyProperties: function (src, dest) {
-                let prop;
+                var prop;
                 for (prop in src) {
                     dest[prop] = src[prop];
                 }
             },
             // used to recursively scan hierarchical transform step object for param substitution
             resolveTransformObject: function (subObj, params, depth) {
-                let prop, pname;
+                var prop, pname;
                 if (typeof depth !== "number") {
                     depth = 0;
                 }
@@ -83,7 +83,7 @@
             },
             // top level utility to resolve an entire (single) transform (array of steps) for parameter substitution
             resolveTransformParams: function (transform, params) {
-                let idx, clonedStep, resolvedTransform = [];
+                var idx, clonedStep, resolvedTransform = [];
                 if (typeof params === "undefined")
                     return transform;
                 // iterate all steps in the transform array
@@ -128,8 +128,7 @@
                 if (!Array.isArray(path)) {
                     throw new Error("path must be a string or array. Found " + typeof path);
                 }
-                let index = 0;
-                const length = path.length;
+                var index = 0, length = path.length;
                 while (object != null && index < length) {
                     object = object[path[index++]];
                 }
@@ -139,7 +138,7 @@
         // wrapping in object to expose to default export for potential user override.
         // warning: overriding these methods will override behavior for all loki db instances in memory.
         // warning: if you use binary indices these comparators should be the same for all inserts/updates/removes.
-        const Comparators = {
+        var Comparators = {
             aeq: aeqHelper,
             lt: ltHelper,
             gt: gtHelper,
@@ -154,7 +153,7 @@
          *     aeqHelper(undefined, null) === true
          */
         function aeqHelper(prop1, prop2) {
-            let cv1, cv2, t1, t2;
+            var cv1, cv2, t1, t2;
             if (prop1 === prop2)
                 return true;
             // 'falsy' and Boolean handling
@@ -228,7 +227,7 @@
          *     need this function (as well as gtHelper) to always ensure one value is LT, GT, or EQ to another.
          */
         function ltHelper(prop1, prop2, equal) {
-            let cv1, cv2, t1, t2;
+            var cv1, cv2, t1, t2;
             // if one of the params is falsy or strictly true or not equal to itself
             // 0, 0.0, "", NaN, null, undefined, not defined, false, true
             if (!prop1 ||
@@ -317,7 +316,7 @@
             return false;
         }
         function gtHelper(prop1, prop2, equal) {
-            let cv1, cv2, t1, t2;
+            var cv1, cv2, t1, t2;
             // 'falsy' and Boolean handling
             if (!prop1 ||
                 !prop2 ||
@@ -426,9 +425,9 @@
          * @returns {integer} 0, -1, or 1 to designate if identical (sortwise) or which should be first
          */
         function compoundeval(properties, obj1, obj2) {
-            let res = 0;
-            let prop, field, val1, val2, arr, path;
-            for (let i = 0, len = properties.length; i < len; i++) {
+            var res = 0;
+            var prop, field, val1, val2, arr, path;
+            for (var i = 0, len = properties.length; i < len; i++) {
                 prop = properties[i];
                 field = prop[0];
                 if (~field.indexOf(".")) {
@@ -458,10 +457,10 @@
          * @param {number} poffset - index of the item in 'paths' to start the sub-scan from
          */
         function dotSubScan(root, paths, fun, value, extra, poffset) {
-            const pathOffset = poffset || 0;
-            const path = paths[pathOffset];
-            let valueFound = false;
-            let element;
+            var pathOffset = poffset || 0;
+            var path = paths[pathOffset];
+            var valueFound = false;
+            var element;
             if (root !== null && typeof root === "object" && path in root) {
                 element = root[path];
             }
@@ -471,7 +470,7 @@
                 valueFound = fun(element, value, extra);
             }
             else if (Array.isArray(element)) {
-                for (let index = 0, len = element.length; index < len; index += 1) {
+                for (var index = 0, len = element.length; index < len; index += 1) {
                     valueFound = dotSubScan(element[index], paths, fun, value, extra, pathOffset + 1);
                     if (valueFound === true) {
                         break;
@@ -497,14 +496,14 @@
             return null;
         }
         function doQueryOp(val, op, record) {
-            for (const p in op) {
+            for (var p in op) {
                 if (hasOwnProperty.call(op, p)) {
                     return LokiOps[p](val, op[p], record);
                 }
             }
             return false;
         }
-        const LokiOps = {
+        var LokiOps = {
             // comparison operators
             // a is the value in the collection
             // b is the query value
@@ -595,14 +594,14 @@
                 return !LokiOps.$containsAny(a, b);
             },
             $containsAny: function (a, b) {
-                const checkFn = containsCheckFn(a);
+                var checkFn = containsCheckFn(a);
                 if (checkFn !== null) {
                     return Array.isArray(b) ? b.some(checkFn) : checkFn(b);
                 }
                 return false;
             },
             $contains: function (a, b) {
-                const checkFn = containsCheckFn(a);
+                var checkFn = containsCheckFn(a);
                 if (checkFn !== null) {
                     return Array.isArray(b) ? b.every(checkFn) : checkFn(b);
                 }
@@ -612,7 +611,7 @@
                 if (Array.isArray(a)) {
                     return a.some(function (item) {
                         return Object.keys(b).every(function (property) {
-                            let filter = b[property];
+                            var filter = b[property];
                             if (!(typeof filter === "object" && filter)) {
                                 filter = { $eq: filter };
                             }
@@ -626,7 +625,7 @@
                 return false;
             },
             $type: function (a, b, record) {
-                let type = typeof a;
+                var type = typeof a;
                 if (type === "object") {
                     if (Array.isArray(a)) {
                         type = "array";
@@ -667,7 +666,7 @@
                 return !doQueryOp(a, b, record);
             },
             $and: function (a, b, record) {
-                for (let idx = 0, len = b.length; idx < len; idx += 1) {
+                for (var idx = 0, len = b.length; idx < len; idx += 1) {
                     if (!doQueryOp(a, b[idx], record)) {
                         return false;
                     }
@@ -675,7 +674,7 @@
                 return true;
             },
             $or: function (a, b, record) {
-                for (let idx = 0, len = b.length; idx < len; idx += 1) {
+                for (var idx = 0, len = b.length; idx < len; idx += 1) {
                     if (doQueryOp(a, b[idx], record)) {
                         return true;
                     }
@@ -692,7 +691,7 @@
             },
         };
         // ops that can be used with { $$op: 'column-name' } syntax
-        const valueLevelOps = [
+        var valueLevelOps = [
             "$eq",
             "$aeq",
             "$ne",
@@ -708,7 +707,7 @@
             "$type",
         ];
         valueLevelOps.forEach(function (op) {
-            const fun = LokiOps[op];
+            var fun = LokiOps[op];
             LokiOps["$" + op] = function (a, spec, record) {
                 if (typeof spec === "string") {
                     return fun(a, record[spec]);
@@ -724,7 +723,7 @@
         // if an op is registered in this object, our 'calculateRange' can use it with our binary indices.
         // if the op is registered to a function, we will run that function/op as a 2nd pass filter on results.
         // those 2nd pass filter functions should be similar to LokiOps functions, accepting 2 vals to compare.
-        const indexedOps = {
+        var indexedOps = {
             $eq: LokiOps.$eq,
             $aeq: true,
             $dteq: true,
@@ -739,8 +738,8 @@
             if (data === null || data === undefined) {
                 return null;
             }
-            const cloneMethod = method || "parse-stringify";
-            let cloned;
+            var cloneMethod = method || "parse-stringify";
+            var cloned;
             switch (cloneMethod) {
                 case "parse-stringify":
                     cloned = JSON.parse(JSON.stringify(data));
@@ -764,8 +763,9 @@
                 case "shallow-recurse-objects":
                     // shallow clone top level properties
                     cloned = clone(data, "shallow");
+                    var keys = Object.keys(data);
                     // for each of the top level properties which are object literals, recursively shallow copy
-                    Object.keys(data).forEach(function (key) {
+                    keys.forEach(function (key) {
                         if (typeof data[key] === "object" &&
                             data[key].constructor.name === "Object") {
                             cloned[key] = clone(data[key], "shallow-recurse-objects");
@@ -784,8 +784,8 @@
             if (method == "parse-stringify") {
                 return clone(objarray, method);
             }
-            const result = [];
-            for (let i = 0, len = objarray.length; i < len; i++) {
+            var result = [];
+            for (var i = 0, len = objarray.length; i < len; i++) {
                 result[i] = clone(objarray[i], method);
             }
             return result;
@@ -828,8 +828,8 @@
          * @memberof LokiEventEmitter
          */
         LokiEventEmitter.prototype.on = function (eventName, listener) {
-            let event;
-            const self = this;
+            var event;
+            var self = this;
             if (Array.isArray(eventName)) {
                 eventName.forEach(function (currentEventName) {
                     self.on(currentEventName, listener);
@@ -852,8 +852,8 @@
          * @memberof LokiEventEmitter
          */
         LokiEventEmitter.prototype.emit = function (eventName) {
-            const self = this;
-            let selfArgs;
+            var self = this;
+            var selfArgs;
             if (eventName && this.events[eventName]) {
                 if (this.events[eventName].length) {
                     selfArgs = Array.prototype.slice.call(arguments, 1);
@@ -889,7 +889,7 @@
          * @memberof LokiEventEmitter
          */
         LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
-            const self = this;
+            var self = this;
             if (Array.isArray(eventName)) {
                 eventName.forEach(function (currentEventName) {
                     self.removeListener(currentEventName, listener);
@@ -897,7 +897,7 @@
                 return;
             }
             if (this.events[eventName]) {
-                const listeners = this.events[eventName];
+                var listeners = this.events[eventName];
                 listeners.splice(listeners.indexOf(listener), 1);
             }
         };
@@ -956,7 +956,7 @@
                 changes: [],
                 warning: [],
             };
-            const getENV = function () {
+            var getENV = function () {
                 if (typeof global !== "undefined" &&
                     (global.android || global.NSObject)) {
                     // If no adapter assume nativescript which needs adapter to be passed manually
@@ -1002,7 +1002,7 @@
         // experimental support for browserify's abstract syntax scan to pick up dependency of indexed adapter.
         // Hopefully, once this hits npm a browserify require of lokijs should scan the main file and detect this indexed adapter reference.
         Loki.prototype.getIndexedAdapter = function () {
-            let adapter;
+            var adapter;
             if (typeof require === "function") {
                 adapter = require("./loki-indexed-adapter.js");
             }
@@ -1025,7 +1025,7 @@
          * @memberof Loki
          */
         Loki.prototype.configureOptions = function (options, initialConfig) {
-            const defaultPersistence = {
+            var defaultPersistence = {
                 NODEJS: "fs",
                 BROWSER: "localStorage",
                 CORDOVA: "localStorage",
@@ -1061,8 +1061,8 @@
                 }
                 // if they want to load database on loki instantiation, now is a good time to load... after adapter set and before possible autosave initiation
                 if (options.autoload && initialConfig) {
-                    // for autoload, let the constructor complete before firing callback
-                    const self = this;
+                    // for autoload, var the constructor complete before firing callback
+                    var self = this;
                     setTimeout(function () {
                         self.loadDatabase(options, options.autoloadCallback);
                     }, 1);
@@ -1110,12 +1110,12 @@
          */
         Loki.prototype.copy = function (options) {
             // in case running in an environment without accurate environment detection, pass 'NA'
-            const databaseCopy = new Loki(this.filename, { env: "NA" });
-            let clen, idx;
+            var databaseCopy = new Loki(this.filename, { env: "NA" });
+            var clen, idx;
             options = options || {};
             // currently inverting and letting loadJSONObject do most of the work
             databaseCopy.loadJSONObject(this, { retainDirtyFlags: true });
-            // since our JSON serializeReplacer is not invoked for reference database adapters, this will let us mimic
+            // since our JSON serializeReplacer is not invoked for reference database adapters, this will var us mimic
             if (options.hasOwnProperty("removeNonSerializable") &&
                 options.removeNonSerializable === true) {
                 databaseCopy.autosaveHandle = null;
@@ -1148,7 +1148,7 @@
          * @memberof Loki
          */
         Loki.prototype.addCollection = function (name, options) {
-            let i, len = this.collections.length;
+            var i, len = this.collections.length;
             if (options && options.disableMeta === true) {
                 if (options.disableChangesApi === false) {
                     throw new Error("disableMeta option cannot be passed as true when disableChangesApi is passed as false");
@@ -1165,7 +1165,7 @@
                     return this.collections[i];
                 }
             }
-            const collection = new Collection(name, options);
+            var collection = new Collection(name, options);
             collection.isIncremental = this.isIncremental;
             this.collections.push(collection);
             if (this.verbose)
@@ -1185,7 +1185,7 @@
          * @memberof Loki
          */
         Loki.prototype.getCollection = function (collectionName) {
-            let i, len = this.collections.length;
+            var i, len = this.collections.length;
             for (i = 0; i < len; i += 1) {
                 if (this.collections[i].name === collectionName) {
                     return this.collections[i];
@@ -1203,7 +1203,7 @@
          * @memberof Loki
          */
         Loki.prototype.renameCollection = function (oldName, newName) {
-            const c = this.getCollection(oldName);
+            var c = this.getCollection(oldName);
             if (c) {
                 c.name = newName;
             }
@@ -1215,7 +1215,7 @@
          * @memberof Loki
          */
         Loki.prototype.listCollections = function () {
-            let i = this.collections.length, colls = [];
+            var i = this.collections.length, colls = [];
             while (i--) {
                 colls.push({
                     name: this.collections[i].name,
@@ -1231,12 +1231,12 @@
          * @memberof Loki
          */
         Loki.prototype.removeCollection = function (collectionName) {
-            let i, len = this.collections.length;
+            var i, len = this.collections.length;
             for (i = 0; i < len; i += 1) {
                 if (this.collections[i].name === collectionName) {
-                    const tmpcol = new Collection(collectionName, {});
-                    const curcol = this.collections[i];
-                    for (const prop in curcol) {
+                    var tmpcol = new Collection(collectionName, {});
+                    var curcol = this.collections[i];
+                    for (var prop in curcol) {
                         if (curcol.hasOwnProperty(prop) && tmpcol.hasOwnProperty(prop)) {
                             curcol[prop] = tmpcol[prop];
                         }
@@ -1309,9 +1309,9 @@
          * @memberof Loki
          */
         Loki.prototype.serializeDestructured = function (options) {
-            let idx, sidx, result, resultlen;
-            const reconstruct = [];
-            let dbcopy;
+            var idx, sidx, result, resultlen;
+            var reconstruct = [];
+            var dbcopy;
             options = options || {};
             if (!options.hasOwnProperty("partitioned")) {
                 options.partitioned = false;
@@ -1421,7 +1421,7 @@
          * @memberof Loki
          */
         Loki.prototype.serializeCollection = function (options) {
-            let doccount, docidx, resultlines = [];
+            var doccount, docidx, resultlines = [];
             options = options || {};
             if (!options.hasOwnProperty("delimited")) {
                 options.delimited = true;
@@ -1462,10 +1462,10 @@
          * @memberof Loki
          */
         Loki.prototype.deserializeDestructured = function (destructuredSource, options) {
-            let workarray = [];
-            let len, cdb;
-            let idx, collIndex = 0, collCount, lineIndex = 1, done = false;
-            let currLine, currObject;
+            var workarray = [];
+            var len, cdb;
+            var idx, collIndex = 0, collCount, lineIndex = 1, done = false;
+            var currLine, currObject;
             options = options || {};
             if (!options.hasOwnProperty("partitioned")) {
                 options.partitioned = false;
@@ -1550,8 +1550,8 @@
          * @memberof Loki
          */
         Loki.prototype.deserializeCollection = function (destructuredSource, options) {
-            let workarray = [];
-            let idx, len;
+            var workarray = [];
+            var idx, len;
             options = options || {};
             if (!options.hasOwnProperty("partitioned")) {
                 options.partitioned = false;
@@ -1584,7 +1584,7 @@
          * @memberof Loki
          */
         Loki.prototype.loadJSON = function (serializedDb, options) {
-            let dbObject;
+            var dbObject;
             if (serializedDb.length === 0) {
                 dbObject = {};
             }
@@ -1614,7 +1614,7 @@
          * @memberof Loki
          */
         Loki.prototype.loadJSONObject = function (dbObject, options) {
-            let i = 0, len = dbObject.collections ? dbObject.collections.length : 0, coll, copyColl, clen, j, loader, collObj;
+            var i = 0, len = dbObject.collections ? dbObject.collections.length : 0, coll, copyColl, clen, j, loader, collObj;
             this.name = dbObject.name;
             // restore save throttled boolean only if not defined in options
             if (dbObject.hasOwnProperty("throttledSaves") &&
@@ -1624,12 +1624,12 @@
             }
             this.collections = [];
             function makeLoader(coll) {
-                const collOptions = options[coll.name];
-                let inflater;
+                var collOptions = options[coll.name];
+                var inflater;
                 if (collOptions.proto) {
                     inflater = collOptions.inflate || Utils.copyProperties;
                     return function (data) {
-                        const collObj = new collOptions.proto();
+                        var collObj = new collOptions.proto();
                         inflater(data, collObj);
                         return collObj;
                     };
@@ -1672,7 +1672,7 @@
                     Object.defineProperty(copyColl, "data", {
                         /* jshint loopfunc:true */
                         get: function () {
-                            const data = this.getData();
+                            var data = this.getData();
                             this.getData = null;
                             Object.defineProperty(this, "data", { value: data });
                             return data;
@@ -1721,9 +1721,9 @@
                 if (typeof coll.DynamicViews === "undefined")
                     continue;
                 // reinflate DynamicViews and attached Resultsets
-                for (let idx = 0; idx < coll.DynamicViews.length; idx++) {
-                    const colldv = coll.DynamicViews[idx];
-                    const dv = copyColl.addDynamicView(colldv.name, colldv.options);
+                for (var idx = 0; idx < coll.DynamicViews.length; idx++) {
+                    var colldv = coll.DynamicViews[idx];
+                    var dv = copyColl.addDynamicView(colldv.name, colldv.options);
                     dv.resultdata = colldv.resultdata;
                     dv.resultsdirty = colldv.resultsdirty;
                     dv.filterPipeline = colldv.filterPipeline;
@@ -1762,7 +1762,7 @@
          * @memberof Loki
          */
         Loki.prototype.close = function (callback) {
-            // for autosave scenarios, we will let close perform final save (if dirty)
+            // for autosave scenarios, we will var close perform final save (if dirty)
             // For web use, you might call from window.onbeforeunload to shutdown database, saving pending changes
             if (this.autosave) {
                 this.autosaveDisable();
@@ -1797,7 +1797,7 @@
             function getCollName(coll) {
                 return coll.name;
             }
-            let changes = [], selectedCollections = arrayOfCollectionNames || this.collections.map(getCollName);
+            var changes = [], selectedCollections = arrayOfCollectionNames || this.collections.map(getCollName);
             this.collections.forEach(function (coll) {
                 if (selectedCollections.indexOf(getCollName(coll)) !== -1) {
                     changes = changes.concat(coll.getChanges());
@@ -1860,7 +1860,7 @@
          * @memberof LokiMemoryAdapter
          */
         LokiMemoryAdapter.prototype.loadDatabase = function (dbname, callback) {
-            const self = this;
+            var self = this;
             if (this.options.asyncResponses) {
                 setTimeout(function () {
                     if (self.hashStore.hasOwnProperty(dbname)) {
@@ -1891,8 +1891,8 @@
          * @memberof LokiMemoryAdapter
          */
         LokiMemoryAdapter.prototype.saveDatabase = function (dbname, dbstring, callback) {
-            const self = this;
-            let saveCount;
+            var self = this;
+            var saveCount;
             if (this.options.asyncResponses) {
                 setTimeout(function () {
                     saveCount = self.hashStore.hasOwnProperty(dbname)
@@ -1990,7 +1990,7 @@
          * @memberof LokiPartitioningAdapter
          */
         LokiPartitioningAdapter.prototype.loadDatabase = function (dbname, callback) {
-            const self = this;
+            var self = this;
             this.dbname = dbname;
             this.dbref = new Loki(dbname);
             // load the db container (without data)
@@ -2006,10 +2006,10 @@
                     callback(new Error("LokiPartitioningAdapter received an unexpected response from inner adapter loadDatabase()"));
                 }
                 // I will want to use loki destructuring helper methods so i will inflate into typed instance
-                let db = JSON.parse(result);
+                var db = JSON.parse(result);
                 self.dbref.loadJSONObject(db);
                 db = null;
-                const clen = self.dbref.collections.length;
+                var clen = self.dbref.collections.length;
                 if (self.dbref.collections.length === 0) {
                     callback(self.dbref);
                     return;
@@ -2030,15 +2030,15 @@
          * @param {function} callback - adapter callback to return load result to caller
          */
         LokiPartitioningAdapter.prototype.loadNextPartition = function (partition, callback) {
-            const keyname = this.dbname + "." + partition;
-            const self = this;
+            var keyname = this.dbname + "." + partition;
+            var self = this;
             if (this.options.paging === true) {
                 this.pageIterator.pageIndex = 0;
                 this.loadNextPage(callback);
                 return;
             }
             this.adapter.loadDatabase(keyname, function (result) {
-                const data = self.dbref.deserializeCollection(result, {
+                var data = self.dbref.deserializeCollection(result, {
                     delimited: true,
                     collectionIndex: partition,
                 });
@@ -2058,20 +2058,20 @@
          */
         LokiPartitioningAdapter.prototype.loadNextPage = function (callback) {
             // calculate name for next saved page in sequence
-            const keyname = this.dbname +
+            var keyname = this.dbname +
                 "." +
                 this.pageIterator.collection +
                 "." +
                 this.pageIterator.pageIndex;
-            const self = this;
+            var self = this;
             // load whatever page is next in sequence
             this.adapter.loadDatabase(keyname, function (result) {
-                let data = result.split(self.options.delimiter);
+                var data = result.split(self.options.delimiter);
                 result = ""; // free up memory now that we have split it into array
-                let dlen = data.length;
-                let idx;
+                var dlen = data.length;
+                var idx;
                 // detect if last page by presence of final empty string element and remove it if so
-                const isLastPage = data[dlen - 1] === "";
+                var isLastPage = data[dlen - 1] === "";
                 if (isLastPage) {
                     data.pop();
                     dlen = data.length;
@@ -2114,8 +2114,8 @@
          * @memberof LokiPartitioningAdapter
          */
         LokiPartitioningAdapter.prototype.exportDatabase = function (dbname, dbref, callback) {
-            const self = this;
-            let idx, clen = dbref.collections.length;
+            var self = this;
+            var idx, clen = dbref.collections.length;
             this.dbref = dbref;
             this.dbname = dbname;
             // queue up dirty partitions to be saved
@@ -2135,9 +2135,9 @@
          * @param {function} callback - adapter callback to return load result to caller
          */
         LokiPartitioningAdapter.prototype.saveNextPartition = function (callback) {
-            const self = this;
-            const partition = this.dirtyPartitions.shift();
-            const keyname = this.dbname + (partition === -1 ? "" : "." + partition);
+            var self = this;
+            var partition = this.dirtyPartitions.shift();
+            var keyname = this.dbname + (partition === -1 ? "" : "." + partition);
             // if we are doing paging and this is collection partition
             if (this.options.paging && partition !== -1) {
                 this.pageIterator = {
@@ -2157,7 +2157,7 @@
                 return;
             }
             // otherwise this is 'non-paged' partioning...
-            const result = this.dbref.serializeDestructured({
+            var result = this.dbref.serializeDestructured({
                 partitioned: true,
                 delimited: true,
                 partition: partition,
@@ -2181,17 +2181,17 @@
          * @param {function} callback - adapter callback to return load result to caller
          */
         LokiPartitioningAdapter.prototype.saveNextPage = function (callback) {
-            const self = this;
-            const coll = this.dbref.collections[this.pageIterator.collection];
-            const keyname = this.dbname +
+            var self = this;
+            var coll = this.dbref.collections[this.pageIterator.collection];
+            var keyname = this.dbname +
                 "." +
                 this.pageIterator.collection +
                 "." +
                 this.pageIterator.pageIndex;
-            let pageLen = 0, cdlen = coll.data.length, delimlen = this.options.delimiter.length;
-            let serializedObject = "", pageBuilder = "";
-            let doneWithPartition = false, doneWithPage = false;
-            const pageSaveCallback = function (err) {
+            var pageLen = 0, cdlen = coll.data.length, delimlen = this.options.delimiter.length;
+            var serializedObject = "", pageBuilder = "";
+            var doneWithPartition = false, doneWithPage = false;
+            var pageSaveCallback = function (err) {
                 pageBuilder = "";
                 if (err) {
                     callback(err);
@@ -2253,7 +2253,7 @@
          * @memberof LokiFsAdapter
          */
         LokiFsAdapter.prototype.loadDatabase = function loadDatabase(dbname, callback) {
-            const self = this;
+            var self = this;
             this.fs.stat(dbname, function (err, stats) {
                 if (!err && stats.isFile()) {
                     self.fs.readFile(dbname, {
@@ -2280,8 +2280,8 @@
          * @memberof LokiFsAdapter
          */
         LokiFsAdapter.prototype.saveDatabase = function saveDatabase(dbname, dbstring, callback) {
-            const self = this;
-            const tmpdbname = dbname + "~";
+            var self = this;
+            var tmpdbname = dbname + "~";
             this.fs.writeFile(tmpdbname, dbstring, function writeFileCallback(err) {
                 if (err) {
                     callback(new Error(err));
@@ -2370,8 +2370,8 @@
          * @memberof Loki
          */
         Loki.prototype.throttledSaveDrain = function (callback, options) {
-            const self = this;
-            const now = new Date().getTime();
+            var self = this;
+            var now = new Date().getTime();
             if (!this.throttledSaves) {
                 callback(true);
             }
@@ -2431,7 +2431,7 @@
          * @param {function=} callback - (Optional) user supplied async callback / error handler
          */
         Loki.prototype.loadDatabaseInternal = function (options, callback) {
-            const cFun = callback ||
+            var cFun = callback ||
                 function (err, data) {
                     if (err) {
                         throw err;
@@ -2441,7 +2441,7 @@
             if (this.persistenceAdapter !== null) {
                 this.persistenceAdapter.loadDatabase(this.filename, function loadDatabaseCallback(dbString) {
                     if (typeof dbString === "string") {
-                        let parseSuccess = false;
+                        var parseSuccess = false;
                         try {
                             self.loadJSON(dbString, options || {});
                             parseSuccess = true;
@@ -2506,7 +2506,7 @@
          * });
          */
         Loki.prototype.loadDatabase = function (options, callback) {
-            const self = this;
+            var self = this;
             // if throttling disabled, just call internal
             if (!this.throttledSaves) {
                 this.loadDatabaseInternal(options, callback);
@@ -2543,14 +2543,14 @@
          * Internal save logic, decoupled from save throttling logic
          */
         Loki.prototype.saveDatabaseInternal = function (callback) {
-            const cFun = callback ||
+            var cFun = callback ||
                 function (err) {
                     if (err) {
                         throw err;
                     }
                     return;
                 };
-            const self = this;
+            var self = this;
             // the persistenceAdapter should be present if all is ok, but check to be sure.
             if (!this.persistenceAdapter) {
                 cFun(new Error("persistenceAdapter not configured"));
@@ -2558,7 +2558,7 @@
             }
             // run incremental, reference, or normal mode adapters, depending on what's available
             if (this.persistenceAdapter.mode === "incremental") {
-                let cachedDirty;
+                var cachedDirty;
                 // ignore autosave until we copy loki (only then we can clear dirty flags,
                 // but if we don't do it now, autosave will be triggered a lot unnecessarily)
                 this.ignoreAutosave = true;
@@ -2568,7 +2568,7 @@
                         cFun(new Error("adapter error - getLokiCopy called more than once"));
                         return;
                     }
-                    const lokiCopy = self.copy({ removeNonSerializable: true });
+                    var lokiCopy = self.copy({ removeNonSerializable: true });
                     // remember and clear dirty ids -- we must do it before the save so that if
                     // and update occurs between here and callback, it will get saved later
                     cachedDirty = self.collections.map(function (collection) {
@@ -2584,7 +2584,7 @@
                     if (err && cachedDirty) {
                         // roll back dirty IDs to be saved later
                         self.collections.forEach(function (col, i) {
-                            const cached = cachedDirty[i];
+                            var cached = cachedDirty[i];
                             col.dirty = col.dirty || cached[0];
                             col.dirtyIds = col.dirtyIds.concat(cached[1]);
                         });
@@ -2640,11 +2640,11 @@
                 this.throttledCallbacks.push(callback);
                 return;
             }
-            const localCallbacks = this.throttledCallbacks;
+            var localCallbacks = this.throttledCallbacks;
             this.throttledCallbacks = [];
             localCallbacks.unshift(callback);
             this.throttledSavePending = true;
-            const self = this;
+            var self = this;
             this.saveDatabaseInternal(function (err) {
                 self.throttledSavePending = false;
                 localCallbacks.forEach(function (pcb) {
@@ -2673,7 +2673,7 @@
          * @memberof Loki
          */
         Loki.prototype.deleteDatabase = function (options, callback) {
-            let cFun = callback ||
+            var cFun = callback ||
                 function (err, data) {
                     if (err) {
                         throw err;
@@ -2700,7 +2700,7 @@
          * @returns {boolean} - true if database has changed since last autosave, false if not.
          */
         Loki.prototype.autosaveDirty = function () {
-            for (let idx = 0; idx < this.collections.length; idx++) {
+            for (var idx = 0; idx < this.collections.length; idx++) {
                 if (this.collections[idx].dirty) {
                     return true;
                 }
@@ -2713,7 +2713,7 @@
          *
          */
         Loki.prototype.autosaveClearFlags = function () {
-            for (let idx = 0; idx < this.collections.length; idx++) {
+            for (var idx = 0; idx < this.collections.length; idx++) {
                 this.collections[idx].dirty = false;
             }
         };
@@ -2725,7 +2725,7 @@
          */
         Loki.prototype.autosaveEnable = function (options, callback) {
             this.autosave = true;
-            let delay = 5000, self = this;
+            var delay = 5000, self = this;
             if (typeof this.autosaveInterval !== "undefined" &&
                 this.autosaveInterval !== null) {
                 delay = this.autosaveInterval;
@@ -2788,7 +2788,7 @@
          *
          */
         Resultset.prototype.toJSON = function () {
-            const copy = this.copy();
+            var copy = this.copy();
             copy.collection = null;
             return copy;
         };
@@ -2807,7 +2807,7 @@
             if (!this.filterInitialized && this.filteredrows.length === 0) {
                 this.filteredrows = this.collection.prepareFullDocIndex();
             }
-            const rscopy = Resultset(this.collection);
+            var rscopy = Resultset(this.collection);
             rscopy.filteredrows = this.filteredrows.slice(0, qty);
             rscopy.filterInitialized = true;
             return rscopy;
@@ -2826,7 +2826,7 @@
             if (!this.filterInitialized && this.filteredrows.length === 0) {
                 this.filteredrows = this.collection.prepareFullDocIndex();
             }
-            const rscopy = Resultset(this.collection);
+            var rscopy = Resultset(this.collection);
             rscopy.filteredrows = this.filteredrows.slice(pos);
             rscopy.filterInitialized = true;
             return rscopy;
@@ -2838,7 +2838,7 @@
          * @memberof Resultset
          */
         Resultset.prototype.copy = function () {
-            const result = Resultset(this.collection);
+            var result = Resultset(this.collection);
             if (this.filteredrows.length > 0) {
                 result.filteredrows = this.filteredrows.slice();
             }
@@ -2874,7 +2874,7 @@
          * var results = users.chain().transform("CountryFilter", { Country: 'fr' }).data();
          */
         Resultset.prototype.transform = function (transform, parameters) {
-            let idx, step, rs = this;
+            var idx, step, rs = this;
             // if transform is name, then do lookup first
             if (typeof transform === "string") {
                 if (this.collection.transforms.hasOwnProperty(transform)) {
@@ -2953,7 +2953,7 @@
             if (!this.filterInitialized && this.filteredrows.length === 0) {
                 this.filteredrows = this.collection.prepareFullDocIndex();
             }
-            const wrappedComparer = (function (userComparer, data) {
+            var wrappedComparer = (function (userComparer, data) {
                 return function (a, b) {
                     return userComparer(data[a], data[b]);
                 };
@@ -2977,7 +2977,7 @@
          * var results = users.chain().simplesort('age').data();
          */
         Resultset.prototype.simplesort = function (propname, options) {
-            let eff, targetEff = 10, dc = this.collection.data.length, frl = this.filteredrows.length, hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
+            var eff, targetEff = 10, dc = this.collection.data.length, frl = this.filteredrows.length, hasBinaryIndex = this.collection.binaryIndices.hasOwnProperty(propname);
             if (typeof options === "undefined" || options === false) {
                 options = { desc: false };
             }
@@ -3025,14 +3025,14 @@
                     // anything more than ratio of 10:1 (total documents/current results) should use old sort code path
                     // So we will only use array intersection if you have more than 10% of total docs in your current resultset.
                     if (eff <= targetEff || options.forceIndexIntersect) {
-                        let idx, fr = this.filteredrows;
-                        const io = {};
+                        var idx, fr = this.filteredrows;
+                        var io = {};
                         // set up hashobject for simple 'inclusion test' with existing (filtered) results
                         for (idx = 0; idx < frl; idx++) {
                             io[fr[idx]] = true;
                         }
                         // grab full sorted binary index array
-                        const pv = this.collection.binaryIndices[propname].values;
+                        var pv = this.collection.binaryIndices[propname].values;
                         // filter by existing results
                         this.filteredrows = pv.filter(function (n) {
                             return io[n];
@@ -3057,8 +3057,8 @@
                 });
             }
             // otherwise use loki sort which will return same results if column is indexed or not
-            const wrappedComparer = (function (prop, desc, data) {
-                let val1, val2, arr;
+            var wrappedComparer = (function (prop, desc, data) {
+                var val1, val2, arr;
                 return function (a, b) {
                     if (~prop.indexOf(".")) {
                         arr = prop.split(".");
@@ -3091,7 +3091,7 @@
             if (properties.length === 0) {
                 throw new Error("Invalid call to compoundsort, need at least one property");
             }
-            let prop;
+            var prop;
             if (properties.length === 1) {
                 prop = properties[0];
                 if (Array.isArray(prop)) {
@@ -3100,7 +3100,7 @@
                 return this.simplesort(prop, false);
             }
             // unify the structure of 'properties' to avoid checking it repeatedly while sorting
-            for (let i = 0, len = properties.length; i < len; i += 1) {
+            for (var i = 0, len = properties.length; i < len; i += 1) {
                 prop = properties[i];
                 if (!Array.isArray(prop)) {
                     properties[i] = [prop, false];
@@ -3110,7 +3110,7 @@
             if (!this.filterInitialized && this.filteredrows.length === 0) {
                 this.filteredrows = this.collection.prepareFullDocIndex();
             }
-            const wrappedComparer = (function (props, data) {
+            var wrappedComparer = (function (props, data) {
                 return function (a, b) {
                     return compoundeval(props, data[a], data[b]);
                 };
@@ -3128,10 +3128,10 @@
          * @returns {Resultset} this resultset for further chain ops.
          */
         Resultset.prototype.findOr = function (expressionArray) {
-            let fr = null, fri = 0, frlen = 0, docset = [], idxset = [], idx = 0, origCount = this.count();
+            var fr = null, fri = 0, frlen = 0, docset = [], idxset = [], idx = 0, origCount = this.count();
             // If filter is already initialized, then we query against only those items already in filter.
             // This means no index utilization for fields, so hopefully its filtered to a smallish filteredrows.
-            for (let ei = 0, elen = expressionArray.length; ei < elen; ei++) {
+            for (var ei = 0, elen = expressionArray.length; ei < elen; ei++) {
                 // we need to branch existing query to run each filter separately and combine results
                 fr = this.branch().find(expressionArray[ei]).filteredrows;
                 frlen = fr.length;
@@ -3161,7 +3161,7 @@
                 }
             }
             else if (typeof value === "object") {
-                for (const key in value) {
+                for (var key in value) {
                     if (key === "$regex" || typeof value[key] === "object") {
                         value[key] = precompileQuery(key, value[key]);
                     }
@@ -3181,7 +3181,7 @@
         Resultset.prototype.findAnd = function (expressionArray) {
             // we have already implementing method chaining in this (our Resultset class)
             // so lets just progressively apply user supplied and filters
-            for (let i = 0, len = expressionArray.length; i < len; i++) {
+            for (var i = 0, len = expressionArray.length; i < len; i++) {
                 if (this.count() === 0) {
                     return this;
                 }
@@ -3206,7 +3206,7 @@
                 this.filterInitialized = true;
                 return this;
             }
-            let queryObject = query || "getAll", p, property, queryObjectOp, obj, operator, value, key, searchByIndex = false, result = [], filters = [], index = null;
+            var queryObject = query || "getAll", p, property, queryObjectOp, obj, operator, value, key, searchByIndex = false, result = [], filters = [], index = null;
             // flag if this was invoked via findOne()
             firstOnly = firstOnly || false;
             if (typeof queryObject === "object") {
@@ -3270,10 +3270,10 @@
                 value = precompileQuery(operator, value);
             }
             // if user is deep querying the object such as find('name.first': 'odin')
-            const usingDotNotation = property.indexOf(".") !== -1;
+            var usingDotNotation = property.indexOf(".") !== -1;
             // if an index exists for the property being queried against, use it
             // for now only enabling where it is the first filter applied and prop is indexed
-            const doIndexCheck = !this.filterInitialized;
+            var doIndexCheck = !this.filterInitialized;
             if (doIndexCheck &&
                 this.collection.binaryIndices[property] &&
                 indexedOps[operator]) {
@@ -3296,17 +3296,17 @@
                 operator = "$inSet";
             }
             // the comparison function
-            const fun = LokiOps[operator];
+            var fun = LokiOps[operator];
             // "shortcut" for collection data
-            const t = this.collection.data;
+            var t = this.collection.data;
             // filter data length
-            let i = 0, len = 0;
+            var i = 0, len = 0;
             // Query executed differently depending on :
             //    - whether the property being queried has an index defined
             //    - if chained, we handle first pass differently for initial filteredrows[] population
             //
             // For performance reasons, each case has its own if block to minimize in-loop calculations
-            let filter, rowIdx = 0, record;
+            var filter, rowIdx = 0, record;
             // If the filteredrows[] is already initialized, use it
             if (this.filterInitialized) {
                 filter = this.filteredrows;
@@ -3375,7 +3375,7 @@
                 }
                 else {
                     // search by index
-                    const segm = this.collection.calculateRange(operator, property, value);
+                    var segm = this.collection.calculateRange(operator, property, value);
                     if (operator !== "$in") {
                         for (i = segm[0]; i <= segm[1]; i++) {
                             if (indexedOps[operator] !== true) {
@@ -3425,7 +3425,7 @@
          * var over30 = users.chain().where(function(obj) { return obj.age >= 30; }.data();
          */
         Resultset.prototype.where = function (fun) {
-            let viewFunction, result = [];
+            var viewFunction, result = [];
             if ("function" === typeof fun) {
                 viewFunction = fun;
             }
@@ -3434,7 +3434,7 @@
             }
             // If the filteredrows[] is already initialized, use it
             if (this.filterInitialized) {
-                let j = this.filteredrows.length;
+                var j = this.filteredrows.length;
                 while (j--) {
                     if (viewFunction(this.collection.data[this.filteredrows[j]]) === true) {
                         result.push(this.filteredrows[j]);
@@ -3445,7 +3445,7 @@
             }
             // otherwise this is initial chained op, work against data, push into filteredrows[]
             else {
-                let k = this.collection.data.length;
+                var k = this.collection.data.length;
                 while (k--) {
                     if (viewFunction(this.collection.data[k]) === true) {
                         result.push(k);
@@ -3486,7 +3486,7 @@
          * var resutls = users.chain().find({ age: 34 }).data();
          */
         Resultset.prototype.data = function (options) {
-            let result = [], data = this.collection.data, obj, len, i, method;
+            var result = [], data = this.collection.data, obj, len, i, method;
             options = options || {};
             // if user opts to strip meta, then force clones and use 'shallow' if 'force' options are not present
             if (options.removeMeta && !options.forceClones) {
@@ -3527,7 +3527,7 @@
                     this.filterInitialized = true;
                 }
             }
-            const fr = this.filteredrows;
+            var fr = this.filteredrows;
             len = fr.length;
             if (this.collection.cloneObjects || options.forceClones) {
                 method = options.forceCloneMethod || this.collection.cloneMethod;
@@ -3566,9 +3566,9 @@
             if (!this.filterInitialized && this.filteredrows.length === 0) {
                 this.filteredrows = this.collection.prepareFullDocIndex();
             }
-            let obj, len = this.filteredrows.length, rcd = this.collection.data;
+            var obj, len = this.filteredrows.length, rcd = this.collection.data;
             // pass in each document object currently in resultset to user supplied updateFunction
-            for (let idx = 0; idx < len; idx++) {
+            for (var idx = 0; idx < len; idx++) {
                 // if we have cloning option specified or are doing differential delta changes, clone object first
                 if (!this.disableFreeze ||
                     this.collection.cloneObjects ||
@@ -3625,7 +3625,12 @@
          * console.log(grandOrderTotal);
          */
         Resultset.prototype.mapReduce = function (mapFunction, reduceFunction) {
-            return reduceFunction(this.data().map(mapFunction));
+            try {
+                return reduceFunction(this.data().map(mapFunction));
+            }
+            catch (err) {
+                throw err;
+            }
         };
         /**
          * eqJoin() - Left joining two sets of data. Join keys can be defined or calculated properties
@@ -3676,17 +3681,16 @@
          * console.log(orderSummary);
          */
         Resultset.prototype.eqJoin = function (joinData, leftJoinKey, rightJoinKey, mapFun, dataOptions) {
-            let leftData = [], leftDataLength, rightData = [], rightDataLength, key, result = [], leftKeyisFunction = typeof leftJoinKey === "function", rightKeyisFunction = typeof rightJoinKey === "function", joinMap = {};
+            var rightData = [], key;
+            var leftData = this.data(dataOptions) || [], result = [], leftKeyisFunction = typeof leftJoinKey === "function", rightKeyisFunction = typeof rightJoinKey === "function", joinMap = {}, leftDataLength = leftData.length;
             //get the left data
-            leftData = this.data(dataOptions);
-            leftDataLength = leftData.length;
             //get the right data
             if (joinData instanceof Collection) {
-                // @ts-ignore
-                rightData = joinData.chain().data(dataOptions);
+                rightData = joinData
+                    .chain()
+                    .data(dataOptions);
             }
             else if (joinData instanceof Resultset) {
-                // @ts-ignore
                 rightData = joinData.data(dataOptions);
             }
             else if (Array.isArray(joinData)) {
@@ -3695,9 +3699,9 @@
             else {
                 throw new TypeError("joinData needs to be an array or result set");
             }
-            rightDataLength = rightData.length;
+            var rightDataLength = rightData.length;
             //construct a lookup table
-            for (let i = 0; i < rightDataLength; i++) {
+            for (var i = 0; i < rightDataLength; i++) {
                 key = rightKeyisFunction
                     ? rightJoinKey(rightData[i])
                     : rightData[i][rightJoinKey];
@@ -3712,7 +3716,7 @@
                 };
             }
             //Run map function over each object in the resultset
-            for (let j = 0; j < leftDataLength; j++) {
+            for (var j = 0; j < leftDataLength; j++) {
                 key = leftKeyisFunction
                     ? leftJoinKey(leftData[j])
                     : leftData[j][leftJoinKey];
@@ -3743,7 +3747,7 @@
          * });
          */
         Resultset.prototype.map = function (mapFun, dataOptions) {
-            const data = this.data(dataOptions).map(mapFun);
+            var data = this.data(dataOptions).map(mapFun);
             //return return a new resultset with no filters
             this.collection = new Collection("mappedData");
             this.collection.insert(data);
@@ -3834,7 +3838,7 @@
          * @fires DynamicView.rebuild
          */
         DynamicView.prototype.rematerialize = function (options) {
-            let fpl, fpi, idx;
+            var fpl, fpi, idx;
             options = options || {};
             this.resultdata = [];
             this.resultsdirty = true;
@@ -3842,7 +3846,7 @@
             if (this.sortFunction || this.sortCriteria || this.sortCriteriaSimple) {
                 this.sortDirty = true;
             }
-            const wasFrozen = Object.isFrozen(this.filterPipeline);
+            var wasFrozen = Object.isFrozen(this.filterPipeline);
             if (options.hasOwnProperty("removeWhereFilters")) {
                 // for each view see if it had any where filters applied... since they don't
                 // serialize those functions lets remove those invalid filters
@@ -3862,7 +3866,7 @@
                 }
             }
             // back up old filter pipeline, clear filter pipeline, and reapply pipeline ops
-            const ofp = this.filterPipeline;
+            var ofp = this.filterPipeline;
             this.filterPipeline = [];
             // now re-apply 'find' filterPipeline ops
             fpl = ofp.length;
@@ -3908,7 +3912,7 @@
          * var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();
          */
         DynamicView.prototype.branchResultset = function (transform, parameters) {
-            const rs = this.resultset.branch();
+            var rs = this.resultset.branch();
             if (typeof transform === "undefined") {
                 return rs;
             }
@@ -3919,7 +3923,7 @@
          *
          */
         DynamicView.prototype.toJSON = function () {
-            const copy = new DynamicView(this.collection, this.name, this.options);
+            var copy = new DynamicView(this.collection, this.name, this.options);
             copy.resultset = this.resultset;
             copy.resultdata = []; // let's not save data (copy) to minimize size
             copy.resultsdirty = true;
@@ -3946,8 +3950,8 @@
             this.resultdata = [];
             this.resultsdirty = true;
             this.cachedresultset = null;
-            const wasFrozen = Object.isFrozen(this.filterPipeline);
-            const filterChanged = this.filterPipeline.length > 0;
+            var wasFrozen = Object.isFrozen(this.filterPipeline);
+            var filterChanged = this.filterPipeline.length > 0;
             // keep ordered filter pipeline
             this.filterPipeline = [];
             if (wasFrozen) {
@@ -4082,7 +4086,7 @@
          */
         DynamicView.prototype._indexOfFilterWithId = function (uid) {
             if (typeof uid === "string" || typeof uid === "number") {
-                for (let idx = 0, len = this.filterPipeline.length; idx < len; idx += 1) {
+                for (var idx = 0, len = this.filterPipeline.length; idx < len; idx += 1) {
                     if (uid === this.filterPipeline[idx].uid) {
                         return idx;
                     }
@@ -4097,7 +4101,7 @@
          * @param {object} filter - The filter object. Refer to applyFilter() for extra details.
          */
         DynamicView.prototype._addFilter = function (filter) {
-            const wasFrozen = Object.isFrozen(this.filterPipeline);
+            var wasFrozen = Object.isFrozen(this.filterPipeline);
             if (wasFrozen) {
                 this.filterPipeline = this.filterPipeline.slice();
             }
@@ -4122,10 +4126,10 @@
                 this.resultdata = [];
                 this.resultsdirty = true;
             }
-            const filters = this.filterPipeline;
-            const wasFrozen = Object.isFrozen(filters);
+            var filters = this.filterPipeline;
+            var wasFrozen = Object.isFrozen(filters);
             this.filterPipeline = [];
-            for (let idx = 0, len = filters.length; idx < len; idx += 1) {
+            for (var idx = 0, len = filters.length; idx < len; idx += 1) {
                 this._addFilter(filters[idx]);
             }
             if (wasFrozen) {
@@ -4149,9 +4153,9 @@
          * @memberof DynamicView
          */
         DynamicView.prototype.applyFilter = function (filter) {
-            const idx = this._indexOfFilterWithId(filter.uid);
+            var idx = this._indexOfFilterWithId(filter.uid);
             if (idx >= 0) {
-                const wasFrozen = Object.isFrozen(this.filterPipeline);
+                var wasFrozen = Object.isFrozen(this.filterPipeline);
                 if (wasFrozen) {
                     this.filterPipeline = this.filterPipeline.slice();
                 }
@@ -4217,11 +4221,11 @@
          * @memberof DynamicView
          */
         DynamicView.prototype.removeFilter = function (uid) {
-            const idx = this._indexOfFilterWithId(uid);
+            var idx = this._indexOfFilterWithId(uid);
             if (idx < 0) {
                 throw new Error("Dynamic view does not contain a filter with ID: " + uid);
             }
-            const wasFrozen = Object.isFrozen(this.filterPipeline);
+            var wasFrozen = Object.isFrozen(this.filterPipeline);
             if (wasFrozen) {
                 this.filterPipeline = this.filterPipeline.slice();
             }
@@ -4279,7 +4283,7 @@
                 return;
             }
             this.rebuildPending = true;
-            const self = this;
+            var self = this;
             setTimeout(function () {
                 if (self.rebuildPending) {
                     self.rebuildPending = false;
@@ -4298,7 +4302,7 @@
                 return;
             }
             this.sortDirty = true;
-            const self = this;
+            var self = this;
             if (this.options.sortPriority === "active") {
                 // active sorting... once they are done and yield js thread, run async performSortPhase()
                 setTimeout(function () {
@@ -4364,21 +4368,21 @@
                 }
                 return;
             }
-            const ofr = this.resultset.filteredrows;
-            const oldPos = isNew ? -1 : ofr.indexOf(+objIndex);
-            const oldlen = ofr.length;
+            var ofr = this.resultset.filteredrows;
+            var oldPos = isNew ? -1 : ofr.indexOf(+objIndex);
+            var oldlen = ofr.length;
             // creating a 1-element resultset to run filter chain ops on to see if that doc passes filters;
             // mostly efficient algorithm, slight stack overhead price (this function is called on inserts and updates)
-            const evalResultset = Resultset(this.collection);
+            var evalResultset = Resultset(this.collection);
             evalResultset.filteredrows = [objIndex];
             evalResultset.filterInitialized = true;
-            let filter;
-            for (let idx = 0, len = this.filterPipeline.length; idx < len; idx++) {
+            var filter;
+            for (var idx = 0, len = this.filterPipeline.length; idx < len; idx++) {
                 filter = this.filterPipeline[idx];
                 evalResultset[filter.type](filter.val);
             }
             // not a true position, but -1 if not pass our filter(s), 0 if passed filter(s)
-            const newPos = evalResultset.filteredrows.length === 0 ? -1 : 0;
+            var newPos = evalResultset.filteredrows.length === 0 ? -1 : 0;
             // wasn't in old, shouldn't be now... do nothing
             if (oldPos === -1 && newPos === -1)
                 return;
@@ -4441,11 +4445,11 @@
          * @param {number|number[]} objIndex - index of document to (re)run through filter pipeline.
          */
         DynamicView.prototype.removeDocument = function (objIndex) {
-            let idx, rmidx, rmlen, rxo = {}, fxo = {};
-            let adjels = [];
-            const drs = this.resultset;
-            const fr = this.resultset.filteredrows;
-            let frlen = fr.length;
+            var idx, rmidx, rmlen, rxo = {}, fxo = {};
+            var adjels = [];
+            var drs = this.resultset;
+            var fr = this.resultset.filteredrows;
+            var frlen = fr.length;
             // if no filter applied yet, the result 'set' should remain 'everything'
             if (!this.resultset.filterInitialized) {
                 if (this.options.persistent) {
@@ -4496,7 +4500,7 @@
                 }
             }
             // to remove holes, we need to 'shift down' indices, this filter function finds number of positions to shift
-            const filt = function (idx) {
+            var filt = function (idx) {
                 return function (di) {
                     return di < drs.filteredrows[idx];
                 };
@@ -4518,7 +4522,12 @@
          * @memberof DynamicView
          */
         DynamicView.prototype.mapReduce = function (mapFunction, reduceFunction) {
-            return reduceFunction(this.data().map(mapFunction));
+            try {
+                return reduceFunction(this.data().map(mapFunction));
+            }
+            catch (err) {
+                throw err;
+            }
         };
         /**
          * Collection class that handles documents of same type
@@ -4570,7 +4579,7 @@
             this.cachedIndex = null;
             this.cachedBinaryIndex = null;
             this.cachedData = null;
-            const self = this;
+            var self = this;
             /* OPTIONS */
             options = options || {};
             // exact match and unique constraints
@@ -4665,7 +4674,7 @@
             // lightweight changes tracking (loki IDs only) for optimized db saving
             this.dirtyIds = [];
             // initialize optional user-supplied indices array ['age', 'lname', 'zip']
-            let indices = [];
+            var indices = [];
             if (options && options.indices) {
                 if (Object.prototype.toString.call(options.indices) === "[object Array]") {
                     indices = options.indices;
@@ -4677,11 +4686,11 @@
                     throw new TypeError("Indices needs to be a string or an array of strings");
                 }
             }
-            for (let idx = 0; idx < indices.length; idx++) {
+            for (var idx = 0; idx < indices.length; idx++) {
                 this.ensureIndex(indices[idx]);
             }
             function observerCallback(changes) {
-                const changedObjects = new Set();
+                var changedObjects = new Set();
                 if (!changedObjects.add)
                     changedObjects.add = function (object) {
                         if (this.indexOf(object) === -1)
@@ -4697,9 +4706,7 @@
                     try {
                         self.update(object);
                     }
-                    catch (err) {
-                        console.error(err);
-                    }
+                    catch (err) { }
                 });
             }
             this.observerCallback = observerCallback;
@@ -4714,15 +4721,15 @@
             }
             this.getChangeDelta = getChangeDelta;
             function getObjectDelta(oldObject, newObject) {
-                const propertyNames = newObject !== null && typeof newObject === "object"
+                var propertyNames = newObject !== null && typeof newObject === "object"
                     ? Object.keys(newObject)
                     : null;
                 if (propertyNames &&
                     propertyNames.length &&
                     ["string", "boolean", "number"].indexOf(typeof newObject) < 0) {
-                    const delta = {};
-                    for (let i = 0; i < propertyNames.length; i++) {
-                        const propertyName = propertyNames[i];
+                    var delta = {};
+                    for (var i = 0; i < propertyNames.length; i++) {
+                        var propertyName = propertyNames[i];
                         if (newObject.hasOwnProperty(propertyName)) {
                             if (!oldObject.hasOwnProperty(propertyName) ||
                                 self.uniqueNames.indexOf(propertyName) >= 0 ||
@@ -4731,9 +4738,8 @@
                                 delta[propertyName] = newObject[propertyName];
                             }
                             else {
-                                const propertyDelta = getObjectDelta(oldObject[propertyName], newObject[propertyName]);
-                                if (typeof propertyDelta !== "undefined" &&
-                                    Object.keys(propertyDelta).length > 0) {
+                                var propertyDelta = getObjectDelta(oldObject[propertyName], newObject[propertyName]);
+                                if (typeof propertyDelta !== "undefined") {
                                     delta[propertyName] = propertyDelta;
                                 }
                             }
@@ -4786,7 +4792,7 @@
             });
         };
         Collection.prototype.insertMeta = function (obj) {
-            let len, idx;
+            var len, idx;
             if (this.disableMeta || !obj) {
                 return;
             }
@@ -4906,7 +4912,7 @@
             delete this.transforms[name];
         };
         Collection.prototype.byExample = function (template) {
-            let k, obj, query;
+            var k, obj, query;
             query = [];
             for (k in template) {
                 if (!template.hasOwnProperty(k))
@@ -4927,15 +4933,13 @@
         | TTL daemon                  |
         +----------------------------*/
         Collection.prototype.ttlDaemonFuncGen = function () {
-            const collection = this;
-            const age = this.ttl.age;
+            var collection = this;
+            var age = this.ttl.age;
             return function ttlDaemon() {
-                const now = Date.now();
-                const toRemove = collection
-                    .chain()
-                    .where(function daemonFilter(member) {
-                    let timestamp = member.meta.updated || member.meta.created;
-                    let diff = now - timestamp;
+                var now = Date.now();
+                var toRemove = collection.chain().where(function daemonFilter(member) {
+                    var timestamp = member.meta.updated || member.meta.created;
+                    var diff = now - timestamp;
                     return age < diff;
                 });
                 toRemove.remove();
@@ -4964,9 +4968,9 @@
          * create a row filter that covers all documents in the collection
          */
         Collection.prototype.prepareFullDocIndex = function () {
-            const len = this.data.length;
-            const indexes = new Array(len);
-            for (let i = 0; i < len; i += 1) {
+            var len = this.data.length;
+            var indexes = new Array(len);
+            for (var i = 0; i < len; i += 1) {
                 indexes[i] = i;
             }
             return indexes;
@@ -5010,15 +5014,15 @@
                 !force) {
                 return;
             }
-            const index = {
+            var index = {
                 name: property,
                 dirty: true,
                 values: this.prepareFullDocIndex(),
             };
             this.binaryIndices[property] = index;
-            const wrappedComparer = (function (prop, data) {
-                let val1, val2;
-                let propPath = ~prop.indexOf(".") ? prop.split(".") : false;
+            var wrappedComparer = (function (prop, data) {
+                var val1, val2;
+                var propPath = ~prop.indexOf(".") ? prop.split(".") : false;
                 return function (a, b) {
                     if (propPath) {
                         val1 = Utils.getIn(data[a], propPath, true);
@@ -5059,8 +5063,8 @@
          * }
          */
         Collection.prototype.checkAllIndexes = function (options) {
-            let key, bIndices = this.binaryIndices;
-            let results = [], result;
+            var key, bIndices = this.binaryIndices;
+            var results = [], result;
             for (key in bIndices) {
                 if (hasOwnProperty.call(bIndices, key)) {
                     result = this.checkIndex(key, options);
@@ -5105,7 +5109,7 @@
                 options.randomSamplingFactor > 1) {
                 options.randomSamplingFactor = 0.1;
             }
-            let valid = true, idx, iter, pos, len, biv;
+            var valid = true, idx, iter, pos, len, biv;
             // make sure we are passed a valid binary index name
             if (!this.binaryIndices.hasOwnProperty(property)) {
                 throw new Error("called checkIndex on property without an index: " + property);
@@ -5126,7 +5130,7 @@
             if (len === 0) {
                 return true;
             }
-            const usingDotNotation = property.indexOf(".") !== -1;
+            var usingDotNotation = property.indexOf(".") !== -1;
             if (len === 1) {
                 valid = biv[0] === 0;
             }
@@ -5173,8 +5177,8 @@
             return valid;
         };
         Collection.prototype.getBinaryIndexValues = function (property) {
-            let idx, idxvals = this.binaryIndices[property].values;
-            const result = [];
+            var idx, idxvals = this.binaryIndices[property].values;
+            var result = [];
             for (idx = 0; idx < idxvals.length; idx++) {
                 result.push(Utils.getIn(this.data[idxvals[idx]], property, true));
             }
@@ -5186,14 +5190,14 @@
          * @param {boolean} force - if `true`, will rebuild index; otherwise, function may return null
          */
         Collection.prototype.getUniqueIndex = function (field, force) {
-            const index = this.constraints.unique[field];
+            var index = this.constraints.unique[field];
             if (!index && force) {
                 return this.ensureUniqueIndex(field);
             }
             return index;
         };
         Collection.prototype.ensureUniqueIndex = function (field) {
-            let index = this.constraints.unique[field];
+            var index = this.constraints.unique[field];
             if (!index) {
                 // keep track of new unique index for regenerate after database (re)load.
                 if (this.uniqueNames.indexOf(field) == -1) {
@@ -5213,7 +5217,7 @@
          * @memberof Collection
          */
         Collection.prototype.ensureAllIndexes = function (force) {
-            let key, bIndices = this.binaryIndices;
+            var key, bIndices = this.binaryIndices;
             for (key in bIndices) {
                 if (hasOwnProperty.call(bIndices, key)) {
                     this.ensureIndex(key, force);
@@ -5224,7 +5228,7 @@
          * Internal method used to flag all lazy index as dirty
          */
         Collection.prototype.flagBinaryIndexesDirty = function () {
-            let key, bIndices = this.binaryIndices;
+            var key, bIndices = this.binaryIndices;
             for (key in bIndices) {
                 if (hasOwnProperty.call(bIndices, key)) {
                     bIndices[key].dirty = true;
@@ -5257,9 +5261,9 @@
             if (this.idIndex) {
                 return;
             }
-            let data = this.data, i = 0;
-            const len = data.length;
-            const index = new Array(len);
+            var data = this.data, i = 0;
+            var len = data.length;
+            var index = new Array(len);
             for (i; i < len; i++) {
                 index[i] = data[i].$loki;
             }
@@ -5290,7 +5294,7 @@
          * var results = pview.data();
          **/
         Collection.prototype.addDynamicView = function (name, options) {
-            const dv = new DynamicView(this, name, options);
+            var dv = new DynamicView(this, name, options);
             this.DynamicViews.push(dv);
             return dv;
         };
@@ -5311,7 +5315,7 @@
          * @memberof Collection
          **/
         Collection.prototype.getDynamicView = function (name) {
-            for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+            for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                 if (this.DynamicViews[idx].name === name) {
                     return this.DynamicViews[idx];
                 }
@@ -5366,11 +5370,11 @@
                 return this.insertOne(doc);
             }
             // holder to the clone of the object inserted if collections is set to clone objects
-            let obj;
-            let results = [];
+            var obj;
+            var results = [];
             // if not cloning, disable adaptive binary indices for the duration of the batch insert,
             // followed by lazy rebuild and re-enabling adaptive indices after batch insert.
-            const adaptiveBatchOverride = overrideAdaptiveIndices &&
+            var adaptiveBatchOverride = overrideAdaptiveIndices &&
                 !this.cloneObjects &&
                 this.adaptiveBinaryIndices &&
                 Object.keys(this.binaryIndices).length > 0;
@@ -5379,7 +5383,7 @@
             }
             try {
                 this.emit("pre-insert", doc);
-                for (let i = 0, len = doc.length; i < len; i++) {
+                for (var i = 0, len = doc.length; i < len; i++) {
                     obj = this.insertOne(doc[i], true);
                     if (!obj) {
                         return undefined;
@@ -5406,8 +5410,8 @@
          * @returns {object} document or 'undefined' if there was a problem inserting it
          */
         Collection.prototype.insertOne = function (doc, bulkInsert) {
-            let err = null;
-            let returnObj;
+            var err = null;
+            var returnObj;
             if (typeof doc !== "object") {
                 err = new TypeError("Document needs to be an object");
             }
@@ -5419,7 +5423,7 @@
                 throw err;
             }
             // if configured to clone, do so now... otherwise just use same obj reference
-            let obj = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
+            var obj = this.cloneObjects ? clone(doc, this.cloneMethod) : doc;
             if (!this.disableFreeze) {
                 obj = unFreeze(obj);
             }
@@ -5468,7 +5472,7 @@
          * @memberof Collection
          */
         Collection.prototype.clear = function (options) {
-            const self = this;
+            var self = this;
             options = options || {};
             this.data = [];
             this.idIndex = null;
@@ -5490,7 +5494,7 @@
             // clear indices but leave definitions in place
             else {
                 // clear binary indices
-                const keys = Object.keys(this.binaryIndices);
+                var keys = Object.keys(this.binaryIndices);
                 keys.forEach(function (biname) {
                     self.binaryIndices[biname].dirty = false;
                     self.binaryIndices[biname].values = [];
@@ -5503,7 +5507,7 @@
          * @memberof Collection
          */
         Collection.prototype.update = function (doc) {
-            let adaptiveBatchOverride, k, len;
+            var adaptiveBatchOverride, k, len;
             if (Array.isArray(doc)) {
                 len = doc.length;
                 // if not cloning, disable adaptive binary indices for the duration of the batch update,
@@ -5534,7 +5538,7 @@
             }
             try {
                 this.startTransaction();
-                let arr = this.get(doc.$loki, true), oldInternal, // ref to existing obj
+                var arr = this.get(doc.$loki, true), oldInternal, // ref to existing obj
                 newInternal, // ref to new internal obj
                 position, self = this;
                 if (!arr) {
@@ -5559,13 +5563,13 @@
                 }
                 // now that we can efficiently determine the data[] position of newly added document,
                 // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-                for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+                for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                     this.DynamicViews[idx].evaluateDocument(position, false);
                 }
-                let key;
+                var key;
                 if (this.adaptiveBinaryIndices) {
                     // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
-                    const bIndices = this.binaryIndices;
+                    var bIndices = this.binaryIndices;
                     for (key in bIndices) {
                         this.adaptiveBinaryIndexUpdate(position, key);
                     }
@@ -5590,7 +5594,7 @@
                 if (!this.disableFreeze) {
                     deepFreeze(newInternal);
                 }
-                let returnObj;
+                var returnObj;
                 // if cloning is enabled, emit 'update' event and return with clone of new object
                 if (this.cloneObjects) {
                     returnObj = clone(newInternal, this.cloneMethod);
@@ -5631,7 +5635,7 @@
                 if (isNaN(this.maxId)) {
                     this.maxId = this.data[this.data.length - 1].$loki + 1;
                 }
-                const newId = this.maxId;
+                var newId = this.maxId;
                 obj.$loki = newId;
                 if (!this.disableMeta) {
                     obj.meta.version = 0;
@@ -5647,17 +5651,17 @@
                 }
                 // add the object
                 this.data.push(obj);
-                const addedPos = this.data.length - 1;
+                var addedPos = this.data.length - 1;
                 // now that we can efficiently determine the data[] position of newly added document,
                 // submit it for all registered DynamicViews to evaluate for inclusion/exclusion
-                const dvlen = this.DynamicViews.length;
+                var dvlen = this.DynamicViews.length;
                 for (i = 0; i < dvlen; i++) {
                     this.DynamicViews[i].evaluateDocument(addedPos, true);
                 }
                 if (this.adaptiveBinaryIndices) {
                     // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
-                    const bIndices = this.binaryIndices;
-                    for (const key in bIndices) {
+                    var bIndices = this.binaryIndices;
+                    for (var key in bIndices) {
                         this.adaptiveBinaryIndexInsert(addedPos, key);
                     }
                 }
@@ -5683,7 +5687,7 @@
          * @memberof Collection
          */
         Collection.prototype.updateWhere = function (filterFunction, updateFunction) {
-            let results = this.where(filterFunction), i = 0, obj;
+            var results = this.where(filterFunction), i = 0, obj;
             try {
                 for (i; i < results.length; i++) {
                     obj = updateFunction(results[i]);
@@ -5702,7 +5706,7 @@
          * @memberof Collection
          */
         Collection.prototype.removeWhere = function (query) {
-            let list;
+            var list;
             if (typeof query === "function") {
                 list = this.data.filter(query);
                 this.remove(list);
@@ -5719,14 +5723,14 @@
          * @param {number[]} positions - data/idIndex positions to remove
          */
         Collection.prototype.removeBatchByPositions = function (positions) {
-            const len = positions.length;
-            const xo = {};
-            let dlen, didx, idx;
-            const bic = Object.keys(this.binaryIndices).length;
-            const uic = Object.keys(this.constraints.unique).length;
-            const adaptiveOverride = this.adaptiveBinaryIndices &&
+            var len = positions.length;
+            var xo = {};
+            var dlen, didx, idx;
+            var bic = Object.keys(this.binaryIndices).length;
+            var uic = Object.keys(this.constraints.unique).length;
+            var adaptiveOverride = this.adaptiveBinaryIndices &&
                 Object.keys(this.binaryIndices).length > 0;
-            let doc, self = this;
+            var doc, self = this;
             try {
                 this.startTransaction();
                 // create hashobject for positional removal inclusion tests...
@@ -5748,7 +5752,7 @@
                     // notify binary indices to update
                     if (this.adaptiveBinaryIndices && !adaptiveOverride) {
                         // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
-                        let key, bIndices = this.binaryIndices;
+                        var key, bIndices = this.binaryIndices;
                         for (key in bIndices) {
                             this.adaptiveBinaryIndexRemove(positions, key);
                         }
@@ -5758,7 +5762,7 @@
                     }
                     if (uic) {
                         this.uniqueNames.forEach(function (key) {
-                            const index = self.getUniqueIndex(key);
+                            var index = self.getUniqueIndex(key);
                             if (index) {
                                 for (idx = 0; idx < len; idx++) {
                                     doc = self.data[positions[idx]];
@@ -5817,9 +5821,9 @@
          * @param {object[]|number[]} batch - array of documents or $loki ids to remove
          */
         Collection.prototype.removeBatch = function (batch) {
-            let len = batch.length, dlen = this.data.length, idx;
-            const xlt = {};
-            const posx = [];
+            var len = batch.length, dlen = this.data.length, idx;
+            var xlt = {};
+            var posx = [];
             // create lookup hashobject to translate $loki id to position
             for (idx = 0; idx < dlen; idx++) {
                 xlt[this.data[idx].$loki] = idx;
@@ -5841,7 +5845,7 @@
          * @memberof Collection
          */
         Collection.prototype.remove = function (doc) {
-            let frozen;
+            var frozen;
             if (typeof doc === "number") {
                 doc = this.get(doc);
             }
@@ -5857,13 +5861,13 @@
             }
             try {
                 this.startTransaction();
-                const arr = this.get(doc.$loki, true), 
+                var arr = this.get(doc.$loki, true), 
                 // obj = arr[0],
                 position = arr[1];
-                const self = this;
+                var self = this;
                 this.uniqueNames.forEach(function (key) {
                     if (doc[key] !== null && typeof doc[key] !== "undefined") {
-                        const index = self.getUniqueIndex(key);
+                        var index = self.getUniqueIndex(key);
                         if (index) {
                             index.remove(doc[key]);
                         }
@@ -5871,12 +5875,12 @@
                 });
                 // now that we can efficiently determine the data[] position of newly added document,
                 // submit it for all registered DynamicViews to remove
-                for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+                for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                     this.DynamicViews[idx].removeDocument(position);
                 }
                 if (this.adaptiveBinaryIndices) {
                     // for each binary index defined in collection, immediately update rather than flag for lazy rebuild
-                    let key, bIndices = this.binaryIndices;
+                    var key, bIndices = this.binaryIndices;
                     for (key in bIndices) {
                         this.adaptiveBinaryIndexRemove(position, key);
                     }
@@ -5926,7 +5930,7 @@
             if (!this.idIndex) {
                 this.ensureId();
             }
-            let retpos = returnPosition || false, data = this.idIndex, max = data.length - 1, min = 0, mid = (min + max) >> 1;
+            var retpos = returnPosition || false, data = this.idIndex, max = data.length - 1, min = 0, mid = (min + max) >> 1;
             id = typeof id === "number" ? id : parseInt(id, 10);
             if (isNaN(id)) {
                 throw new TypeError("Passed id is not an integer");
@@ -5956,21 +5960,21 @@
          * @param {string} binaryIndexName : index to search for dataPosition in
          */
         Collection.prototype.getBinaryIndexPosition = function (dataPosition, binaryIndexName) {
-            const val = Utils.getIn(this.data[dataPosition], binaryIndexName, true);
-            const index = this.binaryIndices[binaryIndexName].values;
+            var val = Utils.getIn(this.data[dataPosition], binaryIndexName, true);
+            var index = this.binaryIndices[binaryIndexName].values;
             // i think calculateRange can probably be moved to collection
             // as it doesn't seem to need resultset.  need to verify
-            const range = this.calculateRange("$eq", binaryIndexName, val);
+            var range = this.calculateRange("$eq", binaryIndexName, val);
             if (range[0] === 0 && range[1] === -1) {
                 // uhoh didn't find range
                 return null;
             }
-            const min = range[0];
-            const max = range[1];
+            var min = range[0];
+            var max = range[1];
             // narrow down the sub-segment of index values
             // where the indexed property value exactly matches our
             // value and then linear scan to find exact -index- position
-            for (let idx = min; idx <= max; idx++) {
+            for (var idx = min; idx <= max; idx++) {
                 if (index[idx] === dataPosition)
                     return idx;
             }
@@ -5983,15 +5987,15 @@
          * @param {string} binaryIndexName : index to search for dataPosition in
          */
         Collection.prototype.adaptiveBinaryIndexInsert = function (dataPosition, binaryIndexName) {
-            const usingDotNotation = binaryIndexName.indexOf(".") !== -1;
-            const index = this.binaryIndices[binaryIndexName].values;
-            let val = Utils.getIn(this.data[dataPosition], binaryIndexName, usingDotNotation);
+            var usingDotNotation = binaryIndexName.indexOf(".") !== -1;
+            var index = this.binaryIndices[binaryIndexName].values;
+            var val = Utils.getIn(this.data[dataPosition], binaryIndexName, usingDotNotation);
             // If you are inserting a javascript Date value into a binary index, convert to epoch time
             if (this.serializableIndices === true && val instanceof Date) {
                 this.data[dataPosition][binaryIndexName] = val.getTime();
                 val = Utils.getIn(this.data[dataPosition], binaryIndexName);
             }
-            const idxPos = index.length === 0
+            var idxPos = index.length === 0
                 ? 0
                 : this.calculateRangeStart(binaryIndexName, val, true, usingDotNotation);
             // insert new data index into our binary index at the proper sorted location for relevant property calculated by idxPos.
@@ -6006,7 +6010,7 @@
         Collection.prototype.adaptiveBinaryIndexUpdate = function (dataPosition, binaryIndexName) {
             // linear scan needed to find old position within index unless we optimize for clone scenarios later
             // within (my) node 5.6.0, the following for() loop with strict compare is -much- faster than indexOf()
-            let idxPos, index = this.binaryIndices[binaryIndexName].values, len = index.length;
+            var idxPos, index = this.binaryIndices[binaryIndexName].values, len = index.length;
             for (idxPos = 0; idxPos < len; idxPos++) {
                 if (index[idxPos] === dataPosition)
                     break;
@@ -6022,9 +6026,9 @@
          * @param {string} binaryIndexName : index to search for dataPosition in
          */
         Collection.prototype.adaptiveBinaryIndexRemove = function (dataPosition, binaryIndexName, removedFromIndexOnly) {
-            const bi = this.binaryIndices[binaryIndexName];
-            let len, idx, rmidx, rmlen, rxo = {};
-            let curr, shift, idxPos;
+            var bi = this.binaryIndices[binaryIndexName];
+            var len, idx, rmidx, rmlen, rxo = {};
+            var curr, shift, idxPos;
             if (Array.isArray(dataPosition)) {
                 // when called from chained remove, and only one document in array,
                 // it will be faster to use old algorithm
@@ -6046,7 +6050,7 @@
                     if (removedFromIndexOnly === true) {
                         return;
                     }
-                    const sortedPositions = dataPosition.slice();
+                    var sortedPositions = dataPosition.slice();
                     sortedPositions.sort(function (a, b) {
                         return a - b;
                     });
@@ -6102,16 +6106,16 @@
          * @param {bool?} adaptive - if true, we will return insert position
          */
         Collection.prototype.calculateRangeStart = function (prop, val, adaptive, usingDotNotation) {
-            const rcd = this.data;
-            const index = this.binaryIndices[prop].values;
-            let min = 0;
-            let max = index.length - 1;
-            let mid = 0;
+            var rcd = this.data;
+            var index = this.binaryIndices[prop].values;
+            var min = 0;
+            var max = index.length - 1;
+            var mid = 0;
             if (index.length === 0) {
                 return -1;
             }
-            const minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
-            const maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
+            var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+            var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
             // hone in on start position of value
             while (min < max) {
                 mid = (min + max) >> 1;
@@ -6122,7 +6126,7 @@
                     max = mid;
                 }
             }
-            const lbound = min;
+            var lbound = min;
             // found it... return it
             if (Comparators.aeq(val, Utils.getIn(rcd[index[lbound]], prop, usingDotNotation))) {
                 return lbound;
@@ -6139,16 +6143,16 @@
          * (which may or may not yet exist) this will find the final position of that upper range value.
          */
         Collection.prototype.calculateRangeEnd = function (prop, val, usingDotNotation) {
-            const rcd = this.data;
-            const index = this.binaryIndices[prop].values;
-            let min = 0;
-            let max = index.length - 1;
-            let mid = 0;
+            var rcd = this.data;
+            var index = this.binaryIndices[prop].values;
+            var min = 0;
+            var max = index.length - 1;
+            var mid = 0;
             if (index.length === 0) {
                 return -1;
             }
-            const minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
-            const maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
+            var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+            var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
             // hone in on start position of value
             while (min < max) {
                 mid = (min + max) >> 1;
@@ -6159,7 +6163,7 @@
                     min = mid + 1;
                 }
             }
-            const ubound = max;
+            var ubound = max;
             // only eq if last element in array is our val
             if (Comparators.aeq(val, Utils.getIn(rcd[index[ubound]], prop, usingDotNotation))) {
                 return ubound;
@@ -6186,20 +6190,20 @@
          * @returns {array} [start, end] index array positions
          */
         Collection.prototype.calculateRange = function (op, prop, val) {
-            const rcd = this.data;
-            const index = this.binaryIndices[prop].values;
-            const min = 0;
-            const max = index.length - 1;
-            const mid = 0;
-            let lbound, lval;
-            let ubound, uval;
+            var rcd = this.data;
+            var index = this.binaryIndices[prop].values;
+            var min = 0;
+            var max = index.length - 1;
+            var mid = 0;
+            var lbound, lval;
+            var ubound, uval;
             // when no documents are in collection, return empty range condition
             if (rcd.length === 0) {
                 return [0, -1];
             }
-            const usingDotNotation = prop.indexOf(".") !== -1;
-            const minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
-            const maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
+            var usingDotNotation = prop.indexOf(".") !== -1;
+            var minVal = Utils.getIn(rcd[index[min]], prop, usingDotNotation);
+            var maxVal = Utils.getIn(rcd[index[max]], prop, usingDotNotation);
             // if value falls outside of our range return [0, -1] to designate no results
             switch (op) {
                 case "$eq":
@@ -6277,12 +6281,12 @@
                     if (ubound < lbound)
                         return [0, -1];
                     return [lbound, ubound];
-                case "$in":
+                case "$in": {
                     var idxset = [], segResult = [];
                     // query each value '$eq' operator and merge the seqment results.
-                    for (let j = 0, len = val.length; j < len; j++) {
-                        const seg = this.calculateRange("$eq", prop, val[j]);
-                        for (let i = seg[0]; i <= seg[1]; i++) {
+                    for (var j = 0, len = val.length; j < len; j++) {
+                        var seg = this.calculateRange("$eq", prop, val[j]);
+                        for (var i = seg[0]; i <= seg[1]; i++) {
                             if (idxset[i] === undefined) {
                                 idxset[i] = true;
                                 segResult.push(i);
@@ -6290,6 +6294,7 @@
                         }
                     }
                     return segResult;
+                }
             }
             // determine lbound where needed
             switch (op) {
@@ -6366,14 +6371,14 @@
          * @memberof Collection
          */
         Collection.prototype.by = function (field, value) {
-            let self;
+            var self;
             if (value === undefined) {
                 self = this;
                 return function (value) {
                     return self.by(field, value);
                 };
             }
-            const result = this.getUniqueIndex(field, true).get(value);
+            var result = this.getUniqueIndex(field, true).get(value);
             if (!this.cloneObjects) {
                 return result;
             }
@@ -6390,7 +6395,7 @@
         Collection.prototype.findOne = function (query) {
             query = query || {};
             // Instantiate Resultset and exec find op passing firstOnly = true param
-            const result = this.chain().find(query, true).data();
+            var result = this.chain().find(query, true).data();
             if (Array.isArray(result) && result.length === 0) {
                 return null;
             }
@@ -6413,7 +6418,7 @@
          * @memberof Collection
          */
         Collection.prototype.chain = function (transform, parameters) {
-            const rs = Resultset(this);
+            var rs = Resultset(this);
             if (typeof transform === "undefined") {
                 return rs;
             }
@@ -6435,7 +6440,7 @@
          * simply iterates and returns the first element matching the query
          */
         Collection.prototype.findOneUnindexed = function (prop, value) {
-            let i = this.data.length, doc;
+            var i = this.data.length, doc;
             while (i--) {
                 if (Utils.getIn(this.data[i], prop, true) === value) {
                     doc = this.data[i];
@@ -6455,7 +6460,7 @@
                 this.cachedBinaryIndex = this.binaryIndices;
                 this.cachedDirtyIds = this.dirtyIds;
                 // propagate startTransaction to dynamic views
-                for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+                for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                     this.DynamicViews[idx].startTransaction();
                 }
             }
@@ -6468,7 +6473,7 @@
                 this.cachedBinaryIndex = null;
                 this.cachedDirtyIds = null;
                 // propagate commit to dynamic views
-                for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+                for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                     this.DynamicViews[idx].commit();
                 }
             }
@@ -6483,7 +6488,7 @@
                     this.dirtyIds = this.cachedDirtyIds;
                 }
                 // propagate rollback to dynamic views
-                for (let idx = 0; idx < this.DynamicViews.length; idx++) {
+                for (var idx = 0; idx < this.DynamicViews.length; idx++) {
                     this.DynamicViews[idx].rollback();
                 }
             }
@@ -6573,7 +6578,7 @@
          * @memberof Collection
          */
         Collection.prototype.stage = function (stageName, obj) {
-            const copy = JSON.parse(JSON.stringify(obj));
+            var copy = JSON.parse(JSON.stringify(obj));
             this.getStage(stageName)[obj.$loki] = copy;
             return copy;
         };
@@ -6585,7 +6590,7 @@
          * @memberof Collection
          */
         Collection.prototype.commitStage = function (stageName, message) {
-            let stage = this.getStage(stageName), prop, timestamp = new Date().getTime();
+            var stage = this.getStage(stageName), prop, timestamp = new Date().getTime();
             for (prop in stage) {
                 this.update(stage[prop]);
                 this.commitLog.push({
@@ -6603,7 +6608,7 @@
          * @memberof Collection
          */
         Collection.prototype.extract = function (field) {
-            let i = 0, len = this.data.length, isDotNotation = isDeepProperty(field), result = [];
+            var i = 0, len = this.data.length, isDotNotation = isDeepProperty(field), result = [];
             for (i; i < len; i += 1) {
                 result.push(deepProperty(this.data[i], field, isDotNotation));
             }
@@ -6625,7 +6630,7 @@
          * @memberof Collection
          */
         Collection.prototype.maxRecord = function (field) {
-            let i = 0, len = this.data.length, deep = isDeepProperty(field), result = {
+            var i = 0, len = this.data.length, deep = isDeepProperty(field), result = {
                 index: 0,
                 value: undefined,
             }, max;
@@ -6648,7 +6653,7 @@
          * @memberof Collection
          */
         Collection.prototype.minRecord = function (field) {
-            let i = 0, len = this.data.length, deep = isDeepProperty(field), result = {
+            var i = 0, len = this.data.length, deep = isDeepProperty(field), result = {
                 index: 0,
                 value: undefined,
             }, min;
@@ -6701,7 +6706,7 @@
          * @param {string} field
          */
         Collection.prototype.mode = function (field) {
-            const dict = {}, data = this.extract(field);
+            var dict = {}, data = this.extract(field);
             data.forEach(function (obj) {
                 if (dict[obj]) {
                     dict[obj] += 1;
@@ -6710,7 +6715,7 @@
                     dict[obj] = 1;
                 }
             });
-            let max, prop, mode;
+            var max, prop, mode;
             for (prop in dict) {
                 if (max) {
                     if (max < dict[prop]) {
@@ -6729,9 +6734,9 @@
          * @param {string} field - property name
          */
         Collection.prototype.median = function (field) {
-            const values = this.extractNumerical(field);
+            var values = this.extractNumerical(field);
             values.sort(sub);
-            const half = Math.floor(values.length / 2);
+            var half = Math.floor(values.length / 2);
             if (values.length % 2) {
                 return values[half];
             }
@@ -6760,7 +6765,7 @@
         }
         function median(values) {
             values.sort(sub);
-            const half = Math.floor(values.length / 2);
+            var half = Math.floor(values.length / 2);
             return values.length % 2
                 ? values[half]
                 : (values[half - 1] + values[half]) / 2.0;
@@ -6769,14 +6774,14 @@
             return array.reduce(add, 0) / array.length;
         }
         function standardDeviation(values) {
-            const avg = average(values);
-            const squareDiffs = values.map(function (value) {
-                let diff = value - avg;
-                let sqrDiff = diff * diff;
+            var avg = average(values);
+            var squareDiffs = values.map(function (value) {
+                var diff = value - avg;
+                var sqrDiff = diff * diff;
                 return sqrDiff;
             });
-            const avgSquareDiff = average(squareDiffs);
-            const stdDev = Math.sqrt(avgSquareDiff);
+            var avgSquareDiff = average(squareDiffs);
+            var stdDev = Math.sqrt(avgSquareDiff);
             return stdDev;
         }
         function deepProperty(obj, property, isDeep) {
@@ -6784,14 +6789,14 @@
                 // pass without processing
                 return obj[property];
             }
-            let pieces = property.split("."), root = obj;
+            var pieces = property.split("."), root = obj;
             while (pieces.length > 0) {
                 root = root[pieces.shift()];
             }
             return root;
         }
         function binarySearch(array, item, fun) {
-            let lo = 0, hi = array.length, compared, mid;
+            var lo = 0, hi = array.length, compared, mid;
             while (lo < hi) {
                 mid = (lo + hi) >> 1;
                 compared = fun.apply(null, [item, array[mid]]);
@@ -6832,7 +6837,7 @@
                 return BSonSort(this.sort);
             },
             set: function (key, value) {
-                const pos = this.bs(this.keys, key);
+                var pos = this.bs(this.keys, key);
                 if (pos.found) {
                     this.values[pos.index] = value;
                 }
@@ -6853,7 +6858,7 @@
         UniqueIndex.prototype.keyMap = {};
         UniqueIndex.prototype.lokiMap = {};
         UniqueIndex.prototype.set = function (obj) {
-            const fieldValue = obj[this.field];
+            var fieldValue = obj[this.field];
             if (fieldValue !== null && typeof fieldValue !== "undefined") {
                 if (this.keyMap[fieldValue]) {
                     throw new Error("Duplicate key for property " + this.field + ": " + fieldValue);
@@ -6877,7 +6882,7 @@
          */
         UniqueIndex.prototype.update = function (obj, doc) {
             if (this.lokiMap[obj.$loki] !== doc[this.field]) {
-                const old = this.lokiMap[obj.$loki];
+                var old = this.lokiMap[obj.$loki];
                 this.set(doc);
                 // make the old key fail bool test, while avoiding the use of delete (mem-leak prone)
                 this.keyMap[old] = undefined;
@@ -6887,7 +6892,7 @@
             }
         };
         UniqueIndex.prototype.remove = function (key) {
-            const obj = this.keyMap[key];
+            var obj = this.keyMap[key];
             if (obj !== null && typeof obj !== "undefined") {
                 // avoid using `delete`
                 this.keyMap[key] = undefined;
@@ -6917,8 +6922,8 @@
             },
             // remove the value from the index, if the value was the last one, remove the key
             remove: function remove(key, val) {
-                const idxSet = this.index[key];
-                for (const i in idxSet) {
+                var idxSet = this.index[key];
+                for (var i in idxSet) {
                     if (idxSet[i] == val) {
                         idxSet.splice(i, 1);
                     }
@@ -6955,7 +6960,7 @@
             },
             // add the value you want returned  to the key in the index
             set: function (key, value) {
-                const pos = binarySearch(this.keys, key, this.sort);
+                var pos = binarySearch(this.keys, key, this.sort);
                 if (pos.found) {
                     this.values[pos.index].push(value);
                 }
@@ -6966,7 +6971,7 @@
             },
             // get all values which have a key == the given key
             get: function (key) {
-                const bsr = binarySearch(this.keys, key, this.sort);
+                var bsr = binarySearch(this.keys, key, this.sort);
                 if (bsr.found) {
                     return this.values[bsr.index];
                 }
@@ -6976,24 +6981,24 @@
             },
             // get all values which have a key < the given key
             getLt: function (key) {
-                const bsr = binarySearch(this.keys, key, this.sort);
-                let pos = bsr.index;
+                var bsr = binarySearch(this.keys, key, this.sort);
+                var pos = bsr.index;
                 if (bsr.found)
                     pos--;
                 return this.getAll(key, 0, pos);
             },
             // get all values which have a key > the given key
             getGt: function (key) {
-                const bsr = binarySearch(this.keys, key, this.sort);
-                let pos = bsr.index;
+                var bsr = binarySearch(this.keys, key, this.sort);
+                var pos = bsr.index;
                 if (bsr.found)
                     pos++;
                 return this.getAll(key, pos, this.keys.length);
             },
             // get all vals from start to end
             getAll: function (key, start, end) {
-                let results = [];
-                for (let i = start; i < end; i++) {
+                var results = [];
+                for (var i = start; i < end; i++) {
                     results = results.concat(this.values[i]);
                 }
                 return results;
@@ -7004,9 +7009,9 @@
             },
             // remove the value from the index, if the value was the last one, remove the key
             remove: function (key, value) {
-                const pos = binarySearch(this.keys, key, this.sort).index;
-                const idxSet = this.values[pos];
-                for (const i in idxSet) {
+                var pos = binarySearch(this.keys, key, this.sort).index;
+                var idxSet = this.values[pos];
+                for (var i in idxSet) {
                     if (idxSet[i] == value)
                         idxSet.splice(i, 1);
                 }

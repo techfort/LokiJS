@@ -943,109 +943,172 @@
      *
      * @constructor LokiEventEmitter
      */
-    function LokiEventEmitter() {}
+    // function LokiEventEmitter() {}
+    class LokiEventEmitter {
+      getIndexedAdapter: () => any;
+      configureOptions: (options: any, initialConfig: any) => void;
+      copy: (options: any) => any;
+      addCollection: (name: any, options: any) => any;
+      loadCollection: (collection: any) => void;
+      getCollection: (collectionName: any) => any;
+      renameCollection: (oldName: any, newName: any) => any;
+      listCollections: () => any[];
+      removeCollection: (collectionName: any) => void;
+      getName: () => any;
+      serializeReplacer: (key: any, value: any) => any;
+      serialize: (options: any) => any;
+      toJson: any;
+      serializeDestructured: (options: any) => any;
+      serializeCollection: (options: any) => string | any[];
+      deserializeDestructured: (destructuredSource: any, options: any) => any;
+      deserializeCollection: (destructuredSource: any, options: any) => any[];
+      loadJSON: (serializedDb: any, options: any) => void;
+      loadJSONObject: (dbObject: any, options: any) => void;
+      close: (callback: any) => void;
+      generateChangesNotification: (arrayOfCollectionNames: any) => any[];
+      serializeChanges: (collectionNamesArray: any) => string;
+      clearChanges: () => void;
+      throttledSaveDrain: (callback: any, options: any) => void;
+      loadDatabaseInternal: (options: any, callback: any) => void;
+      loadDatabase: (options: any, callback: any) => void;
+      saveDatabaseInternal: (callback: any) => void;
+      saveDatabase: (callback: any) => void;
+      save: any;
+      deleteDatabase: (options: any, callback: any) => void;
+      autosaveDirty: () => boolean;
+      autosaveClearFlags: () => void;
+      autosaveEnable: (options: any, callback: any) => void;
+      autosaveDisable: () => void;
+      getSort: () => any;
+      rematerialize: (options: any) => any;
+      branchResultset: (transform: any, parameters: any) => any;
+      toJSON: () => any;
+      removeFilters: (options: any) => void;
+      applySort: (comparefun: any) => any;
+      applySimpleSort: (propname: any, options: any) => any;
+      applySortCriteria: (criteria: any) => any;
+      startTransaction: () => any;
+      commit: () => any;
+      rollback: () => any;
+      _indexOfFilterWithId: (uid: any) => number;
+      _addFilter: (filter: any) => void;
+      reapplyFilters: () => any;
+      applyFilter: (filter: any) => any;
+      applyFind: (query: any, uid: any) => any;
+      applyWhere: (fun: any, uid: any) => any;
+      removeFilter: (uid: any) => any;
+      count: () => any;
+      data: (options: any) => any;
+      queueRebuildEvent: () => void;
+      queueSortPhase: () => void;
+      performSortPhase: (options: any) => void;
+      evaluateDocument: (objIndex: any, isNew: any) => void;
+      removeDocument: (objIndex: any) => void;
+      mapReduce: (mapFunction: any, reduceFunction: any) => any;
 
-    /**
-     * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.events = {};
+      /**
+       * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+       * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
+       * @param {function} listener - callback function of listener to attach
+       * @returns {int} the index of the callback in the array of listeners for a particular event
+       * @memberof LokiEventEmitter
+       */
+      on(eventName, listener) {
+        let event;
+        var self = this;
 
-    /**
-     * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event
-     * should happen in an async fashion or not
-     * Default is false, which means events are synchronous
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.asyncListeners = false;
+        if (Array.isArray(eventName)) {
+          eventName.forEach((currentEventName) => {
+            this.on(currentEventName, listener);
+          });
+          return listener;
+        }
 
-    /**
-     * on(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
-     * @param {function} listener - callback function of listener to attach
-     * @returns {int} the index of the callback in the array of listeners for a particular event
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.on = function (eventName, listener) {
-      var event;
-      var self = this;
-
-      if (Array.isArray(eventName)) {
-        eventName.forEach(function (currentEventName) {
-          self.on(currentEventName, listener);
-        });
+        event = this.events[eventName];
+        if (!event) {
+          event = this.events[eventName] = [];
+        }
+        event.push(listener);
         return listener;
       }
 
-      event = this.events[eventName];
-      if (!event) {
-        event = this.events[eventName] = [];
-      }
-      event.push(listener);
-      return listener;
-    };
+      /**
+       * Alias of LokiEventEmitter.prototype.on
+       * addListener(eventName, listener) - adds a listener to the queue of callbacks associated to an event
+       * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
+       * @param {function} listener - callback function of listener to attach
+       * @returns {int} the index of the callback in the array of listeners for a particular event
+       * @memberof LokiEventEmitter
+       */
+      addListener = this.on;
 
-    /**
-     * emit(eventName, data) - emits a particular event
-     * with the option of passing optional parameters which are going to be processed by the callback
-     * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
-     * @param {string} eventName - the name of the event
-     * @param {object=} data - optional object passed with the event
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.emit = function (eventName) {
-      var self = this;
-      var selfArgs;
-      if (eventName && this.events[eventName]) {
-        if (this.events[eventName].length) {
-          selfArgs = Array.prototype.slice.call(arguments, 1);
-          this.events[eventName].forEach(function (listener) {
-            if (self.asyncListeners) {
-              setTimeout(function () {
+      /**
+       * emit(eventName, data) - emits a particular event
+       * with the option of passing optional parameters which are going to be processed by the callback
+       * provided signatures match (i.e. if passing emit(event, arg0, arg1) the listener should take two parameters)
+       * @param {string} eventName - the name of the event
+       * @param {object=} data - optional object passed with the event
+       * @memberof LokiEventEmitter
+       */
+      emit(eventName) {
+        let selfArgs;
+        var self = this;
+
+        if (eventName && this.events[eventName]) {
+          if (this.events[eventName].length) {
+            selfArgs = Array.prototype.slice.call(arguments, 1);
+            this.events[eventName].forEach((listener) => {
+              if (this.asyncListeners) {
+                setTimeout(() => {
+                  listener.apply(self, selfArgs);
+                }, 1);
+              } else {
                 listener.apply(self, selfArgs);
-              }, 1);
-            } else {
-              listener.apply(self, selfArgs);
-            }
-          });
+              }
+            });
+          }
+        } else {
+          throw new Error(`No event ${eventName} defined`);
         }
-      } else {
-        throw new Error("No event " + eventName + " defined");
-      }
-    };
-
-    /**
-     * Alias of LokiEventEmitter.prototype.on
-     * addListener(eventName, listener) - adds a listener to the queue of callbacks associated to an event
-     * @param {string|string[]} eventName - the name(s) of the event(s) to listen to
-     * @param {function} listener - callback function of listener to attach
-     * @returns {int} the index of the callback in the array of listeners for a particular event
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.addListener = LokiEventEmitter.prototype.on;
-
-    /**
-     * removeListener() - removes the listener at position 'index' from the event 'eventName'
-     * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
-     * @param {function} listener - the listener callback function to remove from emitter
-     * @memberof LokiEventEmitter
-     */
-    LokiEventEmitter.prototype.removeListener = function (eventName, listener) {
-      var self = this;
-
-      if (Array.isArray(eventName)) {
-        eventName.forEach(function (currentEventName) {
-          self.removeListener(currentEventName, listener);
-        });
-
-        return;
       }
 
-      if (this.events[eventName]) {
-        var listeners = this.events[eventName];
-        listeners.splice(listeners.indexOf(listener), 1);
+      /**
+       * removeListener() - removes the listener at position 'index' from the event 'eventName'
+       * @param {string|string[]} eventName - the name(s) of the event(s) which the listener is attached to
+       * @param {function} listener - the listener callback function to remove from emitter
+       * @memberof LokiEventEmitter
+       */
+      removeListener(eventName, listener) {
+        var self = this;
+
+        if (Array.isArray(eventName)) {
+          eventName.forEach((currentEventName) => {
+            this.removeListener(currentEventName, listener);
+          });
+
+          return;
+        }
+
+        if (this.events[eventName]) {
+          const listeners = this.events[eventName];
+          listeners.splice(listeners.indexOf(listener), 1);
+        }
       }
-    };
+
+      /**
+       * @prop {hashmap} events - a hashmap, with each property being an array of callbacks
+       * @memberof LokiEventEmitter
+       */
+      events = {};
+
+      /**
+       * @prop {boolean} asyncListeners - boolean determines whether or not the callbacks associated with each event
+       * should happen in an async fashion or not
+       * Default is false, which means events are synchronous
+       * @memberof LokiEventEmitter
+       */
+      asyncListeners = false;
+    }
 
     /**
      * Loki: The main database class
@@ -5362,6 +5425,45 @@
      * @see {@link Loki#addCollection} for normal creation of collections
      */
     class Collection extends LokiEventEmitter {
+      isIncremental: any;
+      lokiConsoleWrapper: Console;
+      name: any;
+      idIndex: any;
+      binaryIndices: {};
+      constraints: { unique: {}; exact: {} };
+      uniqueNames: any[];
+      transforms: {};
+      objType: any;
+      dirty: boolean;
+      cachedIndex: any;
+      cachedBinaryIndex: any;
+      cachedData: any;
+      adaptiveBinaryIndices: any;
+      transactional: any;
+      cloneObjects: any;
+      cloneMethod: any;
+      disableMeta: any;
+      disableChangesApi: any;
+      disableDeltaChangesApi: any;
+      autoupdate: any;
+      serializableIndices: any;
+      disableFreeze: any;
+      ttl: { age: any; ttlInterval: any; daemon: any };
+      maxId: number;
+      DynamicViews: any[];
+      changes: any[];
+      dirtyIds: any[];
+      observerCallback: (changes: any) => void;
+      getChangeDelta: (obj: any, old: any) => any;
+      getObjectDelta: (oldObject: any, newObject: any) => any;
+      getChanges: () => any;
+      flushChanges: () => void;
+      setChangesApi: (enabled: any) => void;
+      cachedDirtyIds: any;
+      stages: any;
+      commitLog: any;
+      contructor: typeof Collection;
+      no_op: () => void;
       constructor(name, options) {
         super();
         // the name of the collection

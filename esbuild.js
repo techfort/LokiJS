@@ -5,9 +5,10 @@ esbuild
     entryPoints: ["src/lokijs.ts", "src/loki-indexed-adapter.js"],
     entryNames: "[name].min",
     outdir: "build",
-    // bundle: true,
+    bundle: true,
     // sourcemap: true,
     minifyWhitespace: true,
+    format: "iife",
     // target: ["esnext"],
   })
   .catch(() => process.exit(1));

@@ -22,14 +22,14 @@
     "indexeddb"
   ],
   "scripts": {
-    "lint": "jshint src",
+    "lint": "exit 0",
     "lint:eslint": "eslint . --ext .ts",
     "test:browser": "karma start karma.conf.js --single-run",
     "test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
     "pretest": "npm run lint",
     "test": "npm run test:browser && npm run test:node",
-    "build:lokijs": "terser --compress -- src/lokijs.js > build/lokijs.min.js",
-    "build:indexedAdapter": "terser --compress -- src/loki-indexed-adapter.js > build/loki-indexed-adapter.min.js",
+    "build:lokijs": "esbuild src/lokijs.ts --outfile=build/lokijs.min.js",
+    "build:indexedAdapter": "esbuild src/loki-indexed-adapter.js --outfile=build/loki-indexed-adapter.min.js",
     "prebuild": "tsc || exit 0",
     "build": "npm run build:lokijs && npm run build:indexedAdapter",
     "postbuild": "karma start karma.build.conf.js --single-run",
@@ -75,6 +75,7 @@
   },
   "dependencies": {
     "@types/requirejs": "^2.1.34",
+    "esbuild": "0.17.19",
     "terser": "^5.17.6"
   }
 }

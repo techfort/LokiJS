@@ -19,3 +19,6 @@ sandbox.db.1
 sandbox.db.2
 .[iI]dea
 .DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store

@@ -30,9 +30,10 @@
     "test:node": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
     "test:incrementalidb": "npm run build && cp src/incremental-indexeddb-adapter.js spec/incrementalidb/build && cp -r build/ spec/incrementalidb/build && serve spec/incrementalidb",
     "pretest": "npm run build",
-    "test": "npm run test:browser && npm run test:node",
+    "test:old": "npm run test:browser && npm run test:node",
+    "test": "jest --config jest.config.ts spec/*.ts --silent=false",
     "build": "node esbuild.js",
-    "postbuild": "karma start karma.build.conf.js --single-run",
+    "postbuild:old": "karma start karma.build.conf.js --single-run",
     "prebuild": "npm run format && tsc --noEmit",
     "prepublish": "npm run build",
     "clean": "rimraf build/* coverage/*",
@@ -53,13 +54,17 @@
   },
   "devDependencies": {
     "@types/jasmine": "^4.3.2",
+    "@types/jest": "^29.5.1",
     "@types/jquery": "^3.5.16",
     "@types/node": "^20.2.5",
+    "@types/requirejs": "^2.1.34",
     "@typescript-eslint/eslint-plugin": "^5.59.7",
     "@typescript-eslint/parser": "^5.59.7",
+    "esbuild": "0.17.19",
     "eslint": "^8.41.0",
     "istanbul": "^0.4.4",
     "jasmine": "^2.4.1",
+    "jest": "^29.5.0",
     "jsdoc": "^3.5.5",
     "jshint": "^2.9.2",
     "karma": "^1.1.2",
@@ -73,13 +78,13 @@
     "rimraf": "^2.5.4",
     "serve": "^14.2.0",
     "should": "^4.6.5",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
     "typescript": "^5.0.4",
     "uglify-js": "^2.7.0"
   },
   "dependencies": {
-    "@types/requirejs": "^2.1.34",
-    "esbuild": "0.17.19",
-    "jquery": "^3.7.0",
-    "terser": "^5.17.6"
+    "esbuild-plugin-d.ts": "^1.1.0",
+    "jquery": "^3.7.0"
   }
 }

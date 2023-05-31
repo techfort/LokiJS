@@ -429,7 +429,7 @@ export default class Loki extends LokiEventEmitter {
    * @returns {Collection} a reference to the collection which was just added
    * @memberof Loki
    */
-  addCollection = (name, options) => {
+  addCollection = (name, options?: Record<string, any>) => {
     let i;
     const len = this.collections.length;
 
@@ -976,7 +976,7 @@ export default class Loki extends LokiEventEmitter {
    * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
    * @memberof Loki
    */
-  loadJSON = (serializedDb, options) => {
+  loadJSON = (serializedDb, options?: { retainDirtyFlags: boolean }) => {
     let dbObject;
     if (serializedDb.length === 0) {
       dbObject = {};

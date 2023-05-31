@@ -110,5 +110,8 @@ export function BSonSort(fun) {
 }
 
 if (typeof window !== "undefined") {
+  // @ts-ignore
   window.loki = Loki;
 }
+
+export default Loki;

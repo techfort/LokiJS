@@ -1,5 +1,7 @@
-if (typeof window === "undefined")
-    var loki = require("../../src/lokijs.js");
+// if (typeof window === "undefined") {
+//   const loki = require("../../build/lokijs.min.js");
+// }
+import { loki } from "../../build/lokijs";
 describe("collection", function () {
     it("collection rename works", function () {
         const db = new loki("test.db");

@@ -440,8 +440,10 @@ export class Collection extends LokiEventEmitter {
   }
 
   addAutoUpdateObserver(object) {
+    // @ts-ignore
     if (!this.autoupdate || typeof Object.observe !== "function") return;
 
+    // @ts-ignore
     Object.observe(object, this.observerCallback, [
       "add",
       "update",
@@ -452,8 +454,10 @@ export class Collection extends LokiEventEmitter {
   }
 
   removeAutoUpdateObserver(object) {
+    // @ts-ignore
     if (!this.autoupdate || typeof Object.observe !== "function") return;
 
+    // @ts-ignore
     Object.unobserve(object, this.observerCallback);
   }
 

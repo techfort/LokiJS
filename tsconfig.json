@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "es6",
     "skipLibCheck": true,
-    "lib": ["es2022", "esnext", "dom"]
+    "lib": ["es2022", "esnext", "dom"],
+    "esModuleInterop": true
   },
   "include": ["./src/**/*"],
   "exclude": ["node_modules"]

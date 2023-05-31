@@ -5,7 +5,22 @@ import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
 import { LokiLocalStorageAdapter } from "./loki-storage-adapter/LokiLocalStorageAdapter";
 import { LokiMemoryAdapter } from "./loki-storage-adapter/LokiMemoryAdapter";
+import { LokiPartitioningAdapterOptions } from "./loki-storage-adapter/LokiPartitioningAdapter";
 import { LokiPersistenceAdapter } from "./loki-storage-adapter/LokiPersistenceAdapter";
+export type ChangeOpsLoadJSONUsersOptions = {
+    inflate: ((src: any) => ChangeOpsLoadJSONOptionsMeta) | ((src: any, dest: ChangeOpsLoadJSONOptionsMeta) => void);
+    proto: (n: any) => void;
+};
+export interface ChangeOpsLoadJSONOptionsMeta {
+    $loki: any;
+    meta: any;
+    onlyInflater: any;
+    customInflater: boolean;
+}
+export interface ChangeOpsLoadJSONOptions extends ChangeOpsLoadJSONOptionsMeta {
+    retainDirtyFlags: boolean;
+    users: Partial<ChangeOpsLoadJSONUsersOptions>;
+}
 export interface ChangeOps {
     name: string;
     operation: string;
@@ -132,7 +147,7 @@ export default class Loki extends LokiEventEmitter {
     static Resultset: typeof Resultset;
     static KeyValueStore: () => void;
     static LokiMemoryAdapter: typeof LokiMemoryAdapter;
-    static LokiPartitioningAdapter: (adapter: any, options: any) => void;
+    static LokiPartitioningAdapter: (adapter: any, options?: Partial<LokiPartitioningAdapterOptions>) => void;
     static LokiLocalStorageAdapter: typeof LokiLocalStorageAdapter;
     static LokiFsAdapter: typeof LokiFsAdapter;
     static persistenceAdapters: {
@@ -304,9 +319,7 @@ export default class Loki extends LokiEventEmitter {
      * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
-    loadJSON: (serializedDb: any, options?: {
-        retainDirtyFlags: boolean;
-    }) => void;
+    loadJSON: (serializedDb: any, options?: Partial<ChangeOpsLoadJSONOptions>) => void;
     /**
      * Inflates a loki database from a JS object
      *
@@ -315,7 +328,10 @@ export default class Loki extends LokiEventEmitter {
      * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
      * @memberof Loki
      */
-    loadJSONObject: (dbObject: any, options: any) => void;
+    loadJSONObject: (dbObject: any, options?: {
+        throttledSaves?: boolean;
+        retainDirtyFlags?: boolean;
+    }) => void;
     /**
      * Emits the close event. In autosave scenarios, if the database is dirty, this will save and disable timer.
      * Does not actually destroy the db.
@@ -341,13 +357,13 @@ export default class Loki extends LokiEventEmitter {
      * @see private method createChange() in Collection
      * @memberof Loki
      */
-    generateChangesNotification: (arrayOfCollectionNames?: string[]) => ChangeOps[];
+    generateChangesNotification: (arrayOfCollectionNames?: string[] | string) => ChangeOps[];
     /**
      * (Changes API) - stringify changes for network transmission
      * @returns {string} string representation of the changes
      * @memberof Loki
      */
-    serializeChanges: (collectionNamesArray: any) => string;
+    serializeChanges: (collectionNamesArray?: any) => string;
     /**
      * (Changes API) - deserialize a serialized changes array
      * @returns {ChangeOps[]} string representation of the changes
@@ -369,14 +385,20 @@ export default class Loki extends LokiEventEmitter {
      * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
      * @memberof Loki
      */
-    throttledSaveDrain: (callback: any, options: any) => void;
+    throttledSaveDrain: (callback: any, options?: {
+        recursiveWait?: boolean;
+        recursiveWaitLimit?: boolean;
+        recursiveWaitLimitDelay?: boolean;
+        recursiveWaitLimitDuration?: number;
+        started?: number;
+    }) => void;
     /**
      * Internal load logic, decoupled from throttling/contention logic
      *
      * @param {object} options - not currently used (remove or allow overrides?)
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      */
-    loadDatabaseInternal: (options: any, callback: any) => void;
+    loadDatabaseInternal: (options: any, callback?: (_: string | Error) => void) => void;
     /**
      * Handles manually loading from file system, local storage, or adapter (such as indexeddb)
      *    This method utilizes loki configuration options (if provided) to determine which
@@ -401,7 +423,11 @@ export default class Loki extends LokiEventEmitter {
      *   }
      * });
      */
-    loadDatabase: (options: any, callback: any) => void;
+    loadDatabase: (options?: {
+        recursiveWait?: boolean;
+        recursiveWaitLimit?: boolean;
+        recursiveWaitLimitDelay?: boolean;
+    }, callback?: (_: string | Error) => void) => void;
     /**
      * Internal save logic, decoupled from save throttling logic
      */
@@ -425,7 +451,7 @@ export default class Loki extends LokiEventEmitter {
      *   }
      * });
      */
-    saveDatabase: (callback?: () => any) => void;
+    saveDatabase: (callback?: (_: string | Error) => any) => void;
     /**
      * Handles deleting a database from file system, local
      *    storage, or adapter (indexeddb)
@@ -435,7 +461,7 @@ export default class Loki extends LokiEventEmitter {
      * @param {function=} callback - (Optional) user supplied async callback / error handler
      * @memberof Loki
      */
-    deleteDatabase: (options: any, callback: any) => void;
+    deleteDatabase: (options: (_: string | Error) => void, callback?: (_: string | Error) => void) => void;
     /**
      * autosaveDirty - check whether any collections are 'dirty' meaning we need to save (entire) database
      *

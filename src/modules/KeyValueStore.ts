@@ -1,26 +1,24 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable no-prototype-builtins */
 /* eslint-disable no-var */
-"use strict";
-
-import { BSonSort, binarySearch } from "../lokijs";
+import { BSonSort, binarySearch } from "../utils/binarySearch";
 
 export function KeyValueStore() {}
 
 KeyValueStore.prototype = {
   keys: [],
   values: [],
-  sort: function (a, b) {
+  sort(a, b) {
     return a < b ? -1 : a > b ? 1 : 0;
   },
-  setSort: function (fun) {
+  setSort(fun) {
     this.bs = BSonSort(fun);
   },
-  bs: function () {
+  bs() {
     return BSonSort(this.sort);
   },
-  set: function (key, value) {
-    var pos = this.bs(this.keys, key);
+  set(key, value) {
+    const pos = this.bs(this.keys, key);
     if (pos.found) {
       this.values[pos.index] = value;
     } else {
@@ -28,7 +26,7 @@ KeyValueStore.prototype = {
       this.values.splice(pos.index, 0, value);
     }
   },
-  get: function (key) {
+  get(key) {
     return this.values[binarySearch(this.keys, key, this.sort).index];
   },
 };

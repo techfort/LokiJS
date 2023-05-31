@@ -21,7 +21,7 @@ interface LokiMemoryAdapterOptions {
 export declare class LokiMemoryAdapter implements LokiPersistenceAdapter {
     hashStore: Record<string, any>;
     options: Partial<LokiMemoryAdapterOptions>;
-    constructor(options: LokiMemoryAdapterOptions);
+    constructor(options?: Partial<LokiMemoryAdapterOptions>);
     mode: string;
     exportDatabase(dbname: string, dbref: typeof Loki, callback: (err: Error) => void): void;
     /**

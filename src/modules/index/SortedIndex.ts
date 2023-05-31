@@ -3,7 +3,7 @@
 /* eslint-disable no-var */
 "use strict";
 
-import { BSonSort, binarySearch } from "../../lokijs";
+import { BSonSort, binarySearch } from "../../utils/binarySearch";
 
 export function SortedIndex(sortedField) {
   this.field = sortedField;

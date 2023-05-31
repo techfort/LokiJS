@@ -8,19 +8,12 @@ import { Utils } from "../utils/index";
 import { LokiOps } from "../utils/ops";
 import { Comparators } from "../utils/sort";
 import { LokiEventEmitter } from "./LokiEventEmitter";
-import {
-  hasOwnProperty,
-  isDeepProperty,
-  deepProperty,
-  parseBase10,
-  average,
-  standardDeviation,
-  sub,
-} from "../lokijs";
+import { hasOwnProperty, deepProperty, parseBase10 } from "../lokijs";
 import { ExactIndex } from "./index/ExactIndex";
 import { UniqueIndex } from "./index/UniqueIndex";
 import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
+import { isDeepProperty, average, standardDeviation, sub } from "../utils/math";
 
 /**
  * Collection class that handles documents of same type

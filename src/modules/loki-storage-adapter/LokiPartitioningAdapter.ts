@@ -5,6 +5,11 @@
 
 import Loki from "../Loki";
 
+export interface LokiPartitioningAdapterOptions {
+  paging: boolean;
+  pageSize: number;
+  delimiter: string;
+}
 /**
  * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
  * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
@@ -22,7 +27,10 @@ import Loki from "../Loki";
  * @param {string} options.delimiter - allows you to override the default delimeter
  * @constructor LokiPartitioningAdapter
  */
-export function LokiPartitioningAdapter(adapter, options) {
+export function LokiPartitioningAdapter(
+  adapter,
+  options?: Partial<LokiPartitioningAdapterOptions>
+) {
   this.mode = "reference";
   this.adapter = null;
   this.options = options || {};

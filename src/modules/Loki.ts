@@ -15,8 +15,30 @@ import { KeyValueStore } from "./KeyValueStore";
 import { Resultset } from "./Resultset";
 import { LokiLocalStorageAdapter } from "./loki-storage-adapter/LokiLocalStorageAdapter";
 import { LokiMemoryAdapter } from "./loki-storage-adapter/LokiMemoryAdapter";
-import { LokiPartitioningAdapter } from "./loki-storage-adapter/LokiPartitioningAdapter";
+import {
+  LokiPartitioningAdapter,
+  LokiPartitioningAdapterOptions,
+} from "./loki-storage-adapter/LokiPartitioningAdapter";
 import { LokiPersistenceAdapter } from "./loki-storage-adapter/LokiPersistenceAdapter";
+
+export type ChangeOpsLoadJSONUsersOptions = {
+  inflate:
+    | ((src: any) => ChangeOpsLoadJSONOptionsMeta)
+    | ((src: any, dest: ChangeOpsLoadJSONOptionsMeta) => void);
+  proto: (n: any) => void;
+};
+
+export interface ChangeOpsLoadJSONOptionsMeta {
+  $loki: any;
+  meta: any;
+  onlyInflater: any;
+  customInflater: boolean;
+}
+
+export interface ChangeOpsLoadJSONOptions extends ChangeOpsLoadJSONOptionsMeta {
+  retainDirtyFlags: boolean;
+  users: Partial<ChangeOpsLoadJSONUsersOptions>;
+}
 
 export interface ChangeOps {
   name: string;
@@ -148,7 +170,10 @@ export default class Loki extends LokiEventEmitter {
   static Resultset: typeof Resultset;
   static KeyValueStore: () => void;
   static LokiMemoryAdapter: typeof LokiMemoryAdapter;
-  static LokiPartitioningAdapter: (adapter: any, options: any) => void;
+  static LokiPartitioningAdapter: (
+    adapter: any,
+    options?: Partial<LokiPartitioningAdapterOptions>
+  ) => void;
   static LokiLocalStorageAdapter: typeof LokiLocalStorageAdapter;
   static LokiFsAdapter: typeof LokiFsAdapter;
   static persistenceAdapters: {
@@ -998,7 +1023,7 @@ export default class Loki extends LokiEventEmitter {
    * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
    * @memberof Loki
    */
-  loadJSON = (serializedDb, options?: { retainDirtyFlags: boolean }) => {
+  loadJSON = (serializedDb, options?: Partial<ChangeOpsLoadJSONOptions>) => {
     let dbObject;
     if (serializedDb.length === 0) {
       dbObject = {};
@@ -1029,7 +1054,10 @@ export default class Loki extends LokiEventEmitter {
    * @param {bool} options.retainDirtyFlags - whether collection dirty flags will be preserved
    * @memberof Loki
    */
-  loadJSONObject = (dbObject, options) => {
+  loadJSONObject = (
+    dbObject,
+    options?: { throttledSaves?: boolean; retainDirtyFlags?: boolean }
+  ) => {
     let i = 0;
     const len = dbObject.collections ? dbObject.collections.length : 0;
     let coll;
@@ -1245,7 +1273,7 @@ export default class Loki extends LokiEventEmitter {
    * @memberof Loki
    */
   generateChangesNotification = (
-    arrayOfCollectionNames?: string[]
+    arrayOfCollectionNames?: string[] | string
   ): ChangeOps[] => {
     function getCollName({ name }) {
       return name;
@@ -1268,7 +1296,7 @@ export default class Loki extends LokiEventEmitter {
    * @returns {string} string representation of the changes
    * @memberof Loki
    */
-  serializeChanges = (collectionNamesArray): string => {
+  serializeChanges = (collectionNamesArray?): string => {
     return JSON.stringify(
       this.generateChangesNotification(collectionNamesArray)
     );
@@ -1305,7 +1333,16 @@ export default class Loki extends LokiEventEmitter {
    * @param {int} options.recursiveWaitLimitDelay - (default: 2000) cutoff in ms to stop recursively re-draining
    * @memberof Loki
    */
-  throttledSaveDrain = (callback, options) => {
+  throttledSaveDrain = (
+    callback,
+    options?: {
+      recursiveWait?: boolean;
+      recursiveWaitLimit?: boolean;
+      recursiveWaitLimitDelay?: boolean;
+      recursiveWaitLimitDuration?: number;
+      started?: number;
+    }
+  ) => {
     const self = this;
     const now = new Date().getTime();
 
@@ -1313,7 +1350,13 @@ export default class Loki extends LokiEventEmitter {
       callback(true);
     }
 
-    options = options || {};
+    options =
+      options ||
+      ({} as {
+        recursiveWait?: boolean;
+        recursiveWaitLimit?: boolean;
+        recursiveWaitLimitDelay?: boolean;
+      });
     if (!options.hasOwnProperty("recursiveWait")) {
       options.recursiveWait = true;
     }
@@ -1372,7 +1415,7 @@ export default class Loki extends LokiEventEmitter {
    * @param {object} options - not currently used (remove or allow overrides?)
    * @param {function=} callback - (Optional) user supplied async callback / error handler
    */
-  loadDatabaseInternal = (options, callback) => {
+  loadDatabaseInternal = (options, callback?: (_: string | Error) => void) => {
     const cFun =
       callback ||
       ((err) => {
@@ -1455,7 +1498,14 @@ export default class Loki extends LokiEventEmitter {
    *   }
    * });
    */
-  loadDatabase = (options, callback) => {
+  loadDatabase = (
+    options?: {
+      recursiveWait?: boolean;
+      recursiveWaitLimit?: boolean;
+      recursiveWaitLimitDelay?: boolean;
+    },
+    callback?: (_: string | Error) => void
+  ) => {
     const self = this;
 
     // if throttling disabled, just call internal
@@ -1610,7 +1660,7 @@ export default class Loki extends LokiEventEmitter {
    *   }
    * });
    */
-  saveDatabase = (callback?: () => any) => {
+  saveDatabase = (callback?: (_: string | Error) => any) => {
     if (!this.throttledSaves) {
       this.saveDatabaseInternal(callback);
       return;
@@ -1654,7 +1704,10 @@ export default class Loki extends LokiEventEmitter {
    * @param {function=} callback - (Optional) user supplied async callback / error handler
    * @memberof Loki
    */
-  deleteDatabase = (options, callback) => {
+  deleteDatabase = (
+    options: (_: string | Error) => void,
+    callback?: (_: string | Error) => void
+  ) => {
     let cFun =
       callback ||
       ((err) => {

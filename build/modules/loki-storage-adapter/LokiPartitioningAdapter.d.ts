@@ -1,3 +1,8 @@
+export interface LokiPartitioningAdapterOptions {
+    paging: boolean;
+    pageSize: number;
+    delimiter: string;
+}
 /**
  * An adapter for adapters.  Converts a non reference mode adapter into a reference mode adapter
  * which can perform destructuring and partioning.  Each collection will be stored in its own key/save and
@@ -15,4 +20,4 @@
  * @param {string} options.delimiter - allows you to override the default delimeter
  * @constructor LokiPartitioningAdapter
  */
-export declare function LokiPartitioningAdapter(adapter: any, options: any): void;
+export declare function LokiPartitioningAdapter(adapter: any, options?: Partial<LokiPartitioningAdapterOptions>): void;

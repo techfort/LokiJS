@@ -29,7 +29,7 @@ interface LokiMemoryAdapterOptions {
 export class LokiMemoryAdapter implements LokiPersistenceAdapter {
   hashStore: Record<string, any>;
   options: Partial<LokiMemoryAdapterOptions>;
-  constructor(options: LokiMemoryAdapterOptions) {
+  constructor(options?: Partial<LokiMemoryAdapterOptions>) {
     this.hashStore = {};
     this.options = options || {};
 

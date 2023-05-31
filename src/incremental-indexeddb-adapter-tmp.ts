@@ -8,6 +8,7 @@
     module.exports = factory();
   } else {
     // Browser globals
+    // @ts-ignore
     root.IncrementalIndexedDBAdapter = factory();
   }
 })(this, function () {

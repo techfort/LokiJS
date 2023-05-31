@@ -305,7 +305,7 @@ describe("dynamicviews", function () {
 
   describe("querying branched result set", function () {
     let elves;
-    beforeAll(function () {
+    beforeEach(function () {
       const db = new loki("firstonly.db");
       const items = db.addCollection("items");
       items.insert({ name: "mjolnir", owner: "thor", maker: "dwarves" });

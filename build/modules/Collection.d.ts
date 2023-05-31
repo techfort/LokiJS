@@ -1,6 +1,12 @@
 import { LokiEventEmitter } from "./LokiEventEmitter";
 import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
+export type ChainTransform = string | {
+    type: string;
+    value?: any;
+    mapFunction?: (_: any) => any;
+    reduceFunction?: (values: any[]) => any;
+}[];
 /**
  * Collection class that handles documents of same type
  * @constructor Collection
@@ -24,17 +30,17 @@ import { Resultset } from "./Resultset";
  * @param {int=} options.ttlInterval - time interval for clearing out 'aged' documents; not set by default.
  * @see {@link Loki#addCollection} for normal creation of collections
  */
-export declare class Collection extends LokiEventEmitter {
-    data: {
-        $loki: number;
-    }[];
+export declare class Collection<ColT extends {
+    $loki: number;
+}> extends LokiEventEmitter {
+    data: ColT[];
     isIncremental: any;
     name: any;
     idIndex: any;
     binaryIndices: {};
     constraints: {
-        unique: {};
-        exact: {};
+        unique: Record<string, any>;
+        exact: Record<string, any>;
     };
     uniqueNames: any[];
     transforms: {};
@@ -245,7 +251,7 @@ export declare class Collection extends LokiEventEmitter {
      *
      * var results = pview.data();
      **/
-    addDynamicView(name: any, options: any): DynamicView;
+    addDynamicView(name: any, options: any): DynamicView<ColT>;
     /**
      * Remove a dynamic view from the collection
      * @param {string} name - name of dynamic view to remove
@@ -274,7 +280,7 @@ export declare class Collection extends LokiEventEmitter {
      * @param {object} filterObject - 'mongo-like' query object
      * @memberof Collection
      */
-    findAndRemove(filterObject: any): void;
+    findAndRemove(filterObject?: Record<string, any>): void;
     /**
      * Adds object(s) to collection, ensure object(s) have meta properties, clone it if necessary, etc.
      * @param {(object|array)} doc - the document (or array of documents) to be inserted
@@ -307,7 +313,9 @@ export declare class Collection extends LokiEventEmitter {
      * @param {bool=} [options.removeIndices=false] - whether to remove indices in addition to data
      * @memberof Collection
      */
-    clear(options: any): void;
+    clear(options?: {
+        removeIndices?: boolean;
+    }): void;
     /**
      * Updates an object and notifies collection that the document has changed.
      * @param {object} doc - document to update within the collection
@@ -358,11 +366,7 @@ export declare class Collection extends LokiEventEmitter {
      *     or an array if 'returnPosition' was passed.
      * @memberof Collection
      */
-    get(id: any, returnPosition?: boolean): {
-        $loki: number;
-    } | (number | {
-        $loki: number;
-    })[];
+    get(id: any, returnPosition?: boolean): ColT | (number | ColT)[];
     /**
      * Perform binary range lookup for the data[dataPosition][binaryIndexName] property value
      *    Since multiple documents may contain the same value (which the index is sorted on),
@@ -427,7 +431,7 @@ export declare class Collection extends LokiEventEmitter {
      * @returns {object} document matching the value passed
      * @memberof Collection
      */
-    by(field: any, value: any): any;
+    by(field: string, value?: string): any;
     /**
      * Find one object by index property, by property equal to value
      * @param {object} query - query object used to perform search with
@@ -444,7 +448,7 @@ export declare class Collection extends LokiEventEmitter {
      * @returns {Resultset} (this) resultset, or data array if any map or join functions where called
      * @memberof Collection
      */
-    chain(transform?: unknown, parameters?: unknown): Resultset;
+    chain(transform?: ChainTransform, parameters?: unknown): Resultset<ColT> | ColT;
     /**
      * Find method, api is similar to mongodb.
      * for more complex queries use [chain()]{@link Collection#chain} or [where()]{@link Collection#where}.
@@ -453,7 +457,7 @@ export declare class Collection extends LokiEventEmitter {
      * @returns {array} Array of matching documents
      * @memberof Collection
      */
-    find(query: any): any;
+    find(query?: Record<string, object>): any;
     /**
      * Find object by unindexed field by property equal to value,
      * simply iterates and returns the first element matching the query
@@ -480,7 +484,7 @@ export declare class Collection extends LokiEventEmitter {
      * @returns {array} all documents which pass your filter function
      * @memberof Collection
      */
-    where(fun: any): unknown[];
+    where(fun: any): ColT[];
     /**
      * Map Reduce operation
      *
@@ -504,7 +508,9 @@ export declare class Collection extends LokiEventEmitter {
      * @returns {Resultset} Result of the mapping operation
      * @memberof Collection
      */
-    eqJoin(joinData: any, leftJoinProp: any, rightJoinProp: any, mapFun: any, dataOptions: any): Resultset;
+    eqJoin(joinData: any, leftJoinProp: any, rightJoinProp: any, mapFun: any, dataOptions: any): Resultset<{
+        $loki: number;
+    }>;
     /**
      * (Staging API) create a stage and/or retrieve it
      * @memberof Collection

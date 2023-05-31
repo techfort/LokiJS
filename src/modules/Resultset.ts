@@ -20,11 +20,11 @@ import { dotSubScan } from "../utils/dotSubScan";
 import { Utils } from "../utils/index";
 import { indexedOps, LokiOps } from "../utils/ops";
 import { sortHelper, compoundeval } from "../utils/sort";
-import { Collection } from "./Collection";
+import { ChainTransform, Collection } from "./Collection";
 
-export class Resultset {
+export class Resultset<RST extends { $loki: number }> {
   options: Record<string, any>;
-  collection: any;
+  collection: Collection<RST>;
   filteredrows: any[];
   filterInitialized: boolean;
   disableFreeze: any;
@@ -146,10 +146,13 @@ export class Resultset {
    * ]);
    * var results = users.chain().transform("CountryFilter", { Country: 'fr' }).data();
    */
-  transform(transform, parameters) {
+  transform(
+    transform: ChainTransform,
+    parameters?: Record<string, any>
+  ): Resultset<RST> | RST {
     let idx;
     let step;
-    let rs = this;
+    let rs: Resultset<RST> = this;
 
     // if transform is name, then do lookup first
     if (typeof transform === "string") {
@@ -1073,7 +1076,7 @@ export class Resultset {
    * var resutls = users.chain().find({ age: 34 }).data();
    */
 
-  data<T = unknown>(options?: Partial<ResultSetDataOptions>): T[] {
+  data(options?: Partial<ResultSetDataOptions>): RST[] {
     var result = [],
       data = this.collection.data,
       obj,

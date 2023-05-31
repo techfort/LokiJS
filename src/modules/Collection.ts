@@ -15,6 +15,14 @@ import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
 import { isDeepProperty, average, standardDeviation, sub } from "../utils/math";
 
+export type ChainTransform =
+  | string
+  | {
+      type: string;
+      value?: any;
+      mapFunction?: (_: any) => any;
+      reduceFunction?: (values: any[]) => any;
+    }[];
 /**
  * Collection class that handles documents of same type
  * @constructor Collection
@@ -39,13 +47,18 @@ import { isDeepProperty, average, standardDeviation, sub } from "../utils/math";
  * @see {@link Loki#addCollection} for normal creation of collections
  */
 
-export class Collection extends LokiEventEmitter {
-  data: { $loki: number }[];
+export class Collection<
+  ColT extends { $loki: number }
+> extends LokiEventEmitter {
+  data: ColT[];
   isIncremental: any;
   name: any;
   idIndex: any;
   binaryIndices: {};
-  constraints: { unique: {}; exact: {} };
+  constraints: {
+    unique: Record<string, any>;
+    exact: Record<string, any>;
+  };
   uniqueNames: any[];
   transforms: {};
   objType: any;
@@ -537,11 +550,13 @@ export class Collection extends LokiEventEmitter {
     const age = this.ttl.age;
     return function ttlDaemon() {
       const now = Date.now();
-      const toRemove = collection.chain().where(function daemonFilter(member) {
-        const timestamp = member.meta.updated || member.meta.created;
-        const diff = now - timestamp;
-        return age < diff;
-      });
+      const toRemove = (collection.chain() as Resultset<ColT>).where(
+        function daemonFilter(member) {
+          const timestamp = member.meta.updated || member.meta.created;
+          const diff = now - timestamp;
+          return age < diff;
+        }
+      );
       toRemove.remove();
     };
   }
@@ -914,7 +929,7 @@ export class Collection extends LokiEventEmitter {
       return this.data.length;
     }
 
-    return this.chain().find(query).filteredrows.length;
+    return (this.chain() as Resultset<ColT>).find(query).filteredrows.length;
   };
 
   /**
@@ -1003,7 +1018,9 @@ export class Collection extends LokiEventEmitter {
     if (typeof filterObject === "function") {
       this.updateWhere(filterObject, updateFunction);
     } else {
-      this.chain().find(filterObject).update(updateFunction);
+      (this.chain() as Resultset<ColT>)
+        .find(filterObject)
+        .update(updateFunction);
     }
   }
 
@@ -1013,8 +1030,8 @@ export class Collection extends LokiEventEmitter {
    * @param {object} filterObject - 'mongo-like' query object
    * @memberof Collection
    */
-  findAndRemove(filterObject) {
-    this.chain().find(filterObject).remove();
+  findAndRemove(filterObject?: Record<string, any>) {
+    (this.chain() as Resultset<ColT>).find(filterObject).remove();
   }
 
   /**
@@ -1157,7 +1174,7 @@ export class Collection extends LokiEventEmitter {
    * @param {bool=} [options.removeIndices=false] - whether to remove indices in addition to data
    * @memberof Collection
    */
-  clear(options) {
+  clear(options?: { removeIndices?: boolean }) {
     const self = this;
 
     options = options || {};
@@ -1441,11 +1458,11 @@ export class Collection extends LokiEventEmitter {
       list = this.data.filter(query);
       this.remove(list);
     } else {
-      this.chain().find(query).remove();
+      (this.chain() as Resultset<ColT>).find(query).remove();
     }
   }
 
-  removeDataOnly() {
+  removeDataOnly(): void {
     this.remove(this.data.slice());
   }
 
@@ -2297,7 +2314,7 @@ export class Collection extends LokiEventEmitter {
    * @returns {object} document matching the value passed
    * @memberof Collection
    */
-  by(field, value) {
+  by(field: string, value?: string) {
     let self;
     if (value === undefined) {
       self = this;
@@ -2320,7 +2337,7 @@ export class Collection extends LokiEventEmitter {
    */
   findOne(query = {}) {
     // Instantiate Resultset and exec find op passing firstOnly = true param
-    const result = this.chain().find(query, true).data();
+    const result = (this.chain() as Resultset<ColT>).find(query, true).data();
 
     if (Array.isArray(result) && result.length === 0) {
       return null;
@@ -2342,8 +2359,11 @@ export class Collection extends LokiEventEmitter {
    * @returns {Resultset} (this) resultset, or data array if any map or join functions where called
    * @memberof Collection
    */
-  chain(transform?: unknown, parameters?: unknown) {
-    const rs = new Resultset(this);
+  chain(
+    transform?: ChainTransform,
+    parameters?: unknown
+  ): Resultset<ColT> | ColT {
+    const rs = new Resultset<ColT>(this);
 
     if (typeof transform === "undefined") {
       return rs;
@@ -2360,8 +2380,8 @@ export class Collection extends LokiEventEmitter {
    * @returns {array} Array of matching documents
    * @memberof Collection
    */
-  find(query) {
-    return this.chain().find(query).data();
+  find(query?: Record<string, object>) {
+    return (this.chain() as Resultset<ColT>).find(query).data();
   }
 
   /**
@@ -2456,7 +2476,7 @@ export class Collection extends LokiEventEmitter {
    * @memberof Collection
    */
   where(fun) {
-    return this.chain().where(fun).data();
+    return (this.chain() as Resultset<ColT>).where(fun).data();
   }
 
   /**

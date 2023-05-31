@@ -107,7 +107,7 @@ interface LokiConfigOptions {
    */
 export default class Loki extends LokiEventEmitter {
   filename: any;
-  collections: any[];
+  collections: Collection<any | { $loki: number }>[];
   databaseVersion: number;
   engineVersion: number;
   autosave: boolean;
@@ -428,7 +428,7 @@ export default class Loki extends LokiEventEmitter {
    * @param {bool} options.removeNonSerializable - nulls properties not safe for serialization.
    * @memberof Loki
    */
-  copy = (options) => {
+  copy = (options?: { removeNonSerializable?: boolean }): Loki => {
     // in case running in an environment without accurate environment detection, pass 'NA'
     const databaseCopy = new Loki(this.filename, { env: "NA" });
     let clen;
@@ -476,7 +476,10 @@ export default class Loki extends LokiEventEmitter {
    * @returns {Collection} a reference to the collection which was just added
    * @memberof Loki
    */
-  addCollection = (name, options?: Record<string, any>) => {
+  addCollection = <T extends { $loki: number }>(
+    name,
+    options?: Record<string, any>
+  ): Collection<T> | any => {
     let i;
     const len = this.collections.length;
 

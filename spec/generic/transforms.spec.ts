@@ -1,4 +1,5 @@
 import Loki from "../../src/lokijs";
+import { ChainTransform } from "../../src/modules/Collection";
 const loki = Loki;
 
 describe("transforms", function () {
@@ -141,10 +142,10 @@ describe("transforms", function () {
       items.insert({ name: "mjolnir", age: 5 });
       items.insert({ name: "tyrfing", age: 9 });
 
-      const mapper = function (item) {
+      const mapper = (item: { age: number }) => {
         return item.age;
       };
-      const averageReduceFunction = function (values) {
+      const averageReduceFunction = (values: number[]) => {
         let sum = 0;
 
         values.forEach(function (i) {
@@ -163,7 +164,7 @@ describe("transforms", function () {
       // that our parameter substitution method does not have problem with
       // non-serializable transforms.
 
-      const tx1 = [
+      const tx1: ChainTransform = [
         {
           type: "mapReduce",
           mapFunction: mapper,
@@ -171,7 +172,7 @@ describe("transforms", function () {
         },
       ];
 
-      const tx2 = [
+      const tx2: ChainTransform = [
         {
           type: "find",
           value: {
@@ -186,7 +187,8 @@ describe("transforms", function () {
           reduceFunction: averageReduceFunction,
         },
       ];
-
+      const x = items.chain(tx1);
+      typeof x;
       // no data() call needed to mapReduce
       expect(items.chain(tx1)).toBe(7);
       expect(items.chain(tx1, { foo: 5 })).toBe(7);

@@ -2,7 +2,7 @@ import Loki from "../../src/lokijs";
 const loki = Loki;
 
 describe("Testing comparator helpers", function () {
-  var ops;
+  let ops;
   beforeEach(function () {
     ops = loki.LokiOps;
   });

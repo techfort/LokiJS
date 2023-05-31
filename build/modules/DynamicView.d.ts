@@ -27,12 +27,14 @@ interface DynamicViewOptions {
     sortPriority: "passive" | "active";
     minRebuildInterval: number;
 }
-export declare class DynamicView extends LokiEventEmitter {
-    collection: Collection;
+export declare class DynamicView<DT extends {
+    $loki: number;
+}> extends LokiEventEmitter {
+    collection: Collection<DT>;
     name: string;
     rebuildPending: boolean;
     options: Partial<DynamicViewOptions>;
-    resultset: Resultset;
+    resultset: Resultset<DT>;
     resultdata: any[];
     resultsdirty: boolean;
     cachedresultset: any;
@@ -46,7 +48,7 @@ export declare class DynamicView extends LokiEventEmitter {
         filter: any[];
         sort: any[];
     };
-    constructor(collection: Collection, name: string, options?: Partial<DynamicViewOptions>);
+    constructor(collection: Collection<DT>, name: string, options?: Partial<DynamicViewOptions>);
     /**
      * getSort() - used to get the current sort
      *
@@ -94,12 +96,16 @@ export declare class DynamicView extends LokiEventEmitter {
      *
      * var results = dv.branchResultset('viewPaging', { pageStart: 10, pageSize: 10 }).data();
      */
-    branchResultset: (transform: any, parameters: any) => Resultset;
+    branchResultset: (transform: any, parameters: any) => {
+        $loki: number;
+    } | Resultset<{
+        $loki: number;
+    }>;
     /**
      * toJSON() - Override of toJSON to avoid circular references
      *
      */
-    toJSON: () => DynamicView;
+    toJSON: () => DynamicView<DT>;
     /**
      * removeFilters() - Used to clear pipeline and reset dynamic view to initial state.
      *     Existing options should be retained.

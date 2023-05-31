@@ -84,7 +84,9 @@ interface LokiConfigOptions {
    */
 export default class Loki extends LokiEventEmitter {
     filename: any;
-    collections: any[];
+    collections: Collection<any | {
+        $loki: number;
+    }>[];
     databaseVersion: number;
     engineVersion: number;
     autosave: boolean;
@@ -188,7 +190,9 @@ export default class Loki extends LokiEventEmitter {
      * @param {bool} options.removeNonSerializable - nulls properties not safe for serialization.
      * @memberof Loki
      */
-    copy: (options: any) => Loki;
+    copy: (options?: {
+        removeNonSerializable?: boolean;
+    }) => Loki;
     /**
      * Adds a collection to the database.
      * @param {string} name - name of collection to add
@@ -208,7 +212,9 @@ export default class Loki extends LokiEventEmitter {
      * @returns {Collection} a reference to the collection which was just added
      * @memberof Loki
      */
-    addCollection: (name: any, options?: Record<string, any>) => any;
+    addCollection: <T extends {
+        $loki: number;
+    }>(name: any, options?: Record<string, any>) => any;
     loadCollection: (collection: any) => void;
     /**
      * Retrieves reference to a collection by name.
@@ -216,7 +222,7 @@ export default class Loki extends LokiEventEmitter {
      * @returns {Collection} Reference to collection in database by that name, or null if not found
      * @memberof Loki
      */
-    getCollection: (collectionName: any) => any;
+    getCollection: (collectionName: any) => Collection<any>;
     /**
      * Renames an existing loki collection
      * @param {string} oldName - name of collection to rename
@@ -224,7 +230,7 @@ export default class Loki extends LokiEventEmitter {
      * @returns {Collection} reference to the newly renamed collection
      * @memberof Loki
      */
-    renameCollection: (oldName: any, newName: any) => any;
+    renameCollection: (oldName: any, newName: any) => Collection<any>;
     /**
      * Returns a list of collections in the database.
      * @returns {object[]} array of objects containing 'name', 'type', and 'count' properties.

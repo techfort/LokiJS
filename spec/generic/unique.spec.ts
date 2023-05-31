@@ -3,8 +3,8 @@ const loki = Loki;
 
 describe("Constraints", function () {
   it("should retrieve records with by()", function () {
-    var db = new loki();
-    var coll = db.addCollection("users", {
+    const db = new loki();
+    const coll = db.addCollection("users", {
       unique: ["username"],
     });
     coll.insert({
@@ -17,10 +17,10 @@ describe("Constraints", function () {
     });
     expect(coll.by("username", "joe").name).toEqual("Joe");
 
-    var byUsername = coll.by("username");
+    const byUsername = coll.by("username");
     expect(byUsername("jack").name).toEqual("Jack");
 
-    var joe = coll.by("username", "joe");
+    const joe = coll.by("username", "joe");
     joe.username = "jack";
     expect(function () {
       coll.update(joe);
@@ -33,8 +33,8 @@ describe("Constraints", function () {
   });
 
   it("should create a unique index", function () {
-    var db = new loki();
-    var coll2 = db.addCollection("moreusers");
+    const db = new loki();
+    const coll2 = db.addCollection("moreusers");
     coll2.insert({
       name: "jack",
     });
@@ -45,8 +45,8 @@ describe("Constraints", function () {
   });
 
   it("should not add record with null index", function () {
-    var db = new loki();
-    var coll3 = db.addCollection("nullusers", {
+    const db = new loki();
+    const coll3 = db.addCollection("nullusers", {
       unique: ["username"],
     });
     coll3.insert({
@@ -63,8 +63,8 @@ describe("Constraints", function () {
   });
 
   it("should not throw an error id multiple nulls are added", function () {
-    var db = new loki();
-    var coll4 = db.addCollection("morenullusers", {
+    const db = new loki();
+    const coll4 = db.addCollection("morenullusers", {
       unique: ["username"],
     });
     coll4.insert({
@@ -85,8 +85,8 @@ describe("Constraints", function () {
   });
 
   it("coll.clear should affect unique indices correctly", function () {
-    var db = new loki();
-    var coll = db.addCollection("users", { unique: ["username"] });
+    let db = new loki();
+    let coll = db.addCollection("users", { unique: ["username"] });
 
     coll.insert({ username: "joe", name: "Joe" });
     coll.insert({ username: "jack", name: "Jack" });
@@ -108,8 +108,8 @@ describe("Constraints", function () {
     );
     expect(coll.uniqueNames.length).toEqual(1);
 
-    var db = new loki();
-    var coll = db.addCollection("users", { unique: ["username"] });
+    db = new loki();
+    coll = db.addCollection("users", { unique: ["username"] });
 
     coll.insert({ username: "joe", name: "Joe" });
     coll.insert({ username: "jack", name: "Jack" });
@@ -129,14 +129,14 @@ describe("Constraints", function () {
   });
 
   it("batch removes should update unique contraints", function () {
-    var data = [
+    const data = [
       { name: "Sleipnir", legs: 8 },
       { name: "Jormungandr", legs: 0 },
       { name: "Hel", legs: 2 },
     ];
 
-    var db = new loki("test.db");
-    var collection = db.addCollection("children", {
+    const db = new loki("test.db");
+    const collection = db.addCollection("children", {
       unique: ["name"],
     });
 
@@ -151,7 +151,7 @@ describe("Constraints", function () {
     collection.insert(JSON.parse(JSON.stringify(data[0])));
     collection.insert(JSON.parse(JSON.stringify(data[1])));
 
-    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    const keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(3);
     keys.sort();
     // seems we don't delete the key but set its value to undefined
@@ -173,14 +173,14 @@ describe("Constraints", function () {
   });
 
   it("chained batch updates should update constraints", function () {
-    var data = [
+    const data = [
       { name: "Sleipnir", legs: 8 },
       { name: "Jormungandr", legs: 0 },
       { name: "Hel", legs: 2 },
     ];
 
-    var db = new loki("test.db");
-    var collection = db.addCollection("children", {
+    const db = new loki("test.db");
+    const collection = db.addCollection("children", {
       unique: ["name"],
     });
 
@@ -197,7 +197,7 @@ describe("Constraints", function () {
       collection.insert(JSON.parse(JSON.stringify(c)));
     });
 
-    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    const keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(6);
     keys.sort();
     expect(keys[0]).toEqual("Hel");
@@ -209,19 +209,19 @@ describe("Constraints", function () {
   });
 
   it("batch updates should update constraints", function () {
-    var data = [
+    const data = [
       { name: "Sleipnir", legs: 8 },
       { name: "Jormungandr", legs: 0 },
       { name: "Hel", legs: 2 },
     ];
 
-    var db = new loki("test.db");
-    var collection = db.addCollection("children", {
+    const db = new loki("test.db");
+    const collection = db.addCollection("children", {
       unique: ["name"],
     });
 
     // batch insert docs
-    var docs = collection.insert(JSON.parse(JSON.stringify(data)));
+    const docs = collection.insert(JSON.parse(JSON.stringify(data)));
 
     // batch update docs (by passing array to collection.update())
     docs.forEach(function (obj) {
@@ -232,7 +232,7 @@ describe("Constraints", function () {
     // reinsert originals (implicitly 'expecting' that this will not throw exception on Duplicate key)
     collection.insert(data);
 
-    var keys = Object.keys(collection.constraints.unique.name.keyMap);
+    const keys = Object.keys(collection.constraints.unique.name.keyMap);
     expect(keys.length).toEqual(6);
     keys.sort();
     expect(keys[0]).toEqual("Hel");
@@ -243,8 +243,8 @@ describe("Constraints", function () {
     expect(keys[5]).toEqual("Sleipnir2");
   });
   it("should not crash on unsafe strings", function () {
-    var db = new loki();
-    var coll = db.addCollection("local_storage", {
+    const db = new loki();
+    const coll = db.addCollection("local_storage", {
       unique: ["key"],
     });
     expect(coll.by("key", "hasOwnProperty")).toBe(undefined);

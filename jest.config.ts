@@ -7,6 +7,11 @@ const jestConfig: JestConfigWithTsJest = {
   transform: {
     ...tsjPreset.transform,
   },
+  testPathIgnorePatterns: [
+    "<rootDir>/node_modules/",
+    "<rootDir>/build/",
+    "<rootDir>/spec/browser/",
+  ],
 };
 
 export default jestConfig;

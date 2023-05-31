@@ -35,12 +35,14 @@ interface DynamicViewOptions {
   minRebuildInterval: number;
 }
 
-export class DynamicView extends LokiEventEmitter {
-  collection: Collection;
+export class DynamicView<
+  DT extends { $loki: number }
+> extends LokiEventEmitter {
+  collection: Collection<DT>;
   name: string;
   rebuildPending: boolean;
   options: Partial<DynamicViewOptions>;
-  resultset: Resultset;
+  resultset: Resultset<DT>;
   resultdata: any[];
   resultsdirty: boolean;
   cachedresultset: any;
@@ -52,7 +54,7 @@ export class DynamicView extends LokiEventEmitter {
   events: { rebuild: any[]; filter: any[]; sort: any[] };
 
   constructor(
-    collection: Collection,
+    collection: Collection<DT>,
     name: string,
     options?: Partial<DynamicViewOptions>
   ) {

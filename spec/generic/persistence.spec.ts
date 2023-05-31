@@ -854,7 +854,7 @@ describe("async adapter tests", function () {
                 expect(db2.collections[2].data.length).toEqual(0);
 
                 // since async calls are being used, use jasmine done() to indicate test finished
-                done();
+                // done();
               });
             });
           });

@@ -862,7 +862,7 @@ describe("immutable", function () {
 
     describe("querying branched result set", function () {
       let elves;
-      beforeAll(function () {
+      beforeEach(function () {
         const db = new loki("firstonly.db");
         const items = db.addCollection("items", { disableFreeze: false });
         items.insert({ name: "mjolnir", owner: "thor", maker: "dwarves" });

@@ -12,9 +12,12 @@
  * @param {Collection} collection - The collection which this Resultset will query against.
  */
 import { CloneMethods } from "../utils/clone";
-export declare class Resultset {
+import { ChainTransform, Collection } from "./Collection";
+export declare class Resultset<RST extends {
+    $loki: number;
+}> {
     options: Record<string, any>;
-    collection: any;
+    collection: Collection<RST>;
     filteredrows: any[];
     filterInitialized: boolean;
     disableFreeze: any;
@@ -30,7 +33,9 @@ export declare class Resultset {
      * toJSON() - Override of toJSON to avoid circular references
      *
      */
-    toJSON(): Resultset;
+    toJSON(): Resultset<{
+        $loki: number;
+    }>;
     /**
      * Allows you to limit the number of documents passed to next chain operation.
      *    A resultset copy() is made to avoid altering original resultset.
@@ -41,7 +46,9 @@ export declare class Resultset {
      * // find the two oldest users
      * var result = users.chain().simplesort("age", true).limit(2).data();
      */
-    limit(qty: any): Resultset;
+    limit(qty: any): Resultset<{
+        $loki: number;
+    }>;
     /**
      * Used for skipping 'pos' number of documents in the resultset.
      *
@@ -51,14 +58,18 @@ export declare class Resultset {
      * // find everyone but the two oldest users
      * var result = users.chain().simplesort("age", true).offset(2).data();
      */
-    offset(pos: any): Resultset;
+    offset(pos: any): Resultset<{
+        $loki: number;
+    }>;
     /**
      * copy() - To support reuse of resultset in branched query situations.
      *
      * @returns {Resultset} Returns a copy of the resultset (set) but the underlying document references will be the same.
      * @memberof Resultset
      */
-    copy(): Resultset;
+    copy(): Resultset<{
+        $loki: number;
+    }>;
     /**
      * transform() - executes a named collection transform or raw array of transform steps against the resultset.
      *
@@ -82,7 +93,7 @@ export declare class Resultset {
      * ]);
      * var results = users.chain().transform("CountryFilter", { Country: 'fr' }).data();
      */
-    transform(transform: any, parameters: any): this;
+    transform(transform: ChainTransform, parameters?: Record<string, any>): Resultset<RST> | RST;
     /**
      * User supplied compare function is provided two documents to compare. (chainable)
      * @example
@@ -299,7 +310,7 @@ export declare class Resultset {
      * @example
      * var resutls = users.chain().find({ age: 34 }).data();
      */
-    data<T = unknown>(options?: Partial<ResultSetDataOptions>): T[];
+    data(options?: Partial<ResultSetDataOptions>): RST[];
     /**
      * Applies a map function into a new collection for further chaining.
      * @param {function} mapFun - javascript map function
@@ -322,9 +333,11 @@ export declare class Resultset {
      * Alias of copy()
      * @memberof Resultset
      */
-    branch: () => Resultset;
-    $or: (expressionArray: any) => Resultset;
-    $and: (expressionArray: any) => Resultset;
+    branch: () => Resultset<{
+        $loki: number;
+    }>;
+    $or: (expressionArray: any) => Resultset<any>;
+    $and: (expressionArray: any) => Resultset<any>;
 }
 interface ResultSetDataOptions {
     removeMeta: boolean;

@@ -14,7 +14,7 @@ describe("collection", function () {
     expect(result.name).toEqual("coll2");
   });
   it("subclassing works", function () {
-    class SubclassedCollection extends loki.Collection {
+    class SubclassedCollection extends loki.Collection<any> {
       constructor(args, opts) {
         super(args, opts);
       }

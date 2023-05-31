@@ -18,6 +18,28 @@ import { LokiMemoryAdapter } from "./loki-storage-adapter/LokiMemoryAdapter";
 import { LokiPartitioningAdapter } from "./loki-storage-adapter/LokiPartitioningAdapter";
 import { LokiPersistenceAdapter } from "./loki-storage-adapter/LokiPersistenceAdapter";
 
+export interface ChangeOps {
+  name: string;
+  operation: string;
+  obj: Obj;
+}
+
+export interface Obj {
+  name?: string;
+  owner?: string;
+  maker?: string | { count: number };
+  count: number;
+  meta: Meta;
+  $loki: number;
+}
+
+export interface Meta {
+  revision: number;
+  created: number;
+  version: number;
+  updated?: number;
+}
+
 interface SerializationOptions {
   partitioned: boolean;
   partition: number;
@@ -142,7 +164,7 @@ export default class Loki extends LokiEventEmitter {
     gt: (prop1: any, prop2: any, equal: any) => any;
   };
   constructor(
-    filename: string,
+    filename?: string,
     options?: Partial<LokiConfigOptions & LokiConstructorOptions>
   ) {
     super();
@@ -1222,7 +1244,9 @@ export default class Loki extends LokiEventEmitter {
    * @see private method createChange() in Collection
    * @memberof Loki
    */
-  generateChangesNotification = (arrayOfCollectionNames) => {
+  generateChangesNotification = (
+    arrayOfCollectionNames?: string[]
+  ): ChangeOps[] => {
     function getCollName({ name }) {
       return name;
     }
@@ -1244,10 +1268,19 @@ export default class Loki extends LokiEventEmitter {
    * @returns {string} string representation of the changes
    * @memberof Loki
    */
-  serializeChanges = (collectionNamesArray) => {
+  serializeChanges = (collectionNamesArray): string => {
     return JSON.stringify(
       this.generateChangesNotification(collectionNamesArray)
     );
+  };
+
+  /**
+   * (Changes API) - deserialize a serialized changes array
+   * @returns {ChangeOps[]} string representation of the changes
+   * @memberof Loki
+   */
+  deserializeChanges = (collectionString): ChangeOps[] => {
+    return JSON.parse(collectionString);
   };
 
   /**

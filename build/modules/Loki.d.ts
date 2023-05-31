@@ -6,6 +6,27 @@ import { Resultset } from "./Resultset";
 import { LokiLocalStorageAdapter } from "./loki-storage-adapter/LokiLocalStorageAdapter";
 import { LokiMemoryAdapter } from "./loki-storage-adapter/LokiMemoryAdapter";
 import { LokiPersistenceAdapter } from "./loki-storage-adapter/LokiPersistenceAdapter";
+export interface ChangeOps {
+    name: string;
+    operation: string;
+    obj: Obj;
+}
+export interface Obj {
+    name?: string;
+    owner?: string;
+    maker?: string | {
+        count: number;
+    };
+    count: number;
+    meta: Meta;
+    $loki: number;
+}
+export interface Meta {
+    revision: number;
+    created: number;
+    version: number;
+    updated?: number;
+}
 interface SerializationOptions {
     partitioned: boolean;
     partition: number;
@@ -126,7 +147,7 @@ export default class Loki extends LokiEventEmitter {
         lt: (prop1: any, prop2: any, equal: any) => any;
         gt: (prop1: any, prop2: any, equal: any) => any;
     };
-    constructor(filename: string, options?: Partial<LokiConfigOptions & LokiConstructorOptions>);
+    constructor(filename?: string, options?: Partial<LokiConfigOptions & LokiConstructorOptions>);
     getIndexedAdapter: () => any;
     /**
      * Allows reconfiguring database options
@@ -320,13 +341,19 @@ export default class Loki extends LokiEventEmitter {
      * @see private method createChange() in Collection
      * @memberof Loki
      */
-    generateChangesNotification: (arrayOfCollectionNames: any) => any[];
+    generateChangesNotification: (arrayOfCollectionNames?: string[]) => ChangeOps[];
     /**
      * (Changes API) - stringify changes for network transmission
      * @returns {string} string representation of the changes
      * @memberof Loki
      */
     serializeChanges: (collectionNamesArray: any) => string;
+    /**
+     * (Changes API) - deserialize a serialized changes array
+     * @returns {ChangeOps[]} string representation of the changes
+     * @memberof Loki
+     */
+    deserializeChanges: (collectionString: any) => ChangeOps[];
     /**
      * (Changes API) : clears all the changes in all collections.
      * @memberof Loki

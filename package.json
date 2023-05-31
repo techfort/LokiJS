@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "lint": "eslint . --ext .ts || exit 0",
-    "format": "prettier src/*.ts -w",
+    "format": "prettier src/**/*.ts spec/**/*.ts -w",
     "typecheck": "tsc --noEmit",
     "test:browser:old": "karma start karma.conf.js --single-run",
     "test:browser": "web-test-runner spec/**/*.ts --node-resolve",

@@ -247,10 +247,8 @@ export class Resultset<RST extends { $loki: number }> {
       this.filteredrows = this.collection.prepareFullDocIndex();
     }
 
-    const wrappedComparer = (
-      (userComparer, data) => (a, b) =>
-        userComparer(data[a], data[b])
-    )(comparefun, this.collection.data);
+    const wrappedComparer = ((userComparer, data) => (a, b) =>
+      userComparer(data[a], data[b]))(comparefun, this.collection.data);
 
     this.filteredrows.sort(wrappedComparer);
 
@@ -303,8 +301,9 @@ export class Resultset<RST extends { $loki: number }> {
         // make sure index is up-to-date
         this.collection.ensureIndex(propname);
         // copy index values into filteredrows
-        this.filteredrows =
-          this.collection.binaryIndices[propname].values.slice(0);
+        this.filteredrows = this.collection.binaryIndices[
+          propname
+        ].values.slice(0);
 
         if (options.desc) {
           this.filteredrows.reverse();
@@ -433,10 +432,8 @@ export class Resultset<RST extends { $loki: number }> {
       this.filteredrows = this.collection.prepareFullDocIndex();
     }
 
-    const wrappedComparer = (
-      (props, data) => (a, b) =>
-        compoundeval(props, data[a], data[b])
-    )(properties, this.collection.data);
+    const wrappedComparer = ((props, data) => (a, b) =>
+      compoundeval(props, data[a], data[b]))(properties, this.collection.data);
 
     this.filteredrows.sort(wrappedComparer);
 

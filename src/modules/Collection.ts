@@ -2740,5 +2740,3 @@ export class Collection<
     error(message: string) {},
   };
 }
-
-// Collection.prototype.contructor = Collection;

@@ -1,4 +1,5 @@
 import { LokiEventEmitter } from "./LokiEventEmitter";
+import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
 export type ChainTransform = string | {
     type: string;
@@ -259,7 +260,7 @@ export declare class Collection<ColT extends {
      *
      * var results = pview.data();
      **/
-    addDynamicView(name: any, options: any): any;
+    addDynamicView(name: any, options: any): DynamicView<ColT>;
     /**
      * Remove a dynamic view from the collection
      * @param {string} name - name of dynamic view to remove

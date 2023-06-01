@@ -1,4 +1,4 @@
-(function(root, factory) {
+(function (root, factory) {
   if (typeof define === "function" && define.amd) {
     // AMD
     define([], factory);
@@ -9,12 +9,13 @@
     // Browser globals
     root.IncrementalIndexedDBAdapter = factory();
   }
-})(this, function() {
-  return (function() {
+})(this, function () {
+  return (function () {
     "use strict";
 
     /* jshint -W030 */
-    var DEBUG = typeof window !== 'undefined' && !!window.__loki_incremental_idb_debug;
+    var DEBUG =
+      typeof window !== "undefined" && !!window.__loki_incremental_idb_debug;
 
     /**
      * An improved Loki persistence adapter for IndexedDB (not compatible with LokiIndexedAdapter)
@@ -62,12 +63,15 @@
       this._prevCollectionVersionIds = {};
 
       if (!(this.megachunkCount >= 4 && this.megachunkCount % 2 === 0)) {
-        throw new Error('megachunkCount must be >=4 and divisible by 2');
+        throw new Error("megachunkCount must be >=4 and divisible by 2");
       }
     }
 
     // chunkId - index of the data chunk - e.g. chunk 0 will be lokiIds 0-99
-    IncrementalIndexedDBAdapter.prototype._getChunk = function(collection, chunkId) {
+    IncrementalIndexedDBAdapter.prototype._getChunk = function (
+      collection,
+      chunkId
+    ) {
       // 0-99, 100-199, etc.
       var minId = chunkId * this.chunkSize;
       var maxId = minId + this.chunkSize - 1;
@@ -106,7 +110,11 @@
       // (and we look back in case there are missing pieces)
       // TODO: Binary search (not as important as first position, worst case scanario is only chunkSize steps)
       var lastDataPosition = null;
-      for (var i = firstDataPosition + this.chunkSize - 1; i >= firstDataPosition; i--) {
+      for (
+        var i = firstDataPosition + this.chunkSize - 1;
+        i >= firstDataPosition;
+        i--
+      ) {
         if (idIndex[i] <= maxId) {
           lastDataPosition = i;
           break;
@@ -115,18 +123,33 @@
 
       // verify
       var firstElement = collection.data[firstDataPosition];
-      if (!(firstElement && firstElement.$loki >= minId && firstElement.$loki <= maxId)) {
+      if (
+        !(
+          firstElement &&
+          firstElement.$loki >= minId &&
+          firstElement.$loki <= maxId
+        )
+      ) {
         throw new Error("broken invariant firstelement");
       }
 
       var lastElement = collection.data[lastDataPosition];
-      if (!(lastElement && lastElement.$loki >= minId && lastElement.$loki <= maxId)) {
+      if (
+        !(
+          lastElement &&
+          lastElement.$loki >= minId &&
+          lastElement.$loki <= maxId
+        )
+      ) {
         throw new Error("broken invariant lastElement");
       }
 
       // this will have *up to* 'this.chunkSize' elements (might have less, because $loki ids
       // will have holes when data is deleted)
-      var chunkData = collection.data.slice(firstDataPosition, lastDataPosition + 1);
+      var chunkData = collection.data.slice(
+        firstDataPosition,
+        lastDataPosition + 1
+      );
 
       if (chunkData.length > this.chunkSize) {
         throw new Error("broken invariant - chunk size");
@@ -150,18 +173,24 @@
      * @param {function} callback - (Optional) callback passed obj.success with true or false
      * @memberof IncrementalIndexedDBAdapter
      */
-    IncrementalIndexedDBAdapter.prototype.saveDatabase = function(dbname, getLokiCopy, callback) {
+    IncrementalIndexedDBAdapter.prototype.saveDatabase = function (
+      dbname,
+      getLokiCopy,
+      callback
+    ) {
       var that = this;
 
       if (!this.idb) {
-        this._initializeIDB(dbname, callback, function() {
+        this._initializeIDB(dbname, callback, function () {
           that.saveDatabase(dbname, getLokiCopy, callback);
         });
         return;
       }
 
       if (this.operationInProgress) {
-        throw new Error("Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
+        throw new Error(
+          "Error while saving to database - another operation is already in progress. Please use throttledSaves=true option on Loki object"
+        );
       }
       this.operationInProgress = true;
 
@@ -179,12 +208,14 @@
       // (this may happen if another tab has called deleteDatabase)
       try {
         var updatePrevVersionIds = function () {
-          console.error('Unexpected successful tx - cannot update previous version ids');
+          console.error(
+            "Unexpected successful tx - cannot update previous version ids"
+          );
         };
         var didOverwrite = false;
 
-        var tx = this.idb.transaction(['LokiIncrementalData'], "readwrite");
-        tx.oncomplete = function() {
+        var tx = this.idb.transaction(["LokiIncrementalData"], "readwrite");
+        tx.oncomplete = function () {
           updatePrevVersionIds();
           finish();
           if (didOverwrite && that.options.onDidOverwrite) {
@@ -192,30 +223,36 @@
           }
         };
 
-        tx.onerror = function(e) {
+        tx.onerror = function (e) {
           finish(e);
         };
 
-        tx.onabort = function(e) {
+        tx.onabort = function (e) {
           finish(e);
         };
 
-        var store = tx.objectStore('LokiIncrementalData');
+        var store = tx.objectStore("LokiIncrementalData");
 
         var performSave = function (maxChunkIds) {
           try {
             var incremental = !maxChunkIds;
-            var chunkInfo = that._putInChunks(store, getLokiCopy(), incremental, maxChunkIds);
+            var chunkInfo = that._putInChunks(
+              store,
+              getLokiCopy(),
+              incremental,
+              maxChunkIds
+            );
             // Update last seen version IDs, but only after the transaction is successful
-            updatePrevVersionIds = function() {
+            updatePrevVersionIds = function () {
               that._prevLokiVersionId = chunkInfo.lokiVersionId;
               chunkInfo.collectionVersionIds.forEach(function (collectionInfo) {
-                that._prevCollectionVersionIds[collectionInfo.name] = collectionInfo.versionId;
+                that._prevCollectionVersionIds[collectionInfo.name] =
+                  collectionInfo.versionId;
               });
             };
             tx.commit && tx.commit();
           } catch (error) {
-            console.error('idb performSave failed: ', error);
+            console.error("idb performSave failed: ", error);
             tx.abort();
           }
         };
@@ -230,31 +267,44 @@
         // TODO: We can optimize the slow path by fetching collection metadata chunks and comparing their
         // version IDs with those last seen by us. Since any change in collection data requires a metadata
         // chunk save, we're guaranteed that if the IDs match, we don't need to overwrite chukns of this collection
-        var getAllKeysThenSave = function() {
+        var getAllKeysThenSave = function () {
           // NOTE: We must fetch all keys to protect against a case where another tab has wrote more
           // chunks whan we did -- if so, we must delete them.
-          idbReq(store.getAllKeys(), function(e) {
-            var maxChunkIds = getMaxChunkIds(e.target.result);
-            performSave(maxChunkIds);
-          }, function(e) {
-            console.error('Getting all keys failed: ', e);
-            tx.abort();
-          });
+          idbReq(
+            store.getAllKeys(),
+            function (e) {
+              var maxChunkIds = getMaxChunkIds(e.target.result);
+              performSave(maxChunkIds);
+            },
+            function (e) {
+              console.error("Getting all keys failed: ", e);
+              tx.abort();
+            }
+          );
         };
 
-        var getLokiThenSave = function() {
-          idbReq(store.get('loki'), function(e) {
-            if (lokiChunkVersionId(e.target.result) === that._prevLokiVersionId) {
-              performSave();
-            } else {
-              DEBUG && console.warn('Another writer changed Loki IDB, using slow path...');
-              didOverwrite = true;
-              getAllKeysThenSave();
+        var getLokiThenSave = function () {
+          idbReq(
+            store.get("loki"),
+            function (e) {
+              if (
+                lokiChunkVersionId(e.target.result) === that._prevLokiVersionId
+              ) {
+                performSave();
+              } else {
+                DEBUG &&
+                  console.warn(
+                    "Another writer changed Loki IDB, using slow path..."
+                  );
+                didOverwrite = true;
+                getAllKeysThenSave();
+              }
+            },
+            function (e) {
+              console.error("Getting loki chunk failed: ", e);
+              tx.abort();
             }
-          }, function(e) {
-            console.error('Getting loki chunk failed: ', e);
-            tx.abort();
-          });
+          );
         };
 
         getLokiThenSave();
@@ -292,12 +342,17 @@
           return null;
         }
       } catch (e) {
-        console.error('Error while parsing loki chunk', e);
+        console.error("Error while parsing loki chunk", e);
         return null;
       }
     }
 
-    IncrementalIndexedDBAdapter.prototype._putInChunks = function(idbStore, loki, incremental, maxChunkIds) {
+    IncrementalIndexedDBAdapter.prototype._putInChunks = function (
+      idbStore,
+      loki,
+      incremental,
+      maxChunkIds
+    ) {
       var that = this;
       var collectionVersionIds = [];
       var savedSize = 0;
@@ -305,10 +360,11 @@
       var prepareCollection = function (collection, i) {
         // Find dirty chunk ids
         var dirtyChunks = new Set();
-        incremental && collection.dirtyIds.forEach(function(lokiId) {
-          var chunkId = (lokiId / that.chunkSize) | 0;
-          dirtyChunks.add(chunkId);
-        });
+        incremental &&
+          collection.dirtyIds.forEach(function (lokiId) {
+            var chunkId = (lokiId / that.chunkSize) | 0;
+            dirtyChunks.add(chunkId);
+          });
         collection.dirtyIds = [];
 
         // Serialize chunks to save
@@ -322,7 +378,9 @@
           // JSON.stringify is much better optimized than IDB's structured clone
           chunkData = JSON.stringify(chunkData);
           savedSize += chunkData.length;
-          DEBUG && incremental && console.log('Saving: ' + collection.name + ".chunk." + chunkId);
+          DEBUG &&
+            incremental &&
+            console.log("Saving: " + collection.name + ".chunk." + chunkId);
           idbStore.put({
             key: collection.name + ".chunk." + chunkId,
             value: chunkData,
@@ -344,7 +402,7 @@
           for (var k = maxChunkId + 1; k <= persistedMaxChunkId; k += 1) {
             var deletedChunkName = collection.name + ".chunk." + k;
             idbStore.delete(deletedChunkName);
-            DEBUG && console.warn('Deleted chunk: ' + deletedChunkName);
+            DEBUG && console.warn("Deleted chunk: " + deletedChunkName);
           }
         }
 
@@ -353,11 +411,16 @@
           collection.idIndex = []; // this is recreated lazily
           collection.data = [];
           collection.idbVersionId = randomVersionId();
-          collectionVersionIds.push({ name: collection.name, versionId: collection.idbVersionId });
+          collectionVersionIds.push({
+            name: collection.name,
+            versionId: collection.idbVersionId,
+          });
 
           var metadataChunk = JSON.stringify(collection);
           savedSize += metadataChunk.length;
-          DEBUG && incremental && console.log('Saving: ' + collection.name + ".metadata");
+          DEBUG &&
+            incremental &&
+            console.log("Saving: " + collection.name + ".metadata");
           idbStore.put({
             key: collection.name + ".metadata",
             value: metadataChunk,
@@ -373,7 +436,7 @@
       var serializedMetadata = JSON.stringify(loki);
       savedSize += serializedMetadata.length;
 
-      DEBUG && incremental && console.log('Saving: loki');
+      DEBUG && incremental && console.log("Saving: loki");
       idbStore.put({ key: "loki", value: serializedMetadata });
 
       DEBUG && console.log("saved size: " + savedSize);
@@ -398,11 +461,16 @@
      * @param {function} callback - callback should accept string param containing serialized db string.
      * @memberof IncrementalIndexedDBAdapter
      */
-    IncrementalIndexedDBAdapter.prototype.loadDatabase = function(dbname, callback) {
+    IncrementalIndexedDBAdapter.prototype.loadDatabase = function (
+      dbname,
+      callback
+    ) {
       var that = this;
 
       if (this.operationInProgress) {
-        throw new Error("Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
+        throw new Error(
+          "Error while loading database - another operation is already in progress. Please use throttledSaves=true option on Loki object"
+        );
       }
 
       this.operationInProgress = true;
@@ -416,7 +484,7 @@
         callback(value);
       };
 
-      this._getAllChunks(dbname, function(chunks) {
+      this._getAllChunks(dbname, function (chunks) {
         try {
           if (!Array.isArray(chunks)) {
             throw chunks; // we have an error
@@ -434,14 +502,20 @@
           chunks.loki = null; // gc
 
           // populate collections with data
-          populateLoki(loki, chunks.chunkMap, that.options.deserializeChunk, that.lazyCollections);
+          populateLoki(
+            loki,
+            chunks.chunkMap,
+            that.options.deserializeChunk,
+            that.lazyCollections
+          );
           chunks = null; // gc
 
           // remember previous version IDs
           that._prevLokiVersionId = loki.idbVersionId || null;
           that._prevCollectionVersionIds = {};
           loki.collections.forEach(function (collection) {
-            that._prevCollectionVersionIds[collection.name] = collection.idbVersionId || null;
+            that._prevCollectionVersionIds[collection.name] =
+              collection.idbVersionId || null;
           });
 
           return finish(loki);
@@ -459,7 +533,7 @@
 
       sortChunksInPlace(chunks);
 
-      chunks.forEach(function(chunk) {
+      chunks.forEach(function (chunk) {
         var type = chunk.type;
         var value = chunk.value;
         var name = chunk.collectionName;
@@ -498,7 +572,9 @@
         var chunkCollection = chunkMap[name];
         if (chunkCollection) {
           if (!chunkCollection.metadata) {
-            throw new Error("Corrupted database - missing metadata chunk for " + name);
+            throw new Error(
+              "Corrupted database - missing metadata chunk for " + name
+            );
           }
           var collection = chunkCollection.metadata;
           chunkCollection.metadata = null;
@@ -516,7 +592,7 @@
                   chunk = deserializeChunk(name, chunk);
                 }
               }
-              chunk.forEach(function(doc) {
+              chunk.forEach(function (doc) {
                 data.push(doc);
               });
               dataChunks[i] = null;
@@ -528,36 +604,44 @@
       });
     }
 
-    IncrementalIndexedDBAdapter.prototype._initializeIDB = function(dbname, onError, onSuccess) {
+    IncrementalIndexedDBAdapter.prototype._initializeIDB = function (
+      dbname,
+      onError,
+      onSuccess
+    ) {
       var that = this;
       DEBUG && console.log("initializing idb");
 
       if (this.idbInitInProgress) {
-        throw new Error("Cannot open IndexedDB because open is already in progress");
+        throw new Error(
+          "Cannot open IndexedDB because open is already in progress"
+        );
       }
       this.idbInitInProgress = true;
 
       var openRequest = indexedDB.open(dbname, 1);
 
-      openRequest.onupgradeneeded = function(e) {
+      openRequest.onupgradeneeded = function (e) {
         var db = e.target.result;
-        DEBUG && console.log('onupgradeneeded, old version: ' + e.oldVersion);
+        DEBUG && console.log("onupgradeneeded, old version: " + e.oldVersion);
 
         if (e.oldVersion < 1) {
           // Version 1 - Initial - Create database
-          db.createObjectStore('LokiIncrementalData', { keyPath: "key" });
+          db.createObjectStore("LokiIncrementalData", { keyPath: "key" });
         } else {
           // Unknown version
-          throw new Error("Invalid old version " + e.oldVersion + " for IndexedDB upgrade");
+          throw new Error(
+            "Invalid old version " + e.oldVersion + " for IndexedDB upgrade"
+          );
         }
       };
 
-      openRequest.onsuccess = function(e) {
+      openRequest.onsuccess = function (e) {
         that.idbInitInProgress = false;
         var db = e.target.result;
         that.idb = db;
 
-        if (!db.objectStoreNames.contains('LokiIncrementalData')) {
+        if (!db.objectStoreNames.contains("LokiIncrementalData")) {
           onError(new Error("Missing LokiIncrementalData"));
           // Attempt to recover (after reload) by deleting database, since it's damaged anyway
           that.deleteDatabase(dbname);
@@ -566,13 +650,13 @@
 
         DEBUG && console.log("init success");
 
-        db.onversionchange = function(versionChangeEvent) {
+        db.onversionchange = function (versionChangeEvent) {
           // Ignore if database was deleted and recreated in the meantime
           if (that.idb !== db) {
             return;
           }
 
-          DEBUG && console.log('IDB version change', versionChangeEvent);
+          DEBUG && console.log("IDB version change", versionChangeEvent);
           // This function will be called if another connection changed DB version
           // (Most likely database was deleted from another browser tab, unless there's a new version
           // of this adapter, or someone makes a connection to IDB outside of this adapter)
@@ -589,29 +673,32 @@
         onSuccess();
       };
 
-      openRequest.onblocked = function(e) {
+      openRequest.onblocked = function (e) {
         console.error("IndexedDB open is blocked", e);
         onError(new Error("IndexedDB open is blocked by open connection"));
       };
 
-      openRequest.onerror = function(e) {
+      openRequest.onerror = function (e) {
         that.idbInitInProgress = false;
         console.error("IndexedDB open error", e);
         onError(e);
       };
     };
 
-    IncrementalIndexedDBAdapter.prototype._getAllChunks = function(dbname, callback) {
+    IncrementalIndexedDBAdapter.prototype._getAllChunks = function (
+      dbname,
+      callback
+    ) {
       var that = this;
       if (!this.idb) {
-        this._initializeIDB(dbname, callback, function() {
+        this._initializeIDB(dbname, callback, function () {
           that._getAllChunks(dbname, callback);
         });
         return;
       }
 
-      var tx = this.idb.transaction(['LokiIncrementalData'], "readonly");
-      var store = tx.objectStore('LokiIncrementalData');
+      var tx = this.idb.transaction(["LokiIncrementalData"], "readonly");
+      var store = tx.objectStore("LokiIncrementalData");
 
       var deserializeChunk = this.options.deserializeChunk;
       var lazyCollections = this.lazyCollections;
@@ -649,15 +736,19 @@
         var megachunksPerWave = megachunkCount / megachunkWaves;
         function requestMegachunk(index, wave) {
           var keyRange = keyRanges[index];
-          idbReq(store.getAll(keyRange), function(e) {
-            if (wave < megachunkWaves) {
-              requestMegachunk(index + megachunksPerWave, wave + 1);
-            }
+          idbReq(
+            store.getAll(keyRange),
+            function (e) {
+              if (wave < megachunkWaves) {
+                requestMegachunk(index + megachunksPerWave, wave + 1);
+              }
 
-            processMegachunk(e, index, keyRange);
-          }, function(e) {
-            callback(e);
-          });
+              processMegachunk(e, index, keyRange);
+            },
+            function (e) {
+              callback(e);
+            }
+          );
         }
 
         for (var i = 0; i < megachunksPerWave; i += 1) {
@@ -666,15 +757,19 @@
       }
 
       function getAllChunks() {
-        idbReq(store.getAll(), function(e) {
-          var allChunks = e.target.result;
-          allChunks.forEach(function (chunk) {
-            parseChunk(chunk, deserializeChunk, lazyCollections);
-          });
-          callback(allChunks);
-        }, function(e) {
-          callback(e);
-        });
+        idbReq(
+          store.getAll(),
+          function (e) {
+            var allChunks = e.target.result;
+            allChunks.forEach(function (chunk) {
+              parseChunk(chunk, deserializeChunk, lazyCollections);
+            });
+            callback(allChunks);
+          },
+          function (e) {
+            callback(e);
+          }
+        );
       }
 
       function getAllKeys() {
@@ -687,11 +782,15 @@
           }
         }
 
-        idbReq(store.getAllKeys(), function(e) {
-          onDidGetKeys(e.target.result);
-        }, function(e) {
-          callback(e);
-        });
+        idbReq(
+          store.getAllKeys(),
+          function (e) {
+            onDidGetKeys(e.target.result);
+          },
+          function (e) {
+            callback(e);
+          }
+        );
 
         if (that.options.onFetchStart) {
           that.options.onFetchStart();
@@ -704,18 +803,18 @@
     function classifyChunk(chunk) {
       var key = chunk.key;
 
-      if (key === 'loki') {
-        chunk.type = 'loki';
+      if (key === "loki") {
+        chunk.type = "loki";
         return;
-      } else if (key.includes('.')) {
+      } else if (key.includes(".")) {
         var keySegments = key.split(".");
         if (keySegments.length === 3 && keySegments[1] === "chunk") {
-          chunk.type = 'data';
+          chunk.type = "data";
           chunk.collectionName = keySegments[0];
           chunk.index = parseInt(keySegments[2], 10);
           return;
         } else if (keySegments.length === 2 && keySegments[1] === "metadata") {
-          chunk.type = 'metadata';
+          chunk.type = "metadata";
           chunk.collectionName = keySegments[0];
           return;
         }
@@ -728,7 +827,7 @@
     function parseChunk(chunk, deserializeChunk, lazyCollections) {
       classifyChunk(chunk);
 
-      var isData = chunk.type === 'data';
+      var isData = chunk.type === "data";
       var isLazy = lazyCollections.includes(chunk.collectionName);
 
       if (!(isData && isLazy)) {
@@ -753,9 +852,14 @@
      * @param {function=} callback - (Optional) executed on database delete
      * @memberof IncrementalIndexedDBAdapter
      */
-    IncrementalIndexedDBAdapter.prototype.deleteDatabase = function(dbname, callback) {
+    IncrementalIndexedDBAdapter.prototype.deleteDatabase = function (
+      dbname,
+      callback
+    ) {
       if (this.operationInProgress) {
-        throw new Error("Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object");
+        throw new Error(
+          "Error while deleting database - another operation is already in progress. Please use throttledSaves=true option on Loki object"
+        );
       }
 
       this.operationInProgress = true;
@@ -774,22 +878,25 @@
 
       var request = indexedDB.deleteDatabase(dbname);
 
-      request.onsuccess = function() {
+      request.onsuccess = function () {
         that.operationInProgress = false;
         DEBUG && console.timeEnd("deleteDatabase");
         callback({ success: true });
       };
 
-      request.onerror = function(e) {
+      request.onerror = function (e) {
         that.operationInProgress = false;
         console.error("Error while deleting database", e);
         callback({ success: false });
       };
 
-      request.onblocked = function(e) {
+      request.onblocked = function (e) {
         // We can't call callback with failure status, because this will be called even if we
         // succeed in just a moment
-        console.error("Deleting database failed because it's blocked by another connection", e);
+        console.error(
+          "Deleting database failed because it's blocked by another connection",
+          e
+        );
       };
     };
 
@@ -803,7 +910,7 @@
     function sortChunksInPlace(chunks) {
       // sort chunks in place to load data in the right order (ascending loki ids)
       // on both Safari and Chrome, we'll get chunks in order like this: 0, 1, 10, 100...
-      chunks.sort(function(a, b) {
+      chunks.sort(function (a, b) {
         return (a.index || 0) - (b.index || 0);
       });
     }

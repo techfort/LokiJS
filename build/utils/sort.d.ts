@@ -20,7 +20,7 @@ export declare function aeqHelper(prop1: any, prop2: any): boolean;
  */
 export declare function ltHelper(prop1: any, prop2: any, equal: any): any;
 export declare function gtHelper(prop1: any, prop2: any, equal: any): any;
-export declare function sortHelper(prop1: any, prop2: any, desc: any): 1 | -1 | 0;
+export declare function sortHelper(prop1: any, prop2: any, desc: any): 0 | 1 | -1;
 /**
  * compoundeval() - helper function for compoundsort(), performing individual object comparisons
  *

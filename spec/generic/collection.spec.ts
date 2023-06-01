@@ -19,8 +19,6 @@ describe("collection", function () {
     db.addCollection("coll1");
     const collection = db.getCollection("coll1");
     collection.stage("tmp", { a: 1, $loki: testLokiId });
-    console.log(collection.stages);
-    console.log(collection.getStage("tmp"));
     expect(collection.getStage("tmp")[testLokiId].a).toEqual(1);
     expect(collection.getStage("tmp")[testLokiId].$loki).toEqual(0);
   });

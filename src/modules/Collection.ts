@@ -88,8 +88,15 @@ export class Collection<
   flushChanges: () => void;
   setChangesApi: (enabled: any) => void;
   cachedDirtyIds: any;
-  stages: (object & { $loki: number })[];
-  commitLog: any;
+  /**
+   * stages: a map of uniquely identified 'stages', which hold copies of objects to be
+   * manipulated without affecting the data in the original collection
+   */
+  stages: object & Partial<{ $loki: number }> = {};
+  /**
+   * a collection of objects recording the changes applied through a commmitStage
+   */
+  commitLog = [];
   contructor: typeof Collection;
   no_op: () => void;
   constructor(name, options?: Record<string, any>) {
@@ -2515,6 +2522,8 @@ export class Collection<
     );
   }
 
+  /* ------ STAGING API -------- */
+
   /**
    * (Staging API) create a stage and/or retrieve it
    * @memberof Collection
@@ -2732,20 +2741,4 @@ export class Collection<
   };
 }
 
-Collection.prototype.contructor = Collection;
-
-/* ------ STAGING API -------- */
-/**
- * stages: a map of uniquely identified 'stages', which hold copies of objects to be
- * manipulated without affecting the data in the original collection
- */
-Collection.prototype.stages = {};
-
-/**
- * a collection of objects recording the changes applied through a commmitStage
- */
-Collection.prototype.commitLog = [];
-
-Collection.prototype.no_op = function () {
-  return;
-};
+// Collection.prototype.contructor = Collection;

@@ -1,5 +1,4 @@
 import { LokiEventEmitter } from "./LokiEventEmitter";
-import { DynamicView } from "./DynamicView";
 import { Resultset } from "./Resultset";
 export type ChainTransform = string | {
     type: string;
@@ -75,8 +74,17 @@ export declare class Collection<ColT extends {
     flushChanges: () => void;
     setChangesApi: (enabled: any) => void;
     cachedDirtyIds: any;
-    stages: any;
-    commitLog: any;
+    /**
+     * stages: a map of uniquely identified 'stages', which hold copies of objects to be
+     * manipulated without affecting the data in the original collection
+     */
+    stages: object & Partial<{
+        $loki: number;
+    }>;
+    /**
+     * a collection of objects recording the changes applied through a commmitStage
+     */
+    commitLog: any[];
     contructor: typeof Collection;
     no_op: () => void;
     constructor(name: any, options?: Record<string, any>);
@@ -127,7 +135,7 @@ export declare class Collection<ColT extends {
      */
     removeTransform(name: any): void;
     byExample(template: any): {
-        $and: any;
+        $and: any[];
     };
     findObject(template: any): any;
     findObjects(template: any): any;
@@ -251,7 +259,7 @@ export declare class Collection<ColT extends {
      *
      * var results = pview.data();
      **/
-    addDynamicView(name: any, options: any): DynamicView<ColT>;
+    addDynamicView(name: any, options: any): any;
     /**
      * Remove a dynamic view from the collection
      * @param {string} name - name of dynamic view to remove
@@ -515,12 +523,16 @@ export declare class Collection<ColT extends {
      * (Staging API) create a stage and/or retrieve it
      * @memberof Collection
      */
-    getStage(name: any): any;
+    getStage(name: string): Record<number, Record<string, any> & {
+        $loki: number;
+    }>;
     /**
      * (Staging API) create a copy of an object and insert it into a stage
      * @memberof Collection
      */
-    stage(stageName: any, obj: any): any;
+    stage(stageName: string, obj: Record<string, any> & {
+        $loki: number;
+    }): any;
     /**
      * (Staging API) re-attach all objects to the original collection, so indexes and views can be rebuilt
      * then create a message to be inserted in the commitlog
@@ -528,7 +540,7 @@ export declare class Collection<ColT extends {
      * @param {string} message
      * @memberof Collection
      */
-    commitStage(stageName: any, message: any): void;
+    commitStage(stageName: string, message: string): void;
     /**
      * @memberof Collection
      */

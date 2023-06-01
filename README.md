@@ -1,5 +1,7 @@
 # LokiJS
 
+This repo is a fork of the original [LokiJS repository](https://github.com/techfort/LokiJS).
+
 The super fast in-memory javascript document oriented database.
 
 Enable offline-syncing to your SQL/NoSQL database servers with [SyncProxy](https://www.syncproxy.com) !! Code-free real time syncing, ideal for mobile, electron and web apps.
@@ -13,8 +15,8 @@ Enable offline-syncing to your SQL/NoSQL database servers with [SyncProxy](https
 
 LokiJS is a document oriented database written in javascript, published under MIT License.
 Its purpose is to store javascript objects as documents in a nosql fashion and retrieve them with a similar mechanism.
-Runs in node (including cordova/phonegap and node-webkit),  [nativescript](http://www.nativescript.org) and the browser.
-LokiJS is ideal for the following scenarios: 
+Runs in node (including cordova/phonegap and node-webkit), [nativescript](http://www.nativescript.org) and the browser.
+LokiJS is ideal for the following scenarios:
 
 1. client-side in-memory db is ideal (e.g., a session store)
 2. performance critical applications
@@ -28,6 +30,7 @@ LokiJS supports indexing and views and achieves high-performance through maintai
 ## Demo
 
 The following demos are available:
+
 - [Sandbox / Playground](https://rawgit.com/techfort/LokiJS/master/examples/sandbox/LokiSandbox.htm)
 - a node-webkit small demo in the folder demos/desktop_app. You can launch it by running `/path/to/nw demos/desktop_app/`
 
@@ -50,7 +53,7 @@ LokiJS is at version 1.3 [Eostre].
 
 As LokiJS is written in JavaScript it can be run on any environment supporting JavaScript such as browsers, node.js/node-webkit, nativescript mobile framework and hybrid mobile apps (such as phonegap/cordova).
 
-Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday. 
+Made by [@techfort](http://twitter.com/tech_fort), with the precious help of Dave Easterday.
 
 _[Leave a tip](https://gratipay.com/techfort/) or give us a star if you find LokiJS useful!_
 
@@ -64,12 +67,12 @@ For node and nativescript environments you can install through `npm install loki
 
 ## Roadmap
 
-* exactIndex
-* key-value datastore
-* MRU cache
-* MongoDB API compatibility
-* server standalone (tcp and http servers and clients)
-* replication and horizontal scaling
+- exactIndex
+- key-value datastore
+- MRU cache
+- MongoDB API compatibility
+- server standalone (tcp and http servers and clients)
+- replication and horizontal scaling
 
 ## Contact
 
@@ -88,4 +91,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-

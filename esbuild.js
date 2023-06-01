@@ -5,9 +5,13 @@ const { dtsPlugin } = require("esbuild-plugin-d.ts");
 
 esbuild
   .build({
-    entryPoints: ["src/lokijs.ts", "src/loki-indexed-adapter.ts"],
+    entryPoints: [
+      "src/lokijs.ts",
+      "src/loki-indexed-adapter.ts",
+      "src/incremental-indexeddb-adapter.ts",
+    ],
     // entryNames: "[name].min",
-    outdir: "build",
+    outdir: "dist",
     bundle: true,
     sourcemap: true,
     minifyWhitespace: true,

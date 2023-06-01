@@ -9,7 +9,7 @@ const jestConfig: JestConfigWithTsJest = {
   },
   testPathIgnorePatterns: [
     "<rootDir>/node_modules/",
-    "<rootDir>/build/",
+    "<rootDir>/dist/",
     "<rootDir>/spec/browser/",
   ],
 };

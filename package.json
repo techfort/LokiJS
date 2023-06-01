@@ -29,7 +29,7 @@
     "test:browser": "web-test-runner spec/**/*.ts --node-resolve",
     "test:node:old": "istanbul cover --dir coverage/nodejs node_modules/jasmine/bin/jasmine.js",
     "test:node": "jest --config jest.config.ts spec/*.ts --silent=false",
-    "test:incrementalidb": "npm run build && cp src/incremental-indexeddb-adapter.js spec/incrementalidb/build && cp -r build/ spec/incrementalidb/build && serve spec/incrementalidb",
+    "test:incrementalidb": "npm run build:only && mkdir -p spec/incrementalidb/dist/ && cp src/incremental-indexeddb-adapter.js spec/incrementalidb/dist && cp -r dist/ spec/incrementalidb/dist && serve spec/incrementalidb",
     "pretest": "npm run build:only",
     "test": "npm run test:node && npm run test:browser",
     "build": "node esbuild.js",
@@ -38,7 +38,7 @@
     "postbuild": "jest --config jest.config.ts spec/*.ts --silent=false",
     "prebuild": "npm run format && npm run typecheck",
     "prepublish": "npm run build",
-    "clean": "rimraf build/* coverage/*",
+    "clean": "rimraf dist/* coverage/*",
     "pour:beer": "echo New npm version published, one beer for you !",
     "jsdoc": "./node_modules/.bin/jsdoc -c jsdoc-conf.json",
     "benchmark": "node benchmark/benchmark"

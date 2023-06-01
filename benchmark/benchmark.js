@@ -1,4 +1,4 @@
-var loki = require("../build/lokijs.min.js"),
+var loki = require("../dist/lokijs.min.js"),
 var db = new loki("perftest"),
   samplecoll = null,
   uniquecoll = null,

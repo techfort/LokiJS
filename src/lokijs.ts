@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable no-prototype-builtins */
-/* eslint-disable no-var */
 
 "use strict";
 
-import { binarySearch } from "./utils/binarySearch";
 import Loki from "./modules/Loki";
 
-export var hasOwnProperty = Object.prototype.hasOwnProperty;
+export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 // precompile recursively
 export function precompileQuery(operator, value) {
@@ -19,7 +17,7 @@ export function precompileQuery(operator, value) {
       value = new RegExp(value);
     }
   } else if (typeof value === "object") {
-    for (var key in value) {
+    for (const key in value) {
       if (key === "$regex" || typeof value[key] === "object") {
         value[key] = precompileQuery(key, value[key]);
       }
@@ -42,7 +40,7 @@ export function deepProperty(obj, property, isDeep) {
     // pass without processing
     return obj[property];
   }
-  var pieces = property.split("."),
+  let pieces = property.split("."),
     root = obj;
   while (pieces.length > 0) {
     root = root[pieces.shift()];

@@ -13,6 +13,17 @@ describe("collection", function () {
     result = db.getCollection("coll2");
     expect(result.name).toEqual("coll2");
   });
+  it("inserting into stage and retrieving works", function () {
+    const testLokiId = 0;
+    const db = new loki("test.db");
+    db.addCollection("coll1");
+    const collection = db.getCollection("coll1");
+    collection.stage("tmp", { a: 1, $loki: testLokiId });
+    console.log(collection.stages);
+    console.log(collection.getStage("tmp"));
+    expect(collection.getStage("tmp")[testLokiId].a).toEqual(1);
+    expect(collection.getStage("tmp")[testLokiId].$loki).toEqual(0);
+  });
   it("subclassing works", function () {
     class SubclassedCollection extends loki.Collection<any> {
       constructor(args, opts) {

@@ -88,7 +88,7 @@ export class Collection<
   flushChanges: () => void;
   setChangesApi: (enabled: any) => void;
   cachedDirtyIds: any;
-  stages: any;
+  stages: (object & { $loki: number })[];
   commitLog: any;
   contructor: typeof Collection;
   no_op: () => void;
@@ -523,8 +523,7 @@ export class Collection<
   byExample(template) {
     let k;
     let obj;
-    let query;
-    query = [];
+    const query = [];
     for (k in template) {
       if (!template.hasOwnProperty(k)) continue;
       query.push(((obj = {}), (obj[k] = template[k]), obj));
@@ -2520,7 +2519,9 @@ export class Collection<
    * (Staging API) create a stage and/or retrieve it
    * @memberof Collection
    */
-  getStage(name) {
+  getStage(
+    name: string
+  ): Record<number, Record<string, any> & { $loki: number }> {
     if (!this.stages[name]) {
       this.stages[name] = {};
     }
@@ -2531,7 +2532,7 @@ export class Collection<
    * (Staging API) create a copy of an object and insert it into a stage
    * @memberof Collection
    */
-  stage(stageName, obj) {
+  stage(stageName: string, obj: Record<string, any> & { $loki: number }) {
     const copy = JSON.parse(JSON.stringify(obj));
     this.getStage(stageName)[obj.$loki] = copy;
     return copy;
@@ -2544,7 +2545,7 @@ export class Collection<
    * @param {string} message
    * @memberof Collection
    */
-  commitStage(stageName, message) {
+  commitStage(stageName: string, message: string) {
     const stage = this.getStage(stageName);
     let prop;
     const timestamp = new Date().getTime();

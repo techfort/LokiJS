@@ -52,6 +52,11 @@
       return clone(obj, 'shallow');
     }
 
+    function splitPath(path){
+      const result=path.split(/\.+(?![^\<]*\>)/)
+      return result.map(item=> item.replace(/\<|\>/g,''))
+    }
+
     var Utils = {
       copyProperties: function (src, dest) {
         var prop;
@@ -384,7 +389,7 @@
         prop = properties[i];
         field = prop[0];
         if (~field.indexOf('.')) {
-          arr = field.split('.');
+          arr = splitPath(field),//**field.split('.');
           val1 = Utils.getIn(obj1, arr, true);
           val2 = Utils.getIn(obj2, arr, true);
         } else {
@@ -596,7 +601,7 @@
               }
 
               if (property.indexOf('.') !== -1) {
-                return dotSubScan(item, property.split('.'), doQueryOp, b[property], item);
+                return dotSubScan(item, splitPath(property), doQueryOp, b[property], item);
               }
               return doQueryOp(item[property], filter, item);
             });
@@ -3306,7 +3311,7 @@
           var val1, val2, arr;
           return function (a, b) {
             if (~prop.indexOf('.')) {
-              arr = prop.split('.');
+              arr = splitPath(prop);
               val1 = Utils.getIn(data[a], arr, true);
               val2 = Utils.getIn(data[b], arr, true);
             } else {
@@ -3605,7 +3610,7 @@
 
         // currently supporting dot notation for non-indexed conditions only
         if (usingDotNotation) {
-          property = property.split('.');
+          property = splitPath(property);
           for (i = 0; i < len; i++) {
             rowIdx = filter[i];
             record = t[rowIdx];
@@ -3638,7 +3643,7 @@
           len = t.length;
 
           if (usingDotNotation) {
-            property = property.split('.');
+            property = splitPath(property);
             for (i = 0; i < len; i++) {
               record = t[i];
               if (dotSubScan(record, property, fun, value, record)) {
@@ -5482,7 +5487,7 @@
       var wrappedComparer =
         (function (prop, data) {
           var val1, val2;
-          var propPath = ~prop.indexOf('.') ? prop.split('.') : false;
+          var propPath = ~prop.indexOf('.') ?splitPath(prop) : false;
           return function (a, b) {
             if (propPath) {
               val1 = Utils.getIn(data[a], propPath, true);
@@ -7487,7 +7492,7 @@
         // pass without processing
         return obj[property];
       }
-      var pieces = property.split('.'),
+      var pieces = splitPath(property)
         root = obj;
       while (pieces.length > 0) {
         root = root[pieces.shift()];
